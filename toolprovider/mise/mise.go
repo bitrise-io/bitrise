@@ -115,7 +115,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 
 	installRequest := installRequest(tool, useNix)
 
-	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest)
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest, false)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
@@ -195,8 +195,7 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 }
 
 // ResolveLatestVersion resolves a tool to its latest version without installing it.
-// If checkInstalled is true, returns the latest installed version. Otherwise, returns the latest released version.
-func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest, checkInstalled bool) (string, error) {
+func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest, silent bool) (string, error) {
 	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
 	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
@@ -208,13 +207,7 @@ func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest, check
 
 	installRequest := installRequest(tool, useNix)
 
-	if checkInstalled {
-		installRequest.ResolutionStrategy = provider.ResolutionStrategyLatestInstalled
-	} else {
-		installRequest.ResolutionStrategy = provider.ResolutionStrategyLatestReleased
-	}
-
-	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest)
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest, silent)
 	if err != nil {
 		return "", err
 	}

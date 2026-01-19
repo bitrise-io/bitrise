@@ -211,7 +211,7 @@ func TestParseToolSpec(t *testing.T) {
 			toolSpec:    "node",
 			isLatest:    false,
 			wantErr:     true,
-			errContains: "version required",
+			errContains: "version cannot be empty",
 		},
 		{
 			name:        "empty version after @ for install (error)",
@@ -247,7 +247,7 @@ func TestParseToolSpec(t *testing.T) {
 			toolSpec:    "ruby3.2.0",
 			isLatest:    false,
 			wantErr:     true,
-			errContains: "version required",
+			errContains: "version cannot be empty",
 		},
 	}
 

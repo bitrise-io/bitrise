@@ -454,11 +454,11 @@ func TestVersionExistsRemote(t *testing.T) {
 
 func TestNormalizeRequest(t *testing.T) {
 	tests := []struct {
-		name               string
-		tool               provider.ToolRequest
-		setupFake          func(*fakeExecEnv)
-		expectedRequest    provider.ToolRequest
-		wantErr            bool
+		name            string
+		tool            provider.ToolRequest
+		setupFake       func(*fakeExecEnv)
+		expectedRequest provider.ToolRequest
+		wantErr         bool
 	}{
 		{
 			name: "Strict strategy - no normalization",
@@ -467,13 +467,13 @@ func TestNormalizeRequest(t *testing.T) {
 				UnparsedVersion:    "20.18.1",
 				ResolutionStrategy: provider.ResolutionStrategyStrict,
 			},
-			setupFake:          func(m *fakeExecEnv) {},
-			expectedRequest:    provider.ToolRequest{
+			setupFake: func(m *fakeExecEnv) {},
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "node",
 				UnparsedVersion:    "20.18.1",
 				ResolutionStrategy: provider.ResolutionStrategyStrict,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "LatestReleased strategy - no normalization",
@@ -482,13 +482,13 @@ func TestNormalizeRequest(t *testing.T) {
 				UnparsedVersion:    "3.11",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
-			setupFake:          func(m *fakeExecEnv) {},
-			expectedRequest:    provider.ToolRequest{
+			setupFake: func(m *fakeExecEnv) {},
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "python",
 				UnparsedVersion:    "3.11",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "LatestInstalled strategy - version is installed",
@@ -500,12 +500,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("ruby", "3.3"), "3.3.8")
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "ruby",
 				UnparsedVersion:    "3.3",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "LatestInstalled strategy - no version installed, normalizes to LatestReleased",
@@ -517,12 +517,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("go", "1.21"), "")
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "go",
 				UnparsedVersion:    "1.21",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "LatestInstalled strategy - command error",
@@ -534,12 +534,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setError(miseLatestInstalledCmd("java", "17"), fmt.Errorf("command failed"))
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "java",
 				UnparsedVersion:    "17",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
-			wantErr:            true,
+			wantErr: true,
 		},
 		{
 			name: "Installed keyword - version is installed",
@@ -551,12 +551,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("node", ""), "20.18.1")
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "node",
 				UnparsedVersion:    "",
 				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "Installed keyword - no version installed, normalizes to LatestReleased",
@@ -568,12 +568,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("python", ""), "")
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "python",
 				UnparsedVersion:    "",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 		{
 			name: "Latest keyword",
@@ -585,12 +585,12 @@ func TestNormalizeRequest(t *testing.T) {
 			setupFake: func(m *fakeExecEnv) {
 				m.setResponse(miseLatestInstalledCmd("node", ""), "20.18.1")
 			},
-			expectedRequest:    provider.ToolRequest{
+			expectedRequest: provider.ToolRequest{
 				ToolName:           "node",
 				UnparsedVersion:    "",
 				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			},
-			wantErr:            false,
+			wantErr: false,
 		},
 	}
 
@@ -599,7 +599,7 @@ func TestNormalizeRequest(t *testing.T) {
 			fake := newFakeExecEnv()
 			tt.setupFake(fake)
 
-			request, err := normalizeRequest(fake, tt.tool)
+			request, err := normalizeRequest(fake, tt.tool, false)
 
 			if tt.wantErr {
 				if err == nil {

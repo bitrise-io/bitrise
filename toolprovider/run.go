@@ -132,10 +132,9 @@ func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useF
 	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
 }
 
-// GetLatestVersion queries the latest version of a tool without installing it.
-// If checkInstalled is true, returns the latest installed version, otherwise, returns the latest released version.
+// GetLatestVersion queries the latest version of a tool without installing it (installed or released).
 // Currently only supports mise.
-func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, checkInstalled bool, silent bool) (string, error) {
+func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, silent bool) (string, error) {
 	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
 	if err != nil {
@@ -150,5 +149,5 @@ func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, che
 	canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 	toolRequest.ToolName = canonicalToolID
 
-	return miseProvider.ResolveLatestVersion(toolRequest, checkInstalled)
+	return miseProvider.ResolveLatestVersion(toolRequest, silent)
 }
