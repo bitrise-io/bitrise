@@ -38,6 +38,17 @@ type StepBundleListItemModel struct {
 	RunIf        *string                             `json:"run_if,omitempty" yaml:"run_if,omitempty"`
 	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	/*
+		Containers (execution and service) to be used for the step bundle.
+		The value is either the container id, or a map with the container id and additional configuration.
+
+		service_containers:
+		- redis
+		- postgres:
+		   recreate: true
+	*/
+	ExecutionContainer any   `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
+	ServiceContainers  []any `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
 }
 
 type WithModel struct {
@@ -180,8 +191,9 @@ type BitriseDataModel struct {
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
-	Services    map[string]Container       `json:"services,omitempty" yaml:"services,omitempty"`
-	Containers  map[string]Container       `json:"containers,omitempty" yaml:"containers,omitempty"`
+	ExecutionContainers map[string]Container `json:"execution_containers,omitempty" yaml:"execution_containers,omitempty"`
+	ServiceContainers   map[string]Container `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
+	//
 	App         AppModel                   `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta        map[string]interface{}     `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap  TriggerMapModel            `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
@@ -191,6 +203,9 @@ type BitriseDataModel struct {
 	StepBundles map[string]StepBundleModel `json:"step_bundles,omitempty" yaml:"step_bundles,omitempty"`
 	Tools       ToolsModel                 `json:"tools,omitempty" yaml:"tools,omitempty"`
 	ToolConfig  *ToolConfigModel           `json:"tool_config,omitempty" yaml:"tool_config,omitempty"`
+	// TODO: Old container definitions, to be removed when containerisation using "With groups" is sunsetted
+	Services   map[string]Container `json:"services,omitempty" yaml:"services,omitempty"`
+	Containers map[string]Container `json:"containers,omitempty" yaml:"containers,omitempty"`
 }
 
 type BuildRunStartModel struct {
