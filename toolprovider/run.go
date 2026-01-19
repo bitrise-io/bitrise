@@ -133,13 +133,9 @@ func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useF
 }
 
 // GetLatestVersion queries the latest version of a tool without installing it.
-// If checkInstalled is true, returns the latest installed version. Otherwise, returns the latest released version.
-// Currently only supports mise provider.
-func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, checkInstalled bool, silent bool) (string, error) {
-	if providerID != "mise" {
-		return "", fmt.Errorf("unsupported tool provider for latest command: %s (only 'mise' is supported)", providerID)
-	}
-
+// If checkInstalled is true, returns the latest installed version, otherwise, returns the latest released version.
+// Currently only supports mise.
+func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, checkInstalled bool, silent bool) (string, error) {
 	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
 	if err != nil {
@@ -151,7 +147,6 @@ func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFa
 		return "", fmt.Errorf("bootstrap mise: %w", err)
 	}
 
-	// Canonicalize tool ID
 	canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 	toolRequest.ToolName = canonicalToolID
 

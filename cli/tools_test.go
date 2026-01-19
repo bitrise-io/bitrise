@@ -257,9 +257,9 @@ func TestParseToolSpec(t *testing.T) {
 			var err error
 
 			if tt.isLatest {
-				gotTool, gotVersion, err = parseToolSpecForLatest(tt.toolSpec)
+				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec, false)
 			} else {
-				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec)
+				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec, true)
 			}
 
 			if tt.wantErr {

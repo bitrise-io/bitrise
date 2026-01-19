@@ -210,6 +210,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 
 			got := canBeInstalledWithNix(request, execEnv, true, nixChecker)
 			require.Equal(t, tt.want, got)
+
 		})
 	}
 }

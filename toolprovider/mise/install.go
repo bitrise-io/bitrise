@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-// installRequest converts a tool request to use Nix backend if needed.
 func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.ToolRequest {
 	if useNix {
 		return provider.ToolRequest{
@@ -31,7 +30,6 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 // The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
 type nixChecker func(tool provider.ToolRequest) bool
 
-// canBeInstalledWithNix checks if a tool can be installed using the Nix backend.
 func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, useFastInstall bool, nixChecker nixChecker) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"

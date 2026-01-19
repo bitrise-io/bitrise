@@ -209,36 +209,34 @@ func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest, check
 	installRequest := installRequest(tool, useNix)
 
 	if checkInstalled {
-		// For --installed flag, check if any version is installed
-		existsLocally, err := versionExistsLocal(m.ExecEnv, installRequest.ToolName, tool.UnparsedVersion)
-		if err != nil {
-			return "", fmt.Errorf("check if version exists locally: %w", err)
-		}
-		if !existsLocally {
-			return "", fmt.Errorf("no installed versions found for %s", tool.ToolName)
-		}
-
-		// Resolve to latest installed
-		return m.resolveToLatestInstalled(installRequest.ToolName, tool.UnparsedVersion)
+		installRequest.ResolutionStrategy = provider.ResolutionStrategyLatestInstalled
+	} else {
+		installRequest.ResolutionStrategy = provider.ResolutionStrategyLatestReleased
 	}
 
-	// For latest released, check if version exists in remote
-	if !useNix {
-		versionExists, err := m.versionExists(installRequest.ToolName, tool.UnparsedVersion)
-		if err != nil {
-			return "", fmt.Errorf("check if version exists: %w", err)
-		}
-		if !versionExists {
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest)
+	if err != nil {
+		return "", err
+	}
+
+	concreteVersion, err := resolveToConcreteVersion(
+		m.ExecEnv,
+		normalizedRequest.ToolName,
+		normalizedRequest.UnparsedVersion,
+		normalizedRequest.ResolutionStrategy,
+	)
+	if err != nil {
+		if errors.Is(err, errNoMatchingVersion) {
 			return "", provider.ToolInstallError{
 				ToolName:         tool.ToolName,
 				RequestedVersion: tool.UnparsedVersion,
 				Cause:            fmt.Sprintf("no match for requested version %s", tool.UnparsedVersion),
 			}
 		}
+		return "", fmt.Errorf("resolve %s@%s: %w", tool.ToolName, tool.UnparsedVersion, err)
 	}
 
-	// Resolve to latest released
-	return m.resolveToLatestReleased(installRequest.ToolName, tool.UnparsedVersion)
+	return concreteVersion, nil
 }
 
 func GetMiseVersion() string {
