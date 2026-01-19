@@ -281,7 +281,7 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 			}
 
 			plan.ExecutionContainer = containerCfg
-			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; ok {
+			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; !ok {
 				builder.executionContainerPlans[containerCfg.ContainerID] = ContainerPlan{
 					Image: container.Image,
 				}
@@ -298,11 +298,11 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 			if containerCfg != nil {
 				container, ok := builder.services[containerCfg.ContainerID]
 				if !ok {
-					return nil, fmt.Errorf("referenced execution container not defined: %s", containerCfg.ContainerID)
+					return nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
 				}
 
 				plan.ServiceContainers = append(plan.ServiceContainers, *containerCfg)
-				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; ok {
+				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
 					builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
 						Image: container.Image,
 					}
@@ -389,7 +389,7 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 			}
 
 			executionContainerCfg = containerCfg
-			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; ok {
+			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; !ok {
 				builder.executionContainerPlans[containerCfg.ContainerID] = ContainerPlan{
 					Image: container.Image,
 				}
@@ -408,11 +408,11 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 			if containerCfg != nil {
 				container, ok := builder.services[containerCfg.ContainerID]
 				if !ok {
-					return nil, fmt.Errorf("referenced execution container not defined: %s", containerCfg.ContainerID)
+					return nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
 				}
 
 				serviceContainerCfgs = append(serviceContainerCfgs, *containerCfg)
-				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; ok {
+				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
 					builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
 						Image: container.Image,
 					}
