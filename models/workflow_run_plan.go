@@ -191,6 +191,8 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
 		WithGroupPlans:          builder.withGroupPlans,
 		StepBundlePlans:         builder.stepBundlePlans,
+		ExecutionContainerPlans: builder.executionContainerPlans,
+		ServiceContainerPlans:   builder.serviceContainerPlans,
 		ExecutionPlan:           executionPlan,
 	}, nil
 }
