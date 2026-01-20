@@ -135,21 +135,36 @@ func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useF
 }
 
 // GetLatestVersion queries the latest version of a tool without installing it (installed or released).
-// Currently only supports mise.
-func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, silent bool) (string, error) {
-	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
-	if err != nil {
-		return "", fmt.Errorf("create mise tool provider: %w", err)
-	}
-
-	err = miseProvider.Bootstrap()
-	if err != nil {
-		return "", fmt.Errorf("bootstrap mise: %w", err)
-	}
-
+// Supports both mise and asdf providers.
+func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, silent bool) (string, error) {
 	canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 	toolRequest.ToolName = canonicalToolID
 
-	return miseProvider.ResolveLatestVersion(toolRequest)
+	switch providerID {
+	case "asdf":
+		asdfProvider := &asdf.AsdfToolProvider{
+			ExecEnv: execenv.ExecEnv{
+				EnvVars:            map[string]string{},
+				ShellInit:          "",
+				ClearInheritedEnvs: false,
+			},
+			Silent: silent,
+		}
+		return asdfProvider.ResolveLatestVersion(toolRequest)
+	case "mise":
+		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
+		if err != nil {
+			return "", fmt.Errorf("create mise tool provider: %w", err)
+		}
+
+		err = miseProvider.Bootstrap()
+		if err != nil {
+			return "", fmt.Errorf("bootstrap mise: %w", err)
+		}
+
+		return miseProvider.ResolveLatestVersion(toolRequest)
+	default:
+		return "", fmt.Errorf("unsupported tool provider: %s", providerID)
+	}
 }

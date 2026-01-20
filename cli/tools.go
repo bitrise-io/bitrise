@@ -157,7 +157,7 @@ EXAMPLES:
 )
 
 var (
-	toolsLatestSubcommandUsageText = "bitrise tools latest [--installed] [--format FORMAT] <TOOL[@VERSION]>"
+	toolsLatestSubcommandUsageText = "bitrise tools latest [--installed] [--provider PROVIDER] [--format FORMAT] <TOOL[@VERSION]>"
 	toolsLatestSubcommand          = cli.Command{
 		Name:      toolsLatestSubcommandName,
 		Usage:     "Query the latest version of a tool",
@@ -193,6 +193,7 @@ EXAMPLES:
 		Flags: []cli.Flag{
 			flToolsInstalled,
 			flToolsOutputFormat,
+			flToolsProvider,
 		},
 	}
 )
@@ -547,7 +548,17 @@ func toolsLatest(c *cli.Context) error {
 	// For tools latest, we'll use fast install regardless of the stack type
 	useFastInstall := true
 
-	version, err := toolprovider.GetLatestVersion(toolRequest, useFastInstall, silent)
+	// Get provider from flag, default to mise
+	providerID := c.String(toolsProviderKey)
+	if providerID == "" {
+		providerID = "mise"
+	}
+
+	if providerID != "asdf" && providerID != "mise" {
+		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+	}
+
+	version, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
 	if err != nil {
 		return err
 	}
