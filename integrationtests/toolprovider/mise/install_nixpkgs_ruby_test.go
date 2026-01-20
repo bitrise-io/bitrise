@@ -66,7 +66,7 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 	for _, tt := range tests {
 		miseInstallDir := t.TempDir()
 		miseDataDir := t.TempDir()
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, true)
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, true, false)
 		require.NoError(t, err)
 
 		err = miseProvider.Bootstrap()

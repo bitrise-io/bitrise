@@ -70,7 +70,7 @@ func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRe
 		allTools = append(allTools, tools...)
 	}
 
-	if len(allTools) == 0 {
+	if !silent && len(allTools) == 0 {
 		log.Warnf("No tools found in version files")
 		return nil, nil
 	}

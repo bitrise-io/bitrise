@@ -189,7 +189,7 @@ func TestMiseToolEntryParsing(t *testing.T) {
 }
 
 func TestListInstalledToolsUnsupportedProvider(t *testing.T) {
-	tools, err := ListInstalledTools("unsupported", false)
+	tools, err := ListInstalledTools("unsupported", false, false)
 	require.Error(t, err)
 	assert.Nil(t, tools)
 	assert.Contains(t, err.Error(), "unsupported tool provider")

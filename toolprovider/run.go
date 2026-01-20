@@ -37,8 +37,9 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
 
-	log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
-
+	if !silent {
+		log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
+	}
 	var toolProvider provider.ToolProvider
 	var err error
 
@@ -59,10 +60,11 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 				ShellInit:          "",
 				ClearInheritedEnvs: false,
 			},
+			Silent: silent,
 		}
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}
@@ -136,7 +138,7 @@ func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useF
 // Currently only supports mise.
 func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, silent bool) (string, error) {
 	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
 	if err != nil {
 		return "", fmt.Errorf("create mise tool provider: %w", err)
 	}
@@ -149,5 +151,5 @@ func GetLatestVersion(toolRequest provider.ToolRequest, useFastInstall bool, sil
 	canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
 	toolRequest.ToolName = canonicalToolID
 
-	return miseProvider.ResolveLatestVersion(toolRequest, silent)
+	return miseProvider.ResolveLatestVersion(toolRequest)
 }

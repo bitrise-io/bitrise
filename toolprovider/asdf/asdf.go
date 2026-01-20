@@ -17,6 +17,7 @@ type ProviderOptions struct {
 
 type AsdfToolProvider struct {
 	ExecEnv execenv.ExecEnv
+	Silent  bool
 }
 
 func (a *AsdfToolProvider) ID() string {
@@ -67,7 +68,9 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	if err != nil {
 		var nomatchErr *ErrNoMatchingVersion
 		if errors.As(err, &nomatchErr) {
-			log.Warnf("No matching version found, updating asdf-%s plugin and retrying...", tool.ToolName)
+			if !a.Silent {
+				log.Warnf("No matching version found, updating asdf-%s plugin and retrying...", tool.ToolName)
+			}
 			// Some asdf plugins hardcode the list of installable versions and need a new plugin release to support new versions.
 			_, err = a.ExecEnv.RunAsdf("plugin", "update", string(tool.ToolName))
 			if err != nil {

@@ -28,12 +28,12 @@ func installRequest(toolRequest provider.ToolRequest, useNix bool) provider.Tool
 
 // nixChecker is a helper for testing.
 // The real implementation returns true if Nix (the daemon) is available on the system and various other conditions are met.
-type nixChecker func(tool provider.ToolRequest) bool
+type nixChecker func(tool provider.ToolRequest, silent bool) bool
 
-func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, useFastInstall bool, nixChecker nixChecker) bool {
+func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, useFastInstall bool, nixChecker nixChecker, silent bool) bool {
 	// Force switch for integration testing. No fallback to regular install when this is active. This makes failures explicit.
 	forceNix := os.Getenv("BITRISE_TOOLSETUP_FAST_INSTALL_FORCE") == "true"
-	useNix := nixChecker(tool)
+	useNix := nixChecker(tool, silent)
 
 	canProceed := (useFastInstall && useNix) || forceNix
 	if !canProceed {
@@ -42,14 +42,18 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, u
 
 	// Enable experimental settings for custom backend
 	if _, err := execEnv.RunMise("settings", "experimental=true"); err != nil {
-		log.Warnf("Error while enabling experimental settings: %v.", err)
+		if !silent {
+			log.Warnf("Error while enabling experimental settings: %v.", err)
+		}
 		return forceNix
 	}
 
 	// If the plugin is already installed, Mise will not throw an error.
 	_, err := execEnv.RunMisePlugin("install", nixpkgs.PluginName, nixpkgs.PluginGitURL)
 	if err != nil {
-		log.Warnf("Error while installing nixpkgs plugin (%s): %v.", nixpkgs.PluginGitURL, err)
+		if !silent {
+			log.Warnf("Error while installing nixpkgs plugin (%s): %v.", nixpkgs.PluginGitURL, err)
+		}
 		return forceNix
 	}
 
@@ -57,7 +61,9 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, u
 	// because the index might be outdated.
 	_, err = execEnv.RunMisePlugin("update", nixpkgs.PluginName)
 	if err != nil {
-		log.Warnf("Error while updating nixpkgs plugin (%s): %v. Possibly using outdated plugin version.", nixpkgs.PluginGitURL, err)
+		if !silent {
+			log.Warnf("Error while updating nixpkgs plugin (%s): %v. Possibly using outdated plugin version.", nixpkgs.PluginGitURL, err)
+		}
 	}
 
 	if forceNix {
@@ -69,11 +75,15 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, u
 	nameWithBackend := provider.ToolID(fmt.Sprintf("nixpkgs:%s", tool.ToolName))
 	available, err := versionExistsRemote(execEnv, nameWithBackend, tool.UnparsedVersion)
 	if err != nil {
-		log.Warnf("Error while checking nixpkgs index for %s@%s: %v. Falling back to core plugin installation.", tool.ToolName, tool.UnparsedVersion, err)
+		if !silent {
+			log.Warnf("Error while checking nixpkgs index for %s@%s: %v. Falling back to core plugin installation.", tool.ToolName, tool.UnparsedVersion, err)
+		}
 		return false
 	}
 	if !available {
-		log.Warnf("%s@%s not found in nixpkgs index, doing a source build. This may take some time...", tool.ToolName, tool.UnparsedVersion)
+		if !silent {
+			log.Warnf("%s@%s not found in nixpkgs index, doing a source build. This may take some time...", tool.ToolName, tool.UnparsedVersion)
+		}
 		return false
 	}
 

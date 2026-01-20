@@ -44,16 +44,20 @@ func (m *MiseToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 	}
 	if plugin == nil {
 		// No plugin installation needed (either core tool or registry tool).
-		log.Debugf("[TOOLPROVIDER] No plugin installation needed for tool %s", tool.ToolName)
+		if !m.Silent {
+			log.Debugf("[TOOLPROVIDER] No plugin installation needed for tool %s", tool.ToolName)
+		}
 		return nil
 	}
 
 	installed, err := m.isPluginInstalled(plugin)
-	if err != nil {
+	if !m.Silent && err != nil {
 		log.Warnf("Failed to check if plugin is already installed: %v", err)
 	}
 	if installed {
-		log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		if !m.Silent {
+			log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		}
 		return nil
 	}
 
@@ -142,7 +146,7 @@ func (m *MiseToolProvider) isPluginInstalled(plugin *PluginSource) (bool, error)
 			continue
 		}
 		if strings.Contains(line, string(plugin.PluginName)) {
-			if plugin.GitCloneURL != "" && !strings.Contains(line, string(plugin.GitCloneURL)) {
+			if !m.Silent && plugin.GitCloneURL != "" && !strings.Contains(line, string(plugin.GitCloneURL)) {
 				log.Warnf("installed, but required URL does not match current:\n%s %s\n%s", plugin.PluginName, plugin.GitCloneURL, line)
 			}
 			return true, nil

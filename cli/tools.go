@@ -118,7 +118,7 @@ EXAMPLES:
 }
 
 var (
-	toolInstallSubcommandUsageText = "bitrise tools install <TOOL@VERSION> [--provider PROVIDER] [--format FORMAT]"
+	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL@VERSION>"
 	toolsInstallSubcommand         = cli.Command{
 		Name:      toolsInstallSubcommandName,
 		Usage:     "Install a specific tool version",
@@ -157,7 +157,7 @@ EXAMPLES:
 )
 
 var (
-	toolsLatestSubcommandUsageText = "bitrise tools latest [-i|--installed] <TOOL[@VERSION]> [--format FORMAT]"
+	toolsLatestSubcommandUsageText = "bitrise tools latest [--installed] [--format FORMAT] <TOOL[@VERSION]>"
 	toolsLatestSubcommand          = cli.Command{
 		Name:      toolsLatestSubcommandName,
 		Usage:     "Query the latest version of a tool",
@@ -180,8 +180,8 @@ EXAMPLES:
    Query latest available Node.js (any version):
    bitrise tools latest node
 
-   Output in bash-friendly format:
-   bitrise tools latest ruby@3 --format bash`,
+   Output as JSON:
+   bitrise tools latest --format json ruby@3`,
 		Action: func(c *cli.Context) error {
 			logCommandParameters(c)
 			if err := toolsLatest(c); err != nil {
@@ -414,7 +414,7 @@ func toolsInfo(c *cli.Context) error {
 	format := c.String("format")
 	activeOnly := c.Bool("active")
 
-	tools, err := toolprovider.ListInstalledTools("mise", activeOnly)
+	tools, err := toolprovider.ListInstalledTools("mise", activeOnly, false)
 	if err != nil {
 		return err
 	}
@@ -513,7 +513,7 @@ func toolsLatest(c *cli.Context) error {
 	silent := false
 
 	switch format {
-	case outputFormatJSON, outputFormatBash:
+	case outputFormatJSON:
 		silent = true
 	case outputFormatPlaintext:
 		// valid format
@@ -524,6 +524,12 @@ func toolsLatest(c *cli.Context) error {
 	toolName, versionStr, err := parseToolSpec(toolSpec, false)
 	if err != nil {
 		return err
+	}
+	if versionStr == "latest" {
+		return fmt.Errorf("invalid version prefix: %s (latest version is returned by default)", versionStr)
+	}
+	if versionStr == "installed" {
+		return fmt.Errorf("invalid version prefix: %s (latest installed version is returned using --installed)", versionStr)
 	}
 
 	resolutionStrategy := provider.ResolutionStrategyLatestReleased
@@ -558,16 +564,9 @@ func toolsLatest(c *cli.Context) error {
 			return fmt.Errorf("marshal JSON: %w", err)
 		}
 		fmt.Println(string(jsonData))
-	case outputFormatBash:
-		// For bash, just output the version string
-		fmt.Println(version)
 	case outputFormatPlaintext:
-		// For plaintext, output a user-friendly message
-		if checkInstalled {
-			log.Infof("Latest installed version of %s: %s", toolName, colorstring.Green("%s", version))
-		} else {
-			log.Infof("Latest available version of %s: %s", toolName, colorstring.Green("%s", version))
-		}
+		// For plaintext, just output the version string
+		fmt.Println(version)
 	}
 
 	return nil

@@ -204,11 +204,11 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				ResolutionStrategy: tt.resolutionStrategy,
 			}
 
-			nixChecker := func(tool provider.ToolRequest) bool {
+			nixChecker := func(tool provider.ToolRequest, silent bool) bool {
 				return true
 			}
 
-			got := canBeInstalledWithNix(request, execEnv, true, nixChecker)
+			got := canBeInstalledWithNix(request, execEnv, true, nixChecker, false)
 			require.Equal(t, tt.want, got)
 
 		})

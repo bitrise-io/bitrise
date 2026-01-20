@@ -17,7 +17,7 @@ func TestExecEnv_RunMiseWithTimeout(t *testing.T) {
 
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
