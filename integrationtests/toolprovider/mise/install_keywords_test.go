@@ -26,8 +26,10 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 		name     string
 		toolName provider.ToolID
 	}{
-		{"Install latest tuist", "tuist"},
 		{"Install latest golang", "golang"},
+		{"Install latest python", "python"},
+		{"Install latest node", "node"},
+		{"Install latest tuist", "tuist"},
 	}
 
 	for _, tt := range tests {

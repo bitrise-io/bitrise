@@ -140,24 +140,10 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		}
 		return provider.ToolInstallResult{}, fmt.Errorf("resolve %s@%s: %w", installRequest.ToolName, installRequest.UnparsedVersion, err)
 	}
-	if !m.Silent {
-		log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
-			installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
-	}
-	if !useNix {
-		versionExists, err := versionExistsRemote(m.ExecEnv, installRequest.ToolName, concreteVersion)
-		if err != nil {
-			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists for %s@%s: %w", installRequest.ToolName, concreteVersion, err)
-		}
-		if !versionExists {
-			return provider.ToolInstallResult{}, provider.ToolInstallError{
-				ToolName:         installRequest.ToolName,
-				RequestedVersion: installRequest.UnparsedVersion,
-				Cause:            fmt.Sprintf("no match for requested version %s", installRequest.UnparsedVersion),
-			}
-		}
-	} // else: canBeInstalledWithNix() already verified version existence
-
+  if !m.Silent {
+    log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
+      installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
+  }
 	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

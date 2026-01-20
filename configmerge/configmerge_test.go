@@ -46,7 +46,7 @@ include:
 			wantErr:       "circular reference detected: bitrise.yml -> module_1.yml -> module_2.yml -> module_1.yml",
 		},
 		{
-			name: "Max 10 include items are allowed",
+			name: "Max 35 include items are allowed",
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
@@ -57,24 +57,22 @@ include:
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "max include count (10) exceeded",
+			wantErr:       "max include count (35) exceeded",
 		},
 		{
-			name: "Max 20 config files are allowed",
+			name: "Max 35 config files are allowed",
 			configReader: mockConfigReader{
 				fileSystemFiles: map[string][]byte{
 					"bitrise.yml": []byte(fmt.Sprintf(`format_version: "15"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 include:
-%s`, strings.Repeat("- path: path_1.yml\n", 10))),
-					"path_1.yml": []byte(`include:
-- path: path_2.yml`),
-					"path_2.yml": []byte(``),
+%s`, strings.Repeat("- path: path_1.yml\n", MaxIncludeCountPerFile))),
+					"path_1.yml": []byte(``),
 				},
 			},
 			mainConfigPth: "bitrise.yml",
-			wantErr:       "max file count (20) exceeded",
+			wantErr:       "max file count (35) exceeded",
 		},
 		{
 			name: "Max include depth is 5",
