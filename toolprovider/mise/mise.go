@@ -105,7 +105,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
-	useNix := runtime.GOOS =="darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
+	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -138,20 +138,6 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	}
 	log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
 		installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
-
-	if !useNix {
-		versionExists, err := versionExistsRemote(m.ExecEnv, installRequest.ToolName, concreteVersion)
-		if err != nil {
-			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists for %s@%s: %w", installRequest.ToolName, concreteVersion, err)
-		}
-		if !versionExists {
-			return provider.ToolInstallResult{}, provider.ToolInstallError{
-				ToolName:         installRequest.ToolName,
-				RequestedVersion: installRequest.UnparsedVersion,
-				Cause:            fmt.Sprintf("no match for requested version %s", installRequest.UnparsedVersion),
-			}
-		}
-	} // else: canBeInstalledWithNix() already verified version existence
 
 	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
