@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	MaxIncludeCountPerFile = 10
-	MaxFilesCountTotal     = 20
+	MaxIncludeCountPerFile = 35
+	MaxFilesCountTotal     = 35
 	MaxIncludeDepth        = 5           // root + 4 includes
 	MaxFileSizeBytes       = 1024 * 1024 // 1MB
 )
