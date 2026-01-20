@@ -150,6 +150,12 @@ func resolveToConcreteVersion(
 	version string,
 	strategy provider.ResolutionStrategy,
 ) (string, error) {
+	if version == "latest" {
+		return "", fmt.Errorf("version string is set to latest. this should not happen")
+	}
+	if version == "installed" {
+		return "", fmt.Errorf("version string is set to installed. this should not happen")
+	}
 	switch strategy {
 	case provider.ResolutionStrategyStrict, provider.ResolutionStrategyLatestReleased:
 		// Both strategies resolve fuzzy versions the same way.
