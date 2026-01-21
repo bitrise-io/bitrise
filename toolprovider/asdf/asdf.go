@@ -17,6 +17,7 @@ type ProviderOptions struct {
 
 type AsdfToolProvider struct {
 	ExecEnv execenv.ExecEnv
+	Silent  bool
 }
 
 func (a *AsdfToolProvider) ID() string {
@@ -67,7 +68,9 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	if err != nil {
 		var nomatchErr *ErrNoMatchingVersion
 		if errors.As(err, &nomatchErr) {
-			log.Warnf("No matching version found, updating asdf-%s plugin and retrying...", tool.ToolName)
+			if !a.Silent {
+				log.Warnf("No matching version found, updating asdf-%s plugin and retrying...", tool.ToolName)
+			}
 			// Some asdf plugins hardcode the list of installable versions and need a new plugin release to support new versions.
 			_, err = a.ExecEnv.RunAsdf("plugin", "update", string(tool.ToolName))
 			if err != nil {
@@ -113,4 +116,44 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 			ConcreteVersion:    resolution.VersionString,
 		}, nil
 	}
+}
+
+// ResolveLatestVersion resolves a tool to its latest version without installing it.
+func (a *AsdfToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (string, error) {
+	err := a.InstallPlugin(tool)
+	if err != nil {
+		return "", fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+	}
+
+	installedVersions, err := a.listInstalled(tool.ToolName)
+	if err != nil {
+		return "", fmt.Errorf("list installed versions: %w", err)
+	}
+
+	releasedVersions, err := a.listReleased(tool.ToolName)
+	if err != nil {
+		return "", fmt.Errorf("list released versions: %w", err)
+	}
+
+	if len(releasedVersions) == 0 && len(installedVersions) == 0 {
+		return "", &ErrNoMatchingVersion{
+			RequestedVersion:  tool.UnparsedVersion,
+			AvailableVersions: releasedVersions,
+		}
+	}
+
+	resolution, err := ResolveVersion(tool, releasedVersions, installedVersions)
+	if err != nil {
+		var nomatchErr *ErrNoMatchingVersion
+		if errors.As(err, &nomatchErr) {
+			return "", provider.ToolInstallError{
+				ToolName:         tool.ToolName,
+				RequestedVersion: tool.UnparsedVersion,
+				Cause:            nomatchErr.Error(),
+			}
+		}
+		return "", fmt.Errorf("resolve version: %w", err)
+	}
+
+	return resolution.VersionString, nil
 }
