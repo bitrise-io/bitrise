@@ -204,6 +204,24 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 		bundle.Environments[i] = env
 	}
 
+	if bundle.ExecutionContainer != nil {
+		normalized, err := stepmanModels.RecursiveJSONMarshallable(bundle.ExecutionContainer)
+		if err != nil {
+			return err
+		}
+		bundle.ExecutionContainer = normalized
+	}
+
+	if bundle.ServiceContainers != nil {
+		normalized, err := stepmanModels.RecursiveJSONMarshallable(bundle.ServiceContainers)
+		if err != nil {
+			return err
+		}
+		if normalizedSlice, ok := normalized.([]interface{}); ok {
+			bundle.ServiceContainers = normalizedSlice
+		}
+	}
+
 	return nil
 }
 
@@ -334,6 +352,20 @@ func (config *BitriseDataModel) Normalize() error {
 			return fmt.Errorf("failed to normalize service: %w", err)
 		}
 		config.Services[serviceID] = service
+	}
+
+	for containerID, container := range config.ExecutionContainers {
+		if err := container.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize execution container: %w", err)
+		}
+		config.ExecutionContainers[containerID] = container
+	}
+
+	for serviceID, service := range config.ServiceContainers {
+		if err := service.Normalize(); err != nil {
+			return fmt.Errorf("failed to normalize service container: %w", err)
+		}
+		config.ServiceContainers[serviceID] = service
 	}
 
 	for stepBundleID, stepBundle := range config.StepBundles {
