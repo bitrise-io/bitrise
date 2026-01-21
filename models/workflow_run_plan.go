@@ -268,47 +268,15 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.ContainerID = withGroupContext.ContainerID
 		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
-	if allowContainerDefinition && step.ExecutionContainer != nil {
-		containerCfg, err := getContainerConfig(step.ExecutionContainer)
+	if allowContainerDefinition {
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableStep(*step))
 		if err != nil {
 			return nil, err
 		}
 
-		if containerCfg != nil {
-			container, ok := builder.containers[containerCfg.ContainerID]
-			if !ok {
-				return nil, fmt.Errorf("referenced execution container not defined: %s", containerCfg.ContainerID)
-			}
+		plan.ExecutionContainer = executionContainerCfg
+		plan.ServiceContainers = serviceContainerCfgs
 
-			plan.ExecutionContainer = containerCfg
-			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; !ok {
-				builder.executionContainerPlans[containerCfg.ContainerID] = ContainerPlan{
-					Image: container.Image,
-				}
-			}
-		}
-	}
-	if allowContainerDefinition && step.ServiceContainers != nil {
-		for _, serviceContainer := range step.ServiceContainers {
-			containerCfg, err := getContainerConfig(serviceContainer)
-			if err != nil {
-				return nil, err
-			}
-
-			if containerCfg != nil {
-				container, ok := builder.services[containerCfg.ContainerID]
-				if !ok {
-					return nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
-				}
-
-				plan.ServiceContainers = append(plan.ServiceContainers, *containerCfg)
-				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
-					builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
-						Image: container.Image,
-					}
-				}
-			}
-		}
 	}
 	return &plan, nil
 }
@@ -375,55 +343,16 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		return nil, err
 	}
 
-	var executionContainerCfg *ContainerConfig
-	if allowContainerDefinition && bundleOverride.ExecutionContainer != nil {
-		containerCfg, err := getContainerConfig(bundleOverride.ExecutionContainer)
+	if allowContainerDefinition {
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableStepBundle(*bundleOverride))
 		if err != nil {
 			return nil, err
 		}
 
-		if containerCfg != nil {
-			container, ok := builder.containers[containerCfg.ContainerID]
-			if !ok {
-				return nil, fmt.Errorf("referenced execution container not defined: %s", containerCfg.ContainerID)
-			}
-
-			executionContainerCfg = containerCfg
-			if _, ok := builder.executionContainerPlans[containerCfg.ContainerID]; !ok {
-				builder.executionContainerPlans[containerCfg.ContainerID] = ContainerPlan{
-					Image: container.Image,
-				}
-			}
+		for i := range plans {
+			plans[i].ExecutionContainer = executionContainerCfg
+			plans[i].ServiceContainers = serviceContainerCfgs
 		}
-	}
-
-	var serviceContainerCfgs []ContainerConfig
-	if allowContainerDefinition && bundleOverride.ServiceContainers != nil {
-		for _, serviceContainer := range bundleOverride.ServiceContainers {
-			containerCfg, err := getContainerConfig(serviceContainer)
-			if err != nil {
-				return nil, err
-			}
-
-			if containerCfg != nil {
-				container, ok := builder.services[containerCfg.ContainerID]
-				if !ok {
-					return nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
-				}
-
-				serviceContainerCfgs = append(serviceContainerCfgs, *containerCfg)
-				if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
-					builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
-						Image: container.Image,
-					}
-				}
-			}
-		}
-	}
-
-	for i := range plans {
-		plans[i].ExecutionContainer = executionContainerCfg
-		plans[i].ServiceContainers = serviceContainerCfgs
 	}
 
 	return plans, nil
@@ -517,53 +446,42 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 	return bundleEnvs, nil
 }
 
-/*
-Get ContainerConfig from container definition which can be either a string or a map.
-
-		Examples:
-	  	- redis
-		- postgres:
-	    	recreate: true
-*/
-func getContainerConfig(container any) (*ContainerConfig, error) {
-	if container == nil {
-		return nil, nil
+func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
+	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
+	if err != nil {
+		return nil, nil, err
 	}
 
-	if ctrStr, ok := container.(string); ok {
-		return &ContainerConfig{
-			ContainerID: ctrStr,
-			Recreate:    false,
-		}, nil
-	}
-
-	var id string
-	var recreate bool
-	if ctrMap, ok := container.(map[any]any); ok {
-		for k, v := range ctrMap {
-			id, ok = k.(string)
-			if !ok {
-				return nil, fmt.Errorf("invalid container config ID type: %T", k)
-			}
-
-			if ctrCfg, ok := v.(map[any]any); ok {
-				recreateVal, ok := ctrCfg["recreate"]
-				if ok {
-					recreate, ok = recreateVal.(bool)
-					if !ok {
-						return nil, fmt.Errorf("invalid recreate value type: %T", recreateVal)
-					}
-				}
-			}
-
-			break
+	if executionContainerCfg != nil {
+		container, ok := builder.containers[executionContainerCfg.ContainerID]
+		if !ok {
+			return nil, nil, fmt.Errorf("referenced execution container not defined: %s", executionContainerCfg.ContainerID)
 		}
 
-		return &ContainerConfig{
-			ContainerID: id,
-			Recreate:    recreate,
-		}, nil
+		if _, ok := builder.executionContainerPlans[executionContainerCfg.ContainerID]; !ok {
+			builder.executionContainerPlans[executionContainerCfg.ContainerID] = ContainerPlan{
+				Image: container.Image,
+			}
+		}
 	}
 
-	return nil, nil
+	serviceContainerCfgs, err := containerisable.GetServiceContainerConfigs()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, containerCfg := range serviceContainerCfgs {
+		container, ok := builder.services[containerCfg.ContainerID]
+		if !ok {
+			return nil, nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
+		}
+
+		if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
+			builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
+				Image: container.Image,
+			}
+		}
+	}
+
+	return executionContainerCfg, serviceContainerCfgs, nil
 }
