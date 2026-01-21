@@ -414,8 +414,18 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 func toolsInfo(c *cli.Context) error {
 	format := c.String("format")
 	activeOnly := c.Bool("active")
+	silent := false
 
-	tools, err := toolprovider.ListInstalledTools("mise", activeOnly, false)
+	switch format {
+	case outputFormatJSON:
+		silent = true
+	case outputFormatPlaintext:
+		// valid format
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	tools, err := toolprovider.ListInstalledTools("mise", activeOnly, silent)
 	if err != nil {
 		return err
 	}
