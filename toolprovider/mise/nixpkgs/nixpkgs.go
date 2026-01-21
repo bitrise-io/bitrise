@@ -12,22 +12,28 @@ const (
 	PluginName   = "nixpkgs"
 )
 
-func ShouldUseBackend(request provider.ToolRequest) bool {
+func ShouldUseBackend(request provider.ToolRequest, silent bool) bool {
 	if request.ToolName != "ruby" {
-		log.Debugf("[TOOLPROVIDER] The mise-nixpkgs backend is only enabled for Ruby for now. Using core plugin to install %s", request.ToolName)
+		if !silent {
+			log.Debugf("[TOOLPROVIDER] The mise-nixpkgs backend is only enabled for Ruby for now. Using core plugin to install %s", request.ToolName)
+		}
 		return false
 	}
 
-	if !isNixAvailable() {
-		log.Debugf("[TOOLPROVIDER] Nix is not available on the system, cannot use nixpkgs backend for %s", request.ToolName)
+	if !isNixAvailable(silent) {
+		if !silent {
+			log.Debugf("[TOOLPROVIDER] Nix is not available on the system, cannot use nixpkgs backend for %s", request.ToolName)
+		}
 		return false
 	}
 
-	log.Debugf("[TOOLPROVIDER] Nix backend is available for %s", request.ToolName)
+	if !silent {
+		log.Debugf("[TOOLPROVIDER] Nix backend is available for %s", request.ToolName)
+	}
 	return true
 }
 
-func isNixAvailable() bool {
+func isNixAvailable(silent bool) bool {
 	_, err := exec.LookPath("nix")
 	if err != nil {
 		return false
@@ -36,7 +42,9 @@ func isNixAvailable() bool {
 	cmd := exec.Command("nix", "--version")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Debugf("[TOOLPROVIDER] Exec nix --version failed: %v\nOutput: %s", err, string(out))
+		if !silent {
+			log.Debugf("[TOOLPROVIDER] Exec nix --version failed: %v\nOutput: %s", err, string(out))
+		}
 		return false
 	}
 

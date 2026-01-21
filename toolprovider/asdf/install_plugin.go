@@ -43,10 +43,14 @@ func (a *AsdfToolProvider) InstallPlugin(tool provider.ToolRequest) error {
 
 	installed, err := a.isPluginInstalled(*plugin)
 	if err != nil {
-		log.Warnf("Failed to check if plugin is already installed: %v", err)
+		if !a.Silent {
+			log.Warnf("Failed to check if plugin is already installed: %v", err)
+		}
 	}
 	if installed {
-		log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		if !a.Silent {
+			log.Debugf("[TOOLPROVIDER] Tool plugin %s is already installed, skipping installation.", tool.ToolName)
+		}
 		return nil
 	}
 
@@ -87,7 +91,7 @@ func (a *AsdfToolProvider) isPluginInstalled(plugin PluginSource) (bool, error) 
 			continue
 		}
 		if strings.Contains(line, string(plugin.PluginName)) {
-			if plugin.GitCloneURL != "" && !strings.Contains(line, string(plugin.GitCloneURL)) {
+			if !a.Silent && plugin.GitCloneURL != "" && !strings.Contains(line, string(plugin.GitCloneURL)) {
 				log.Warnf("installed, but required URL does not match current:\n%s %s\n%s", plugin.PluginName, plugin.GitCloneURL, line)
 			}
 			return true, nil

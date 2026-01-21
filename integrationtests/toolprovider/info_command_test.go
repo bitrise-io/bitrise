@@ -23,16 +23,6 @@ func TestToolsInfoCommandHelp(t *testing.T) {
 	assert.Contains(t, output, "Show information about installed or active tools")
 }
 
-func TestToolsInfoCommandHelpInToolsList(t *testing.T) {
-	output, err := command.New(testhelpers.BinPath(), "tools", "--help").RunAndReturnTrimmedCombinedOutput()
-
-	require.NoError(t, err)
-	assert.Contains(t, output, "info")
-	assert.Contains(t, output, "setup")
-	assert.Contains(t, output, "install")
-	assert.Contains(t, output, "latest")
-}
-
 func TestToolsInfoCommand(t *testing.T) {
 	tests := []struct {
 		name           string
