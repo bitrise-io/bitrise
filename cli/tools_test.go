@@ -158,7 +158,7 @@ func TestIsYMLConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
-			got := isYMLConfig(tt.path)
+			got := isBitriseConfig(tt.path)
 			require.Equal(t, tt.want, got)
 		})
 	}
@@ -211,7 +211,7 @@ func TestParseToolSpec(t *testing.T) {
 			toolSpec:    "node",
 			isLatest:    false,
 			wantErr:     true,
-			errContains: "version required",
+			errContains: "version cannot be empty",
 		},
 		{
 			name:        "empty version after @ for install (error)",
@@ -247,13 +247,20 @@ func TestParseToolSpec(t *testing.T) {
 			toolSpec:    "ruby3.2.0",
 			isLatest:    false,
 			wantErr:     true,
-			errContains: "version required",
+			errContains: "version cannot be empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTool, gotVersion, err := parseToolSpec(tt.toolSpec, tt.isLatest)
+			var gotTool, gotVersion string
+			var err error
+
+			if tt.isLatest {
+				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec, false)
+			} else {
+				gotTool, gotVersion, err = parseToolSpec(tt.toolSpec, true)
+			}
 
 			if tt.wantErr {
 				require.Error(t, err)
