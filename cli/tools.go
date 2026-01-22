@@ -88,20 +88,11 @@ var toolsInfoSubcommand = cli.Command{
 	Name:      toolsInfoCommandName,
 	Usage:     "Show information about installed or active tools.",
 	UsageText: "bitrise tools info [--active] [--format FORMAT]",
-	Description: `Display information about development tools managed by the tool provider.
-
-By default, shows all installed tool versions. Use --active to show only the tools
-that are currently active in the shell context (based on your bitrise.yml, .tool-versions, mise.toml,
-or other config files in the current directory).
+	Description: `Show installed tool versions. Use --active to show only tools currently active in the shell context.
 
 EXAMPLES:
-   Show all installed tools:
    bitrise tools info
-
-   Show currently active tools:
    bitrise tools info --active
-
-   Output as JSON:
    bitrise tools info --active --format json`,
 	Action: func(c *cli.Context) error {
 		logCommandParameters(c)
@@ -118,29 +109,21 @@ EXAMPLES:
 }
 
 var (
-	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL@VERSION>"
+	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL VERSION[:SUFFIX]>"
 	toolsInstallSubcommand         = cli.Command{
 		Name:      toolsInstallSubcommandName,
 		Usage:     "Install a specific tool version",
 		UsageText: toolInstallSubcommandUsageText,
 		Description: `Install a specific version of a tool using the configured tool provider.
 
-The tool specification uses the format TOOL@VERSION where:
-  - TOOL is a valid tool identifier (e.g., node, ruby, python, go, java)
-  - VERSION is an exact version number (e.g., 20.10.0, 3.12.1)
+TOOL: tool name (e.g., nodejs, ruby, python, go, etc.)
+VERSION: specific version (20.10.0), prefix (22), latest, or installed.
 
 EXAMPLES:
-   Install Node.js 20.10.0:
-   bitrise tools install node@20.10.0
-
-   Install Python 3.12.1:
-   bitrise tools install python@3.12.1
-
-   Install and activate in current shell session:
-   eval "$(bitrise tools install ruby@3.2.0 --format bash)"
-
-   Use specific provider:
-   bitrise tools install go@1.21.5 --provider mise`,
+   bitrise tools install nodejs 20.10.0
+   bitrise tools install nodejs 22:latest
+   bitrise tools install ruby installed
+   eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell`,
 		Action: func(c *cli.Context) error {
 			logCommandParameters(c)
 			if err := toolsInstall(c); err != nil {
@@ -157,31 +140,20 @@ EXAMPLES:
 )
 
 var (
-	toolsLatestSubcommandUsageText = "bitrise tools latest [--installed] [--provider PROVIDER] [--format FORMAT] <TOOL[@VERSION]>"
+	toolsLatestSubcommandUsageText = "bitrise tools latest [--provider PROVIDER] [--format FORMAT] <TOOL [VERSION[:SUFFIX]]>"
 	toolsLatestSubcommand          = cli.Command{
 		Name:      toolsLatestSubcommandName,
 		Usage:     "Query the latest version of a tool",
 		UsageText: toolsLatestSubcommandUsageText,
 		Description: `Query the latest version of a tool, optionally matching a version prefix.
 
-The tool specification uses the format TOOL[@VERSION] where:
-  - TOOL is a valid tool identifier (e.g., node, ruby, python, go, java)
-  - VERSION is an optional version prefix (e.g., 20, 3.12)
-
-By default, queries the latest available release. Use --installed to get the latest of the already installed versions.
+By default, queries latest available release. Use :installed suffix for latest installed version.
 
 EXAMPLES:
-   Query latest available Node.js 20.x:
-   bitrise tools latest node@20
-
-   Query latest already installed Python 3.12.x:
-   bitrise tools latest --installed python@3.12
-
-   Query latest available Node.js (any version):
-   bitrise tools latest node
-
-   Output as JSON:
-   bitrise tools latest --format json ruby@3`,
+   bitrise tools latest nodejs
+   bitrise tools latest nodejs 20
+   bitrise tools latest python 3.12:installed
+   bitrise tools latest ruby installed`,
 		Action: func(c *cli.Context) error {
 			logCommandParameters(c)
 			if err := toolsLatest(c); err != nil {
@@ -202,15 +174,10 @@ var toolsSetupSubcommand = cli.Command{
 	Name:      toolsSetupSubcommandName,
 	Usage:     "Install tools from version files or bitrise.yml",
 	UsageText: "bitrise tools setup [--config FILE]...",
-	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .python-version) or from the bitrise.yml.
-
-This is meant to be called from scripts/steps running inside a workflow.
+	Description: `Install tools from version files (e.g. .tool-versions, .node-version, etc.) or bitrise.yml.
 
 EXAMPLES:
-   Setup from .tool-versions:
    bitrise tools setup --config .tool-versions
-
-   Setup from bitrise.yml:
    bitrise tools setup --config bitrise.yml
 
    Setup and activate in current shell session:
@@ -512,63 +479,89 @@ func printToolsInfo(tools []toolprovider.InstalledTool, activeOnly bool) {
 	log.Printf("")
 }
 
-func toolsLatest(c *cli.Context) error {
+// parseToolCommand parses the common tool command parameters for install and latest subcommands.
+func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequest, providerID, format, toolName string, silent bool, err error) {
 	args := c.Args()
-	if len(args) != 1 {
-		return fmt.Errorf("requires exactly 1 argument:\n%s", toolsLatestSubcommandUsageText)
+	providerID = c.String(toolsProviderKey)
+	format = c.String(toolsOutputFormatKey)
+	silent = false
+	request = provider.ToolRequest{}
+
+	// Validate argument count first
+	if isInstall {
+		if len(args) != 2 {
+			err = fmt.Errorf("requires 2 arguments")
+			return
+		}
+	} else {
+		if len(args) < 1 || len(args) > 2 {
+			err = fmt.Errorf("requires 1 or 2 arguments")
+			return
+		}
 	}
 
-	toolSpec := args[0]
-	format := c.String(toolsOutputFormatKey)
-	checkInstalled := c.Bool(toolsInstalledKey)
-	silent := false
+	// Now safely access args
+	toolName = args[0]
+	if toolName == "" {
+		err = fmt.Errorf("tool name cannot be empty")
+		return
+	}
+
+	versionString := ""
+	if len(args) >= 2 {
+		versionString = args[1]
+	}
 
 	switch format {
 	case outputFormatJSON:
 		silent = true
 	case outputFormatPlaintext:
 		// valid format
+	case outputFormatBash:
+		if isInstall {
+			silent = true
+			break
+		}
+		fallthrough
 	default:
-		return fmt.Errorf("invalid --format: %s", format)
+		err = fmt.Errorf("invalid --format: %s", format)
+		return
 	}
 
-	toolName, versionStr, err := parseToolSpec(toolSpec, false)
-	if err != nil {
-		return err
-	}
-	if versionStr == "latest" {
-		return fmt.Errorf("invalid version prefix: %s (latest version is returned by default)", versionStr)
-	}
-	if versionStr == "installed" {
-		return fmt.Errorf("invalid version prefix: %s (latest installed version is returned using --installed)", versionStr)
+	version, resolutionStrategy, parseErr := toolprovider.ParseVersionString(versionString)
+	if parseErr != nil {
+		err = fmt.Errorf("parse version string: %w", parseErr)
+		return
 	}
 
-	resolutionStrategy := provider.ResolutionStrategyLatestReleased
-	if checkInstalled {
-		resolutionStrategy = provider.ResolutionStrategyLatestInstalled
-	}
-
-	toolRequest := provider.ToolRequest{
+	request = provider.ToolRequest{
 		ToolName:           provider.ToolID(toolName),
-		UnparsedVersion:    versionStr,
+		UnparsedVersion:    version,
 		ResolutionStrategy: resolutionStrategy,
 		PluginURL:          nil,
 	}
 
-	// For tools latest, we'll use fast install regardless of the stack type
-	useFastInstall := true
-
-	// Get provider from flag, default to mise
-	providerID := c.String(toolsProviderKey)
 	if providerID == "" {
 		providerID = "mise"
 	}
 
 	if providerID != "asdf" && providerID != "mise" {
-		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+		err = fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+		return
 	}
 
-	version, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
+	return
+}
+
+func toolsLatest(c *cli.Context) error {
+	toolRequest, providerID, format, toolName, silent, err := parseToolCommand(c, false)
+	if err != nil {
+		return err
+	}
+
+	useFastInstall := true
+
+	resultVersion, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
 	if err != nil {
 		return err
 	}
@@ -578,7 +571,7 @@ func toolsLatest(c *cli.Context) error {
 	case outputFormatJSON:
 		data := map[string]string{
 			"tool":    toolName,
-			"version": version,
+			"version": resultVersion,
 		}
 		jsonData, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
@@ -587,52 +580,16 @@ func toolsLatest(c *cli.Context) error {
 		fmt.Println(string(jsonData))
 	case outputFormatPlaintext:
 		// For plaintext, just output the version string
-		fmt.Println(version)
+		fmt.Println(resultVersion)
 	}
 
 	return nil
 }
 
 func toolsInstall(c *cli.Context) error {
-	args := c.Args()
-	if len(args) != 1 {
-		return fmt.Errorf("requires exactly 1 argument:\n%s", toolInstallSubcommandUsageText)
-	}
-
-	toolSpec := args[0]
-	providerID := c.String(toolsProviderKey)
-	format := c.String(toolsOutputFormatKey)
-	silent := false
-
-	switch format {
-	case outputFormatJSON, outputFormatBash:
-		silent = true
-	case outputFormatPlaintext:
-		// valid format
-	default:
-		return fmt.Errorf("invalid --format: %s", format)
-	}
-
-	toolName, versionStr, err := parseToolSpec(toolSpec, true)
+	toolRequest, providerID, format, _, silent, err := parseToolCommand(c, true)
 	if err != nil {
 		return err
-	}
-
-	var strategy = provider.ResolutionStrategyStrict
-
-	toolRequest := provider.ToolRequest{
-		ToolName:           provider.ToolID(toolName),
-		UnparsedVersion:    versionStr,
-		ResolutionStrategy: strategy,
-		PluginURL:          nil,
-	}
-
-	if providerID == "" {
-		providerID = "mise"
-	}
-
-	if providerID != "asdf" && providerID != "mise" {
-		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
 	}
 
 	// For tools install, we'll use fast install regardless of the stack type
@@ -653,29 +610,4 @@ func toolsInstall(c *cli.Context) error {
 	fmt.Println(output)
 
 	return nil
-}
-
-// parseToolSpec parses a tool specification in the format TOOL@VERSION or just TOOL.
-// Returns toolName and version (if required and provided).
-func parseToolSpec(toolSpec string, requireVersion bool) (toolName string, version string, err error) {
-	parts := strings.Split(toolSpec, "@")
-
-	if len(parts) > 2 {
-		return "", "", fmt.Errorf("invalid tool specification: %s (expected TOOL@VERSION or TOOL)", toolSpec)
-	}
-
-	toolName = parts[0]
-	if toolName == "" {
-		return "", "", fmt.Errorf("tool name cannot be empty in: %s", toolSpec)
-	}
-
-	if len(parts) == 2 {
-		version = parts[1]
-	}
-
-	if requireVersion && (len(parts) == 1 || version == "") {
-		return "", "", fmt.Errorf("version cannot be empty in: %s (use format TOOL@VERSION)", toolSpec)
-	}
-
-	return toolName, version, nil
 }
