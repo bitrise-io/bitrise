@@ -197,11 +197,7 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 
 	switch t {
 	case StepListItemTypeStep:
-		plan, err := builder.processStep(key, stepListItem, stepBundleContext, withGroupContext)
-		if err != nil {
-			return nil, err
-		}
-
+		plan := builder.processStep(key, stepListItem, stepBundleContext, withGroupContext)
 		stepPlans = append(stepPlans, *plan)
 	case StepListItemTypeWith:
 		plans, err := builder.processWithGroup(stepListItem)
@@ -224,7 +220,7 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext) (*StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext) *StepExecutionPlan {
 	step := stepListItem.GetStep()
 
 	plan := StepExecutionPlan{
@@ -242,7 +238,7 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.ContainerID = withGroupContext.ContainerID
 		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
-	return &plan, nil
+	return &plan
 }
 
 func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext) ([]StepExecutionPlan, error) {
