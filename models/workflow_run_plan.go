@@ -127,7 +127,12 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 
 		var stepPlans []StepExecutionPlan
 		for _, stepListItem := range workflow.Steps {
-			plans, err := builder.processStepListItem(&stepListItem, nil, nil)
+			genericStep, err := NewStepListItemFromWorkflowStep(stepListItem)
+			if err != nil {
+				return WorkflowRunPlan{}, err
+			}
+
+			plans, err := builder.processStepListItem(*genericStep, nil, nil)
 			if err != nil {
 				return WorkflowRunPlan{}, err
 			}
@@ -188,10 +193,7 @@ func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflow
 func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepListItem, stepBundleContext *BundleContext, withGroupContext *WithGroupContext) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 
-	key, t, err := stepListItem.GetKeyAndType()
-	if err != nil {
-		return nil, err
-	}
+	key, t := stepListItem.GetKeyAndType()
 
 	switch t {
 	case StepListItemTypeStep:
@@ -221,10 +223,7 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 }
 
 func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext) (*StepExecutionPlan, error) {
-	_, step, err := stepListItem.GetStep()
-	if err != nil {
-		return nil, err
-	}
+	step := stepListItem.GetStep()
 
 	plan := StepExecutionPlan{
 		UUID:   builder.uuidProvider(),
@@ -245,10 +244,7 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 }
 
 func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext) ([]StepExecutionPlan, error) {
-	bundleOverride, err := stepListItem.GetBundle()
-	if err != nil {
-		return nil, err
-	}
+	bundleOverride := stepListItem.GetBundle()
 
 	bundleDefinition, ok := builder.stepBundles[bundleID]
 	if !ok {
@@ -310,10 +306,7 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 }
 
 func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListItem) ([]StepExecutionPlan, error) {
-	with, err := stepListItem.GetWith()
-	if err != nil {
-		return nil, err
-	}
+	with := stepListItem.GetWithGroup()
 
 	groupID := builder.uuidProvider()
 
@@ -340,7 +333,12 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 
 	var stepPlans []StepExecutionPlan
 	for _, stepListStepItem := range with.Steps {
-		plans, err := builder.processStepListItem(&stepListStepItem, nil, withGroupContext)
+		genericStep, err := NewStepListItemFromWithStep(stepListStepItem)
+		if err != nil {
+			return nil, err
+		}
+
+		plans, err := builder.processStepListItem(*genericStep, nil, withGroupContext)
 		if err != nil {
 			return nil, err
 		}
@@ -354,7 +352,12 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleContext BundleContext) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
-		plans, err := builder.processStepListItem(&stepListStepOrBundleItem, &bundleContext, nil)
+		genericStep, err := NewStepListItemFromBundleStep(stepListStepOrBundleItem)
+		if err != nil {
+			return nil, err
+		}
+
+		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil)
 		if err != nil {
 			return nil, err
 		}

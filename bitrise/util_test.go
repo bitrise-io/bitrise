@@ -455,7 +455,7 @@ step_bundles:
   test:
     steps:
     - with: {}`,
-			wantErr: "failed to normalize step bundle (test): step list item of step bundle cannot be a with group",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
@@ -472,7 +472,7 @@ workflows:
         - postgres
         steps:
         - bundle::test: {}`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a step bundle",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
@@ -489,7 +489,7 @@ workflows:
         - postgres
         steps:
         - with: {}`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a with group",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {
@@ -525,7 +525,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize step bundle (test): step list item of step bundle cannot be a with group",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
@@ -556,7 +556,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a step bundle",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
@@ -587,7 +587,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a with group",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {

@@ -1,431 +1,119 @@
 package models
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"strings"
 
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
-type StepListItemType int
-
-const (
-	StepListItemTypeUnknown StepListItemType = iota
-	StepListItemTypeStep
-	StepListItemTypeWith
-	StepListItemTypeBundle
-)
-
-const (
-	StepListItemWithKey             = "with"
-	StepListItemStepBundleKeyPrefix = "bundle::"
-)
-
-type StepListItem interface {
-	GetKeyAndType() (string, StepListItemType, error)
-	GetStep() (string, *stepmanModels.StepModel, error)
-	GetBundle() (*StepBundleListItemModel, error)
-	GetWith() (*WithModel, error)
+type StepListItem struct {
+	key      string
+	itemType StepListItemType
+	step     *stepmanModels.StepModel
+	with     *WithModel
+	bundle   *StepBundleListItemModel
 }
 
-type StepListItemRaw map[string]any
-
-func (stepListItem *StepListItemRaw) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
+func NewStepListItemFromWorkflowStep(source StepListItemModel) (*StepListItem, error) {
+	k, t, err := source.GetKeyAndType()
+	if err != nil {
+		return nil, err
 	}
 
-	if len(*stepListItem) == 0 {
-		return "", StepListItemTypeUnknown, errors.New("empty step list item")
+	item := &StepListItem{
+		key:      k,
+		itemType: t,
 	}
 
-	if len(*stepListItem) > 1 {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item has more than 1 key: %#v", stepListItem)
-	}
-
-	var itemID string
-	for key := range *stepListItem {
-		itemID = key
-		break
-	}
-
-	switch {
-	case strings.HasPrefix(itemID, StepListItemStepBundleKeyPrefix):
-		return strings.TrimPrefix(itemID, StepListItemStepBundleKeyPrefix), StepListItemTypeBundle, nil
-	case itemID == StepListItemWithKey:
-		return itemID, StepListItemTypeWith, nil
+	switch t {
+	case StepListItemTypeStep:
+		step, err := source.GetStep()
+		if err != nil {
+			return nil, err
+		}
+		item.step = step
+	case StepListItemTypeWith:
+		with, err := source.GetWith()
+		if err != nil {
+			return nil, err
+		}
+		item.with = with
+	case StepListItemTypeBundle:
+		bundle, err := source.GetBundle()
+		if err != nil {
+			return nil, err
+		}
+		item.bundle = bundle
 	default:
-		return itemID, StepListItemTypeStep, nil
+		return nil, fmt.Errorf("unknown step list item type")
 	}
+	return item, nil
 }
 
-func (stepListItem *StepListItemRaw) GetItem(target interface{}) (string, error) {
-	key, t, err := stepListItem.GetKeyAndType()
+func NewStepListItemFromWithStep(source StepListStepItemModel) (*StepListItem, error) {
+	stepID, step, err := source.GetStepIDAndStep()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var value any
-	for _, v := range *stepListItem {
-		value = v
-		break
+	return &StepListItem{
+		key:      stepID,
+		itemType: StepListItemTypeStep,
+		step:     &step,
+	}, nil
+}
+
+func NewStepListItemFromBundleStep(source StepListItemStepOrBundleModel) (*StepListItem, error) {
+	k, t, err := source.GetKeyAndType()
+	if err != nil {
+		return nil, err
 	}
 
-	switch ptr := target.(type) {
-	case *stepmanModels.StepModel:
-		if t != StepListItemTypeStep {
-			return "", fmt.Errorf("step list item (%s) is not a step", key)
-		}
+	item := &StepListItem{
+		key:      k,
+		itemType: t,
+	}
 
-		step, ok := value.(stepmanModels.StepModel)
-		if !ok {
-			// TODO: why is this needed?
-			stepPtr, ok := value.(*stepmanModels.StepModel)
-			if !ok {
-				return "", fmt.Errorf("step list item value is not a step")
-			}
-			step = *stepPtr
+	switch t {
+	case StepListItemTypeStep:
+		step, err := source.GetStep()
+		if err != nil {
+			return nil, err
 		}
-		*ptr = step
-	case *StepBundleListItemModel:
-		if t != StepListItemTypeBundle {
-			return "", fmt.Errorf("step list item (%s) is not a step bundle", key)
+		item.step = step
+	case StepListItemTypeBundle:
+		bundle, err := source.GetBundle()
+		if err != nil {
+			return nil, err
 		}
-
-		bundle, ok := value.(StepBundleListItemModel)
-		if !ok {
-			bundlePtr, ok := value.(*StepBundleListItemModel)
-			if !ok {
-				return "", fmt.Errorf("step list item value is not a Step Bundle")
-			}
-			bundle = *bundlePtr
-		}
-		*ptr = bundle
-	case *WithModel:
-		if t != StepListItemTypeWith {
-			return "", fmt.Errorf("step list item (%s) is not a With group", key)
-		}
-
-		with, ok := value.(WithModel)
-		if !ok {
-			withPtr, ok := value.(*WithModel)
-			if !ok {
-				return "", fmt.Errorf("step list item value is not a With group")
-			}
-			with = *withPtr
-		}
-		*ptr = with
+		item.bundle = bundle
 	default:
-		return "", fmt.Errorf("unsupported target type: %T", target)
+		return nil, fmt.Errorf("unknown step list item type")
 	}
-
-	return key, nil
+	return item, nil
 }
 
-func (stepListItem *StepListItemRaw) UnmarshalJSON(b []byte) error {
-	var raw map[string]any
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	*stepListItem = map[string]any{}
-	if key == StepListItemWithKey {
-		var withItem map[string]WithModel
-		if err := json.Unmarshal(b, &withItem); err != nil {
-			return err
-		}
-
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
-	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem map[string]StepBundleListItemModel
-		if err := json.Unmarshal(b, &stepBundleItem); err != nil {
-			return err
-		}
-
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem map[string]stepmanModels.StepModel
-		if err := json.Unmarshal(b, &stepItem); err != nil {
-			return err
-		}
-
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
-	return nil
+func (i *StepListItem) GetKeyAndType() (string, StepListItemType) {
+	return i.key, i.itemType
 }
 
-func (stepListItem *StepListItemRaw) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw map[string]any
-	if err := unmarshal(&raw); err != nil {
-		return err
-	}
-
-	var key string
-	for k := range raw {
-		key = k
-		break
-	}
-
-	*stepListItem = map[string]any{}
-	if key == StepListItemWithKey {
-		var withItem map[string]WithModel
-		if err := unmarshal(&withItem); err != nil {
-			return err
-		}
-
-		for k, v := range withItem {
-			(*stepListItem)[k] = v
-		}
-	} else if strings.HasPrefix(key, StepListItemStepBundleKeyPrefix) {
-		var stepBundleItem map[string]StepBundleListItemModel
-		if err := unmarshal(&stepBundleItem); err != nil {
-			return err
-		}
-
-		for k, v := range stepBundleItem {
-			(*stepListItem)[k] = v
-		}
-	} else {
-		var stepItem map[string]stepmanModels.StepModel
-		if err := unmarshal(&stepItem); err != nil {
-			return err
-		}
-
-		for k, v := range stepItem {
-			(*stepListItem)[k] = v
-		}
-	}
-
-	return nil
+func (i *StepListItem) GetStep() *stepmanModels.StepModel {
+	return i.step
 }
 
-// StepListItemModel represents a step list items for a Workflow (can be a step, step bundle and with group)
-type StepListItemModel StepListItemRaw
-
-func (stepListItem *StepListItemModel) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
-	}
-
-	raw := StepListItemRaw(*stepListItem)
-	return raw.GetKeyAndType()
+func (i *StepListItem) GetWithGroup() *WithModel {
+	return i.with
 }
 
-func (stepListItem *StepListItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	if stepListItem == nil {
-		return "", nil, fmt.Errorf("step list item is nil")
-	}
-
-	var step stepmanModels.StepModel
-	raw := StepListItemRaw(*stepListItem)
-	stepID, err := raw.GetItem(&step)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return stepID, &step, nil
+func (i *StepListItem) GetBundle() *StepBundleListItemModel {
+	return i.bundle
 }
 
-func (stepListItem *StepListItemModel) GetBundle() (*StepBundleListItemModel, error) {
-	if stepListItem == nil {
-		return nil, fmt.Errorf("step list item is nil")
-	}
+// StepListItemModel is a map representing a step list item of a workflow, the value is either a Step, a With Group or Step Bundle.
+type StepListItemModel map[string]interface{}
 
-	var stepBundle StepBundleListItemModel
-	raw := StepListItemRaw(*stepListItem)
-	_, err := raw.GetItem(&stepBundle)
-	if err != nil {
-		return nil, err
-	}
+// StepListStepItemModel is a map representing a step list item of a With group, the value is a Step.
+type StepListStepItemModel map[string]stepmanModels.StepModel
 
-	return &stepBundle, nil
-}
-
-func (stepListItem *StepListItemModel) GetWith() (*WithModel, error) {
-	if stepListItem == nil {
-		return nil, fmt.Errorf("step list item is nil")
-	}
-
-	var withGroup WithModel
-	raw := StepListItemRaw(*stepListItem)
-	_, err := raw.GetItem(&withGroup)
-	if err != nil {
-		return nil, err
-	}
-
-	return &withGroup, nil
-}
-
-func (stepListItem *StepListItemModel) UnmarshalJSON(b []byte) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalJSON(b); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListItemModel(raw)
-	return nil
-}
-
-func (stepListItem *StepListItemModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalYAML(unmarshal); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListItemModel(raw)
-	return nil
-}
-
-// StepListItemStepOrBundleModel represents a step list items for a Step Bundle (can be a step or step bundle)
-type StepListItemStepOrBundleModel StepListItemRaw
-
-func (stepListItem *StepListItemStepOrBundleModel) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
-	}
-
-	raw := StepListItemRaw(*stepListItem)
-	key, t, err := raw.GetKeyAndType()
-	if err != nil {
-		return "", StepListItemTypeUnknown, err
-	}
-	if t == StepListItemTypeWith {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of step bundle cannot be a with group")
-	}
-
-	return key, t, nil
-}
-
-func (stepListItem *StepListItemStepOrBundleModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	if stepListItem == nil {
-		return "", nil, fmt.Errorf("step list item is nil")
-	}
-
-	var step stepmanModels.StepModel
-	raw := StepListItemRaw(*stepListItem)
-	stepID, err := raw.GetItem(&step)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return stepID, &step, nil
-}
-
-func (stepListItem *StepListItemStepOrBundleModel) GetBundle() (*StepBundleListItemModel, error) {
-	if stepListItem == nil {
-		return nil, fmt.Errorf("step list item is nil")
-	}
-
-	var stepBundle StepBundleListItemModel
-	raw := StepListItemRaw(*stepListItem)
-	_, err := raw.GetItem(&stepBundle)
-	if err != nil {
-		return nil, err
-	}
-
-	return &stepBundle, nil
-}
-
-func (stepListItem *StepListItemStepOrBundleModel) GetWith() (*WithModel, error) {
-	return nil, fmt.Errorf("step list item of step bundle cannot be a with group")
-}
-
-func (stepListItem *StepListItemStepOrBundleModel) UnmarshalJSON(b []byte) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalJSON(b); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListItemStepOrBundleModel(raw)
-	return nil
-}
-
-func (stepListItem *StepListItemStepOrBundleModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalYAML(unmarshal); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListItemStepOrBundleModel(raw)
-	return nil
-}
-
-// StepListStepItemModel represents a step list items for a With group (can be a step)
-type StepListStepItemModel StepListItemRaw
-
-func (stepListItem *StepListStepItemModel) GetKeyAndType() (string, StepListItemType, error) {
-	if stepListItem == nil {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item is nil")
-	}
-
-	raw := StepListItemRaw(*stepListItem)
-	key, t, err := raw.GetKeyAndType()
-	if err != nil {
-		return "", StepListItemTypeUnknown, err
-	}
-	if t == StepListItemTypeWith {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of a with group cannot be a with group")
-	} else if t == StepListItemTypeBundle {
-		return "", StepListItemTypeUnknown, fmt.Errorf("step list item of a with group cannot be a step bundle")
-	}
-
-	return key, t, nil
-}
-
-func (stepListItem *StepListStepItemModel) GetStep() (string, *stepmanModels.StepModel, error) {
-	if stepListItem == nil {
-		return "", nil, fmt.Errorf("step list item is nil")
-	}
-
-	var step stepmanModels.StepModel
-	raw := StepListItemRaw(*stepListItem)
-	stepID, err := raw.GetItem(&step)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return stepID, &step, nil
-}
-
-func (stepListItem *StepListStepItemModel) GetBundle() (*StepBundleListItemModel, error) {
-	return nil, fmt.Errorf("step list item of a with group cannot be a step bundle")
-}
-
-func (stepListItem *StepListStepItemModel) GetWith() (*WithModel, error) {
-	return nil, fmt.Errorf("step list item of a with group cannot be a with group")
-}
-
-func (stepListItem *StepListStepItemModel) UnmarshalJSON(b []byte) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalJSON(b); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListStepItemModel(raw)
-	return nil
-}
-
-func (stepListItem *StepListStepItemModel) UnmarshalYAML(unmarshal func(any) error) error {
-	var raw StepListItemRaw
-	if err := raw.UnmarshalYAML(unmarshal); err != nil {
-		return err
-	}
-
-	*stepListItem = StepListStepItemModel(raw)
-	return nil
-}
+// StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.
+type StepListItemStepOrBundleModel map[string]any
