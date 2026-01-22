@@ -216,10 +216,10 @@ func toolsSetup(c *cli.Context) error {
 
 	switch format {
 	case outputFormatJSON, outputFormatBash:
-		// valid formats
+		// Valid formats.
 		silent = true
 	case outputFormatPlaintext:
-		// valid format
+		// Valid format.
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
 	}
@@ -355,7 +355,7 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 		envstorePath = configs.InputEnvstorePath
 	}
 
-	// Check if envstore exists - it should be initialized by the workflow runner
+	// Check if envstore exists - it should be initialized by the workflow runner.
 	if _, err := os.Stat(envstorePath); err != nil {
 		if !silent {
 			if os.IsNotExist(err) {
@@ -387,7 +387,7 @@ func toolsInfo(c *cli.Context) error {
 	case outputFormatJSON:
 		silent = true
 	case outputFormatPlaintext:
-		// valid format
+		// Valid format.
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
 	}
@@ -487,8 +487,8 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 	silent = false
 	request = provider.ToolRequest{}
 
-	// Validate argument count first
 	if isInstall {
+		// Install needs version.
 		if len(args) != 2 {
 			err = fmt.Errorf("requires 2 arguments")
 			return
@@ -500,7 +500,6 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 		}
 	}
 
-	// Now safely access args
 	toolName = args[0]
 	if toolName == "" {
 		err = fmt.Errorf("tool name cannot be empty")
@@ -516,12 +515,14 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 	case outputFormatJSON:
 		silent = true
 	case outputFormatPlaintext:
-		// valid format
+		// Valid format.
 	case outputFormatBash:
+		// Install allows bash format for activation in shell.
 		if isInstall {
 			silent = true
 			break
 		}
+		// If not install, fallthrough to error.
 		fallthrough
 	default:
 		err = fmt.Errorf("invalid --format: %s", format)
@@ -560,13 +561,12 @@ func toolsLatest(c *cli.Context) error {
 	}
 
 	useFastInstall := true
-
 	resultVersion, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
 	if err != nil {
 		return err
 	}
 
-	// Output the version in the requested format
+	// Output the version in the requested format.
 	switch format {
 	case outputFormatJSON:
 		data := map[string]string{
@@ -579,7 +579,7 @@ func toolsLatest(c *cli.Context) error {
 		}
 		fmt.Println(string(jsonData))
 	case outputFormatPlaintext:
-		// For plaintext, just output the version string
+		// For plaintext, just output the version string.
 		fmt.Println(resultVersion)
 	}
 
@@ -592,9 +592,7 @@ func toolsInstall(c *cli.Context) error {
 		return err
 	}
 
-	// For tools install, we'll use fast install regardless of the stack type
 	useFastInstall := true
-
 	tracker := analytics.NewDefaultTracker()
 	envs, err := toolprovider.InstallSingleTool(toolRequest, providerID, useFastInstall, tracker, silent)
 	if err != nil {
