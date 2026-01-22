@@ -108,6 +108,7 @@ func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, vers
 func normalizeRequest(
 	execEnv execenv.ExecEnv,
 	request provider.ToolRequest,
+	silent bool,
 ) (provider.ToolRequest, error) {
 	normalizedRequest := request
 	// Handle "installed" and "latest" special keywords
@@ -129,7 +130,9 @@ func normalizeRequest(
 		}
 
 		if errors.Is(err, errNoMatchingVersion) {
-			log.Infof("No installed versions found, fallback to latest released")
+			if !silent {
+				log.Infof("No installed versions found, fallback to latest released")
+			}
 			return provider.ToolRequest{
 				ToolName:           normalizedRequest.ToolName,
 				UnparsedVersion:    normalizedRequest.UnparsedVersion,
@@ -150,6 +153,12 @@ func resolveToConcreteVersion(
 	version string,
 	strategy provider.ResolutionStrategy,
 ) (string, error) {
+	if version == "latest" {
+		return "", fmt.Errorf("version string is set to latest. this should not happen")
+	}
+	if version == "installed" {
+		return "", fmt.Errorf("version string is set to installed. this should not happen")
+	}
 	switch strategy {
 	case provider.ResolutionStrategyStrict, provider.ResolutionStrategyLatestReleased:
 		// Both strategies resolve fuzzy versions the same way.

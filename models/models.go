@@ -8,6 +8,7 @@ import (
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 type GraphPipelineAlwaysRunMode string
@@ -18,7 +19,9 @@ const (
 )
 
 const (
-	FormatVersion = "25"
+	FormatVersion                   = "25"
+	StepListItemWithKey             = "with"
+	StepListItemStepBundleKeyPrefix = "bundle::"
 )
 
 type StepBundleModel struct {
@@ -30,6 +33,9 @@ type StepBundleModel struct {
 	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
 	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
+
+// StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.
+type StepListItemStepOrBundleModel map[string]any
 
 type StepBundleListItemModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
@@ -51,11 +57,21 @@ type StepBundleListItemModel struct {
 	ServiceContainers  []any `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
 }
 
+type StepListStepBundleItemModel map[string]StepBundleListItemModel
+
 type WithModel struct {
 	ContainerID string                  `json:"container,omitempty" yaml:"container,omitempty"`
 	ServiceIDs  []string                `json:"services,omitempty" yaml:"services,omitempty"`
 	Steps       []StepListStepItemModel `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
+
+type StepListWithItemModel map[string]WithModel
+
+// StepListStepItemModel is a map representing a step list item of a With group, the value is a Step.
+type StepListStepItemModel map[string]stepmanModels.StepModel
+
+// StepListItemModel is a map representing a step list item of a workflow, the value is either a Step, a With Group or Step Bundle.
+type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
 	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`

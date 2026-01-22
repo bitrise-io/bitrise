@@ -1836,7 +1836,7 @@ func TestGetStepIDStepDataPair(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, StepListItemTypeStep, itemType)
 
-		_, _, err = stepListItem.GetStep()
+		_, err = stepListItem.GetStep()
 		require.NoError(t, err)
 
 		require.NoError(t, err)
@@ -2053,7 +2053,7 @@ workflows:
 			require.NoError(t, err)
 			require.Equal(t, StepListItemTypeStep, itemType)
 
-			_, step, err := stepListItem.GetStep()
+			step, err := stepListItem.GetStep()
 			require.NoError(t, err)
 
 			require.Nil(t, step.Title)

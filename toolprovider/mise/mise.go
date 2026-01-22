@@ -45,9 +45,10 @@ var miseStableChecksums = map[string]string{
 type MiseToolProvider struct {
 	ExecEnv        execenv.ExecEnv
 	UseFastInstall bool
+	Silent         bool
 }
 
-func NewToolProvider(installDir string, dataDir string, useFastInstall bool) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, useFastInstall, silent bool) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
@@ -81,6 +82,7 @@ func NewToolProvider(installDir string, dataDir string, useFastInstall bool) (*M
 		},
 		),
 		UseFastInstall: useFastInstall,
+		Silent:         silent,
 	}, nil
 }
 
@@ -91,7 +93,9 @@ func (m *MiseToolProvider) ID() string {
 func (m *MiseToolProvider) Bootstrap() error {
 	installDir := m.ExecEnv.InstallDir()
 	if isMiseInstalled(installDir) {
-		log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", installDir)
+		if !m.Silent {
+			log.Debugf("[TOOLPROVIDER] Mise already installed in %s, skipping bootstrap", installDir)
+		}
 		return nil
 	}
 
@@ -105,7 +109,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
 	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
-	useNix := runtime.GOOS =="darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend)
+	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend, m.Silent)
 	if !useNix {
 		err := m.InstallPlugin(tool)
 		if err != nil {
@@ -115,7 +119,7 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 
 	installRequest := installRequest(tool, useNix)
 
-	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest)
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest, m.Silent)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
 	}
@@ -136,23 +140,10 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		}
 		return provider.ToolInstallResult{}, fmt.Errorf("resolve %s@%s: %w", installRequest.ToolName, installRequest.UnparsedVersion, err)
 	}
-	log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
-		installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
-
-	if !useNix {
-		versionExists, err := versionExistsRemote(m.ExecEnv, installRequest.ToolName, concreteVersion)
-		if err != nil {
-			return provider.ToolInstallResult{}, fmt.Errorf("check if version exists for %s@%s: %w", installRequest.ToolName, concreteVersion, err)
-		}
-		if !versionExists {
-			return provider.ToolInstallResult{}, provider.ToolInstallError{
-				ToolName:         installRequest.ToolName,
-				RequestedVersion: installRequest.UnparsedVersion,
-				Cause:            fmt.Sprintf("no match for requested version %s", installRequest.UnparsedVersion),
-			}
-		}
-	} // else: canBeInstalledWithNix() already verified version existence
-
+  if !m.Silent {
+    log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
+      installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
+  }
 	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
@@ -194,9 +185,46 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 	return activationResult, nil
 }
 
+// ResolveLatestVersion resolves a tool to its latest version without installing it.
+func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (string, error) {
+	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
+	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend, m.Silent)
+	if !useNix {
+		err := m.InstallPlugin(tool)
+		if err != nil {
+			return "", fmt.Errorf("install tool plugin %s: %w", tool.ToolName, err)
+		}
+	}
+
+	installRequest := installRequest(tool, useNix)
+
+	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest, m.Silent)
+	if err != nil {
+		return "", err
+	}
+
+	concreteVersion, err := resolveToConcreteVersion(
+		m.ExecEnv,
+		normalizedRequest.ToolName,
+		normalizedRequest.UnparsedVersion,
+		normalizedRequest.ResolutionStrategy,
+	)
+	if err != nil {
+		if errors.Is(err, errNoMatchingVersion) {
+			return "", provider.ToolInstallError{
+				ToolName:         tool.ToolName,
+				RequestedVersion: tool.UnparsedVersion,
+				Cause:            fmt.Sprintf("no match for requested version %s", tool.UnparsedVersion),
+			}
+		}
+		return "", fmt.Errorf("resolve %s@%s: %w", tool.ToolName, tool.UnparsedVersion, err)
+	}
+
+	return concreteVersion, nil
+}
+
 func GetMiseVersion() string {
 	isEdge := configs.IsEdgeStack()
-	log.Debugf("[TOOLPROVIDER] Stack is edge: %t", isEdge)
 	if isEdge {
 		return misePreviewVersion
 	}

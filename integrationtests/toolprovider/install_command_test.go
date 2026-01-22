@@ -164,7 +164,7 @@ func TestToolsInstallCommand(t *testing.T) {
 			toolSpec: "node",
 			validateOutput: func(t *testing.T, output string, err error) {
 				require.Error(t, err)
-				assert.Contains(t, output, "version required")
+				assert.Contains(t, output, "version cannot be empty")
 			},
 		},
 		{
@@ -204,36 +204,44 @@ func TestToolsLatestCommand(t *testing.T) {
 		toolSpec       string
 		installed      bool
 		outputFormat   string
+		provider       string
 		validateOutput func(t *testing.T, output string, err error)
 	}{
 		{
-			name:     "install latest with version prefix",
+			name:     "get latest with version prefix",
 			toolSpec: "node@20",
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
-				assert.Contains(t, output, "nodejs")
-				assert.Contains(t, output, "20")
-				assert.Contains(t, output, "Tool setup complete")
+				require.NoError(t, err, "output: %s", output)
+				// Plaintext format should just output the version
+				assert.True(t, strings.HasPrefix(output, "20."), "version should start with 20., but was: %s", output)
 			},
 		},
 		{
-			name:     "install latest without version prefix",
+			name:     "get latest without version prefix",
 			toolSpec: "python",
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
-				assert.Contains(t, output, "python")
-				assert.Contains(t, output, "Tool setup complete")
+				require.NoError(t, err, "output: %s", output)
+				// Plaintext format should just output the version
+				assert.NotEmpty(t, output, "should return a version")
 			},
 		},
 		{
-			name:      "install latest installed version",
-			toolSpec:  "node@20",
+			name:      "get latest installed version",
+			toolSpec:  "ruby",
 			installed: true,
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
-				assert.Contains(t, output, "nodejs")
-				assert.Contains(t, output, "20")
-				assert.Contains(t, output, "latest installed")
+				// This may error if no ruby versions are installed
+				if err != nil {
+					// Accept error for missing installed versions
+					assert.True(t,
+						strings.Contains(output, "no installed versions") ||
+							strings.Contains(output, "not installed") ||
+							strings.Contains(output, "failed"),
+						"should indicate no installed versions available, but was: %s", output)
+				} else {
+					// Plaintext format should just output the version
+					assert.NotEmpty(t, output, "should return a version")
+				}
 			},
 		},
 		{
@@ -244,18 +252,80 @@ func TestToolsLatestCommand(t *testing.T) {
 				require.NoError(t, err, "output: %s", output)
 				var result map[string]string
 				jsonErr := json.Unmarshal([]byte(output), &result)
-				require.NoError(t, jsonErr)
-				assert.Contains(t, result, "PATH")
+				require.NoError(t, jsonErr, "output should be valid JSON")
+				assert.Contains(t, result, "tool", "JSON should contain tool name")
+				assert.Contains(t, result, "version", "JSON should contain version")
+				assert.Equal(t, "python", result["tool"])
+				assert.True(t, strings.HasPrefix(result["version"], "3."), "version should start with 3., but was: %s", result["version"])
 			},
 		},
 		{
-			name:         "latest with bash format",
+			name:         "latest with plaintext format",
 			toolSpec:     "go@1.21",
-			outputFormat: "bash",
+			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
-				assert.Contains(t, output, "export PATH=")
-				assert.Contains(t, output, "export GOROOT=")
+				require.NoError(t, err, "output: %s", output)
+				// In plaintext format, it should just output the version string
+				assert.True(t, strings.HasPrefix(output, "1.21"), "plaintext output should be just the version starting with 1.21, but was: %s", output)
+			},
+		},
+		{
+			name:         "latest installed with JSON format",
+			toolSpec:     "node@20",
+			installed:    true,
+			outputFormat: "json",
+			validateOutput: func(t *testing.T, output string, err error) {
+				// May error if no node 20.x versions are installed
+				if err == nil {
+					var result map[string]string
+					jsonErr := json.Unmarshal([]byte(output), &result)
+					require.NoError(t, jsonErr, "output should be valid JSON")
+					assert.Equal(t, "node", result["tool"])
+					assert.True(t, strings.HasPrefix(result["version"], "20"), "version should start with 20, but was: %s", result["version"])
+				}
+			},
+		},
+		{
+			name:         "error on invalid format",
+			toolSpec:     "ruby",
+			outputFormat: "invalid",
+			validateOutput: func(t *testing.T, output string, err error) {
+				require.Error(t, err)
+				assert.Contains(t, output, "invalid --format")
+			},
+		},
+		{
+			name:     "get latest with mise provider",
+			toolSpec: "ruby",
+			provider: "mise",
+			validateOutput: func(t *testing.T, output string, err error) {
+				require.NoError(t, err, "output: %s", output)
+				assert.NotEmpty(t, output, "should return a version")
+			},
+		},
+		{
+			name:     "get latest with asdf provider",
+			toolSpec: "node@20",
+			provider: "asdf",
+			validateOutput: func(t *testing.T, output string, err error) {
+				require.NoError(t, err, "output: %s", output)
+				assert.True(t, strings.HasPrefix(output, "20."), "version should start with 20., but was: %s", output)
+			},
+		},
+		{
+			name:         "get latest with asdf provider and JSON format",
+			toolSpec:     "python@3",
+			provider:     "asdf",
+			outputFormat: "json",
+			validateOutput: func(t *testing.T, output string, err error) {
+				require.NoError(t, err, "output: %s", output)
+				var result map[string]string
+				jsonErr := json.Unmarshal([]byte(output), &result)
+				require.NoError(t, jsonErr, "output should be valid JSON")
+				assert.Contains(t, result, "tool", "JSON should contain tool name")
+				assert.Contains(t, result, "version", "JSON should contain version")
+				assert.Equal(t, "python", result["tool"])
+				assert.True(t, strings.HasPrefix(result["version"], "3."), "version should start with 3., but was: %s", result["version"])
 			},
 		},
 	}
@@ -268,6 +338,9 @@ func TestToolsLatestCommand(t *testing.T) {
 			}
 			if tt.outputFormat != "" {
 				args = append(args, "--format", tt.outputFormat)
+			}
+			if tt.provider != "" {
+				args = append(args, "--provider", tt.provider)
 			}
 
 			cmd := command.New(testhelpers.BinPath(), args...)

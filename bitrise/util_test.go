@@ -322,6 +322,7 @@ func TestConfigModelFromYAMLFileContent_StepListValidation(t *testing.T) {
 			name: "Valid workflow with step",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 workflows:
   test:
     steps:
@@ -332,6 +333,7 @@ workflows:
 			name: "Valid workflow with with group",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   ruby:
     image: ruby:3.2
@@ -348,6 +350,7 @@ workflows:
 			name: "Valid workflow with step bundle",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   bundle:
     steps:
@@ -362,6 +365,7 @@ workflows:
 			name: "Valid workflow with step, with group, and step bundle",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   ruby:
     image: ruby:3.2
@@ -384,6 +388,7 @@ workflows:
 			name: "Valid with group with multiple steps",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 containers:
   ruby:
     image: ruby:3.2
@@ -401,6 +406,7 @@ workflows:
 			name: "Valid step bundle with step",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   test:
     steps:
@@ -415,6 +421,7 @@ workflows:
 			name: "Valid step bundle with nested step bundle",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   inner:
     steps:
@@ -432,6 +439,7 @@ workflows:
 			name: "Valid step bundle with step and nested bundle",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   inner:
     steps:
@@ -451,16 +459,18 @@ workflows:
 			name: "Invalid bitrise.yml: with group in a step bundle's steps list",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 step_bundles:
   test:
     steps:
     - with: {}`,
-			wantErr: "failed to normalize step bundle (test): step list item of step bundle cannot be a with group",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 services:
   postgres:
     image: postgres:13
@@ -472,12 +482,13 @@ workflows:
         - postgres
         steps:
         - bundle::test: {}`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a step bundle",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
 			config: `
 format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 services:
   postgres:
     image: postgres:13
@@ -489,7 +500,7 @@ workflows:
         - postgres
         steps:
         - with: {}`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a with group",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {
@@ -525,7 +536,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize step bundle (test): step list item of step bundle cannot be a with group",
+			wantErr: "failed to normalize step_bundle: 'with group' is not allowed in a step bundle's step list",
 		},
 		{
 			name: "Invalid bitrise.yml: step bundle in a 'with group''s steps list",
@@ -556,7 +567,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a step bundle",
+			wantErr: "invalid 'with group' in workflow (primary): step bundle is not allowed in a 'with group''s step list",
 		},
 		{
 			name: "Invalid bitrise.yml: with group in a 'with group''s steps list",
@@ -587,7 +598,7 @@ func TestConfigModelFromJSONFileContent_StepListValidation(t *testing.T) {
     }
   }
 }`,
-			wantErr: "failed to normalize workflow (primary): step list item of a with group cannot be a with group",
+			wantErr: "invalid 'with group' in workflow (primary): 'with group' is not allowed in a 'with group''s step list",
 		},
 	}
 	for _, tt := range tests {

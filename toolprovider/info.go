@@ -21,7 +21,7 @@ type InstalledTool struct {
 
 // ListInstalledTools lists all tools installed by the configured provider.
 // If activeOnly is true, only tools that are currently active in the shell context are returned.
-func ListInstalledTools(providerName string, activeOnly bool) ([]InstalledTool, error) {
+func ListInstalledTools(providerName string, activeOnly, silent bool) ([]InstalledTool, error) {
 	if providerName == "" {
 		providerName = "mise"
 	}
@@ -30,7 +30,7 @@ func ListInstalledTools(providerName string, activeOnly bool) ([]InstalledTool, 
 	case "asdf":
 		return listAsdfTools(activeOnly)
 	case "mise":
-		return listMiseTools(activeOnly)
+		return listMiseTools(activeOnly, silent)
 	default:
 		return nil, fmt.Errorf("unsupported tool provider: %s", providerName)
 	}
@@ -43,6 +43,7 @@ func listAsdfTools(activeOnly bool) ([]InstalledTool, error) {
 			ShellInit:          "",
 			ClearInheritedEnvs: false,
 		},
+		Silent: false,
 	}
 
 	if activeOnly {
@@ -134,9 +135,9 @@ type miseToolEntry struct {
 	Active    bool `json:"active"`
 }
 
-func listMiseTools(activeOnly bool) ([]InstalledTool, error) {
+func listMiseTools(activeOnly bool, silent bool) ([]InstalledTool, error) {
 	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, silent)
 	if err != nil {
 		return nil, fmt.Errorf("create mise provider: %w", err)
 	}
