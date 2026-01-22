@@ -217,6 +217,8 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 		}
 
 		stepPlans = append(stepPlans, plans...)
+	default:
+		return nil, fmt.Errorf("unknown step list item type")
 	}
 
 	return stepPlans, nil

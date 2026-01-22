@@ -108,12 +108,3 @@ func (i *StepListItem) GetWithGroup() *WithModel {
 func (i *StepListItem) GetBundle() *StepBundleListItemModel {
 	return i.bundle
 }
-
-// StepListItemModel is a map representing a step list item of a workflow, the value is either a Step, a With Group or Step Bundle.
-type StepListItemModel map[string]interface{}
-
-// StepListStepItemModel is a map representing a step list item of a With group, the value is a Step.
-type StepListStepItemModel map[string]stepmanModels.StepModel
-
-// StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.
-type StepListItemStepOrBundleModel map[string]any

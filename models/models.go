@@ -8,6 +8,7 @@ import (
 	"time"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
+	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
 type GraphPipelineAlwaysRunMode string
@@ -33,6 +34,9 @@ type StepBundleModel struct {
 	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
+// StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.
+type StepListItemStepOrBundleModel map[string]any
+
 type StepBundleListItemModel struct {
 	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -51,6 +55,12 @@ type WithModel struct {
 }
 
 type StepListWithItemModel map[string]WithModel
+
+// StepListStepItemModel is a map representing a step list item of a With group, the value is a Step.
+type StepListStepItemModel map[string]stepmanModels.StepModel
+
+// StepListItemModel is a map representing a step list item of a workflow, the value is either a Step, a With Group or Step Bundle.
+type StepListItemModel map[string]interface{}
 
 type PipelineModel struct {
 	Title            string                             `json:"title,omitempty" yaml:"title,omitempty"`
