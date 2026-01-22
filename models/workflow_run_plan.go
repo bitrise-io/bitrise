@@ -270,7 +270,7 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
 	if allowContainerDefinition {
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableStep(*step))
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStep(*step))
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +342,7 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	}
 
 	if allowContainerDefinition {
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableStepBundle(*bundleOverride))
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride))
 		if err != nil {
 			return nil, err
 		}

@@ -109,72 +109,45 @@ func (i *StepListItem) GetBundle() *StepBundleListItemModel {
 	return i.bundle
 }
 
-type Containerisable interface {
-	GetExecutionContainerConfig() (*ContainerConfig, error)
-	GetServiceContainerConfigs() ([]ContainerConfig, error)
+type Containerisable struct {
+	Step       *stepmanModels.StepModel
+	StepBundle *StepBundleListItemModel
 }
 
-type containerisableStep struct {
-	Step stepmanModels.StepModel
-}
-
-func newContainerisableStep(step stepmanModels.StepModel) Containerisable {
-	return containerisableStep{
-		Step: step,
+func newContainerisableFromStep(step stepmanModels.StepModel) Containerisable {
+	return Containerisable{
+		Step: &step,
 	}
 }
 
-func (step containerisableStep) GetExecutionContainerConfig() (*ContainerConfig, error) {
-	if step.Step.ExecutionContainer == nil {
-		return nil, nil
-	}
-
-	return getContainerConfig(step.Step.ExecutionContainer)
-}
-
-func (step containerisableStep) GetServiceContainerConfigs() ([]ContainerConfig, error) {
-	if step.Step.ServiceContainers == nil {
-		return nil, nil
-	}
-
-	var containerConfigs []ContainerConfig
-	for _, containerDef := range step.Step.ServiceContainers {
-		ctrConfig, err := getContainerConfig(containerDef)
-		if err != nil {
-			return nil, err
-		}
-		if ctrConfig != nil {
-			containerConfigs = append(containerConfigs, *ctrConfig)
-		}
-	}
-	return containerConfigs, nil
-}
-
-type containerisableStepBundle struct {
-	StepBundle StepBundleListItemModel
-}
-
-func newContainerisableStepBundle(stepBundle StepBundleListItemModel) Containerisable {
-	return containerisableStepBundle{
-		StepBundle: stepBundle,
+func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel) Containerisable {
+	return Containerisable{
+		StepBundle: &stepBundle,
 	}
 }
 
-func (stepBundle containerisableStepBundle) GetExecutionContainerConfig() (*ContainerConfig, error) {
-	if stepBundle.StepBundle.ExecutionContainer == nil {
-		return nil, nil
+func (step Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
+	if step.StepBundle != nil {
+		return getContainerConfig(step.StepBundle.ExecutionContainer)
+	} else if step.Step != nil {
+		return getContainerConfig(step.Step.ExecutionContainer)
 	}
-
-	return getContainerConfig(stepBundle.StepBundle.ExecutionContainer)
+	return nil, nil
 }
 
-func (stepBundle containerisableStepBundle) GetServiceContainerConfigs() ([]ContainerConfig, error) {
-	if stepBundle.StepBundle.ServiceContainers == nil {
+func (step Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error) {
+	var serviceContainers []any
+	if step.StepBundle != nil {
+		serviceContainers = step.StepBundle.ServiceContainers
+	} else if step.Step != nil {
+		serviceContainers = step.Step.ServiceContainers
+	}
+	if serviceContainers == nil {
 		return nil, nil
 	}
 
 	var containerConfigs []ContainerConfig
-	for _, containerDef := range stepBundle.StepBundle.ServiceContainers {
+	for _, containerDef := range serviceContainers {
 		ctrConfig, err := getContainerConfig(containerDef)
 		if err != nil {
 			return nil, err
