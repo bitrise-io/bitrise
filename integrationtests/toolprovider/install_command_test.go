@@ -33,7 +33,7 @@ func TestToolsCommandHelp(t *testing.T) {
 			name: "install help shows usage",
 			args: []string{"tools", "install", "--help"},
 			contains: []string{
-				"TOOL VERSION[:SUFFIX]",
+				"<TOOL> <VERSION>[:SUFFIX]",
 				"--provider",
 				"--format",
 				"nodejs 20.10.0",
@@ -43,7 +43,7 @@ func TestToolsCommandHelp(t *testing.T) {
 			name: "latest help shows usage",
 			args: []string{"tools", "latest", "--help"},
 			contains: []string{
-				"TOOL [VERSION[:SUFFIX]]",
+				"<TOOL> [VERSION[:SUFFIX]]",
 				"--provider",
 				"--format",
 				"nodejs 20",

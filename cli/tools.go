@@ -140,7 +140,7 @@ EXAMPLES:
 )
 
 var (
-	toolsLatestSubcommandUsageText = "bitrise tools latest [--provider PROVIDER] [--format FORMAT] <TOOL [VERSION[:SUFFIX]]>"
+	toolsLatestSubcommandUsageText = "bitrise tools latest [--provider PROVIDER] [--format FORMAT] <TOOL> [VERSION[:SUFFIX]]"
 	toolsLatestSubcommand          = cli.Command{
 		Name:      toolsLatestSubcommandName,
 		Usage:     "Query the latest version of a tool",
