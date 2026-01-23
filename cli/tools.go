@@ -109,7 +109,7 @@ EXAMPLES:
 }
 
 var (
-	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL VERSION[:SUFFIX]>"
+	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]"
 	toolsInstallSubcommand         = cli.Command{
 		Name:      toolsInstallSubcommandName,
 		Usage:     "Install a specific tool version",
