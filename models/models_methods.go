@@ -210,7 +210,8 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 		if err != nil {
 			return err
 		}
-		bundle.ExecutionContainer = normalized
+		ref := stepmanModels.ContainerReference(normalized)
+		bundle.ExecutionContainer = &ref
 	}
 
 	if bundle.ServiceContainers != nil {
@@ -387,7 +388,7 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
-func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel) error {
+func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel, containerValidationCtx *containerValidationContext) error {
 	stepBundleDefinitionInputKeys := map[string]bool{}
 	for _, input := range stepBundleDefinition.Inputs {
 		key, _, err := input.GetKeyValuePair()
@@ -416,6 +417,12 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 		}
 	}
 
+	if containerValidationCtx != nil {
+		if err := validateContainerReferences(bundle.ExecutionContainer, bundle.ServiceContainers, containerValidationCtx.ExecutionContainers, containerValidationCtx.ServiceContainers); err != nil {
+			return fmt.Errorf("step bundle has container reference issue: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -438,7 +445,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, err
 			}
 
-			warns, err := validateStep(key, *step)
+			warns, err := validateStep(key, *step, nil)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				return warnings, err
@@ -454,7 +461,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
 
-			if err := override.Validate(definition); err != nil {
+			if err := override.Validate(definition, nil); err != nil {
 				return warnings, err
 			}
 		}
@@ -517,7 +524,7 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 			return warnings, fmt.Errorf("invalid 'with group' in workflow (%s): step bundle is not allowed in a 'with group''s step list", workflowID)
 		}
 
-		warns, err := validateStep(stepID, step)
+		warns, err := validateStep(stepID, step, nil)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err
@@ -727,6 +734,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 			return warnings, err
 		}
 
+		// TODO: check new containers and services
 		warns, err := bundle.Validate(config.StepBundles)
 		warnings = append(warnings, warns...)
 		if err != nil {
@@ -737,7 +745,12 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	return warnings, nil
 }
 
-func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error) {
+type containerValidationContext struct {
+	ExecutionContainers map[string]Container
+	ServiceContainers   map[string]Container
+}
+
+func validateStep(stepID string, step stepmanModels.StepModel, containerValidationCtx *containerValidationContext) ([]string, error) {
 	var warnings []string
 
 	if err := stepid.Validate(stepID); err != nil {
@@ -746,6 +759,12 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 
 	if err := step.ValidateInputAndOutputEnvs(false); err != nil {
 		return warnings, err
+	}
+
+	if containerValidationCtx != nil {
+		if err := validateContainerReferences(step.ExecutionContainer, step.ServiceContainers, containerValidationCtx.ExecutionContainers, containerValidationCtx.ServiceContainers); err != nil {
+			return warnings, fmt.Errorf("step (%s) has container reference issue: %w", stepID, err)
+		}
 	}
 
 	stepInputMap := map[string]bool{}
@@ -1046,6 +1065,10 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
+		containerValidationCtx := &containerValidationContext{
+			ExecutionContainers: config.Containers,
+			ServiceContainers:   config.Services,
+		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
@@ -1058,7 +1081,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 				stepID := key
-				warns, err := validateStep(stepID, *step)
+				warns, err := validateStep(stepID, *step, containerValidationCtx)
 				warnings = append(warnings, warns...)
 				if err != nil {
 					return warnings, err
@@ -1089,7 +1112,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 
-				if err := bundle.Validate(bundleDefinition); err != nil {
+				if err := bundle.Validate(bundleDefinition, containerValidationCtx); err != nil {
 					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s) has config issue: %w", bundleID, workflowID, err)
 				}
 			}
@@ -1110,6 +1133,29 @@ func validateID(id, modelType string) (string, error) {
 	}
 
 	return "", nil
+}
+
+func validateContainerReferences(executionContainerRef stepmanModels.ContainerReference, serviceContainerRefs []stepmanModels.ContainerReference, containers, services map[string]Container) error {
+	executionContainerCfg, err := stepmanModels.GetContainerConfig(executionContainerRef)
+	if err != nil {
+		return fmt.Errorf("invalid execution container definition: %w", err)
+	}
+	if executionContainerCfg != nil {
+		if _, ok := containers[executionContainerCfg.ContainerID]; !ok {
+			return fmt.Errorf("undefined execution container (%s) referenced", executionContainerCfg.ContainerID)
+		}
+	}
+
+	serviceContainerCfgs, err := stepmanModels.GetContainerConfigs(serviceContainerRefs)
+	if err != nil {
+		return fmt.Errorf("invalid service container definition: %w", err)
+	}
+	for _, serviceContainerCfg := range serviceContainerCfgs {
+		if _, ok := services[serviceContainerCfg.ContainerID]; !ok {
+			return fmt.Errorf("undefined service container (%s) referenced", serviceContainerCfg.ContainerID)
+		}
+	}
+	return nil
 }
 
 // ----------------------------
