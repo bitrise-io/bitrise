@@ -53,8 +53,8 @@ type StepBundleListItemModel struct {
 		- postgres:
 		   recreate: true
 	*/
-	ExecutionContainer any   `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
-	ServiceContainers  []any `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
+	ExecutionContainer stepmanModels.ContainerReference   `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
+	ServiceContainers  []stepmanModels.ContainerReference `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
 }
 
 type StepListStepBundleItemModel map[string]StepBundleListItemModel
@@ -174,20 +174,6 @@ type WorkflowModel struct {
 	Priority         *int                                `json:"priority,omitempty" yaml:"priority,omitempty"`
 	Tools            ToolsModel                          `json:"tools,omitempty" yaml:"tools,omitempty"`
 	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
-}
-
-type DockerCredentials struct {
-	Username string `json:"username,omitempty" yaml:"username,omitempty"`
-	Password string `json:"password,omitempty" yaml:"password,omitempty"`
-	Server   string `json:"server,omitempty" yaml:"server,omitempty"`
-}
-
-type Container struct {
-	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
-	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
-	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
-	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 type AppModel struct {

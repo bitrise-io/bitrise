@@ -214,12 +214,12 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 	}
 
 	if bundle.ServiceContainers != nil {
-		normalized, err := stepmanModels.RecursiveJSONMarshallable(bundle.ServiceContainers)
-		if err != nil {
-			return err
-		}
-		if normalizedSlice, ok := normalized.([]interface{}); ok {
-			bundle.ServiceContainers = normalizedSlice
+		for i, container := range bundle.ServiceContainers {
+			normalized, err := stepmanModels.RecursiveJSONMarshallable(container)
+			if err != nil {
+				return err
+			}
+			bundle.ServiceContainers[i] = normalized
 		}
 	}
 

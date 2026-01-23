@@ -90,7 +90,7 @@ type ContainerPlan struct {
 }
 
 type ContainerConfig struct {
-	ContainerID string `json:"container_id"`
+	ContainerID string `json:"container_id,omitempty"`
 	Recreate    bool   `json:"_"`
 }
 
@@ -184,7 +184,7 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
 	}
 
-	return WorkflowRunPlan{
+	plan := WorkflowRunPlan{
 		Version:                 cliVersion,
 		LogFormatVersion:        LogFormatVersion,
 		CIMode:                  modes.CIMode,
@@ -194,12 +194,22 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
-		WithGroupPlans:          builder.withGroupPlans,
-		StepBundlePlans:         builder.stepBundlePlans,
-		ExecutionContainerPlans: builder.executionContainerPlans,
-		ServiceContainerPlans:   builder.serviceContainerPlans,
 		ExecutionPlan:           executionPlan,
-	}, nil
+	}
+	if len(builder.withGroupPlans) > 0 {
+		plan.WithGroupPlans = builder.withGroupPlans
+	}
+	if len(builder.stepBundlePlans) > 0 {
+		plan.StepBundlePlans = builder.stepBundlePlans
+	}
+	if len(builder.executionContainerPlans) > 0 {
+		plan.ExecutionContainerPlans = builder.executionContainerPlans
+	}
+	if len(builder.serviceContainerPlans) > 0 {
+		plan.ServiceContainerPlans = builder.serviceContainerPlans
+	}
+
+	return plan, nil
 }
 
 func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {

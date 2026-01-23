@@ -55,7 +55,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 				},
@@ -105,7 +104,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_3": {ID: "bundle2"},
@@ -148,7 +146,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -210,7 +207,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 					"uuid_6": {ID: "bundle1"},
@@ -264,7 +260,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle3"},
 					"uuid_3": {ID: "bundle2"},
@@ -328,7 +323,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle2"},
 					"uuid_2": {ID: "bundle1"},
@@ -391,7 +385,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle 1"},
@@ -429,7 +422,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 1"},
@@ -486,12 +478,9 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
-				StepBundlePlans:  map[string]StepBundlePlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{
 					"node-container": {Image: "node:18"},
 				},
-				ServiceContainerPlans: map[string]ContainerPlan{},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{
@@ -515,7 +504,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 				"workflow1": {
 					Steps: []StepListItemModel{
 						{"step1": stepmanModels.StepModel{
-							ServiceContainers: []any{"redis", "postgres"},
+							ServiceContainers: []stepmanModels.ContainerReference{"redis", "postgres"},
 						}},
 					},
 				},
@@ -525,11 +514,8 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 				"postgres": {Image: "postgres:15"},
 			},
 			want: WorkflowRunPlan{
-				Version:                 cliVersion(),
-				LogFormatVersion:        "2",
-				WithGroupPlans:          map[string]WithGroupPlan{},
-				StepBundlePlans:         map[string]StepBundlePlan{},
-				ExecutionContainerPlans: map[string]ContainerPlan{},
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
 				ServiceContainerPlans: map[string]ContainerPlan{
 					"redis":    {Image: "redis:7"},
 					"postgres": {Image: "postgres:15"},
@@ -539,7 +525,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 						{
 							UUID:   "uuid_1",
 							StepID: "step1",
-							Step:   stepmanModels.StepModel{ServiceContainers: []any{"redis", "postgres"}},
+							Step:   stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{"redis", "postgres"}},
 							ServiceContainers: []ContainerConfig{
 								{ContainerID: "redis", Recreate: false},
 								{ContainerID: "postgres", Recreate: false},
@@ -558,7 +544,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 					Steps: []StepListItemModel{
 						{"step1": stepmanModels.StepModel{
 							ExecutionContainer: "node-container",
-							ServiceContainers:  []any{"redis"},
+							ServiceContainers:  []stepmanModels.ContainerReference{"redis"},
 						}},
 					},
 				},
@@ -572,8 +558,6 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
-				StepBundlePlans:  map[string]StepBundlePlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{
 					"node-container": {Image: "node:18"},
 				},
@@ -587,7 +571,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 							StepID: "step1",
 							Step: stepmanModels.StepModel{
 								ExecutionContainer: "node-container",
-								ServiceContainers:  []any{"redis"},
+								ServiceContainers:  []stepmanModels.ContainerReference{"redis"},
 							},
 							ExecutionContainer: &ContainerConfig{
 								ContainerID: "node-container",
@@ -624,12 +608,9 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
-				StepBundlePlans:  map[string]StepBundlePlan{},
 				ExecutionContainerPlans: map[string]ContainerPlan{
 					"node-container": {Image: "node:18"},
 				},
-				ServiceContainerPlans: map[string]ContainerPlan{},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{
@@ -679,14 +660,12 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 				},
 				ExecutionContainerPlans: map[string]ContainerPlan{
 					"node-container": {Image: "node:18"},
 				},
-				ServiceContainerPlans: map[string]ContainerPlan{},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{
@@ -729,7 +708,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 				"workflow1": {
 					Steps: []StepListItemModel{
 						{"bundle::bundle1": StepBundleListItemModel{
-							ServiceContainers: []any{"redis", "postgres"},
+							ServiceContainers: []stepmanModels.ContainerReference{"redis", "postgres"},
 						}},
 					},
 				},
@@ -739,11 +718,9 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 				"postgres": {Image: "postgres:15"},
 			},
 			want: WorkflowRunPlan{
-				Version:                 cliVersion(),
-				LogFormatVersion:        "2",
-				WithGroupPlans:          map[string]WithGroupPlan{},
-				StepBundlePlans:         map[string]StepBundlePlan{"uuid_1": {ID: "bundle1"}},
-				ExecutionContainerPlans: map[string]ContainerPlan{},
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "bundle1"}},
 				ServiceContainerPlans: map[string]ContainerPlan{
 					"redis":    {Image: "redis:7"},
 					"postgres": {Image: "postgres:15"},
@@ -803,13 +780,11 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "bundle1"}},
 				ExecutionContainerPlans: map[string]ContainerPlan{
 					"node-container": {Image: "node:18"},
 					// python-container should NOT be here
 				},
-				ServiceContainerPlans: map[string]ContainerPlan{},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{
@@ -861,7 +836,6 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -870,7 +844,6 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 					"node-container": {Image: "node:18"},
 					// python-container should NOT be here
 				},
-				ServiceContainerPlans: map[string]ContainerPlan{},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{
