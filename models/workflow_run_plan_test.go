@@ -454,15 +454,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 	}
 }
 
-type MockUUIDProvider struct {
-	i int
-}
-
-func (m *MockUUIDProvider) UUID() string {
-	m.i++
-	return fmt.Sprintf("uuid_%d", m.i)
-}
-
 func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -910,4 +901,13 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+type MockUUIDProvider struct {
+	i int
+}
+
+func (m *MockUUIDProvider) UUID() string {
+	m.i++
+	return fmt.Sprintf("uuid_%d", m.i)
 }
