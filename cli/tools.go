@@ -37,9 +37,6 @@ const (
 	toolsOutputFormatKey      = "format"
 	toolsOutputFormatShortKey = "f"
 
-	toolsInstalledKey      = "installed"
-	toolsInstalledShortKey = "i"
-
 	toolsProviderKey      = "provider"
 	toolsProviderShortKey = "p"
 
@@ -57,11 +54,6 @@ var (
 		Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
 		Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
 		Value: outputFormatPlaintext,
-	}
-
-	flToolsInstalled = cli.BoolFlag{
-		Name:  toolsInstalledKey + ", " + toolsInstalledShortKey,
-		Usage: `Install the latest already installed version instead of the latest available release`,
 	}
 
 	flToolsActive = cli.BoolFlag{
@@ -163,7 +155,6 @@ EXAMPLES:
 			return nil
 		},
 		Flags: []cli.Flag{
-			flToolsInstalled,
 			flToolsOutputFormat,
 			flToolsProvider,
 		},
