@@ -191,7 +191,7 @@ Get ContainerConfig from container definition which can be either a string or a 
 
 Examples:
   - redis
-  - postgres: {recreate: true}
+  - postgres: { recreate: true }
 */
 func getContainerConfig(container any) (*ContainerConfig, error) {
 	if container == nil {
