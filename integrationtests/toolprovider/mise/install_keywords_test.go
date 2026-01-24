@@ -14,6 +14,7 @@ import (
 // TestMiseInstallWithLatestKeyword tests that the "latest" keyword works for various tools
 // without failing. We don't assert specific versions since "latest" changes over time.
 func TestMiseInstallWithLatestKeyword(t *testing.T) {
+	t.Parallel()
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
@@ -51,6 +52,7 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 // TestMiseInstallWithInstalledKeyword tests that the "installed" keyword works correctly.
 // It first installs a specific version, then requests "installed" which should find it.
 func TestMiseInstallWithInstalledKeyword(t *testing.T) {
+	t.Parallel()
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
@@ -97,6 +99,7 @@ func TestMiseInstallWithInstalledKeyword(t *testing.T) {
 // TestMiseInstallWithLatestAfterInstalled tests a combination:
 // Install a version, then install "latest" to ensure both keywords work together.
 func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
+	t.Parallel()
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)

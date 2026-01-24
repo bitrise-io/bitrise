@@ -72,7 +72,7 @@ workflows:
       bitrise.io:
         # TODO: switch to stable stack when Nix is rolled out there
         stack: osx-xcode-edge
-        machine_type_id: g2.mac.large
+        machine_type_id: g2.mac.4x-large
 
   run_integration_tests_linux:
     steps:
@@ -86,7 +86,7 @@ workflows:
       bitrise.io:
         # TODO: switch to stable stack when Nix is rolled out there
         stack: ubuntu-noble-24.04-bitrise-2025-android
-        machine_type_id: g2.linux.x-large
+        machine_type_id: g2.linux.3x-large
 
   run_docker_integration_tests_linux:
     steps:
@@ -325,9 +325,74 @@ step_bundles:
 
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
-            # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
-            cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
-            test_exit_code=$?
+
+            cd ./integrationtests
+            log_path="./${test_log_file_name}.log"
+            : > "${log_path}"
+
+            # Sequential-only tests list (run after the parallel pass).
+            sequential_re="^("
+            # Steps: needs node/npm or flaky steplib usage
+            sequential_re+="Test_GoModMigration|"
+            sequential_re+="TestSteplibStepExecutable|"
+            sequential_re+="TestNestedStepBundle|"
+            sequential_re+="TestStepBundleInputs|"
+            sequential_re+="TestStepBundleRunIf|"
+            sequential_re+="Test_SensitiveInputs|"
+            # Environment: Stepman spec update race
+            sequential_re+="Test_OutputAlias|"
+            sequential_re+="Test_EnvstoreTest|"
+            sequential_re+="Test_SecretFiltering|"
+            sequential_re+="Test_Secret_Filtering_FailingStep|"
+            sequential_re+="TestSecretSharing|"
+            # Agent-config tests mutate global config in $HOME
+            sequential_re+="Test_AgentConfigBitriseDirs|"
+            sequential_re+="Test_AgentConfigBuildHooksSuccess|"
+            sequential_re+="Test_AgentConfigBuildHooksFailure|"
+            # Config: Stepman spec update race
+            sequential_re+="Test_ModularConfig_Run_JSON_Logs|"
+            sequential_re+="Test_ModularConfig|"
+            # CLI offline-mode tests require fastlane and race Stepman cleanup/spec
+            sequential_re+="Test_GivenOfflineMode_WhenStepNotCached_ThenFails|"
+            sequential_re+="Test_GivenOnlineMode_WhenStepNotCached_ThenSucceeds|"
+            sequential_re+="Test_GivenOfflineMode_WhenStepCached_ThenSuceeds|"
+            # CLI: Stepman spec update race
+            sequential_re+="Test_GlobalFlagCI|"
+            sequential_re+="Test_JsonParams|"
+            sequential_re+="TestConsoleLogCanBeRestoredFromJSONLog|"
+            sequential_re+="TestStepDebugLogMessagesAppear|"
+            # CLI: update mutates the test binary on disk
+            sequential_re+="Test_Update|"
+            # Steps: Stepman spec update race
+            sequential_re+="Test_StepTemplate|"
+            # Workflow: Stepman spec update race
+            sequential_re+="Test_AsyncStep|"
+            sequential_re+="Test_TimeoutTest|"
+            # Workflow: before/after envs flaky under parallel Stepman updates
+            sequential_re+="Test_WorkflowRunEnvs"
+            sequential_re+=")$"
+
+            # -count=1: Force execution to surface parallel races; cached results can hide them.
+            parallel_start_ts=$(date +%s)
+            echo "PARALLEL_TESTS_START $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            go test -v --tags linux_and_mac -count=1 ./... \
+              -skip "${sequential_re}" 2>&1 | tee -a "${log_path}"
+            test_exit_code=${PIPESTATUS[0]}
+            parallel_end_ts=$(date +%s)
+            echo "PARALLEL_TESTS_END $(date -u +%Y-%m-%dT%H:%M:%SZ) duration_s=$((parallel_end_ts - parallel_start_ts))"
+
+            # Run sequential-only tests.
+            sequential_start_ts=$(date +%s)
+            echo "SEQUENTIAL_TESTS_START $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            go test -v --tags linux_and_mac -count=1 -p 1 ./... \
+              -run "${sequential_re}" 2>&1 | tee -a "${log_path}"
+            seq_exit=${PIPESTATUS[0]}
+            sequential_end_ts=$(date +%s)
+            echo "SEQUENTIAL_TESTS_END $(date -u +%Y-%m-%dT%H:%M:%SZ) duration_s=$((sequential_end_ts - sequential_start_ts))"
+            if [ "${seq_exit}" -ne 0 ] && [ "${test_exit_code}" -eq 0 ]; then
+              test_exit_code="${seq_exit}"
+            fi
+
             set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
