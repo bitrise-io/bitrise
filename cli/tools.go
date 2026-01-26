@@ -114,7 +114,6 @@ VERSION: specific version (20.10.0), prefix (22), latest, or installed.
 EXAMPLES:
    bitrise tools install nodejs 20.10.0
    bitrise tools install nodejs 22:latest
-   bitrise tools install ruby installed
    eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell`,
 		Action: func(c *cli.Context) error {
 			logCommandParameters(c)
