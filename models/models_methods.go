@@ -1065,9 +1065,10 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
+		// TODO: how to handle old container definitions?
 		containerValidationCtx := &containerValidationContext{
-			ExecutionContainers: config.Containers,
-			ServiceContainers:   config.Services,
+			ExecutionContainers: config.ExecutionContainers,
+			ServiceContainers:   config.ServiceContainers,
 		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()
