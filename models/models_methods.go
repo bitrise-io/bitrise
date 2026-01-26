@@ -210,8 +210,7 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 		if err != nil {
 			return err
 		}
-		ref := stepmanModels.ContainerReference(normalized)
-		bundle.ExecutionContainer = &ref
+		bundle.ExecutionContainer = normalized
 	}
 
 	if bundle.ServiceContainers != nil {
@@ -418,7 +417,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	}
 
 	if containerValidationCtx != nil {
-		if err := validateContainerReferences(bundle.ExecutionContainer, bundle.ServiceContainers, containerValidationCtx.ExecutionContainers, containerValidationCtx.ServiceContainers); err != nil {
+		if err := validateContainerReferences(newContainerisableFromStepBundle(*bundle), *containerValidationCtx); err != nil {
 			return fmt.Errorf("step bundle has container reference issue: %w", err)
 		}
 	}
@@ -745,11 +744,6 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	return warnings, nil
 }
 
-type containerValidationContext struct {
-	ExecutionContainers map[string]Container
-	ServiceContainers   map[string]Container
-}
-
 func validateStep(stepID string, step stepmanModels.StepModel, containerValidationCtx *containerValidationContext) ([]string, error) {
 	var warnings []string
 
@@ -762,7 +756,7 @@ func validateStep(stepID string, step stepmanModels.StepModel, containerValidati
 	}
 
 	if containerValidationCtx != nil {
-		if err := validateContainerReferences(step.ExecutionContainer, step.ServiceContainers, containerValidationCtx.ExecutionContainers, containerValidationCtx.ServiceContainers); err != nil {
+		if err := validateContainerReferences(newContainerisableFromStep(step), *containerValidationCtx); err != nil {
 			return warnings, fmt.Errorf("step (%s) has container reference issue: %w", stepID, err)
 		}
 	}
@@ -1134,29 +1128,6 @@ func validateID(id, modelType string) (string, error) {
 	}
 
 	return "", nil
-}
-
-func validateContainerReferences(executionContainerRef stepmanModels.ContainerReference, serviceContainerRefs []stepmanModels.ContainerReference, containers, services map[string]Container) error {
-	executionContainerCfg, err := stepmanModels.GetContainerConfig(executionContainerRef)
-	if err != nil {
-		return fmt.Errorf("invalid execution container definition: %w", err)
-	}
-	if executionContainerCfg != nil {
-		if _, ok := containers[executionContainerCfg.ContainerID]; !ok {
-			return fmt.Errorf("undefined execution container (%s) referenced", executionContainerCfg.ContainerID)
-		}
-	}
-
-	serviceContainerCfgs, err := stepmanModels.GetContainerConfigs(serviceContainerRefs)
-	if err != nil {
-		return fmt.Errorf("invalid service container definition: %w", err)
-	}
-	for _, serviceContainerCfg := range serviceContainerCfgs {
-		if _, ok := services[serviceContainerCfg.ContainerID]; !ok {
-			return fmt.Errorf("undefined service container (%s) referenced", serviceContainerCfg.ContainerID)
-		}
-	}
-	return nil
 }
 
 // ----------------------------

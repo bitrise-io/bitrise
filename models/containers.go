@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -85,4 +87,32 @@ func (step Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, err
 		}
 	}
 	return containerConfigs, nil
+}
+
+type containerValidationContext struct {
+	ExecutionContainers map[string]Container
+	ServiceContainers   map[string]Container
+}
+
+func validateContainerReferences(containerisable Containerisable, validationContext containerValidationContext) error {
+	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
+	if err != nil {
+		return fmt.Errorf("invalid execution container definition: %w", err)
+	}
+	if executionContainerCfg != nil {
+		if _, ok := validationContext.ExecutionContainers[executionContainerCfg.ContainerID]; !ok {
+			return fmt.Errorf("undefined execution container (%s) referenced", executionContainerCfg.ContainerID)
+		}
+	}
+
+	serviceContainerCfgs, err := containerisable.GetServiceContainerConfigs()
+	if err != nil {
+		return fmt.Errorf("invalid service container definition: %w", err)
+	}
+	for _, serviceContainerCfg := range serviceContainerCfgs {
+		if _, ok := validationContext.ServiceContainers[serviceContainerCfg.ContainerID]; !ok {
+			return fmt.Errorf("undefined service container (%s) referenced", serviceContainerCfg.ContainerID)
+		}
+	}
+	return nil
 }
