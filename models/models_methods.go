@@ -733,7 +733,6 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 			return warnings, err
 		}
 
-		// TODO: check new containers and services
 		warns, err := bundle.Validate(config.StepBundles)
 		warnings = append(warnings, warns...)
 		if err != nil {
