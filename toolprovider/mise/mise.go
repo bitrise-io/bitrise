@@ -108,7 +108,7 @@ func (m *MiseToolProvider) Bootstrap() error {
 }
 
 func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.ToolInstallResult, error) {
-	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
+	// Mixing Nix binaries with Linux dynamic linking doesn't work reliably, see https://github.com/bitrise-io/mise-nixpkgs-plugin/blob/main/README.md
 	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend, m.Silent)
 	if !useNix {
 		err := m.InstallPlugin(tool)
@@ -187,7 +187,7 @@ func (m *MiseToolProvider) ActivateEnv(result provider.ToolInstallResult) (provi
 
 // ResolveLatestVersion resolves a tool to its latest version without installing it.
 func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (string, error) {
-	// TODO: disable Nix-based install on Linux until we solve the dynamic linking issues
+	// Mixing Nix binaries with Linux dynamic linking doesn't work reliably, see https://github.com/bitrise-io/mise-nixpkgs-plugin/blob/main/README.md
 	useNix := runtime.GOOS == "darwin" && canBeInstalledWithNix(tool, m.ExecEnv, m.UseFastInstall, nixpkgs.ShouldUseBackend, m.Silent)
 	if !useNix {
 		err := m.InstallPlugin(tool)
