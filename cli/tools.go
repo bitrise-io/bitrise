@@ -232,13 +232,13 @@ func toolsSetup(c *cli.Context) error {
 	}
 
 	var fastInstallOverride *bool
+	val := false
 	if fastInstallFlag != "" {
 		switch fastInstallFlag {
 		case "true":
-			val := true
+			val = true
 			fastInstallOverride = &val
 		case "false":
-			val := false
 			fastInstallOverride = &val
 		default:
 			return fmt.Errorf("invalid --fast-install: %s (must be 'true' or 'false')", fastInstallFlag)
