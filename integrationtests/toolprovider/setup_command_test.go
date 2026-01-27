@@ -24,6 +24,7 @@ type setupCommandCase struct {
 	outputFormat   string
 	workflow       string // Workflow flag (optional, for bitrise.yml)
 	validateOutput func(t *testing.T, output string)
+	useAsdf        bool
 }
 
 func TestToolsSetupCommand(t *testing.T) {
@@ -116,6 +117,18 @@ workflows:
 				assert.NoError(t, err, "Should be able to eval bash output without error: %s", string(out))
 			},
 		},
+		{
+			name:         "use asdf provider",
+			useAsdf:      true,
+			fileContent:  "golang 1.21.0",
+			fileName:     ".tool-versions",
+			outputFormat: "bash",
+			validateOutput: func(t *testing.T, output string) {
+				cmd := exec.Command("bash", "-c", fmt.Sprintf("eval %s", output))
+				out, err := cmd.CombinedOutput()
+				assert.NoError(t, err, "Should be able to eval bash output without error: %s", string(out))
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -131,6 +144,10 @@ workflows:
 			args := []string{"tools", "setup", "--config", configPath, "--format", tc.outputFormat}
 			if tc.workflow != "" {
 				args = append(args, "--workflow", tc.workflow)
+			}
+
+			if tc.useAsdf {
+				args = append(args, "--provider", "asdf")
 			}
 
 			cmd := command.New(testhelpers.BinPath(), args...)

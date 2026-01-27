@@ -42,12 +42,19 @@ const (
 
 	toolsActiveKey      = "active"
 	toolsActiveShortKey = "a"
+
+	toolsFastInstallKey = "fast-install"
 )
 
 var (
 	flToolsProvider = cli.StringFlag{
 		Name:  toolsProviderKey + ", " + toolsProviderShortKey,
 		Usage: `Tool provider to use (asdf/mise). If not specified, uses the default.`,
+	}
+
+	flToolsFastInstall = cli.StringFlag{
+		Name:  toolsFastInstallKey,
+		Usage: `Override fast install setting (true/false). Fast install uses Lix (Nix) for faster installation. If not specified, uses the default for the used stack.`,
 	}
 
 	flToolsOutputFormat = cli.StringFlag{
@@ -163,12 +170,13 @@ EXAMPLES:
 var toolsSetupSubcommand = cli.Command{
 	Name:      toolsSetupSubcommandName,
 	Usage:     "Install tools from version files or bitrise.yml",
-	UsageText: "bitrise tools setup [--config FILE]...",
+	UsageText: "bitrise tools setup [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
 	Description: `Install tools from version files (e.g. .tool-versions, .node-version, etc.) or bitrise.yml.
 
 EXAMPLES:
    bitrise tools setup --config .tool-versions
    bitrise tools setup --config bitrise.yml
+   bitrise tools setup --provider mise --fast-install true
 
    Setup and activate in current shell session:
    eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
@@ -181,6 +189,8 @@ EXAMPLES:
 		return nil
 	},
 	Flags: []cli.Flag{
+		flToolsProvider,
+		flToolsFastInstall,
 		flToolsConfig,
 		flToolsOutputFormat,
 		flToolsWorkflow,
@@ -202,6 +212,8 @@ func toolsSetup(c *cli.Context) error {
 	configFiles := c.StringSlice(toolsConfigKey)
 	workflowID := c.String(toolsWorkflowKey)
 	format := c.String(toolsOutputFormatKey)
+	providerFlag := c.String(toolsProviderKey)
+	fastInstallFlag := c.String(toolsFastInstallKey)
 	silent := false
 
 	switch format {
@@ -212,6 +224,25 @@ func toolsSetup(c *cli.Context) error {
 		// Valid format.
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	var providerOverride *string
+	if providerFlag != "" {
+		providerOverride = &providerFlag
+	}
+
+	var fastInstallOverride *bool
+	if fastInstallFlag != "" {
+		switch fastInstallFlag {
+		case "true":
+			val := true
+			fastInstallOverride = &val
+		case "false":
+			val := false
+			fastInstallOverride = &val
+		default:
+			return fmt.Errorf("invalid --fast-install: %s (must be 'true' or 'false')", fastInstallFlag)
+		}
 	}
 
 	var bitriseConfigPath string
@@ -247,7 +278,7 @@ func toolsSetup(c *cli.Context) error {
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent)
+		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent, providerOverride, fastInstallOverride)
 		if err != nil {
 			return err
 		}
@@ -263,7 +294,7 @@ func toolsSetup(c *cli.Context) error {
 
 	// Setting up from all the other version files.
 	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent)
+	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
 	if err != nil {
 		return err
 	}
