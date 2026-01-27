@@ -17,7 +17,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -27,8 +27,19 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		return nil, nil
 	}
 
-	provider := selectProvider(config)
-	useFastInstall := selectFastInstall(config)
+	var provider string
+	if providerOverride != nil {
+		provider = *providerOverride
+	} else {
+		provider = selectProvider(config)
+	}
+
+	var useFastInstall bool
+	if fastInstallOverride != nil {
+		useFastInstall = *fastInstallOverride
+	} else {
+		useFastInstall = selectFastInstall(config)
+	}
 
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
 }
