@@ -2,8 +2,8 @@ package toolprovider
 
 import (
 	"fmt"
+	"runtime"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
@@ -65,8 +65,6 @@ func selectFastInstall(bitriseConfig models.BitriseDataModel) bool {
 	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.FastInstall != nil {
 		return *bitriseConfig.ToolConfig.FastInstall
 	}
-
-	// Default behavior: use fast install on edge stacks.
-	isEdge := configs.IsEdgeStack()
-	return isEdge
+	// Mixing Nix binaries with Linux dynamic linking doesn't work reliably, see https://github.com/bitrise-io/mise-nixpkgs-plugin/blob/main/README.md
+	return runtime.GOOS == "darwin"
 }
