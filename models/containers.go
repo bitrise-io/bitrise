@@ -7,8 +7,16 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 
+type ContainerType string
+
+const (
+	ContainerTypeExecution ContainerType = "execution"
+	ContainerTypeService   ContainerType = "service"
+)
+
 // Container model defines a Docker container configuration.
 type Container struct {
+	Type        ContainerType                       `json:"type,omitempty" yaml:"type,omitempty"`
 	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
 	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
 	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`

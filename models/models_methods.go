@@ -347,20 +347,6 @@ func (config *BitriseDataModel) Normalize() error {
 		config.Services[serviceID] = service
 	}
 
-	for containerID, container := range config.ExecutionContainers {
-		if err := container.Normalize(); err != nil {
-			return fmt.Errorf("failed to normalize execution container: %w", err)
-		}
-		config.ExecutionContainers[containerID] = container
-	}
-
-	for serviceID, service := range config.ServiceContainers {
-		if err := service.Normalize(); err != nil {
-			return fmt.Errorf("failed to normalize service container: %w", err)
-		}
-		config.ServiceContainers[serviceID] = service
-	}
-
 	for stepBundleID, stepBundle := range config.StepBundles {
 		if err := stepBundle.Normalize(); err != nil {
 			return fmt.Errorf("failed to normalize step_bundle: %w", err)
@@ -1059,9 +1045,23 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 		}
 
 		// TODO: how to handle old container definitions?
+		executionContainers := map[string]Container{}
+		serviceContainers := map[string]Container{}
+		for id, container := range config.Containers {
+			switch container.Type {
+			case ContainerTypeExecution:
+				executionContainers[id] = container
+			case ContainerTypeService:
+				serviceContainers[id] = container
+			default: // TODO: should we treat unknown types as both?
+				executionContainers[id] = container
+				serviceContainers[id] = container
+			}
+		}
+
 		containerValidationCtx := &containerValidationContext{
-			ExecutionContainers: config.ExecutionContainers,
-			ServiceContainers:   config.ServiceContainers,
+			ExecutionContainers: executionContainers,
+			ServiceContainers:   serviceContainers,
 		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()

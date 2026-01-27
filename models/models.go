@@ -184,9 +184,6 @@ type BitriseDataModel struct {
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
-	ExecutionContainers map[string]Container `json:"execution_containers,omitempty" yaml:"execution_containers,omitempty"`
-	ServiceContainers   map[string]Container `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
-	//
 	App         AppModel                   `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta        map[string]interface{}     `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap  TriggerMapModel            `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
@@ -196,8 +193,10 @@ type BitriseDataModel struct {
 	StepBundles map[string]StepBundleModel `json:"step_bundles,omitempty" yaml:"step_bundles,omitempty"`
 	Tools       ToolsModel                 `json:"tools,omitempty" yaml:"tools,omitempty"`
 	ToolConfig  *ToolConfigModel           `json:"tool_config,omitempty" yaml:"tool_config,omitempty"`
-	// TODO: Old container definitions, to be removed when containerisation using "With groups" is sunsetted
-	Services   map[string]Container `json:"services,omitempty" yaml:"services,omitempty"`
+	// Docker container definitions
+	Services map[string]Container `json:"services,omitempty" yaml:"services,omitempty"`
+	// The new containerization syntax uses the "containers" property to define both execution and service containers.
+	// The new "type" property on the Container model defines whether the container is an execution or service container.
 	Containers map[string]Container `json:"containers,omitempty" yaml:"containers,omitempty"`
 }
 

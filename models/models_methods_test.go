@@ -245,16 +245,18 @@ workflows:
 			config: `format_version: "17"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
-execution_containers:
+containers:
   node:
+    type: execution
     image: node:18
   python:
+    type: execution
     image: python:3.11
-
-service_containers:
   redis:
+    type: service
     image: redis:7
   postgres:
+    type: service
     image: postgres:15
     envs:
     - POSTGRES_PASSWORD: password
@@ -289,14 +291,15 @@ workflows:
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
-execution_containers:
+containers:
   node:
+    type: execution
     image: node:18
   ruby:
+    type: execution
     image: ruby:3.2
-
-service_containers:
   postgres:
+    type: service
     image: postgres:15
     envs:
     - POSTGRES_PASSWORD: password
