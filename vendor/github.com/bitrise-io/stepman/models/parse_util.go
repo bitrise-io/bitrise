@@ -7,7 +7,7 @@ import (
 // JSONMarshallable replaces map[interface{}]interface{} with map[string]string recursively
 // map[interface{}]interface{} is usually returned by parser go-yaml/v2
 func JSONMarshallable(source map[string]interface{}) (map[string]interface{}, error) {
-	target, err := recursiveJSONMarshallable(source)
+	target, err := RecursiveJSONMarshallable(source)
 	if err != nil {
 		return nil, err
 	}
@@ -18,11 +18,12 @@ func JSONMarshallable(source map[string]interface{}) (map[string]interface{}, er
 	return castedTarget, nil
 }
 
-func recursiveJSONMarshallable(source interface{}) (interface{}, error) {
+// RecursiveJSONMarshallable recursively converts map[interface{}]interface{} to map[string]interface{}
+func RecursiveJSONMarshallable(source interface{}) (interface{}, error) {
 	if array, ok := source.([]interface{}); ok {
 		var convertedArray []interface{}
 		for _, element := range array {
-			convertedValue, err := recursiveJSONMarshallable(element)
+			convertedValue, err := RecursiveJSONMarshallable(element)
 			if err != nil {
 				return nil, err
 			}
@@ -39,7 +40,7 @@ func recursiveJSONMarshallable(source interface{}) (interface{}, error) {
 				return nil, fmt.Errorf("failed to convert map key from type interface{} to string")
 			}
 
-			convertedValue, err := recursiveJSONMarshallable(value)
+			convertedValue, err := RecursiveJSONMarshallable(value)
 			if err != nil {
 				return nil, err
 			}
@@ -51,7 +52,7 @@ func recursiveJSONMarshallable(source interface{}) (interface{}, error) {
 	if stringToInterfaceMap, ok := source.(map[string]interface{}); ok {
 		target := map[string]interface{}{}
 		for key, value := range stringToInterfaceMap {
-			convertedValue, err := recursiveJSONMarshallable(value)
+			convertedValue, err := RecursiveJSONMarshallable(value)
 			if err != nil {
 				return nil, err
 			}
