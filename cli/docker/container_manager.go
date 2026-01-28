@@ -59,10 +59,10 @@ func (rc *RunningContainer) ExecuteCommandArgs(envs []string) []string {
 const bitriseNetwork = "bitrise"
 
 type ContainerManager struct {
-	logger             Logger
-	workflowContainers map[string]*RunningContainer
-	serviceContainers  map[string][]*RunningContainer
-	client             *client.Client
+	logger              Logger
+	executionContainers map[string]*RunningContainer
+	serviceContainers   map[string][]*RunningContainer
+	client              *client.Client
 
 	mu       sync.Mutex
 	released bool
@@ -119,21 +119,21 @@ func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager 
 			logger:  logger,
 			secrets: secrets,
 		},
-		workflowContainers: make(map[string]*RunningContainer),
-		serviceContainers:  make(map[string][]*RunningContainer),
-		client:             dockerClient,
+		executionContainers: make(map[string]*RunningContainer),
+		serviceContainers:   make(map[string][]*RunningContainer),
+		client:              dockerClient,
 	}
 }
 
-func (cm *ContainerManager) StartContainerForStepGroup(
-	container models.Container,
+func (cm *ContainerManager) StartExecutionContainer(
+	executionContainer models.Container,
 	groupID string,
 	envs map[string]string,
 ) (*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	if err := cm.login(container, envs); err != nil {
+	if err := cm.login(executionContainer, envs); err != nil {
 		log.Errorf("docker credentials provided, but the authentication failed.")
 		return nil, fmt.Errorf("authentication failed: %w", err)
 	}
@@ -143,7 +143,7 @@ func (cm *ContainerManager) StartContainerForStepGroup(
 	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 
-	runningContainer, err := cm.runContainer(container, containerCreateOptions{
+	runningContainer, err := cm.runContainer(executionContainer, containerCreateOptions{
 		name:       containerName,
 		volumes:    dockerMountOverrides,
 		command:    "sleep infinity",
@@ -153,52 +153,52 @@ func (cm *ContainerManager) StartContainerForStepGroup(
 
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
-		cm.workflowContainers[groupID] = runningContainer
+		cm.executionContainers[groupID] = runningContainer
 	}
 
 	if err != nil {
-		return runningContainer, fmt.Errorf("start workflow container: %w", err)
+		return runningContainer, fmt.Errorf("start execution container: %w", err)
 	}
 
-	if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
-		return runningContainer, fmt.Errorf("container health check: %w", err)
+	if runningContainer != nil {
+		if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
+			return runningContainer, fmt.Errorf("container health check: %w", err)
+		}
 	}
 
 	return runningContainer, nil
 }
 
-func (cm *ContainerManager) StartServiceContainersForStepGroup(
-	services map[string]models.Container,
+func (cm *ContainerManager) StartServiceContainers(
+	serviceContainers map[string]models.Container,
 	groupID string,
 	envs map[string]string,
 ) ([]*RunningContainer, error) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	var containers []*RunningContainer
+	var runningContainers []*RunningContainer
 	failedServices := make(map[string]error)
 
-	for serviceName := range services {
-		serviceContainer := services[serviceName]
-
+	for serviceContainerID, serviceContainer := range serviceContainers {
 		if err := cm.login(serviceContainer, envs); err != nil {
-			failedServices[serviceName] = err
+			failedServices[serviceContainerID] = err
 			continue
 		}
 
 		// Naming the container other than the service name, can cause issues with network calls
 		runningContainer, err := cm.runContainer(serviceContainer, containerCreateOptions{
-			name: serviceName,
+			name: serviceContainerID,
 		}, envs)
 		if runningContainer != nil {
-			containers = append(containers, runningContainer)
+			runningContainers = append(runningContainers, runningContainer)
 		}
 		if err != nil {
-			failedServices[serviceName] = err
+			failedServices[serviceContainerID] = err
 		}
 	}
 	// Even on failure we save the references to make sure containers will be cleaned up
-	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], containers...)
+	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], runningContainers...)
 
 	if len(failedServices) != 0 {
 		errServices := fmt.Errorf("failed to start services")
@@ -206,23 +206,23 @@ func (cm *ContainerManager) StartServiceContainersForStepGroup(
 			errServices = fmt.Errorf("%v: %w", errServices, err)
 			cm.logger.Errorf("Failed to start service container (%s): %s", serviceName, err)
 		}
-		return containers, errServices
+		return runningContainers, errServices
 	}
 
-	for _, container := range containers {
-		if err := cm.healthCheckContainer(context.Background(), container); err != nil {
-			return containers, fmt.Errorf("container health check: %w", err)
+	for _, runningContainer := range runningContainers {
+		if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
+			return runningContainers, fmt.Errorf("service container health check: %w", err)
 		}
 	}
 
-	return containers, nil
+	return runningContainers, nil
 }
 
-func (cm *ContainerManager) GetContainerForStepGroup(groupID string) *RunningContainer {
-	return cm.workflowContainers[groupID]
+func (cm *ContainerManager) GetExecutionContainer(groupID string) *RunningContainer {
+	return cm.executionContainers[groupID]
 }
 
-func (cm *ContainerManager) GetServiceContainersForStepGroup(groupID string) []*RunningContainer {
+func (cm *ContainerManager) GetServiceContainers(groupID string) []*RunningContainer {
 	return cm.serviceContainers[groupID]
 }
 
@@ -230,10 +230,10 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 	cm.released = true
-	for _, container := range cm.workflowContainers {
-		cm.logger.Infof("ℹ️ Removing workflow container: %s", container.Name)
+	for _, container := range cm.executionContainers {
+		cm.logger.Infof("ℹ️ Removing execution container: %s", container.Name)
 		if err := container.Destroy(); err != nil {
-			return fmt.Errorf("destroy workflow container: %w", err)
+			return fmt.Errorf("destroy execution container: %w", err)
 		}
 	}
 
