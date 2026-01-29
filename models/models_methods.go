@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/heimdalr/dag"
@@ -38,7 +38,7 @@ func removeWorkflowName(title string, workflowStack []string) []string {
 }
 
 func checkStepBundleReferenceCycle(stepBundleID string, stepBundle StepBundleModel, bitriseConfig BitriseDataModel, stepBundleStack []string) error {
-	if sliceutil.IsStringInSlice(stepBundleID, stepBundleStack) {
+	if slices.Contains(stepBundleStack, stepBundleID) {
 		stackStr := ""
 		for _, aStepBundleID := range stepBundleStack {
 			stackStr += aStepBundleID + " -> "

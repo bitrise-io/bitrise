@@ -7,13 +7,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/progress"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/sliceutil"
 	ver "github.com/hashicorp/go-version"
 )
 
@@ -107,8 +107,8 @@ func isSourceURIChanged(installed, new string) bool {
 			"https://github.com/" + org + "/bitrise-plugins-step.git",
 			"https://github.com/" + org + "/bitrise-plugins-analytics.git",
 		}
-	}; (installed == new) || (sliceutil.IsStringInSlice(installed, urlsForOrg("bitrise-core")) &&
-		sliceutil.IsStringInSlice(new, urlsForOrg("bitrise-io"))) {
+	}; (installed == new) || (slices.Contains(urlsForOrg("bitrise-core"), installed) &&
+		slices.Contains(urlsForOrg("bitrise-io"), new)) {
 		return false
 	}
 	return true
