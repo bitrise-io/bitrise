@@ -33,10 +33,10 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
-	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/toolkits"
+	ver "github.com/hashicorp/go-version"
 )
 
 func (r WorkflowRunner) runWorkflow(
@@ -1016,11 +1016,17 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 		}
 	}
 
-	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
+	supportedVersion, err := ver.NewVersion(models.FormatVersion)
 	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise CLI supported format version (%s): %s", models.FormatVersion, err)
 	}
-	if !isConfigVersionOK {
+
+	configVersion, err := ver.NewVersion(bitriseConfig.FormatVersion)
+	if err != nil {
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise.yml format version (%s): %s", bitriseConfig.FormatVersion, err)
+	}
+
+	if configVersion.GreaterThan(supportedVersion) {
 		return models.BitriseDataModel{}, warnings, fmt.Errorf("the bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
 	}
 
