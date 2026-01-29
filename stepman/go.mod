@@ -9,6 +9,7 @@ require (
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/go-retryablehttp v0.7.7
+	github.com/hashicorp/go-version v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli v1.22.14
 	gopkg.in/yaml.v2 v2.4.0
