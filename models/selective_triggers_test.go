@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
