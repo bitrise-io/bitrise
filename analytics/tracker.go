@@ -136,7 +136,7 @@ func NewDefaultTracker() Tracker {
 	stateChecker := NewStateChecker(envRepository)
 
 	logger := log.NewUtilsLogAdapter()
-	tracker := analytics.NewDefaultTracker(&logger)
+	tracker := analytics.NewDefaultTracker(&logger, env.NewRepository())
 
 	return NewTracker(tracker, envRepository, stateChecker, &logger)
 }

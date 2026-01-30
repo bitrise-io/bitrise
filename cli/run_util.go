@@ -29,10 +29,10 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/toolkits"
@@ -1195,12 +1195,25 @@ func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, ste
 }
 
 func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel) analytics.StepInfo {
+	stepTitle := ""
+	if stepInfoPtr.Step.Title != nil {
+		stepTitle = *stepInfoPtr.Step.Title
+	}
+	stepSource := ""
+	if stepInfoPtr.Step.SourceCodeURL != nil {
+		stepSource = *stepInfoPtr.Step.SourceCodeURL
+	}
+	skippable := false
+	if stepInfoPtr.Step.IsSkippable != nil {
+		skippable = *stepInfoPtr.Step.IsSkippable
+	}
+
 	return analytics.StepInfo{
 		StepID:      stepInfoPtr.ID,
-		StepTitle:   pointers.StringWithDefault(step.Title, ""),
+		StepTitle:   stepTitle,
 		StepVersion: stepInfoPtr.Version,
-		StepSource:  pointers.StringWithDefault(step.SourceCodeURL, ""),
-		Skippable:   pointers.BoolWithDefault(step.IsSkippable, false),
+		StepSource:  stepSource,
+		Skippable:   skippable,
 	}
 }
 
