@@ -49,7 +49,7 @@ func (s *Spinner) erase() {
 	n := utf8.RuneCountInString(s.lastOutput)
 	for _, c := range []string{"\b", " ", "\b"} {
 		for i := 0; i < n; i++ {
-			if _, err := fmt.Fprintf(s.writer, c); err != nil {
+			if _, err := fmt.Fprint(s.writer, c); err != nil {
 				fmt.Printf("failed to update progress, error: %s\n", err)
 			}
 		}

@@ -12,6 +12,6 @@ func ShowIndicator(message string, action func()) {
 	spinner := NewDefaultSpinnerWithOutput(message, output)
 	
 	spinner.Start()
+	defer spinner.Stop()
 	action()
-	spinner.Stop()
 }
