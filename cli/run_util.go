@@ -1196,15 +1196,15 @@ func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, ste
 
 func prepareAnalyticsStepInfo(step stepmanModels.StepModel, stepInfoPtr stepmanModels.StepInfoModel) analytics.StepInfo {
 	stepTitle := ""
-	if stepInfoPtr.Step.Title != nil {
+	if step.Title != nil {
 		stepTitle = *step.Title
 	}
 	stepSource := ""
-	if stepInfoPtr.Step.SourceCodeURL != nil {
+	if step.SourceCodeURL != nil {
 		stepSource = *step.SourceCodeURL
 	}
 	skippable := false
-	if stepInfoPtr.Step.IsSkippable != nil {
+	if step.IsSkippable != nil {
 		skippable = *step.IsSkippable
 	}
 
