@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -15,6 +16,7 @@ type Spinner struct {
 	delay   time.Duration
 	writer  io.Writer
 
+	mu         sync.Mutex
 	active     bool
 	lastOutput string
 	stopChan   chan bool
@@ -46,7 +48,12 @@ func NewDefaultSpinnerWithOutput(message string, output io.Writer) Spinner {
 }
 
 func (s *Spinner) erase() {
-	n := utf8.RuneCountInString(s.lastOutput)
+	s.mu.Lock()
+	lastOut := s.lastOutput
+	s.lastOutput = ""
+	s.mu.Unlock()
+
+	n := utf8.RuneCountInString(lastOut)
 	for _, c := range []string{"\b", " ", "\b"} {
 		for i := 0; i < n; i++ {
 			if _, err := fmt.Fprint(s.writer, c); err != nil {
@@ -54,15 +61,17 @@ func (s *Spinner) erase() {
 			}
 		}
 	}
-	s.lastOutput = ""
 }
 
 // Start begins the spinner animation in a background goroutine.
 func (s *Spinner) Start() {
+	s.mu.Lock()
 	if s.active {
+		s.mu.Unlock()
 		return
 	}
 	s.active = true
+	s.mu.Unlock()
 
 	go func() {
 		for {
@@ -77,7 +86,10 @@ func (s *Spinner) Start() {
 					if _, err := fmt.Fprint(s.writer, out); err != nil {
 						fmt.Printf("failed to update progress, error: %s\n", err)
 					}
-					s.lastOutput = out
+
+				s.mu.Lock()
+				s.lastOutput = out
+				s.mu.Unlock()
 
 					time.Sleep(s.delay)
 				}
@@ -88,9 +100,14 @@ func (s *Spinner) Start() {
 
 // Stop stops the spinner animation and clears the output.
 func (s *Spinner) Stop() {
-	if s.active {
-		s.active = false
-		s.erase()
-		s.stopChan <- true
+	s.mu.Lock()
+	if !s.active {
+		s.mu.Unlock()
+		return
 	}
+	s.active = false
+	s.mu.Unlock()
+
+	s.stopChan <- true
+	s.erase()
 }
