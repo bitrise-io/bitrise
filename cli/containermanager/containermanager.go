@@ -10,10 +10,11 @@ import (
 )
 
 type Manager struct {
-	services           map[string]models.Container
-	containers         map[string]models.Container
-	dockerManager      *docker.ContainerManager
-	currentStepGroupID string
+	services               map[string]models.Container
+	containers             map[string]models.Container
+	dockerManager          *docker.ContainerManager
+	legacyContainerisation bool
+	currentStepGroupID     string
 }
 
 func NewManager(services map[string]models.Container, containers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
@@ -22,6 +23,10 @@ func NewManager(services map[string]models.Container, containers map[string]mode
 		containers:    containers,
 		dockerManager: dockerManager,
 	}
+}
+
+func (m *Manager) SetLegacyContainerisation(useLegacy bool) {
+	m.legacyContainerisation = useLegacy
 }
 
 func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, environments []envmanModels.EnvironmentItemModel, workflowTitle string) {
