@@ -47,8 +47,8 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	}
 }
 
-func (cm *Manager) GetExecutionContainer(groupID string) *docker.RunningContainer {
-	return cm.dockerManager.GetExecutionContainer(groupID)
+func (m *Manager) GetExecutionContainer(groupID string) *docker.RunningContainer {
+	return m.dockerManager.GetExecutionContainer(groupID)
 }
 
 func (m *Manager) DestroyAllContainers() error {
