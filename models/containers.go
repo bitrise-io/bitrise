@@ -47,12 +47,12 @@ func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel) Contai
 	}
 }
 
-func (step Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
+func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
 	var executionContainer stepmanModels.ContainerReference
-	if step.StepBundle != nil {
-		executionContainer = step.StepBundle.ExecutionContainer
-	} else if step.Step != nil {
-		executionContainer = step.Step.ExecutionContainer
+	if c.StepBundle != nil {
+		executionContainer = c.StepBundle.ExecutionContainer
+	} else if c.Step != nil {
+		executionContainer = c.Step.ExecutionContainer
 	}
 	if executionContainer == nil {
 		return nil, nil
@@ -70,12 +70,12 @@ func (step Containerisable) GetExecutionContainerConfig() (*ContainerConfig, err
 	}, nil
 }
 
-func (step Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error) {
+func (c Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error) {
 	var serviceContainers []stepmanModels.ContainerReference
-	if step.StepBundle != nil {
-		serviceContainers = step.StepBundle.ServiceContainers
-	} else if step.Step != nil {
-		serviceContainers = step.Step.ServiceContainers
+	if c.StepBundle != nil {
+		serviceContainers = c.StepBundle.ServiceContainers
+	} else if c.Step != nil {
+		serviceContainers = c.Step.ServiceContainers
 	}
 	if serviceContainers == nil {
 		return nil, nil
