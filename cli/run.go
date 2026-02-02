@@ -13,6 +13,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/containermanager"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
@@ -114,7 +115,7 @@ func run(c *cli.Context) error {
 		<-signalInterruptChan
 		shouldWaitForCleanup = true
 		log.Info("Cancelling bitrise run...")
-		if err := runner.dockerManager.DestroyAllContainers(); err != nil {
+		if err := runner.containerManager.DestroyAllContainers(); err != nil {
 			log.Warnf("Failed to destroy all containers: %s", err)
 		}
 		cleanupSynchronCancelFunc()
@@ -181,19 +182,20 @@ type WorkflowRunner struct {
 	tracker analytics.Tracker
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig   *configs.AgentConfig
-	dockerManager DockerManager
+	agentConfig      *configs.AgentConfig
+	containerManager containermanager.Manager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	dockerManager := docker.NewContainerManager(logger, stepSecretValues)
 	return WorkflowRunner{
-		logger:        logger,
-		config:        config,
-		tracker:       tracker,
-		dockerManager: docker.NewContainerManager(logger, stepSecretValues),
-		agentConfig:   agentConfig,
+		logger:           logger,
+		config:           config,
+		tracker:          tracker,
+		containerManager: containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager),
+		agentConfig:      agentConfig,
 	}
 }
 
