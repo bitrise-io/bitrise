@@ -7,14 +7,23 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
+	"github.com/google/uuid"
 )
 
 type Manager struct {
-	services               map[string]models.Container
-	containers             map[string]models.Container
-	dockerManager          *docker.ContainerManager
+	services      map[string]models.Container
+	containers    map[string]models.Container
+	dockerManager *docker.ContainerManager
+
+	plan                   models.WorkflowRunPlan
 	legacyContainerisation bool
-	currentStepGroupID     string
+
+	// keeps track of the current with group ID
+	currentWithGroupID string
+
+	// Keeps track of the currently running containers
+	currentExecutionContainer string
+	currentServiceContainers  []string
 }
 
 func NewManager(services map[string]models.Container, containers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
@@ -30,24 +39,78 @@ func (m *Manager) SetLegacyContainerisation(useLegacy bool) {
 }
 
 func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, environments []envmanModels.EnvironmentItemModel, workflowTitle string) {
-	if stepPlan.WithGroupUUID != m.currentStepGroupID {
-		if stepPlan.WithGroupUUID != "" {
-			if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-				m.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, stepPlan.WithGroupUUID, workflowTitle)
+	if m.legacyContainerisation {
+		if stepPlan.WithGroupUUID != m.currentWithGroupID {
+			if stepPlan.WithGroupUUID != "" {
+				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
+					m.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, stepPlan.WithGroupUUID, workflowTitle)
+				}
 			}
+
+			m.currentWithGroupID = stepPlan.WithGroupUUID
+		}
+	} else {
+		var startExecutionContainer string
+		if m.shouldStartExecutionContainer(stepPlan) {
+			startExecutionContainer = stepPlan.ExecutionContainer.ContainerID
 		}
 
-		m.currentStepGroupID = stepPlan.WithGroupUUID
+		var startServiceContainers []string
+		// TODO: implement service container transitions
+
+		if startExecutionContainer != "" {
+			newGroupUUID := uuid.New()
+			m.startContainersForStepGroup(startExecutionContainer, startServiceContainers, environments, newGroupUUID.String(), workflowTitle)
+		}
+
+		/*
+			possible transitions for execution containers:
+			A, no running container:
+				- step requires a container: start it
+				- step requires no container: do nothing
+			B, running container:
+				- step requires no container:
+					- first next step with container requirement requires the same container: do nothing
+					- first next step with container requirement requires the same container with recreate: stop running container, start new container later
+					- first next step with container requirement requires different container: stop running container, start new container later
+					- no more steps with container requirement: stop running container
+				- step requires a container:
+					- step requires same container: do nothing
+					- step requires different container: stop running container, start new container
+
+			possible transitions for execution containers at step will start event:
+			A, no running container:
+				- step requires a container: start it
+				- step requires no container: do nothing
+			B, running container:
+				- step requires no container:
+					- first next step with container requirement requires the same container: do nothing
+					- first next step with container requirement requires the same container with recreate: stop running container, start new container later
+					- first next step with container requirement requires different container: stop running container, start new container later
+					- no more steps with container requirement: stop running container
+				- step requires a container:
+					- step requires same container: do nothing
+					- step requires different container: stop running container, start new container
+		*/
 	}
 }
 
-func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecutionPlan) {
-	isLastStepInWorkflow := stepIDX == len(plan.Steps)-1
+func (m *Manager) shouldStartExecutionContainer(stepPlan models.StepExecutionPlan) bool {
+	return m.currentExecutionContainer == "" && stepPlan.ExecutionContainer != nil
+}
 
-	if m.currentStepGroupID != "" {
-		doesStepGroupChange := stepIDX < len(plan.Steps)-1 && m.currentStepGroupID != plan.Steps[stepIDX+1].WithGroupUUID
-		if isLastStepInWorkflow || doesStepGroupChange {
-			m.stopContainersForStepGroup(m.currentStepGroupID, plan.WorkflowTitle)
+func (m *Manager) shouldStopExecutionContainer(stepPlan models.StepExecutionPlan, stepIDX int) bool {
+	return false
+}
+
+func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecutionPlan) {
+	if !m.legacyContainerisation {
+		if m.currentWithGroupID != "" {
+			isLastStepInWorkflow := stepIDX == len(plan.Steps)-1
+			doesStepGroupChange := stepIDX < len(plan.Steps)-1 && m.currentWithGroupID != plan.Steps[stepIDX+1].WithGroupUUID
+			if isLastStepInWorkflow || doesStepGroupChange {
+				m.stopContainersForStepGroup(m.currentWithGroupID, plan.WorkflowTitle)
+			}
 		}
 	}
 }
@@ -78,7 +141,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	}
 
 	if containerID != "" {
-		containerDef := m.ContainerDefinition(containerID)
+		containerDef := m.containerDefinition(containerID)
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
@@ -90,7 +153,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	}
 
 	if len(serviceIDs) > 0 {
-		servicesDefs := m.ServiceDefinitions(serviceIDs...)
+		servicesDefs := m.serviceDefinitions(serviceIDs...)
 		_, err := m.dockerManager.StartServiceContainers(servicesDefs, groupID, envList)
 		if err != nil {
 			log.Errorf("❌ Some services failed to start properly!")
@@ -115,7 +178,7 @@ func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
 	}
 }
 
-func (m *Manager) ContainerDefinition(id string) *models.Container {
+func (m *Manager) containerDefinition(id string) *models.Container {
 	container, ok := m.containers[id]
 	if ok {
 		return &container
@@ -123,7 +186,7 @@ func (m *Manager) ContainerDefinition(id string) *models.Container {
 	return nil
 }
 
-func (m *Manager) ServiceDefinitions(ids ...string) map[string]models.Container {
+func (m *Manager) serviceDefinitions(ids ...string) map[string]models.Container {
 	services := map[string]models.Container{}
 	for _, id := range ids {
 		service, ok := m.services[id]
