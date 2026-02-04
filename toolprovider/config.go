@@ -24,6 +24,10 @@ func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provi
 	if mergedTools == nil {
 		mergedTools = workflowTools
 	}
+	if mergedTools == nil {
+		mergedTools = models.ToolsModel{}
+	}
+
 	for toolID, toolVersion := range workflowTools {
 		if toolVersion == "unset" {
 			delete(mergedTools, toolID)
