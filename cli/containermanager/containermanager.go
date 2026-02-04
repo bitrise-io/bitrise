@@ -15,7 +15,6 @@ type Manager struct {
 	serviceContainers   map[string]models.Container
 	dockerManager       *docker.ContainerManager
 
-	plan                   models.WorkflowRunPlan
 	legacyContainerisation bool
 
 	// keeps track of the current with group ID
@@ -23,7 +22,6 @@ type Manager struct {
 
 	// Keeps track of the currently running containers
 	currentExecutionContainer string
-	currentServiceContainers  []string
 }
 
 func NewManager(executionContainers map[string]models.Container, serviceContainers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
@@ -99,10 +97,6 @@ func (m *Manager) shouldStartExecutionContainer(stepPlan models.StepExecutionPla
 	return m.currentExecutionContainer == "" && stepPlan.ExecutionContainer != nil
 }
 
-func (m *Manager) shouldStopExecutionContainer(stepPlan models.StepExecutionPlan, stepIDX int) bool {
-	return false
-}
-
 func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecutionPlan) {
 	if m.legacyContainerisation {
 		if m.currentWithGroupID != "" {
@@ -110,6 +104,7 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 			doesStepGroupChange := stepIDX < len(plan.Steps)-1 && m.currentWithGroupID != plan.Steps[stepIDX+1].WithGroupUUID
 			if isLastStepInWorkflow || doesStepGroupChange {
 				m.stopContainersForStepGroup(m.currentWithGroupID, plan.WorkflowTitle)
+				m.currentWithGroupID = ""
 			}
 		}
 	}
