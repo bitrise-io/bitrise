@@ -110,6 +110,7 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 			doesStepGroupChange := stepIDX < len(plan.Steps)-1 && m.currentWithGroupID != plan.Steps[stepIDX+1].WithGroupUUID
 			if isLastStepInWorkflow || doesStepGroupChange {
 				m.stopContainersForStepGroup(m.currentWithGroupID, plan.WorkflowTitle)
+				m.currentWithGroupID = ""
 			}
 		}
 	}
