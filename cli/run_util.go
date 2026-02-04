@@ -715,7 +715,7 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.dockerManager.GetContainerForStepGroup(groupID)
+		runningContainer := r.dockerManager.GetExecutionContainerForStepGroup(groupID)
 		if runningContainer == nil {
 			return 1, fmt.Errorf("docker container does not exist")
 		}
@@ -766,7 +766,7 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
-			_, err := r.dockerManager.StartContainerForStepGroup(*containerDef, groupID, envList)
+			_, err := r.dockerManager.StartExecutionContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
 				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 			}
@@ -783,7 +783,7 @@ func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceI
 }
 
 func (r WorkflowRunner) stopContainersForStepGroup(groupID, workflowTitle string) {
-	if container := r.dockerManager.GetContainerForStepGroup(groupID); container != nil {
+	if container := r.dockerManager.GetExecutionContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 		if err := container.Destroy(); err != nil {
 			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
