@@ -10,11 +10,15 @@ import (
 
 func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provider.ToolRequest, error) {
 	globalTools := config.Tools
-	workflow, ok := config.Workflows[workflowID]
-	if !ok {
-		return nil, fmt.Errorf("workflow %s not found", workflowID)
+
+	var workflowTools models.ToolsModel
+	if workflowID != "" {
+		workflow, ok := config.Workflows[workflowID]
+		if !ok {
+			return nil, fmt.Errorf("workflow %s not found", workflowID)
+		}
+		workflowTools = workflow.Tools
 	}
-	workflowTools := workflow.Tools
 
 	mergedTools := globalTools
 	if mergedTools == nil {
