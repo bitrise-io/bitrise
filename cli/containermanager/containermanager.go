@@ -11,9 +11,9 @@ import (
 )
 
 type Manager struct {
-	services      map[string]models.Container
-	containers    map[string]models.Container
-	dockerManager *docker.ContainerManager
+	executionContainers map[string]models.Container
+	serviceContainers   map[string]models.Container
+	dockerManager       *docker.ContainerManager
 
 	plan                   models.WorkflowRunPlan
 	legacyContainerisation bool
@@ -26,11 +26,11 @@ type Manager struct {
 	currentServiceContainers  []string
 }
 
-func NewManager(services map[string]models.Container, containers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
+func NewManager(executionContainers map[string]models.Container, serviceContainers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
 	return Manager{
-		services:      services,
-		containers:    containers,
-		dockerManager: dockerManager,
+		executionContainers: executionContainers,
+		serviceContainers:   serviceContainers,
+		dockerManager:       dockerManager,
 	}
 }
 
@@ -141,7 +141,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	}
 
 	if containerID != "" {
-		containerDef := m.containerDefinition(containerID)
+		containerDef := m.executionContainerDefinition(containerID)
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
@@ -153,7 +153,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	}
 
 	if len(serviceIDs) > 0 {
-		servicesDefs := m.serviceDefinitions(serviceIDs...)
+		servicesDefs := m.serviceContainerDefinitions(serviceIDs...)
 		_, err := m.dockerManager.StartServiceContainers(servicesDefs, groupID, envList)
 		if err != nil {
 			log.Errorf("❌ Some services failed to start properly!")
@@ -178,18 +178,18 @@ func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
 	}
 }
 
-func (m *Manager) containerDefinition(id string) *models.Container {
-	container, ok := m.containers[id]
+func (m *Manager) executionContainerDefinition(id string) *models.Container {
+	container, ok := m.executionContainers[id]
 	if ok {
 		return &container
 	}
 	return nil
 }
 
-func (m *Manager) serviceDefinitions(ids ...string) map[string]models.Container {
+func (m *Manager) serviceContainerDefinitions(ids ...string) map[string]models.Container {
 	services := map[string]models.Container{}
 	for _, id := range ids {
-		service, ok := m.services[id]
+		service, ok := m.serviceContainers[id]
 		if ok {
 			services[id] = service
 		}
