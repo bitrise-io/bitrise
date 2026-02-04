@@ -55,40 +55,12 @@ func (cm *ContainerManager) StartExecutionContainerForStepGroup(container models
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	if err := cm.login(container, envs); err != nil {
-		log.Errorf("docker credentials provided, but the authentication failed.")
-		return nil, fmt.Errorf("authentication failed: %w", err)
-	}
-
-	containerName := fmt.Sprintf("bitrise-workflow-%s", groupID)
-
-	// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
-	dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
-
-	runningContainer, err := cm.runContainer(container, containerCreateOptions{
-		name:       containerName,
-		volumes:    dockerMountOverrides,
-		command:    "sleep infinity",
-		workingDir: "/bitrise/src",
-		user:       "root",
-	}, envs)
-
+	runningContainer, err := cm.loginAndRunContainer(executionContainerType, container, fmt.Sprintf("bitrise-workflow-%s", groupID), envs)
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
 		cm.executionContainers[groupID] = runningContainer
 	}
-
-	if err != nil {
-		return runningContainer, fmt.Errorf("start workflow container: %w", err)
-	}
-
-	if runningContainer != nil {
-		if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
-			return runningContainer, fmt.Errorf("container health check: %w", err)
-		}
-	}
-
-	return runningContainer, nil
+	return runningContainer, err
 }
 
 func (cm *ContainerManager) StartServiceContainersForStepGroup(containers map[string]models.Container, groupID string, envs map[string]string) ([]*RunningContainer, error) {
@@ -101,15 +73,7 @@ func (cm *ContainerManager) StartServiceContainersForStepGroup(containers map[st
 	for containerID := range containers {
 		serviceContainer := containers[containerID]
 
-		if err := cm.login(serviceContainer, envs); err != nil {
-			failedServices[containerID] = err
-			continue
-		}
-
-		// Naming the container other than the service name, can cause issues with network calls
-		runningContainer, err := cm.runContainer(serviceContainer, containerCreateOptions{
-			name: containerID,
-		}, envs)
+		runningContainer, err := cm.loginAndRunContainer(serviceContainerType, serviceContainer, containerID, envs)
 		if runningContainer != nil {
 			runningContainers = append(runningContainers, runningContainer)
 		}
@@ -117,6 +81,7 @@ func (cm *ContainerManager) StartServiceContainersForStepGroup(containers map[st
 			failedServices[containerID] = err
 		}
 	}
+
 	// Even on failure we save the references to make sure containers will be cleaned up
 	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], runningContainers...)
 
@@ -128,13 +93,6 @@ func (cm *ContainerManager) StartServiceContainersForStepGroup(containers map[st
 		}
 		return runningContainers, errServices
 	}
-
-	for _, runningContainer := range runningContainers {
-		if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
-			return runningContainers, fmt.Errorf("container health check: %w", err)
-		}
-	}
-
 	return runningContainers, nil
 }
 
@@ -170,6 +128,54 @@ func (cm *ContainerManager) DestroyAllContainers() error {
 	}
 
 	return nil
+}
+
+type containerType string
+
+const (
+	executionContainerType containerType = "execution"
+	serviceContainerType   containerType = "service"
+)
+
+func (cm *ContainerManager) loginAndRunContainer(t containerType, containerDef models.Container, containerName string, envs map[string]string) (*RunningContainer, error) {
+	if err := cm.login(containerDef, envs); err != nil {
+		log.Errorf("docker credentials provided, but the authentication failed.")
+		return nil, fmt.Errorf("authentication failed: %w", err)
+	}
+
+	var runningContainer *RunningContainer
+	var err error
+
+	switch t {
+	case executionContainerType:
+		// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
+		dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
+
+		runningContainer, err = cm.runContainer(containerDef, containerCreateOptions{
+			name:       containerName,
+			volumes:    dockerMountOverrides,
+			command:    "sleep infinity",
+			workingDir: "/bitrise/src",
+			user:       "root",
+		}, envs)
+	case serviceContainerType:
+		// Naming the container other than the service name, can cause issues with network calls
+		runningContainer, err = cm.runContainer(containerDef, containerCreateOptions{
+			name: containerName,
+		}, envs)
+	}
+
+	if err != nil {
+		return runningContainer, fmt.Errorf("start %s container: %w", t, err)
+	}
+
+	if runningContainer != nil {
+		if err := cm.healthCheckContainer(context.Background(), runningContainer); err != nil {
+			return runningContainer, fmt.Errorf("container health check: %w", err)
+		}
+	}
+
+	return runningContainer, nil
 }
 
 func (cm *ContainerManager) login(container models.Container, envs map[string]string) error {
