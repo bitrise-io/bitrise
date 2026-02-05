@@ -168,14 +168,6 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 	return &config, nil
 }
 
-type DockerManager interface {
-	StartExecutionContainer(executionContainer models.Container, groupID string, envs map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainers(serviceContainers map[string]models.Container, groupID string, envs map[string]string) ([]*docker.RunningContainer, error)
-	GetExecutionContainer(groupID string) *docker.RunningContainer
-	GetServiceContainers(groupID string) []*docker.RunningContainer
-	DestroyAllContainers() error
-}
-
 type WorkflowRunner struct {
 	logger  log.Logger
 	config  RunConfig
@@ -183,18 +175,21 @@ type WorkflowRunner struct {
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig      *configs.AgentConfig
-	containerManager containermanager.Manager
+	containerManager *containermanager.Manager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	dockerManager := docker.NewContainerManager(logger, stepSecretValues)
+	dockerLogger := docker.NewLogger(logger, stepSecretValues)
+	dockerManager := docker.NewContainerManager(dockerLogger)
+	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
+
 	return WorkflowRunner{
 		logger:           logger,
 		config:           config,
 		tracker:          tracker,
-		containerManager: containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager),
+		containerManager: containerManager,
 		agentConfig:      agentConfig,
 	}
 }
@@ -320,8 +315,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	if len(plan.ExecutionPlan) < 1 {
 		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
 	}
-
-	r.containerManager.SetLegacyContainerisation(len(plan.WithGroupPlans) > 0)
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 

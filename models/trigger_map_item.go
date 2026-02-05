@@ -3,9 +3,9 @@ package models
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
-	"github.com/bitrise-io/go-utils/sliceutil"
 	"github.com/ryanuber/go-glob"
 )
 
@@ -257,11 +257,11 @@ func (item TriggerMapItemModel) validateTarget(idx int, workflows, pipelines []s
 	}
 
 	if item.PipelineID != "" {
-		if !sliceutil.IsStringInSlice(item.PipelineID, pipelines) {
+		if !slices.Contains(pipelines, item.PipelineID) {
 			return warnings, fmt.Errorf("trigger item #%d: non-existent pipeline defined as trigger target: %s", idx+1, item.PipelineID)
 		}
 	} else {
-		if !sliceutil.IsStringInSlice(item.WorkflowID, workflows) {
+		if !slices.Contains(workflows, item.WorkflowID) {
 			return warnings, fmt.Errorf("trigger item #%d: non-existent workflow defined as trigger target: %s", idx+1, item.WorkflowID)
 		}
 	}
@@ -295,7 +295,7 @@ func (item TriggerMapItemModel) getType() TriggerItemType {
 
 func (item TriggerMapItemModel) validateType(idx int) error {
 	if item.Type != "" {
-		if !sliceutil.IsStringInSlice(string(item.Type), []string{string(CodePushType), string(PullRequestType), string(TagPushType)}) {
+		if !slices.Contains([]string{string(CodePushType), string(PullRequestType), string(TagPushType)}, string(item.Type)) {
 			return fmt.Errorf("trigger item #%d: invalid type (%s) defined, valid types are: push, pull_request and tag", idx+1, item.Type)
 		}
 	}
