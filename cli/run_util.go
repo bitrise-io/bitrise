@@ -81,7 +81,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		r.containerManager.UpdateWithStepStarted(stepPlan, *environments, plan.WorkflowTitle)
+		r.containerManager.UpdateWithStepStarted(stepPlan, *environments)
 
 		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
 
