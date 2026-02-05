@@ -172,7 +172,7 @@ func (m *Manager) loginAndRunContainer(t docker.ContainerType, containerDef mode
 		return nil, fmt.Errorf("container manager was released already")
 	}
 
-	return m.loginAndRunContainer(t, containerDef, containerName, envs)
+	return m.dockerManager.LoginAndRunContainer(t, containerDef, containerName, envs)
 }
 
 func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
