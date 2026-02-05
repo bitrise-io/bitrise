@@ -260,6 +260,119 @@ func TestNewWorkflowRunPlan_StepBundleInputs(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:           "nested bundle input references parent bundle input",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": "$input"},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle2-step1": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle2": StepBundleListItemModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "test_value"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+					"uuid_2": {ID: "bundle2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle1 definition inputs
+							{"input": ""},
+							// bundle1 override inputs
+							{"input": "test_value"},
+							// bundle2 definition inputs
+							{"input": "$input"}}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "parent bundle passes input value to child bundle on embedding",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle2-step1": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle2": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "$input"},
+							},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "test_value"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				WithGroupPlans:   map[string]WithGroupPlan{},
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+					"uuid_2": {ID: "bundle2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle1 definition inputs
+							{"input": ""},
+							// bundle1 override inputs
+							{"input": "test_value"},
+							// bundle2 definition inputs are skipped because "input" is already defined in parent
+							// bundle2 override inputs
+							{"input": "$input"}}},
+					}},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
