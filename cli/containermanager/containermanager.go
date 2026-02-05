@@ -67,10 +67,6 @@ func (m *Manager) GetExecutionContainerForStepGroup(groupID string) *docker.Runn
 	return m.executionContainers[groupID]
 }
 
-func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.RunningContainer {
-	return m.serviceContainers[groupID]
-}
-
 func (m *Manager) DestroyAllContainers() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -110,7 +106,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
-			_, err := m.StartExecutionContainerForStepGroup(*containerDef, groupID, envList)
+			_, err := m.startExecutionContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
 				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 			}
@@ -119,18 +115,18 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 
 	if len(serviceIDs) > 0 {
 		servicesDefs := m.getServiceContainerDefinitions(serviceIDs...)
-		_, err := m.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
+		_, err := m.startServiceContainersForStepGroup(servicesDefs, groupID, envList)
 		if err != nil {
 			log.Errorf("❌ Some services failed to start properly!")
 		}
 	}
 }
 
-func (m *Manager) StartExecutionContainerForStepGroup(container models.Container, groupID string, envs map[string]string) (*docker.RunningContainer, error) {
+func (m *Manager) startExecutionContainerForStepGroup(container models.Container, groupID string, envs map[string]string) (*docker.RunningContainer, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	runningContainer, err := m.dockerManager.LoginAndRunContainer(docker.ExecutionContainerType, container, fmt.Sprintf("bitrise-workflow-%s", groupID), envs)
+	runningContainer, err := m.loginAndRunContainer(docker.ExecutionContainerType, container, fmt.Sprintf("bitrise-workflow-%s", groupID), envs)
 	// Even on failure we save the reference to make sure containers will be cleaned up
 	if runningContainer != nil {
 		m.executionContainers[groupID] = runningContainer
@@ -138,7 +134,7 @@ func (m *Manager) StartExecutionContainerForStepGroup(container models.Container
 	return runningContainer, err
 }
 
-func (m *Manager) StartServiceContainersForStepGroup(containers map[string]models.Container, groupID string, envs map[string]string) ([]*docker.RunningContainer, error) {
+func (m *Manager) startServiceContainersForStepGroup(containers map[string]models.Container, groupID string, envs map[string]string) ([]*docker.RunningContainer, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -148,7 +144,7 @@ func (m *Manager) StartServiceContainersForStepGroup(containers map[string]model
 	for containerID := range containers {
 		serviceContainer := containers[containerID]
 
-		runningContainer, err := m.dockerManager.LoginAndRunContainer(docker.ServiceContainerType, serviceContainer, containerID, envs)
+		runningContainer, err := m.loginAndRunContainer(docker.ServiceContainerType, serviceContainer, containerID, envs)
 		if runningContainer != nil {
 			runningContainers = append(runningContainers, runningContainer)
 		}
@@ -171,12 +167,12 @@ func (m *Manager) StartServiceContainersForStepGroup(containers map[string]model
 	return runningContainers, nil
 }
 
-func (m *Manager) LoginAndRunContainer(t docker.ContainerType, containerDef models.Container, containerName string, envs map[string]string) (*docker.RunningContainer, error) {
+func (m *Manager) loginAndRunContainer(t docker.ContainerType, containerDef models.Container, containerName string, envs map[string]string) (*docker.RunningContainer, error) {
 	if m.released {
 		return nil, fmt.Errorf("container manager was released already")
 	}
 
-	return m.dockerManager.LoginAndRunContainer(t, containerDef, containerName, envs)
+	return m.loginAndRunContainer(t, containerDef, containerName, envs)
 }
 
 func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
@@ -229,4 +225,8 @@ func (m *Manager) getServiceContainerDefinitions(ids ...string) map[string]model
 		}
 	}
 	return services
+}
+
+func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.RunningContainer {
+	return m.serviceContainers[groupID]
 }
