@@ -48,6 +48,18 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 		}
 
 		m.currentWithGroupID = stepPlan.WithGroupUUID
+	} else {
+		/*
+			possible transitions for execution containers:
+			A, no running container:
+				- step requires a container: start it
+				- step requires no container: do nothing
+			B, running container:
+				- first next step with container requirement requires the same container: do nothing
+				- first next step with container requirement requires the same container with recreate: stop running container, start new container later
+				- first next step with container requirement requires different container: stop running container, start new container later
+				- no more steps with container requirement: stop running container
+		*/
 	}
 }
 
