@@ -26,7 +26,7 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 		name     string
 		toolName provider.ToolID
 	}{
-		{"InsMtall latest golang", "golang"},
+		{"Install latest golang", "golang"},
 		{"Install latest python", "python"},
 		{"Install latest node", "node"},
 	}
