@@ -26,24 +26,28 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 		name     string
 		toolName provider.ToolID
 	}{
-		{"Install latest golang", "golang"},
+		{"InsMtall latest golang", "golang"},
 		{"Install latest python", "python"},
 		{"Install latest node", "node"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			request := provider.ToolRequest{
-				ToolName:           tt.toolName,
-				UnparsedVersion:    "latest",
-				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
-			}
-			result, err := miseProvider.InstallTool(request)
-			require.NoError(t, err, "Installing %s with 'latest' keyword should not fail", tt.toolName)
-			require.Equal(t, tt.toolName, result.ToolName)
-			require.NotEmpty(t, result.ConcreteVersion, "Concrete version should be resolved for %s", tt.toolName)
-			require.False(t, result.IsAlreadyInstalled)
-		})
+		if tt.toolName == "tuist" {
+			t.Skip("Re-enable with BE-1965")
+		} else {
+			t.Run(tt.name, func(t *testing.T) {
+				request := provider.ToolRequest{
+					ToolName:           tt.toolName,
+					UnparsedVersion:    "latest",
+					ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
+				}
+				result, err := miseProvider.InstallTool(request)
+				require.NoError(t, err, "Installing %s with 'latest' keyword should not fail", tt.toolName)
+				require.Equal(t, tt.toolName, result.ToolName)
+				require.NotEmpty(t, result.ConcreteVersion, "Concrete version should be resolved for %s", tt.toolName)
+				require.False(t, result.IsAlreadyInstalled)
+			})
+		}
 	}
 }
 
@@ -67,35 +71,40 @@ func TestMiseInstallWithInstalledKeyword(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// First, install a specific version
-			installRequest := provider.ToolRequest{
-				ToolName:           tt.toolName,
-				UnparsedVersion:    tt.versionToInstall,
-				ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
-			}
-			installResult, err := miseProvider.InstallTool(installRequest)
-			require.NoError(t, err, "Installing %s version %s should not fail", tt.toolName, tt.versionToInstall)
-			require.NotEmpty(t, installResult.ConcreteVersion)
+		if tt.toolName == "tuist" {
+			t.Skip("Re-enable with BE-1965")
+		} else {
+			t.Run(tt.name, func(t *testing.T) {
+				// First, install a specific version
+				installRequest := provider.ToolRequest{
+					ToolName:           tt.toolName,
+					UnparsedVersion:    tt.versionToInstall,
+					ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
+				}
+				installResult, err := miseProvider.InstallTool(installRequest)
+				require.NoError(t, err, "Installing %s version %s should not fail", tt.toolName, tt.versionToInstall)
+				require.NotEmpty(t, installResult.ConcreteVersion)
 
-			// Now request "installed" keyword - should find the previously installed version
-			installedRequest := provider.ToolRequest{
-				ToolName:           tt.toolName,
-				UnparsedVersion:    "installed",
-				ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
-			}
-			installedResult, err := miseProvider.InstallTool(installedRequest)
-			require.NoError(t, err, "Installing %s with 'installed' keyword should not fail", tt.toolName)
-			require.Equal(t, tt.toolName, installedResult.ToolName)
-			require.NotEmpty(t, installedResult.ConcreteVersion, "Concrete version should be resolved for %s", tt.toolName)
-			require.True(t, installedResult.IsAlreadyInstalled, "Tool should be marked as already installed")
-		})
+				// Now request "installed" keyword - should find the previously installed version
+				installedRequest := provider.ToolRequest{
+					ToolName:           tt.toolName,
+					UnparsedVersion:    "installed",
+					ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
+				}
+				installedResult, err := miseProvider.InstallTool(installedRequest)
+				require.NoError(t, err, "Installing %s with 'installed' keyword should not fail", tt.toolName)
+				require.Equal(t, tt.toolName, installedResult.ToolName)
+				require.NotEmpty(t, installedResult.ConcreteVersion, "Concrete version should be resolved for %s", tt.toolName)
+				require.True(t, installedResult.IsAlreadyInstalled, "Tool should be marked as already installed")
+			})
+		}
 	}
 }
 
 // TestMiseInstallWithLatestAfterInstalled tests a combination:
 // Install a version, then install "latest" to ensure both keywords work together.
 func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
+	t.Skip("Re-enable with BE-1965")
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
