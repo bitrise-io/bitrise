@@ -39,11 +39,11 @@ func NewManager(executionContainers map[string]models.Container, serviceContaine
 	}
 }
 
-func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, environments []envmanModels.EnvironmentItemModel, workflowTitle string) {
+func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, environments []envmanModels.EnvironmentItemModel) {
 	if stepPlan.WithGroupUUID != m.currentWithGroupID {
 		if stepPlan.WithGroupUUID != "" {
 			if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-				m.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, stepPlan.WithGroupUUID, workflowTitle)
+				m.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, environments, stepPlan.WithGroupUUID)
 			}
 		}
 
@@ -69,7 +69,7 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 		isLastStepInWorkflow := stepIDX == len(plan.Steps)-1
 		doesStepGroupChange := stepIDX < len(plan.Steps)-1 && m.currentWithGroupID != plan.Steps[stepIDX+1].WithGroupUUID
 		if isLastStepInWorkflow || doesStepGroupChange {
-			m.stopContainersForStepGroup(m.currentWithGroupID, plan.WorkflowTitle)
+			m.stopContainersForStepGroup(m.currentWithGroupID)
 			m.currentWithGroupID = ""
 		}
 	}
@@ -85,9 +85,9 @@ func (m *Manager) DestroyAllContainers() error {
 	m.released = true
 
 	for _, executionContainer := range m.executionContainers {
-		m.logger.Infof("ℹ️ Removing workflow container: %s", executionContainer.Name)
+		m.logger.Infof("ℹ️ Removing execution container: %s", executionContainer.Name)
 		if err := executionContainer.Destroy(); err != nil {
-			return fmt.Errorf("destroy workflow container: %w", err)
+			return fmt.Errorf("destroy execution container: %w", err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func (m *Manager) DestroyAllContainers() error {
 	return nil
 }
 
-func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
+func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID string) {
 	if containerID == "" && len(serviceIDs) == 0 {
 		return
 	}
@@ -116,11 +116,11 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	if containerID != "" {
 		containerDef := m.getExecutionContainerDefinition(containerID)
 		if containerDef != nil {
-			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
+			log.Infof("ℹ️ Running step group in docker container: %s", containerDef.Image)
 
 			_, err := m.startExecutionContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
-				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
+				log.Errorf("Could not start the specified docker image: %s", containerDef.Image)
 			}
 		}
 	}
@@ -187,11 +187,11 @@ func (m *Manager) loginAndRunContainer(t docker.ContainerType, containerDef mode
 	return m.dockerManager.LoginAndRunContainer(t, containerDef, containerName, envs)
 }
 
-func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
+func (m *Manager) stopContainersForStepGroup(groupID string) {
 	if container := m.GetExecutionContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 		if err := container.Destroy(); err != nil {
-			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
+			log.Errorf("Attempted to stop the docker container for step group: %s", err)
 		}
 	}
 
