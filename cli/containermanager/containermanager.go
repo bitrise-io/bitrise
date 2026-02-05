@@ -15,6 +15,7 @@ type Manager struct {
 	serviceContainers   map[string]models.Container
 	dockerManager       *docker.ContainerManager
 
+	workflowRunPlan        models.WorkflowRunPlan
 	legacyContainerisation bool
 
 	// keeps track of the current with group ID
@@ -30,6 +31,11 @@ func NewManager(executionContainers map[string]models.Container, serviceContaine
 		serviceContainers:   serviceContainers,
 		dockerManager:       dockerManager,
 	}
+}
+
+func (m *Manager) SetWorkflowRunPlan(plan models.WorkflowRunPlan) {
+	m.workflowRunPlan = plan
+	m.legacyContainerisation = len(plan.WithGroupPlans) > 0
 }
 
 func (m *Manager) SetLegacyContainerisation(useLegacy bool) {
@@ -67,28 +73,10 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 				- step requires a container: start it
 				- step requires no container: do nothing
 			B, running container:
-				- step requires no container:
-					- first next step with container requirement requires the same container: do nothing
-					- first next step with container requirement requires the same container with recreate: stop running container, start new container later
-					- first next step with container requirement requires different container: stop running container, start new container later
-					- no more steps with container requirement: stop running container
-				- step requires a container:
-					- step requires same container: do nothing
-					- step requires different container: stop running container, start new container
-
-			possible transitions for execution containers at step will start event:
-			A, no running container:
-				- step requires a container: start it
-				- step requires no container: do nothing
-			B, running container:
-				- step requires no container:
-					- first next step with container requirement requires the same container: do nothing
-					- first next step with container requirement requires the same container with recreate: stop running container, start new container later
-					- first next step with container requirement requires different container: stop running container, start new container later
-					- no more steps with container requirement: stop running container
-				- step requires a container:
-					- step requires same container: do nothing
-					- step requires different container: stop running container, start new container
+				- first next step with container requirement requires the same container: do nothing
+				- first next step with container requirement requires the same container with recreate: stop running container, start new container later
+				- first next step with container requirement requires different container: stop running container, start new container later
+				- no more steps with container requirement: stop running container
 		*/
 	}
 }
@@ -97,7 +85,53 @@ func (m *Manager) shouldStartExecutionContainer(stepPlan models.StepExecutionPla
 	return m.currentExecutionContainer == "" && stepPlan.ExecutionContainer != nil
 }
 
-func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecutionPlan) {
+func (m *Manager) shouldStopExecutionContainer(stepPlan models.StepExecutionPlan) bool {
+	if m.currentExecutionContainer == "" {
+		return false
+	}
+
+	var nextPlanWithContainerRequirement *models.StepExecutionPlan
+	currentStepIdx := -1
+	stepIdx := 0
+	for _, workflow := range m.workflowRunPlan.ExecutionPlan {
+		for _, step := range workflow.Steps {
+			stepIdx++
+
+			if step.UUID == stepPlan.UUID {
+				currentStepIdx = stepIdx
+			}
+
+			if currentStepIdx > -1 && stepIdx > currentStepIdx && step.ExecutionContainer != nil {
+				nextPlanWithContainerRequirement = &step
+				break
+			}
+		}
+		if nextPlanWithContainerRequirement != nil {
+			break
+		}
+	}
+
+	// No more steps with container requirement
+	if nextPlanWithContainerRequirement == nil {
+		return true
+	}
+
+	if nextPlanWithContainerRequirement.ExecutionContainer != nil {
+		// Next step requires different container
+		if nextPlanWithContainerRequirement.ExecutionContainer.ContainerID != m.currentExecutionContainer {
+			return true
+		}
+
+		// Next step requires a new instance of the same container
+		if nextPlanWithContainerRequirement.ExecutionContainer.ContainerID == m.currentExecutionContainer && nextPlanWithContainerRequirement.ExecutionContainer.Recreate {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (m *Manager) UpdateWithStepFinished(stepPlan models.StepExecutionPlan, stepIDX int, plan models.WorkflowExecutionPlan) {
 	if m.legacyContainerisation {
 		if m.currentWithGroupID != "" {
 			isLastStepInWorkflow := stepIDX == len(plan.Steps)-1
@@ -106,6 +140,10 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 				m.stopContainersForStepGroup(m.currentWithGroupID, plan.WorkflowTitle)
 				m.currentWithGroupID = ""
 			}
+		}
+	} else {
+		if m.shouldStopExecutionContainer(stepPlan) {
+			// TODO: stop execution container
 		}
 	}
 }
@@ -118,11 +156,37 @@ func (m *Manager) DestroyAllContainers() error {
 	return m.dockerManager.DestroyAllContainers()
 }
 
-func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
+func (m *Manager) startContainers(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel) error {
 	if containerID == "" && len(serviceIDs) == 0 {
-		return
+		return nil
 	}
 
+	envList := m.initEnvs(environments)
+
+	if containerID != "" {
+		containerDef := m.executionContainerDefinition(containerID)
+		if containerDef != nil {
+			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
+
+			_, err := m.dockerManager.StartExecutionContainer(*containerDef, containerID, envList)
+			if err != nil {
+				log.Errorf("Could not start the specified container: %s", containerID)
+			}
+		}
+	}
+
+	if len(serviceIDs) > 0 {
+		servicesDefs := m.serviceContainerDefinitions(serviceIDs...)
+		_, err := m.dockerManager.StartServiceContainers(servicesDefs, groupID, envList)
+		if err != nil {
+			log.Errorf("❌ Some services failed to start properly!")
+		}
+	}
+
+	return nil
+}
+
+func (m *Manager) initEnvs(environments []envmanModels.EnvironmentItemModel) envmanModels.EnvsJSONListModel {
 	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
 		log.Debugf("Couldn't initialize envman.")
 	}
@@ -134,6 +198,16 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 	if err != nil {
 		log.Debugf("Couldn't read envs from envman.")
 	}
+
+	return envList
+}
+
+func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
+	if containerID == "" && len(serviceIDs) == 0 {
+		return
+	}
+
+	envList := m.initEnvs(environments)
 
 	if containerID != "" {
 		containerDef := m.executionContainerDefinition(containerID)
