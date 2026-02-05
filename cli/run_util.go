@@ -699,7 +699,7 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.containerManager.GetExecutionContainerFroStepGroup(groupID)
+		runningContainer := r.containerManager.GetExecutionContainerForStepGroup(groupID)
 		if runningContainer == nil {
 			return 1, fmt.Errorf("docker container does not exist")
 		}

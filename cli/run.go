@@ -183,18 +183,21 @@ type WorkflowRunner struct {
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig      *configs.AgentConfig
-	containerManager containermanager.Manager
+	containerManager *containermanager.Manager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	dockerManager := docker.NewContainerManager(logger, stepSecretValues)
+	dockerLogger := docker.NewLogger(logger, stepSecretValues)
+	dockerManager := docker.NewContainerManager(dockerLogger)
+	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
+
 	return WorkflowRunner{
 		logger:           logger,
 		config:           config,
 		tracker:          tracker,
-		containerManager: containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager),
+		containerManager: containerManager,
 		agentConfig:      agentConfig,
 	}
 }

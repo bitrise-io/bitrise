@@ -14,6 +14,10 @@ type Logger struct {
 	secrets []string
 }
 
+func NewLogger(logger log.Logger, secrets []string) *Logger {
+	return &Logger{logger: logger, secrets: secrets}
+}
+
 func (dl *Logger) Infof(format string, args ...interface{}) {
 	str := fmt.Sprintf(format, args...)
 	redacted, _ := dl.Redact(str)

@@ -7,7 +7,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -23,121 +22,31 @@ import (
 
 const bitriseNetwork = "bitrise"
 
+type ContainerType string
+
+const (
+	ExecutionContainerType ContainerType = "execution"
+	ServiceContainerType   ContainerType = "service"
+)
+
 type ContainerManager struct {
-	logger Logger
+	logger *Logger
 	client *client.Client
-
-	executionContainers map[string]*RunningContainer
-	serviceContainers   map[string][]*RunningContainer
-
-	mu       sync.Mutex
-	released bool
 }
 
-func NewContainerManager(logger log.Logger, secrets []string) *ContainerManager {
+func NewContainerManager(logger *Logger) *ContainerManager {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logger.Warnf("Docker client failed to initialize (possibly running on unsupported environment): %s", err)
 	}
 
 	return &ContainerManager{
-		logger: Logger{
-			logger:  logger,
-			secrets: secrets,
-		},
-		executionContainers: make(map[string]*RunningContainer),
-		serviceContainers:   make(map[string][]*RunningContainer),
-		client:              dockerClient,
+		logger: logger,
+		client: dockerClient,
 	}
 }
 
-func (cm *ContainerManager) StartExecutionContainerForStepGroup(container models.Container, groupID string, envs map[string]string) (*RunningContainer, error) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	runningContainer, err := cm.loginAndRunContainer(executionContainerType, container, fmt.Sprintf("bitrise-workflow-%s", groupID), envs)
-	// Even on failure we save the reference to make sure containers will be cleaned up
-	if runningContainer != nil {
-		cm.executionContainers[groupID] = runningContainer
-	}
-	return runningContainer, err
-}
-
-func (cm *ContainerManager) StartServiceContainersForStepGroup(containers map[string]models.Container, groupID string, envs map[string]string) ([]*RunningContainer, error) {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-
-	var runningContainers []*RunningContainer
-	failedServices := make(map[string]error)
-
-	for containerID := range containers {
-		serviceContainer := containers[containerID]
-
-		runningContainer, err := cm.loginAndRunContainer(serviceContainerType, serviceContainer, containerID, envs)
-		if runningContainer != nil {
-			runningContainers = append(runningContainers, runningContainer)
-		}
-		if err != nil {
-			failedServices[containerID] = err
-		}
-	}
-
-	// Even on failure we save the references to make sure containers will be cleaned up
-	cm.serviceContainers[groupID] = append(cm.serviceContainers[groupID], runningContainers...)
-
-	if len(failedServices) != 0 {
-		errServices := fmt.Errorf("failed to start services")
-		for containerID, err := range failedServices {
-			errServices = fmt.Errorf("%v: %w", errServices, err)
-			cm.logger.Errorf("Failed to start service container (%s): %s", containerID, err)
-		}
-		return runningContainers, errServices
-	}
-	return runningContainers, nil
-}
-
-func (cm *ContainerManager) GetExecutionContainerForStepGroup(groupID string) *RunningContainer {
-	return cm.executionContainers[groupID]
-}
-
-func (cm *ContainerManager) GetServiceContainersForStepGroup(groupID string) []*RunningContainer {
-	return cm.serviceContainers[groupID]
-}
-
-func (cm *ContainerManager) DestroyAllContainers() error {
-	cm.mu.Lock()
-	defer cm.mu.Unlock()
-	cm.released = true
-	for _, executionContainer := range cm.executionContainers {
-		cm.logger.Infof("ℹ️ Removing workflow container: %s", executionContainer.Name)
-		if err := executionContainer.Destroy(); err != nil {
-			return fmt.Errorf("destroy workflow container: %w", err)
-		}
-	}
-
-	for _, serviceContainers := range cm.serviceContainers {
-		for _, serviceContainer := range serviceContainers {
-			if serviceContainer == nil {
-				continue
-			}
-			cm.logger.Infof("Removing service container: %s", serviceContainer.Name)
-			if err := serviceContainer.Destroy(); err != nil {
-				return fmt.Errorf("destroy service container: %w", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-type containerType string
-
-const (
-	executionContainerType containerType = "execution"
-	serviceContainerType   containerType = "service"
-)
-
-func (cm *ContainerManager) loginAndRunContainer(t containerType, containerDef models.Container, containerName string, envs map[string]string) (*RunningContainer, error) {
+func (cm *ContainerManager) LoginAndRunContainer(t ContainerType, containerDef models.Container, containerName string, envs map[string]string) (*RunningContainer, error) {
 	if err := cm.login(containerDef, envs); err != nil {
 		log.Errorf("docker credentials provided, but the authentication failed.")
 		return nil, fmt.Errorf("authentication failed: %w", err)
@@ -147,7 +56,7 @@ func (cm *ContainerManager) loginAndRunContainer(t containerType, containerDef m
 	var err error
 
 	switch t {
-	case executionContainerType:
+	case ExecutionContainerType:
 		// TODO: handle default mounts if BITRISE_DOCKER_MOUNT_OVERRIDES is not provided
 		dockerMountOverrides := strings.Split(os.Getenv("BITRISE_DOCKER_MOUNT_OVERRIDES"), ",")
 
@@ -158,7 +67,7 @@ func (cm *ContainerManager) loginAndRunContainer(t containerType, containerDef m
 			workingDir: "/bitrise/src",
 			user:       "root",
 		}, envs)
-	case serviceContainerType:
+	case ServiceContainerType:
 		// Naming the container other than the service name, can cause issues with network calls
 		runningContainer, err = cm.runContainer(containerDef, containerCreateOptions{
 			name: containerName,
@@ -219,10 +128,6 @@ type containerCreateOptions struct {
 //   - SDK differs from the CLI in some cases, for example pulling from private registry requires the exact token
 //     it can't automatically use the docker config
 func (cm *ContainerManager) runContainer(container models.Container, options containerCreateOptions, envs map[string]string) (*RunningContainer, error) {
-	if cm.released {
-		return nil, fmt.Errorf("container manager was released already")
-	}
-
 	if err := cm.ensureNetwork(); err != nil {
 		return nil, fmt.Errorf("ensure bitrise docker network: %w", err)
 	}

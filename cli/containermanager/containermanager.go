@@ -1,6 +1,9 @@
 package containermanager
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -14,16 +17,25 @@ type Manager struct {
 	serviceContainerDefinitions   map[string]models.Container
 
 	dockerManager *docker.ContainerManager
+	logger        *docker.Logger
 
-	// keeps track of the current with group ID
-	currentWithGroupID string
+	// keeps track of the current with group ID and the currently running containers for the group
+	currentWithGroupID  string
+	executionContainers map[string]*docker.RunningContainer
+	serviceContainers   map[string][]*docker.RunningContainer
+
+	mu       sync.Mutex
+	released bool
 }
 
-func NewManager(executionContainers map[string]models.Container, serviceContainers map[string]models.Container, dockerManager *docker.ContainerManager) Manager {
-	return Manager{
+func NewManager(executionContainers map[string]models.Container, serviceContainers map[string]models.Container, dockerManager *docker.ContainerManager, logger *docker.Logger) *Manager {
+	return &Manager{
 		executionContainerDefinitions: executionContainers,
 		serviceContainerDefinitions:   serviceContainers,
 		dockerManager:                 dockerManager,
+		logger:                        logger,
+		executionContainers:           make(map[string]*docker.RunningContainer),
+		serviceContainers:             make(map[string][]*docker.RunningContainer),
 	}
 }
 
@@ -51,12 +63,39 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	}
 }
 
-func (m *Manager) GetExecutionContainerFroStepGroup(groupID string) *docker.RunningContainer {
-	return m.dockerManager.GetExecutionContainerForStepGroup(groupID)
+func (m *Manager) GetExecutionContainerForStepGroup(groupID string) *docker.RunningContainer {
+	return m.executionContainers[groupID]
+}
+
+func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.RunningContainer {
+	return m.serviceContainers[groupID]
 }
 
 func (m *Manager) DestroyAllContainers() error {
-	return m.dockerManager.DestroyAllContainers()
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.released = true
+
+	for _, executionContainer := range m.executionContainers {
+		m.logger.Infof("ℹ️ Removing workflow container: %s", executionContainer.Name)
+		if err := executionContainer.Destroy(); err != nil {
+			return fmt.Errorf("destroy workflow container: %w", err)
+		}
+	}
+
+	for _, serviceContainers := range m.serviceContainers {
+		for _, serviceContainer := range serviceContainers {
+			if serviceContainer == nil {
+				continue
+			}
+			m.logger.Infof("Removing service container: %s", serviceContainer.Name)
+			if err := serviceContainer.Destroy(); err != nil {
+				return fmt.Errorf("destroy service container: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
@@ -71,7 +110,7 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 		if containerDef != nil {
 			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
 
-			_, err := m.dockerManager.StartExecutionContainerForStepGroup(*containerDef, groupID, envList)
+			_, err := m.StartExecutionContainerForStepGroup(*containerDef, groupID, envList)
 			if err != nil {
 				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
 			}
@@ -80,22 +119,75 @@ func (m *Manager) startContainersForStepGroup(containerID string, serviceIDs []s
 
 	if len(serviceIDs) > 0 {
 		servicesDefs := m.getServiceContainerDefinitions(serviceIDs...)
-		_, err := m.dockerManager.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
+		_, err := m.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
 		if err != nil {
 			log.Errorf("❌ Some services failed to start properly!")
 		}
 	}
 }
 
+func (m *Manager) StartExecutionContainerForStepGroup(container models.Container, groupID string, envs map[string]string) (*docker.RunningContainer, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	runningContainer, err := m.dockerManager.LoginAndRunContainer(docker.ExecutionContainerType, container, fmt.Sprintf("bitrise-workflow-%s", groupID), envs)
+	// Even on failure we save the reference to make sure containers will be cleaned up
+	if runningContainer != nil {
+		m.executionContainers[groupID] = runningContainer
+	}
+	return runningContainer, err
+}
+
+func (m *Manager) StartServiceContainersForStepGroup(containers map[string]models.Container, groupID string, envs map[string]string) ([]*docker.RunningContainer, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var runningContainers []*docker.RunningContainer
+	failedServices := make(map[string]error)
+
+	for containerID := range containers {
+		serviceContainer := containers[containerID]
+
+		runningContainer, err := m.dockerManager.LoginAndRunContainer(docker.ServiceContainerType, serviceContainer, containerID, envs)
+		if runningContainer != nil {
+			runningContainers = append(runningContainers, runningContainer)
+		}
+		if err != nil {
+			failedServices[containerID] = err
+		}
+	}
+
+	// Even on failure we save the references to make sure containers will be cleaned up
+	m.serviceContainers[groupID] = append(m.serviceContainers[groupID], runningContainers...)
+
+	if len(failedServices) != 0 {
+		errServices := fmt.Errorf("failed to start services")
+		for containerID, err := range failedServices {
+			errServices = fmt.Errorf("%v: %w", errServices, err)
+			m.logger.Errorf("Failed to start service container (%s): %s", containerID, err)
+		}
+		return runningContainers, errServices
+	}
+	return runningContainers, nil
+}
+
+func (m *Manager) LoginAndRunContainer(t docker.ContainerType, containerDef models.Container, containerName string, envs map[string]string) (*docker.RunningContainer, error) {
+	if m.released {
+		return nil, fmt.Errorf("container manager was released already")
+	}
+
+	return m.dockerManager.LoginAndRunContainer(t, containerDef, containerName, envs)
+}
+
 func (m *Manager) stopContainersForStepGroup(groupID, workflowTitle string) {
-	if container := m.dockerManager.GetExecutionContainerForStepGroup(groupID); container != nil {
+	if container := m.GetExecutionContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 		if err := container.Destroy(); err != nil {
 			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
 		}
 	}
 
-	if services := m.dockerManager.GetServiceContainersForStepGroup(groupID); services != nil {
+	if services := m.getServiceContainersForStepGroup(groupID); services != nil {
 		for _, container := range services {
 			if err := container.Destroy(); err != nil {
 				log.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
