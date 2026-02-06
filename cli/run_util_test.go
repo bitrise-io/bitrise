@@ -11,7 +11,7 @@ import (
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	"github.com/stretchr/testify/require"
 )
 

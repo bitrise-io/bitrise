@@ -9,7 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	"github.com/urfave/cli"
 )
 

@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	"github.com/stretchr/testify/require"
 )
 

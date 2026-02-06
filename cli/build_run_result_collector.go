@@ -11,7 +11,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/stepruncmd/timeoutcmd"
 	"github.com/bitrise-io/bitrise/v2/utils"
-	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
@@ -86,7 +85,10 @@ func (r buildRunResultCollector) registerStepRunResults(
 	errStr := ""
 	if err != nil {
 		if status == models.StepRunStatusCodePreparationFailed {
-			stepTitle := pointers.StringWithDefault(stepInfoCopy.Step.Title, "missing title")
+			stepTitle := "missing title"
+			if stepInfoCopy.Step.Title != nil {
+				stepTitle = *stepInfoCopy.Step.Title
+			}
 			errStr = fmt.Sprintf("Preparing Step (%s) failed: %s", stepTitle, err.Error())
 		} else {
 			errStr = err.Error()
