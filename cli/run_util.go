@@ -73,7 +73,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	runResultCollector := newBuildRunResultCollector(r.logger, r.tracker)
-	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
 	currentStepBundleUUID := ""
@@ -82,15 +81,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		if stepPlan.WithGroupUUID != currentStepGroupID {
-			if stepPlan.WithGroupUUID != "" {
-				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
-				}
-			}
-
-			currentStepGroupID = stepPlan.WithGroupUUID
-		}
+		r.containerManager.UpdateWithStepStarted(stepPlan, *environments)
 
 		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
 
@@ -135,16 +126,9 @@ func (r WorkflowRunner) activateAndRunSteps(
 			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
 		}
 
+		r.containerManager.UpdateWithStepFinished(idx, plan)
+
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
-
-		// Shut down containers if the step is in a 'With group', and it's the last step in the group
-		if currentStepGroupID != "" {
-			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
-			if isLastStepInWorkflow || doesStepGroupChange {
-				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
-			}
-		}
-
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
 
 		previousBuildRunResult := buildRunResults
@@ -715,7 +699,7 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.dockerManager.GetContainerForStepGroup(groupID)
+		runningContainer := r.containerManager.GetExecutionContainerForStepGroup(groupID)
 		if runningContainer == nil {
 			return 1, fmt.Errorf("docker container does not exist")
 		}
@@ -742,61 +726,6 @@ func (r WorkflowRunner) executeStep(
 	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
-}
-
-func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
-	if containerID == "" && len(serviceIDs) == 0 {
-		return
-	}
-
-	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
-		log.Debugf("Couldn't initialize envman.")
-	}
-	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, environments); err != nil {
-		log.Debugf("Couldn't add envs.")
-	}
-
-	envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-	if err != nil {
-		log.Debugf("Couldn't read envs from envman.")
-	}
-
-	if containerID != "" {
-		containerDef := r.ContainerDefinition(containerID)
-		if containerDef != nil {
-			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
-
-			_, err := r.dockerManager.StartContainerForStepGroup(*containerDef, groupID, envList)
-			if err != nil {
-				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
-			}
-		}
-	}
-
-	if len(serviceIDs) > 0 {
-		servicesDefs := r.ServiceDefinitions(serviceIDs...)
-		_, err := r.dockerManager.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
-		if err != nil {
-			log.Errorf("❌ Some services failed to start properly!")
-		}
-	}
-}
-
-func (r WorkflowRunner) stopContainersForStepGroup(groupID, workflowTitle string) {
-	if container := r.dockerManager.GetContainerForStepGroup(groupID); container != nil {
-		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
-		if err := container.Destroy(); err != nil {
-			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
-		}
-	}
-
-	if services := r.dockerManager.GetServiceContainersForStepGroup(groupID); services != nil {
-		for _, container := range services {
-			if err := container.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
-			}
-		}
-	}
 }
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
