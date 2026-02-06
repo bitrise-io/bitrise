@@ -13,6 +13,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/containermanager"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
@@ -114,7 +115,7 @@ func run(c *cli.Context) error {
 		<-signalInterruptChan
 		shouldWaitForCleanup = true
 		log.Info("Cancelling bitrise run...")
-		if err := runner.dockerManager.DestroyAllContainers(); err != nil {
+		if err := runner.containerManager.DestroyAllContainers(); err != nil {
 			log.Warnf("Failed to destroy all containers: %s", err)
 		}
 		cleanupSynchronCancelFunc()
@@ -167,33 +168,29 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 	return &config, nil
 }
 
-type DockerManager interface {
-	StartContainerForStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainersForStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
-	GetContainerForStepGroup(string) *docker.RunningContainer
-	GetServiceContainersForStepGroup(string) []*docker.RunningContainer
-	DestroyAllContainers() error
-}
-
 type WorkflowRunner struct {
 	logger  log.Logger
 	config  RunConfig
 	tracker analytics.Tracker
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig   *configs.AgentConfig
-	dockerManager DockerManager
+	agentConfig      *configs.AgentConfig
+	containerManager *containermanager.Manager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	dockerLogger := docker.NewLogger(logger, stepSecretValues)
+	dockerManager := docker.NewContainerManager(dockerLogger)
+	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
+
 	return WorkflowRunner{
-		logger:        logger,
-		config:        config,
-		tracker:       tracker,
-		dockerManager: docker.NewContainerManager(logger, stepSecretValues),
-		agentConfig:   agentConfig,
+		logger:           logger,
+		config:           config,
+		tracker:          tracker,
+		containerManager: containerManager,
+		agentConfig:      agentConfig,
 	}
 }
 
