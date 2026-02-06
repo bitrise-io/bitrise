@@ -126,7 +126,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
 		}
 
-		r.containerManager.UpdateWithStepFinished(idx, plan)
+		r.containerManager.UpdateWithStepFinished(idx, plan, stepPlan)
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
