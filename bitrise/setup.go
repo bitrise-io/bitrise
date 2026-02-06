@@ -150,10 +150,80 @@ func doSetupPlugins() error {
 	log.Print()
 	log.Infof("Checking Bitrise Plugins...")
 
+	// Validate currently installed plugins.
+	if err := validateInstalledPlugins(); err != nil {
+		log.Warnf("Failed to validate installed plugins: %s", err)
+	}
+
+	// Check default plugins and install/update if needed.
 	for pluginName, pluginDependency := range PluginDependencyMap {
 		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
 			return fmt.Errorf("plugin (%s) failed to install: %s", pluginName, err)
 		}
+	}
+
+	return nil
+}
+
+// validateInstalledPlugins checks all plugins in the routing file and removes or reinstalls broken ones.
+func validateInstalledPlugins() error {
+	routing, err := plugins.ReadPluginRouting()
+	if err != nil {
+		return fmt.Errorf("failed to read plugin routing: %s", err)
+	}
+
+	if len(routing.RouteMap) == 0 {
+		return nil
+	}
+
+	var reinstalledCount, removedCount int
+
+	for pluginName, route := range routing.RouteMap {
+		_, found, err := plugins.LoadPlugin(pluginName)
+		if err != nil || !found {
+			if err != nil {
+				log.Warnf("Plugin (%s) validation failed: %s", pluginName, err)
+			} else {
+				log.Warnf("Plugin (%s) found in routing but not installed", pluginName)
+			}
+
+			// Reinstall if source is available.
+			if route.Source != "" && route.Source != "local" {
+				log.Warnf("Attempting to reinstall plugin (%s) from %s", pluginName, route.Source)
+
+				// Clean up broken plugin (directory and routing).
+				if err := plugins.DeletePlugin(pluginName); err != nil {
+					log.Warnf("Failed to cleanup broken plugin (%s): %s", pluginName, err)
+				}
+
+				_, _, err := plugins.InstallPlugin(route.Source, route.Version)
+				if err != nil {
+					log.Errorf("Failed to reinstall plugin (%s): %s", pluginName, err)
+					log.Warnf("You may need to manually reinstall: bitrise plugin install %s", route.Source)
+					removedCount++
+				} else {
+					log.Donef("Successfully reinstalled plugin (%s)", pluginName)
+					reinstalledCount++
+				}
+			} else {
+				// Local plugin or no source: remove.
+				log.Warnf("Plugin (%s) cannot be automatically reinstalled, removing", pluginName)
+				if err := plugins.DeletePlugin(pluginName); err != nil {
+					// At least remove from routing, to not block others.
+					if err := plugins.DeletePluginRoute(pluginName); err != nil {
+						log.Warnf("Failed to remove broken plugin route (%s): %s", pluginName, err)
+					}
+				}
+				removedCount++
+			}
+		}
+	}
+
+	if reinstalledCount > 0 {
+		log.Donef("Reinstalled %d broken plugin(s)", reinstalledCount)
+	}
+	if removedCount > 0 {
+		log.Warnf("Removed %d broken plugin(s) that could not be reinstalled", removedCount)
 	}
 
 	return nil

@@ -89,7 +89,7 @@ func GetPluginVersion(name string) (*ver.Version, error) {
 	return pluginVersion, nil
 }
 
-// ReadPluginRoute ...
+// ReadPluginRoute returns the plugin route for the given plugin name, if it exists.
 func ReadPluginRoute(name string) (PluginRoute, bool, error) {
 	routing, err := readPluginRouting()
 	if err != nil {
@@ -111,6 +111,11 @@ func writeRoutingToFile(routing PluginRouting) error {
 
 func readPluginRouting() (PluginRouting, error) {
 	return NewPluginRoutingFromYMLOrEmpty(pluginsRoutingPth)
+}
+
+// ReadPluginRouting returns all plugin routes from the routing file.
+func ReadPluginRouting() (PluginRouting, error) {
+	return readPluginRouting()
 }
 
 // -----------------------
