@@ -89,7 +89,7 @@ func Test_Setup_ValidatesAndFixesBrokenPlugins(t *testing.T) {
 	t.Log("Verify setup validates and fixes broken plugins")
 	{
 		// Run setup (includes plugin validation).
-		out, err := command.New(testhelpers.BinPath(), "setup", "--minimal").RunAndReturnTrimmedCombinedOutput()
+		out, err := command.New(testhelpers.BinPath(), "setup").RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
 		// Verify that plugin validation ran.
