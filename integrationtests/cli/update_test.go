@@ -53,7 +53,7 @@ func Test_Update(t *testing.T) {
 func Test_Update_PluginsPersist(t *testing.T) {
 	t.Log("Verify plugins persist after update")
 	{
-		// initial plugin list
+		// Initial plugin list.
 		preUpdateOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "plugin", "list")
 		require.NoError(t, err)
 		require.NotContains(t, preUpdateOut, "No installed plugin found", "Expected default plugins to be installed")
@@ -62,10 +62,15 @@ func Test_Update_PluginsPersist(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		out, err := command.New(testhelpers.BinPath(), "update").RunAndReturnTrimmedCombinedOutput()
+		// Downgrade to make sure the update actually runs.
+		out, err := command.New(testhelpers.BinPath(), "update", "--version", "2.31.0").RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
+		// Note: the update command will run till the end in the current implementation.
 
-		// verify after update
+		// Verify that plugin validation ran during the update.
+		require.Contains(t, out, "Checking Bitrise Plugins", "Update should validate plugins during setup")
+
+		// Verify plugins.
 		postUpdateOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "plugin", "list")
 		require.NoError(t, err)
 		require.NotContains(t, postUpdateOut, "No installed plugin found", "Plugins should persist after update")
@@ -74,11 +79,29 @@ func Test_Update_PluginsPersist(t *testing.T) {
 		require.Contains(t, postUpdateOut, "step", "Default 'step' plugin should be present")
 		require.Contains(t, postUpdateOut, "workflow-editor", "Default 'workflow-editor' plugin should be present")
 
-		require.Contains(t, out, "Checking Bitrise Plugins", "Update should validate plugins during setup")
-
-		// restore original
 		if err := cli.CopyFile(testhelpers.BinPath()+"_original", testhelpers.BinPath(), true); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func Test_Setup_ValidatesAndFixesBrokenPlugins(t *testing.T) {
+	t.Log("Verify setup validates and fixes broken plugins")
+	{
+		// Run setup (includes plugin validation).
+		out, err := command.New(testhelpers.BinPath(), "setup", "--minimal").RunAndReturnTrimmedCombinedOutput()
+		require.NoError(t, err, out)
+
+		// Verify that plugin validation ran.
+		require.Contains(t, out, "Checking Bitrise Plugins", "Setup should validate plugins")
+
+		// Verify plugins are installed and working.
+		postSetupOut, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "plugin", "list")
+		require.NoError(t, err)
+		require.NotContains(t, postSetupOut, "No installed plugin found", "Plugins should be installed after setup")
+
+		require.Contains(t, postSetupOut, "init", "Default 'init' plugin should be present")
+		require.Contains(t, postSetupOut, "step", "Default 'step' plugin should be present")
+		require.Contains(t, postSetupOut, "workflow-editor", "Default 'workflow-editor' plugin should be present")
 	}
 }

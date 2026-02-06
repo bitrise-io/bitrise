@@ -26,7 +26,11 @@ func Test_validateInstalledPlugins(t *testing.T) {
 
 		// Force init paths to use tmp directory.
 		plugins.ForceInitPaths(tmpDir)
-		defer plugins.InitPaths()
+		defer func() {
+			if err := plugins.InitPaths(); err != nil {
+				t.Logf("Failed to re-initialize plugin paths: %v", err)
+			}
+		}()
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
 		err = os.MkdirAll(pluginsDir, 0755)
@@ -44,7 +48,11 @@ func Test_validateInstalledPlugins(t *testing.T) {
 
 		// Force init paths to use tmp directory.
 		plugins.ForceInitPaths(tmpDir)
-		defer plugins.InitPaths()
+		defer func() {
+			if err := plugins.InitPaths(); err != nil {
+				t.Logf("Failed to re-initialize plugin paths: %v", err)
+			}
+		}()
 
 		pluginsDir := filepath.Join(tmpDir, "plugins")
 		err = os.MkdirAll(pluginsDir, 0755)
@@ -79,21 +87,5 @@ func Test_validateInstalledPlugins(t *testing.T) {
 		require.NoError(t, err)
 		_, exists := routing.RouteMap["broken-plugin"]
 		require.False(t, exists, "Broken plugin should be removed from routing")
-	})
-}
-
-func Test_doSetupPlugins(t *testing.T) {
-	t.Run("validates all plugins during setup", func(t *testing.T) {
-		// Longer test with network access and potential plugin installation.
-		if testing.Short() {
-			t.Skip("Skipping plugin setup test in short mode")
-		}
-
-		// Shouldn't crash: validate existing plugins and install/update defaults.
-		// Note: This may fail in environments without network access or if plugin installation fails for other reasons.
-		err := doSetupPlugins()
-		if err != nil {
-			t.Logf("Plugin setup had issues (this may be expected in CI): %v", err)
-		}
 	})
 }
