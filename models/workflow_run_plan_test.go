@@ -11,13 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func cliVersion() string {
-	if version.IsAlternativeInstallation {
-		return fmt.Sprintf("%s (%s)", version.VERSION, version.Commit)
-	}
-	return version.VERSION
-}
-
 func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -55,7 +48,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 				},
@@ -105,7 +97,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_3": {ID: "bundle2"},
@@ -148,7 +139,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -157,6 +147,222 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`}},
 						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
+					}},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID).Build(tt.modes, tt.targetWorkflow)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestNewWorkflowRunPlan_StepBundleInputs(t *testing.T) {
+	tests := []struct {
+		name           string
+		modes          WorkflowRunModes
+		targetWorkflow string
+		workflows      map[string]WorkflowModel
+		stepBundles    map[string]StepBundleModel
+		containers     map[string]Container
+		services       map[string]Container
+		want           WorkflowRunPlan
+		wantErr        assert.ErrorAssertionFunc
+	}{
+		{
+			name:           "nested step bundle inputs",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input1": "value1"},
+						{"input2": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle1-step1": stepmanModels.StepModel{}},
+						{"bundle1-step2": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input1": "value3"},
+						{"input3": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input2": "value2"},
+							},
+						}},
+						{"bundle2-step1": stepmanModels.StepModel{}},
+						{"bundle2-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle2": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input3": "value3"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle2"},
+					"uuid_2": {ID: "bundle1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"},
+							// bundle1 definition inputs
+							{"input1": "value1"}, {"input2": ""},
+							// bundle1 override inputs
+							{"input2": "value2"}}},
+						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"},
+							// bundle1 definition inputs
+							{"input1": "value1"}, {"input2": ""},
+							// bundle1 override inputs
+							{"input2": "value2"}}},
+						{UUID: "uuid_5", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"}}},
+						{UUID: "uuid_6", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle2 definition inputs
+							{"input1": "value3"}, {"input3": ""},
+							// bundle2 override inputs
+							{"input3": "value3"}}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested bundle input references parent bundle input",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": "$input"},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle2-step1": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle2": StepBundleListItemModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "test_value"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+					"uuid_2": {ID: "bundle2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle1 definition inputs
+							{"input": ""},
+							// bundle1 override inputs
+							{"input": "test_value"},
+							// bundle2 definition inputs
+							{"input": "$input"}}},
+					}},
+				},
+			},
+		},
+		{
+			name:           "parent bundle passes input value to child bundle on embedding",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"bundle2": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle2-step1": stepmanModels.StepModel{}},
+					},
+				},
+				"bundle1": {
+					Inputs: []envmanModels.EnvironmentItemModel{
+						{"input": ""},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::bundle2": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "$input"},
+							},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::bundle1": StepBundleListItemModel{
+							Inputs: []envmanModels.EnvironmentItemModel{
+								{"input": "test_value"},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "bundle1"},
+					"uuid_2": {ID: "bundle2"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
+							// bundle1 definition inputs
+							{"input": ""},
+							// bundle1 override inputs
+							{"input": "test_value"},
+							// bundle2 definition inputs are skipped because "input" is already defined in parent
+							// bundle2 override inputs
+							{"input": "$input"}}},
 					}},
 				},
 			},
@@ -210,7 +416,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 					"uuid_6": {ID: "bundle1"},
@@ -264,7 +469,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle3"},
 					"uuid_3": {ID: "bundle2"},
@@ -278,91 +482,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 						{UUID: "uuid_7", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
 						{UUID: "uuid_8", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3"},
 						{UUID: "uuid_9", StepID: "bundle3-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
-					}},
-				},
-			},
-		},
-		{
-			name:           "nested step bundle inputs",
-			modes:          WorkflowRunModes{},
-			uuidProvider:   (&MockUUIDProvider{}).UUID,
-			targetWorkflow: "workflow1",
-			stepBundles: map[string]StepBundleModel{
-				"bundle1": {
-					Inputs: []envmanModels.EnvironmentItemModel{
-						{"input1": "value1"},
-						{"input2": ""},
-					},
-					Steps: []StepListItemStepOrBundleModel{
-						{"bundle1-step1": stepmanModels.StepModel{}},
-						{"bundle1-step2": stepmanModels.StepModel{}},
-					},
-				},
-				"bundle2": {
-					Inputs: []envmanModels.EnvironmentItemModel{
-						{"input1": "value3"},
-						{"input3": ""},
-					},
-					Steps: []StepListItemStepOrBundleModel{
-						{"bundle::bundle1": StepBundleListItemModel{
-							Inputs: []envmanModels.EnvironmentItemModel{
-								{"input2": "value2"},
-							},
-						}},
-						{"bundle2-step1": stepmanModels.StepModel{}},
-						{"bundle2-step2": stepmanModels.StepModel{}},
-					},
-				},
-			},
-			workflows: map[string]WorkflowModel{
-				"workflow1": {
-					Steps: []StepListItemModel{
-						{"bundle::bundle2": StepBundleListItemModel{
-							Inputs: []envmanModels.EnvironmentItemModel{
-								{"input3": "value3"},
-							},
-						}},
-					},
-				},
-			},
-			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
-				StepBundlePlans: map[string]StepBundlePlan{
-					"uuid_1": {ID: "bundle2"},
-					"uuid_2": {ID: "bundle1"},
-				},
-				ExecutionPlan: []WorkflowExecutionPlan{
-					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
-						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
-							// bundle2 definition inputs
-							{"input1": "value3"}, {"input3": ""},
-							// bundle2 override inputs
-							{"input3": "value3"},
-							// bundle1 definition inputs
-							{"input1": "value1"}, {"input2": ""},
-							// bundle1 override inputs
-							{"input2": "value2"}}},
-						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
-							// bundle2 definition inputs
-							{"input1": "value3"}, {"input3": ""},
-							// bundle2 override inputs
-							{"input3": "value3"},
-							// bundle1 definition inputs
-							{"input1": "value1"}, {"input2": ""},
-							// bundle1 override inputs
-							{"input2": "value2"}}},
-						{UUID: "uuid_5", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
-							// bundle2 definition inputs
-							{"input1": "value3"}, {"input3": ""},
-							// bundle2 override inputs
-							{"input3": "value3"}}},
-						{UUID: "uuid_6", StepID: "bundle2-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleEnvs: []envmanModels.EnvironmentItemModel{
-							// bundle2 definition inputs
-							{"input1": "value3"}, {"input3": ""},
-							// bundle2 override inputs
-							{"input3": "value3"}}},
 					}},
 				},
 			},
@@ -391,7 +510,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle 1"},
@@ -429,7 +547,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 1"},
@@ -461,4 +578,11 @@ type MockUUIDProvider struct {
 func (m *MockUUIDProvider) UUID() string {
 	m.i++
 	return fmt.Sprintf("uuid_%d", m.i)
+}
+
+func cliVersion() string {
+	if version.IsAlternativeInstallation {
+		return fmt.Sprintf("%s (%s)", version.VERSION, version.Commit)
+	}
+	return version.VERSION
 }

@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/go-utils/sliceutil"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/heimdalr/dag"
@@ -38,7 +38,7 @@ func removeWorkflowName(title string, workflowStack []string) []string {
 }
 
 func checkStepBundleReferenceCycle(stepBundleID string, stepBundle StepBundleModel, bitriseConfig BitriseDataModel, stepBundleStack []string) error {
-	if sliceutil.IsStringInSlice(stepBundleID, stepBundleStack) {
+	if slices.Contains(stepBundleStack, stepBundleID) {
 		stackStr := ""
 		for _, aStepBundleID := range stepBundleStack {
 			stackStr += aStepBundleID + " -> "
@@ -205,6 +205,24 @@ func (bundle *StepBundleListItemModel) Normalize() error {
 		bundle.Environments[i] = env
 	}
 
+	if bundle.ExecutionContainer != nil {
+		normalized, err := stepmanModels.RecursiveJSONMarshallable(bundle.ExecutionContainer)
+		if err != nil {
+			return err
+		}
+		bundle.ExecutionContainer = normalized
+	}
+
+	if bundle.ServiceContainers != nil {
+		for i, container := range bundle.ServiceContainers {
+			normalized, err := stepmanModels.RecursiveJSONMarshallable(container)
+			if err != nil {
+				return err
+			}
+			bundle.ServiceContainers[i] = normalized
+		}
+	}
+
 	return nil
 }
 
@@ -355,7 +373,7 @@ func (config *BitriseDataModel) Normalize() error {
 // ----------------------------
 // --- Validate
 
-func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel) error {
+func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleModel, containerValidationCtx *containerValidationContext) error {
 	stepBundleDefinitionInputKeys := map[string]bool{}
 	for _, input := range stepBundleDefinition.Inputs {
 		key, _, err := input.GetKeyValuePair()
@@ -384,6 +402,12 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 		}
 	}
 
+	if containerValidationCtx != nil {
+		if err := validateContainerReferences(newContainerisableFromStepBundle(*bundle), *containerValidationCtx); err != nil {
+			return fmt.Errorf("step bundle has container reference issue: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -406,7 +430,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, err
 			}
 
-			warns, err := validateStep(key, *step)
+			warns, err := validateStep(key, *step, nil)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				return warnings, err
@@ -422,7 +446,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
 
-			if err := override.Validate(definition); err != nil {
+			if err := override.Validate(definition, nil); err != nil {
 				return warnings, err
 			}
 		}
@@ -485,7 +509,7 @@ func (with *WithModel) Validate(workflowID string, containers, services map[stri
 			return warnings, fmt.Errorf("invalid 'with group' in workflow (%s): step bundle is not allowed in a 'with group''s step list", workflowID)
 		}
 
-		warns, err := validateStep(stepID, step)
+		warns, err := validateStep(stepID, step, nil)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, err
@@ -705,7 +729,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	return warnings, nil
 }
 
-func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error) {
+func validateStep(stepID string, step stepmanModels.StepModel, containerValidationCtx *containerValidationContext) ([]string, error) {
 	var warnings []string
 
 	if err := stepid.Validate(stepID); err != nil {
@@ -714,6 +738,12 @@ func validateStep(stepID string, step stepmanModels.StepModel) ([]string, error)
 
 	if err := step.ValidateInputAndOutputEnvs(false); err != nil {
 		return warnings, err
+	}
+
+	if containerValidationCtx != nil {
+		if err := validateContainerReferences(newContainerisableFromStep(step), *containerValidationCtx); err != nil {
+			return warnings, fmt.Errorf("step (%s) has container reference issue: %w", stepID, err)
+		}
 	}
 
 	stepInputMap := map[string]bool{}
@@ -1014,6 +1044,25 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
+		// TODO: how to handle old container definitions?
+		executionContainers := map[string]Container{}
+		serviceContainers := map[string]Container{}
+		for id, container := range config.Containers {
+			switch container.Type {
+			case ContainerTypeExecution:
+				executionContainers[id] = container
+			case ContainerTypeService:
+				serviceContainers[id] = container
+			default: // TODO: should we treat unknown types as both?
+				executionContainers[id] = container
+				serviceContainers[id] = container
+			}
+		}
+
+		containerValidationCtx := &containerValidationContext{
+			ExecutionContainers: executionContainers,
+			ServiceContainers:   serviceContainers,
+		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
@@ -1026,7 +1075,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 				stepID := key
-				warns, err := validateStep(stepID, *step)
+				warns, err := validateStep(stepID, *step, containerValidationCtx)
 				warnings = append(warnings, warns...)
 				if err != nil {
 					return warnings, err
@@ -1057,7 +1106,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 					return warnings, err
 				}
 
-				if err := bundle.Validate(bundleDefinition); err != nil {
+				if err := bundle.Validate(bundleDefinition, containerValidationCtx); err != nil {
 					return warnings, fmt.Errorf("step bundle (%s) referenced in workflow (%s) has config issue: %w", bundleID, workflowID, err)
 				}
 			}

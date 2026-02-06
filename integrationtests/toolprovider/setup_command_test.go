@@ -213,3 +213,38 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 	assert.NotContains(t, out, "No file found at path",
 		"Should not fail with envman file not found error")
 }
+
+func TestToolsSetupCommand_GlobalToolsWithoutWorkflow(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "bitrise.yml")
+
+	// bitrise.yml with global tools but no workflow specified
+	content := `format_version: "17"
+tools:
+  nodejs: 20.0.0
+  python: 3.11.0
+workflows:
+  test:
+    steps:
+      - script:
+          inputs:
+            - content: echo "test"`
+
+	err := os.WriteFile(configPath, []byte(content), 0644)
+	require.NoError(t, err)
+
+	// Run setup WITHOUT --workflow flag
+	cmd := command.New(testhelpers.BinPath(), "tools", "setup",
+		"--config", configPath,
+		"--format", "plaintext")
+	cmd.SetDir(tmpDir)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+
+	require.NoError(t, err, "tools setup should succeed without workflow flag: %s", out)
+
+	// Global tools should be installed
+	assert.Contains(t, out, "nodejs")
+	assert.Contains(t, out, "20.0.0")
+	assert.Contains(t, out, "python")
+	assert.Contains(t, out, "3.11.0")
+}

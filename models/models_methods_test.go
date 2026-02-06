@@ -240,6 +240,96 @@ workflows:
                 stack: osx-xcode-16.0.x-edge
                 machine_type_id: g2-m1-max.10core`,
 		},
+		{
+			name: "Steps with containers are normalized",
+			config: `format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  node:
+    type: execution
+    image: node:18
+  python:
+    type: execution
+    image: python:3.11
+  redis:
+    type: service
+    image: redis:7
+  postgres:
+    type: service
+    image: postgres:15
+    envs:
+    - POSTGRES_PASSWORD: password
+      opts:
+        is_expand: false
+
+workflows:
+  test:
+    steps:
+    - script:
+        title: Run in node container
+        execution_container: node
+        service_containers:
+        - redis
+        - postgres
+        inputs:
+        - content: npm test
+    - script:
+        title: Run in python container
+        execution_container:
+          python:
+            recreate: true
+        service_containers:
+        - redis:
+            recreate: true
+        inputs:
+        - content: pytest`,
+		},
+		{
+			name: "Step bundles with containers are normalized",
+			config: `format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+containers:
+  node:
+    type: execution
+    image: node:18
+  ruby:
+    type: execution
+    image: ruby:3.2
+  postgres:
+    type: service
+    image: postgres:15
+    envs:
+    - POSTGRES_PASSWORD: password
+
+step_bundles:
+  test-bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Running tests"
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle:
+        execution_container: node
+        service_containers:
+        - postgres
+    - script:
+        title: Direct step
+        inputs:
+        - content: echo "Direct step"
+    - bundle::test-bundle:
+        execution_container:
+          ruby:
+            recreate: true
+        service_containers:
+        - postgres:
+            recreate: true`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
