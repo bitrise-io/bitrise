@@ -300,8 +300,21 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		return nil, fmt.Errorf("referenced step bundle not defined: %s", bundleID)
 	}
 
+	// Collect parent input keys to avoid overriding them with child's default values
+	var parentInputKeys map[string]bool
+	if bundleContext != nil {
+		parentInputKeys = make(map[string]bool)
+		for _, env := range bundleContext.Envs {
+			key, _, err := env.GetKeyValuePair()
+			if err != nil {
+				return nil, err
+			}
+			parentInputKeys[key] = true
+		}
+	}
+
 	// Collect Bundle Envs
-	bundleEnvs, err := builder.gatherBundleEnvs(*bundleOverride, bundleDefinition)
+	bundleEnvs, err := builder.gatherBundleEnvs(*bundleOverride, bundleDefinition, parentInputKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -429,13 +442,40 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition StepBundleModel) ([]envmanModels.EnvironmentItemModel, error) {
+func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundleListItemModel, bundleDefinition StepBundleModel, parentInputKeys map[string]bool) ([]envmanModels.EnvironmentItemModel, error) {
 	var bundleEnvs []envmanModels.EnvironmentItemModel
 
 	bundleEnvs = append(bundleEnvs, bundleDefinition.Environments...)
 	bundleEnvs = append(bundleEnvs, bundleOverride.Environments...)
 
-	bundleEnvs = append(bundleEnvs, bundleDefinition.Inputs...)
+	// Collect override input keys
+	bundleOverrideInputKeys := map[string]bool{}
+	for _, input := range bundleOverride.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return nil, err
+		}
+		bundleOverrideInputKeys[key] = true
+	}
+
+	// Add definition inputs, but skip keys that are already defined in parent context
+	// AND will be overridden by this bundle's override inputs
+	for _, input := range bundleDefinition.Inputs {
+		key, _, err := input.GetKeyValuePair()
+		if err != nil {
+			return nil, err
+		}
+
+		// Skip this definition input if:
+		// 1. It's already defined in parent context, AND
+		// 2. This bundle has an override input for the same key
+		// This prevents the definition's default value from overwriting the parent's value
+		// before the override input is applied
+		if parentInputKeys != nil && parentInputKeys[key] && bundleOverrideInputKeys[key] {
+			continue
+		}
+		bundleEnvs = append(bundleEnvs, input)
+	}
 
 	// Filter undefined bundleOverride inputs
 	bundleDefinitionInputKeys := map[string]bool{}
