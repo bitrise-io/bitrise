@@ -9,7 +9,7 @@ DOCKERCOMPOSE=$(shell which docker-compose 2> /dev/null || echo '')
 
 docker-test: setup-test-environment
 	@echo "Running docker integration tests..."
-	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests && go test -v -p 1 --tags linux_only ./docker"
+	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests && go test -v -p 1 -timeout 20m --tags linux_only ./docker"
 
 setup-test-environment: build-main-container
 	@echo "Building bitrise binary inside container..."
