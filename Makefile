@@ -5,15 +5,30 @@ DOCKER_COMPOSE_FILE=integrationtests/docker/local_docker_test_environment/docker
 SRC_DIR_IN_GOPATH=/bitrise/src
 DOCKERCOMPOSE=$(shell which docker-compose 2> /dev/null || echo '')
 
+.PHONY: docker-test setup-test-environment build-main-container docker-clean
+
 docker-test: setup-test-environment
-	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; go test ./integrationtests/docker -tags linux_only"
+	@echo "Running docker integration tests..."
+	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests && go test -v -p 1 -timeout 20m --tags linux_only ./docker"
 
 setup-test-environment: build-main-container
+	@echo "Building bitrise binary inside container..."
 	docker exec -it bitrise-main-container bash -c "go build -o bitrise-cli"
 
 build-main-container:
+	@echo "Building and starting test container..."
 	@if [ "$$DOCKERCOMPOSE" ]; then \
 		docker-compose -f $(DOCKER_COMPOSE_FILE) up --build -d; \
 	else \
 		docker compose -f $(DOCKER_COMPOSE_FILE) up --build -d; \
 	fi
+
+docker-clean:
+	@echo "Stopping and removing all test containers..."
+	@if [ "$$DOCKERCOMPOSE" ]; then \
+		docker-compose -f $(DOCKER_COMPOSE_FILE) down; \
+	else \
+		docker compose -f $(DOCKER_COMPOSE_FILE) down; \
+	fi
+	@rm -rf _tmp /tmp/auth_* 2>/dev/null || true
+	@echo "Cleanup complete!"
