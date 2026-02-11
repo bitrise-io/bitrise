@@ -1,7 +1,16 @@
-FROM golang:1.21
+FROM golang:1.25
 
-RUN apt-get update && apt-get install -y rsync
+# Install rsync + Docker prerequisites in single layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        rsync \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install Docker CE
 RUN install -m 0755 -d /etc/apt/keyrings && \
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
     chmod a+r /etc/apt/keyrings/docker.gpg && \
@@ -16,3 +25,5 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
         docker-buildx-plugin \
         docker-compose-plugin && \
     rm -rf /var/lib/apt/lists/*
+
+CMD ["sleep", "infinity"]
