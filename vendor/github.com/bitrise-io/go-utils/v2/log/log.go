@@ -27,18 +27,61 @@ type Logger interface {
 
 const defaultTimeStampLayout = "15:04:05"
 
+// LoggerOptions ...
+type LoggerOptions func(*logger)
+
 type logger struct {
 	enableDebugLog  bool
 	timestampLayout string
 	stdout          io.Writer
+	prefix          string
 }
 
 // NewLogger ...
-func NewLogger() Logger {
-	return &logger{enableDebugLog: false, timestampLayout: defaultTimeStampLayout, stdout: os.Stdout}
+func NewLogger(options ...LoggerOptions) Logger {
+	l := &logger{
+		enableDebugLog:  false,
+		timestampLayout: defaultTimeStampLayout,
+		stdout:          os.Stdout,
+	}
+
+	for _, option := range options {
+		option(l)
+	}
+	return l
+}
+
+// WithDebugLog ...
+func WithDebugLog(enable bool) LoggerOptions {
+	return func(l *logger) {
+		l.enableDebugLog = enable
+	}
+}
+
+// WithTimestampLayout ...
+func WithTimestampLayout(layout string) LoggerOptions {
+	return func(l *logger) {
+		l.timestampLayout = layout
+	}
+}
+
+// WithOutput ...
+func WithOutput(w io.Writer) LoggerOptions {
+	return func(l *logger) {
+		l.stdout = w
+	}
+}
+
+// WithPrefix adds a prefix to each log line. Prefix is added before the timestamp if timestamps are enabled.
+// It does not add any extra spaces, so if you want a space after the prefix, include it in the prefix string.
+func WithPrefix(prefix string) LoggerOptions {
+	return func(l *logger) {
+		l.prefix = prefix
+	}
 }
 
 // EnableDebugLog ...
+// Deprecated: use WithDebugLog option instead
 func (l *logger) EnableDebugLog(enable bool) {
 	l.enableDebugLog = enable
 }
@@ -126,6 +169,9 @@ func (l *logger) createLogMsg(severity Severity, withTime bool, format string, v
 	message := colorFunc(format, v...)
 	if withTime {
 		message = l.prefixCurrentTime(message)
+	}
+	if l.prefix != "" {
+		message = l.prefix + message
 	}
 
 	return message

@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	envmanModels "github.com/bitrise-io/envman/v2/models"
-	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/go-utils/v2/pointers"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
