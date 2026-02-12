@@ -102,12 +102,17 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 	var executionContainerToStart string
 	var serviceContainersToStart []string
 
-	if len(m.runningExecutionContainer) == 0 {
+	// TODO: validate id ExecutionContainer.ContainerID != ""
+	if len(m.runningExecutionContainer) == 0 && stepPlan.ExecutionContainer != nil && len(stepPlan.ExecutionContainer.ContainerID) > 0 {
 		// No running execution container, we need to check the current step's container requirement and start the container if needed.
-		executionContainerToStart = stepPlan.ContainerID
+		executionContainerToStart = stepPlan.ExecutionContainer.ContainerID
 	}
 
 	for _, serviceContainerConfig := range stepPlan.ServiceContainers {
+		if serviceContainerConfig.ContainerID == "" {
+			continue
+		}
+
 		// If there is no running container for the required service container, we need to start it.
 		if _, isRunning := m.runningServiceContainers[serviceContainerConfig.ContainerID]; !isRunning {
 			serviceContainersToStart = append(serviceContainersToStart, serviceContainerConfig.ContainerID)
@@ -163,8 +168,31 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	}
 }
 
-func (m *Manager) GetExecutionContainerForStepGroup(groupID string) *docker.RunningContainer {
-	return m.executionContainers[groupID]
+func (m *Manager) GetExecutionContainerForStep(UUID string) (*docker.RunningContainer, *models.Container) {
+	stepPlan := m.findStepPlan(UUID)
+	if stepPlan == nil {
+		// This should not happen, but in case it does, we return nil to avoid breaking the execution.
+		return nil, nil
+	}
+
+	if m.legacyContainerisation {
+		if stepPlan.WithGroupUUID == "" {
+			return nil, nil
+		}
+		runningContainer := m.executionContainers[stepPlan.WithGroupUUID]
+		containerDefinition := m.executionContainerDefinitions[stepPlan.ContainerID]
+
+		return runningContainer, &containerDefinition
+	}
+
+	if stepPlan.ExecutionContainer == nil || stepPlan.ExecutionContainer.ContainerID == "" {
+		return nil, nil
+	}
+
+	runningContainer := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]
+	containerDefinition := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
+
+	return runningContainer, &containerDefinition
 }
 
 func (m *Manager) GetExecutionContainer(containerID string) *docker.RunningContainer {
@@ -352,7 +380,7 @@ func (m *Manager) loginAndRunContainer(t docker.ContainerType, containerDef mode
 }
 
 func (m *Manager) stopContainersForStepGroup(groupID string) {
-	if container := m.GetExecutionContainerForStepGroup(groupID); container != nil {
+	if container := m.getExecutionContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
 		if err := container.Destroy(); err != nil {
 			m.logger.Errorf("Attempted to stop the docker container for step group: %s", err)
@@ -389,6 +417,17 @@ func (m *Manager) shouldStopExecutionContainer(containerID string, currentStepPl
 	return false
 }
 
+func (m *Manager) findStepPlan(UUID string) *models.StepExecutionPlan {
+	for _, workflow := range m.workflowRunPlan.ExecutionPlan {
+		for _, step := range workflow.Steps {
+			if step.UUID == UUID {
+				return &step
+			}
+		}
+	}
+	return nil
+}
+
 func (m *Manager) findNextStepPlanWithAnyExecutionContainerRequirement(currentStepPlan models.StepExecutionPlan) *models.StepExecutionPlan {
 	currentStepFound := false
 	for _, workflow := range m.workflowRunPlan.ExecutionPlan {
@@ -398,7 +437,7 @@ func (m *Manager) findNextStepPlanWithAnyExecutionContainerRequirement(currentSt
 				continue
 			}
 
-			if currentStepFound && step.ExecutionContainer != nil {
+			if currentStepFound && step.ExecutionContainer != nil && step.ExecutionContainer.ContainerID != "" {
 				return &step
 			}
 		}
@@ -434,6 +473,10 @@ func (m *Manager) findNextStepPlanWithServiceContainerRequirement(containerID st
 
 			if currentStepFound {
 				for _, containerCfg := range step.ServiceContainers {
+					if containerCfg.ContainerID == "" {
+						continue
+					}
+
 					if containerCfg.ContainerID == containerID {
 						// TODO: validate if a given service is referenced only once for the given step
 						return &step, &containerCfg
@@ -483,4 +526,8 @@ func (m *Manager) getServiceContainerDefinitions(ids ...string) map[string]model
 
 func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.RunningContainer {
 	return m.serviceContainers[groupID]
+}
+
+func (m *Manager) getExecutionContainerForStepGroup(groupID string) *docker.RunningContainer {
+	return m.executionContainers[groupID]
 }

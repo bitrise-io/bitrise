@@ -114,8 +114,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
-			stepPlan.ContainerID,
-			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
 			stepPlan.StepBundleRunIfs,
@@ -184,7 +182,6 @@ func (r WorkflowRunner) activateAndRunStep(
 	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
 	isStepLibOfflineMode bool,
-	containerID, groupID string,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
 	stepBundleRunIfs []string,
@@ -276,7 +273,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	// Run the step
 	r.tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
-	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
+	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues)
 
 	if stepTestDir != "" {
 		if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: stepIDx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -547,8 +544,6 @@ func (r WorkflowRunner) runStep(
 	stepExecutablePath string,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
-	containerID string,
-	groupID string,
 ) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -586,7 +581,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, stepExecutablePath, bitriseSourceDir, secrets, containerID, groupID); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, stepExecutablePath, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -638,8 +633,6 @@ func (r WorkflowRunner) executeStep(
 	step stepmanModels.StepModel, sIDData stepid.CanonicalID,
 	stepAbsDirPath, stepExecutablePath, bitriseSourceDir string,
 	secrets []string,
-	containerID string,
-	groupID string,
 ) (int, error) {
 	var cmdArgs []string
 
@@ -689,8 +682,8 @@ func (r WorkflowRunner) executeStep(
 	var args []string
 	var envs []string
 
-	containerDef := r.ContainerDefinition(containerID)
-	if containerDef != nil {
+	runningContainer, containerDef := r.containerManager.GetExecutionContainerForStep(stepUUID)
+	if runningContainer != nil && containerDef != nil {
 		envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
@@ -699,10 +692,10 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.containerManager.GetExecutionContainerForStepGroup(groupID)
-		if runningContainer == nil {
-			return 1, fmt.Errorf("docker container does not exist")
-		}
+		// TODO: previously this was a failure
+		//if runningContainer == nil {
+		//	return 1, fmt.Errorf("docker container does not exist")
+		//}
 
 		args = runningContainer.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
