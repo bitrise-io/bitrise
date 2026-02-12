@@ -1044,7 +1044,6 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
-		// TODO: how to handle old container definitions?
 		executionContainers := map[string]Container{}
 		serviceContainers := map[string]Container{}
 		for id, container := range config.Containers {
@@ -1053,7 +1052,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 				executionContainers[id] = container
 			case ContainerTypeService:
 				serviceContainers[id] = container
-			default: // TODO: should we treat unknown types as both?
+			default:
 				executionContainers[id] = container
 				serviceContainers[id] = container
 			}

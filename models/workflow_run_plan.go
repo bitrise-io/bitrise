@@ -502,13 +502,27 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
+	executionContainers := map[string]Container{}
+	serviceContainers := map[string]Container{}
+	for id, container := range builder.containers {
+		switch container.Type {
+		case ContainerTypeExecution:
+			executionContainers[id] = container
+		case ContainerTypeService:
+			serviceContainers[id] = container
+		default:
+			executionContainers[id] = container
+			serviceContainers[id] = container
+		}
+	}
+
 	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if executionContainerCfg != nil {
-		container, ok := builder.containers[executionContainerCfg.ContainerID]
+		container, ok := executionContainers[executionContainerCfg.ContainerID]
 		if !ok {
 			return nil, nil, fmt.Errorf("referenced execution container not defined: %s", executionContainerCfg.ContainerID)
 		}
@@ -526,7 +540,7 @@ func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable C
 	}
 
 	for _, containerCfg := range serviceContainerCfgs {
-		container, ok := builder.services[containerCfg.ContainerID]
+		container, ok := serviceContainers[containerCfg.ContainerID]
 		if !ok {
 			return nil, nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
 		}
