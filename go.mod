@@ -10,11 +10,11 @@ require (
 	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.18.6-0.20260127134418-aeee9d03aa2f
+	github.com/bitrise-io/stepman v0.18.7-0.20260212083306-630ac4e30702
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/hashicorp/go-version v1.4.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0

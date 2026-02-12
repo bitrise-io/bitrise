@@ -25,19 +25,30 @@ func GetContainerConfig(ref ContainerReference) (*ContainerConfig, error) {
 		return getContainerConfigFromString(ref), nil
 	case map[any]any:
 		return getContainerConfigFromMap(ref)
+	case map[string]any:
+		return getContainerConfigFromMap(ref)
 	default:
 		return nil, fmt.Errorf("invalid container config type: %T", ref)
 	}
 }
 
 func getContainerConfigFromString(ctrStr string) *ContainerConfig {
+	if ctrStr == "" {
+		return nil
+	}
+
 	return &ContainerConfig{
 		ContainerID: ctrStr,
 		Recreate:    false,
 	}
 }
 
-func getContainerConfigFromMap(ctrMap map[any]any) (*ContainerConfig, error) {
+func getContainerConfigFromMap(ctr any) (*ContainerConfig, error) {
+	ctrMap, ok := toStrMap(ctr)
+	if !ok {
+		return nil, fmt.Errorf("invalid container config map type: %T", ctr)
+	}
+
 	if len(ctrMap) != 1 {
 		return nil, fmt.Errorf("invalid container config map length: %d", len(ctrMap))
 	}
@@ -46,12 +57,9 @@ func getContainerConfigFromMap(ctrMap map[any]any) (*ContainerConfig, error) {
 	var recreate bool
 
 	for k, v := range ctrMap {
-		var ok bool
-		id, ok = k.(string)
-		if !ok {
-			return nil, fmt.Errorf("invalid container config ID type: %T", k)
-		}
+		id = k
 
+		var ok bool
 		ctrCfg, ok := v.(map[any]any)
 		if !ok {
 			return nil, fmt.Errorf("invalid container config value type: %T", v)
@@ -78,4 +86,24 @@ func getContainerConfigFromMap(ctrMap map[any]any) (*ContainerConfig, error) {
 		ContainerID: id,
 		Recreate:    recreate,
 	}, nil
+}
+
+func toStrMap(v any) (map[string]any, bool) {
+	if m, ok := v.(map[string]any); ok {
+		return m, ok
+	}
+	m, ok := v.(map[any]any)
+	if !ok {
+		return nil, false
+	}
+
+	strMap := make(map[string]any, len(m))
+	for k, v := range m {
+		strKey, ok := k.(string)
+		if !ok {
+			return nil, false
+		}
+		strMap[strKey] = v
+	}
+	return strMap, true
 }
