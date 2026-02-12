@@ -124,8 +124,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			currentStepBundleEnvVars = append(currentStepBundleEnvVars, result.OutputEnvironments...)
 		}
 
-		r.containerManager.UpdateWithStepFinished(idx, plan, stepPlan)
-
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
 
@@ -133,6 +131,8 @@ func (r WorkflowRunner) activateAndRunSteps(
 
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
+
+		r.containerManager.UpdateWithStepFinished(idx, plan, stepPlan)
 
 		currentBuildRunResult := buildRunResults
 		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
@@ -682,8 +682,12 @@ func (r WorkflowRunner) executeStep(
 	var args []string
 	var envs []string
 
-	runningContainer, containerDef := r.containerManager.GetExecutionContainerForStep(stepUUID)
-	if runningContainer != nil && containerDef != nil {
+	containerDef, runningContainer := r.containerManager.GetExecutionContainerForStep(stepUUID)
+	if containerDef != nil {
+		if runningContainer == nil {
+			return 1, fmt.Errorf("docker container does not exist")
+		}
+
 		envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
@@ -692,11 +696,6 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		// TODO: previously this was a failure
-		//if runningContainer == nil {
-		//	return 1, fmt.Errorf("docker container does not exist")
-		//}
-
 		args = runningContainer.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
 

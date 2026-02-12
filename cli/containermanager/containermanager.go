@@ -148,9 +148,11 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 
 		if m.shouldStopExecutionContainer(currentExecutionContainerID, stepPlan) {
 			if container := m.runningExecutionContainer[currentExecutionContainerID]; container != nil {
+				m.logger.Infof("ℹ️ Removing execution container: %s", container.Name)
 				if err := container.Destroy(); err != nil {
 					m.logger.Errorf("Attempted to stop execution container: %s", err)
 				}
+				delete(m.runningExecutionContainer, currentExecutionContainerID)
 			}
 		}
 	}
@@ -159,16 +161,18 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 		for containerID := range m.runningServiceContainers {
 			if m.shouldStopServiceContainer(containerID, stepPlan) {
 				if container := m.runningServiceContainers[containerID]; container != nil {
+					m.logger.Infof("ℹ️ Removing service container: %s", container.Name)
 					if err := container.Destroy(); err != nil {
 						m.logger.Errorf("Attempted to stop service container: %s", err)
 					}
+					delete(m.runningServiceContainers, containerID)
 				}
 			}
 		}
 	}
 }
 
-func (m *Manager) GetExecutionContainerForStep(UUID string) (*docker.RunningContainer, *models.Container) {
+func (m *Manager) GetExecutionContainerForStep(UUID string) (*models.Container, *docker.RunningContainer) {
 	stepPlan := m.findStepPlan(UUID)
 	if stepPlan == nil {
 		// This should not happen, but in case it does, we return nil to avoid breaking the execution.
@@ -179,24 +183,21 @@ func (m *Manager) GetExecutionContainerForStep(UUID string) (*docker.RunningCont
 		if stepPlan.WithGroupUUID == "" {
 			return nil, nil
 		}
-		runningContainer := m.executionContainers[stepPlan.WithGroupUUID]
-		containerDefinition := m.executionContainerDefinitions[stepPlan.ContainerID]
 
-		return runningContainer, &containerDefinition
+		containerDefinition := m.executionContainerDefinitions[stepPlan.ContainerID]
+		runningContainer := m.executionContainers[stepPlan.WithGroupUUID]
+
+		return &containerDefinition, runningContainer
 	}
 
 	if stepPlan.ExecutionContainer == nil || stepPlan.ExecutionContainer.ContainerID == "" {
 		return nil, nil
 	}
 
-	runningContainer := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]
 	containerDefinition := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
+	runningContainer := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]
 
-	return runningContainer, &containerDefinition
-}
-
-func (m *Manager) GetExecutionContainer(containerID string) *docker.RunningContainer {
-	return m.runningExecutionContainer[containerID]
+	return &containerDefinition, runningContainer
 }
 
 func (m *Manager) DestroyAllContainers() error {
@@ -264,6 +265,7 @@ func (m *Manager) startContainers(containerID string, serviceIDs []string, envir
 	if containerID != "" {
 		containerDef := m.getExecutionContainerDefinition(containerID)
 		if containerDef != nil {
+			// TODO: here we are not in a with group, update logs
 			m.logger.Infof("ℹ️ Running step group in docker container: %s", containerDef.Image)
 
 			_, err := m.startExecutionContainer(*containerDef, containerID, envList)
@@ -382,6 +384,7 @@ func (m *Manager) loginAndRunContainer(t docker.ContainerType, containerDef mode
 func (m *Manager) stopContainersForStepGroup(groupID string) {
 	if container := m.getExecutionContainerForStepGroup(groupID); container != nil {
 		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
+		m.logger.Infof("ℹ️ Removing execution container: %s", container.Name)
 		if err := container.Destroy(); err != nil {
 			m.logger.Errorf("Attempted to stop the docker container for step group: %s", err)
 		}
@@ -389,6 +392,7 @@ func (m *Manager) stopContainersForStepGroup(groupID string) {
 
 	if services := m.getServiceContainersForStepGroup(groupID); services != nil {
 		for _, container := range services {
+			m.logger.Infof("ℹ️ Removing service container: %s", container.Name)
 			if err := container.Destroy(); err != nil {
 				m.logger.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
 			}
