@@ -59,8 +59,7 @@ func getContainerConfigFromMap(ctr any) (*ContainerConfig, error) {
 	for k, v := range ctrMap {
 		id = k
 
-		var ok bool
-		ctrCfg, ok := v.(map[any]any)
+		ctrCfg, ok := toStrMap(v)
 		if !ok {
 			return nil, fmt.Errorf("invalid container config value type: %T", v)
 		}

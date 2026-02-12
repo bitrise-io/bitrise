@@ -662,7 +662,7 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			},
 		},
 		{
-			name:           "step with service_containers",
+			name:           "step with service_containers - simple string format",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",
 			containers: map[string]Container{
@@ -700,6 +700,65 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 							ServiceContainers: []ContainerConfig{
 								{ContainerID: "redis", Recreate: false},
 								{ContainerID: "postgres", Recreate: false},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with service_containers - recreate flag",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+				"postgres": {
+					Type:  ContainerTypeService,
+					Image: "postgres:13",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{
+								"redis",
+								map[string]any{
+									"postgres": map[string]any{
+										"recreate": true,
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis":    {Image: "redis:latest"},
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_1",
+							StepID: "script",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								"redis",
+								map[string]any{
+									"postgres": map[string]any{
+										"recreate": true,
+									},
+								},
+							}},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "redis", Recreate: false},
+								{ContainerID: "postgres", Recreate: true},
 							},
 						},
 					}},
