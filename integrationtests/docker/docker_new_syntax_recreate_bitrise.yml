@@ -7,7 +7,7 @@ containers:
     image: frolvlad/alpine-bash:latest
 
 workflows:
-  # Test 3: Container Recreation Logic
+  # Container Recreation Logic
   # This test verifies the recreate flag by using filesystem state:
   # - Step 1: Creates a marker file in the container
   # - Step 2: Reuses container (default), marker should exist
@@ -23,7 +23,6 @@ workflows:
             set -e
             echo "Creating marker"
             echo "marker" > /marker.txt
-            cat /marker.txt
 
     - script@1:
         title: Reuse container - marker should exist
