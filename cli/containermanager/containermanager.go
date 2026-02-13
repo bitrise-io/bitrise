@@ -53,13 +53,10 @@ func NewManager(executionContainers map[string]models.Container, serviceContaine
 
 func (m *Manager) SetWorkflowRunPlan(plan models.WorkflowRunPlan) {
 	m.workflowRunPlan = plan
-}
 
-// TODO: merge it with SetWorkflowRunPlan.
-func (m *Manager) SetLegacyContainerisation(legacyContainerisation bool) {
-	m.legacyContainerisation = legacyContainerisation
-
-	if !legacyContainerisation {
+	if len(plan.WithGroupPlans) > 0 {
+		m.legacyContainerisation = true
+	} else {
 		// In new containerisation mode, both service and execution containers are defined under the "containers" key,
 		// so we need to separate them based on their type.
 		executionContainers := map[string]models.Container{}

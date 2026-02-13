@@ -317,7 +317,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	}
 
 	r.containerManager.SetWorkflowRunPlan(plan)
-	r.containerManager.SetLegacyContainerisation(len(plan.WithGroupPlans) > 0)
 
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 
