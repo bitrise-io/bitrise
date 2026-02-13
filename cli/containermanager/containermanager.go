@@ -180,7 +180,7 @@ func (m *Manager) GetExecutionContainerForStep(UUID string) (*models.Container, 
 	}
 
 	if m.legacyContainerisation {
-		if stepPlan.WithGroupUUID == "" {
+		if stepPlan.WithGroupUUID == "" || stepPlan.ContainerID == "" {
 			return nil, nil
 		}
 
