@@ -180,7 +180,11 @@ type WorkflowRunner struct {
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	loggerOpts := log.GetGlobalLoggerOpts()
+	if isContainerDebugLoggingEnabled(config.Secrets) {
+		loggerOpts.DebugLogEnabled = true
+	}
+	logger := log.NewLogger(loggerOpts)
 	dockerLogger := docker.NewLogger(logger, stepSecretValues)
 	dockerManager := docker.NewContainerManager(dockerLogger)
 	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
@@ -554,4 +558,18 @@ func createWorkflowRunStatusMessage(exitCode int) string {
 		colorMessage = colorstring.Red(message)
 	}
 	return colorMessage
+}
+
+func isContainerDebugLoggingEnabled(Secrets []envmanModels.EnvironmentItemModel) bool {
+	for _, secret := range Secrets {
+		k, v, err := secret.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+
+		if k == "ENABLE_CONTAINER_DEBUG_LOGGING" && v == "true" {
+			return true
+		}
+	}
+	return false
 }

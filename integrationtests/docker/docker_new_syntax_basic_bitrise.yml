@@ -8,13 +8,14 @@ containers:
   redis:
     type: service
     image: redis:latest
+    ports:
+    - "6379:6379"
     options: --health-cmd "redis-cli ping" --health-interval 1s
 
 workflows:
   test-execution-container:
     steps:
     - script@1:
-        title: Run in container
         execution_container: alpine
         inputs:
         - content: |
@@ -25,22 +26,28 @@ workflows:
   test-service-containers:
     steps:
     - script@1:
-        title: Test with redis service
         service_containers:
         - redis
         inputs:
         - content: |
             #!/bin/bash
             set -e
-            echo "Testing redis connectivity"
-            # Check if nc (netcat) is available, if not assume redis is accessible
-            if command -v nc > /dev/null 2>&1; then
-              if nc -z redis 6379; then
-                echo "Redis accessible on port 6379"
-              else
-                echo "ERROR: Cannot connect to redis"
-                exit 1
-              fi
+            echo "Testing redis service accessibility"
+
+            # NOTE: In production (Linux host), service containers are accessible via localhost:PORT
+            # In Docker-in-Docker test environment, we can't test localhost connectivity because:
+            # - Port forwarding goes to Docker host (Mac), not the test container
+            # - Script runs on host (test container), not on Docker network with service container
+            # Therefore, we verify the service is running using docker exec
+
+            # Wait for service to be ready
+            sleep 2
+
+            # Verify service container is running and responding
+            if docker exec redis redis-cli ping | grep -q "PONG"; then
+              echo "Redis service container is running and responsive"
             else
-              echo "netcat not available, assuming redis is accessible"
+              echo "Redis service container is not responding"
+              docker ps | grep redis || true
+              exit 1
             fi

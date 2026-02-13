@@ -56,7 +56,9 @@ func (m *Manager) SetWorkflowRunPlan(plan models.WorkflowRunPlan) {
 
 	if len(plan.WithGroupPlans) > 0 {
 		m.legacyContainerisation = true
+		m.logger.Debugf("Using legacy containerisation mode")
 	} else {
+		m.logger.Debugf("Using new containerisation mode")
 		// In new containerisation mode, both service and execution containers are defined under the "containers" key,
 		// so we need to separate them based on their type.
 		executionContainers := map[string]models.Container{}
@@ -116,6 +118,7 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 		}
 	}
 
+	m.debugLogRunningContainers(stepPlan)
 	m.startContainers(executionContainerToStart, serviceContainersToStart, environments)
 }
 
@@ -145,7 +148,7 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 
 		if m.shouldStopExecutionContainer(currentExecutionContainerID, stepPlan) {
 			if container := m.runningExecutionContainer[currentExecutionContainerID]; container != nil {
-				m.logger.Infof("ℹ️ Removing execution container: %s", container.Name)
+				m.logger.Infof("ℹ️ Removing execution container: %s", currentExecutionContainerID)
 				if err := container.Destroy(); err != nil {
 					m.logger.Errorf("Attempted to stop execution container: %s", err)
 				}
@@ -416,6 +419,31 @@ func (m *Manager) shouldStopExecutionContainer(containerID string, currentStepPl
 
 	// Next step requires the same execution container without recreate option
 	return false
+}
+
+func (m *Manager) debugLogRunningContainers(stepPlan models.StepExecutionPlan) {
+	if len(m.runningExecutionContainer) > 0 {
+		if stepPlan.ExecutionContainer != nil && len(stepPlan.ExecutionContainer.ContainerID) > 0 {
+			m.logger.Debugf("Reusing execution container: %s", stepPlan.ExecutionContainer.ContainerID)
+		} else {
+			m.logger.Debugf("Keep running execution container: %s", stepPlan.ExecutionContainer.ContainerID)
+		}
+	}
+
+	for containerID := range m.runningServiceContainers {
+		reuseContainer := false
+		for _, serviceContainerConfig := range stepPlan.ServiceContainers {
+			if serviceContainerConfig.ContainerID == containerID {
+				reuseContainer = true
+				break
+			}
+		}
+		if reuseContainer {
+			m.logger.Debugf("Reusing service container: %s", containerID)
+		} else {
+			m.logger.Debugf("Keep running service container: %s", containerID)
+		}
+	}
 }
 
 func (m *Manager) findStepPlan(UUID string) *models.StepExecutionPlan {
