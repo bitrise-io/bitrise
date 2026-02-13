@@ -1,0 +1,55 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  container_a:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+  container_b:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+
+workflows:
+  # Test 2: Container Lifecycle Management
+  # This test verifies:
+  # - Container A starts before step 1
+  # - Container A is reused (NOT recreated) for step 2
+  # - Container A stops and Container B starts before step 3
+  # - Container B stops before step 4
+  # - No containers remain after workflow completion
+  test-lifecycle:
+    steps:
+    - script@1:
+        title: Step 1 - Start container A
+        execution_container: container_a
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Step 1 in container A"
+
+    - script@1:
+        title: Step 2 - Reuse container A
+        execution_container: container_a
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Step 2 in container A"
+
+    - script@1:
+        title: Step 3 - Switch to container B (A should stop)
+        execution_container: container_b
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Step 3 in container B"
+
+    - script@1:
+        title: Step 4 - No container (B should stop)
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Step 4 on host"

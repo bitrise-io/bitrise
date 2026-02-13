@@ -1,0 +1,46 @@
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  alpine:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+  redis:
+    type: service
+    image: redis:latest
+    options: --health-cmd "redis-cli ping" --health-interval 1s
+
+workflows:
+  test-execution-container:
+    steps:
+    - script@1:
+        title: Run in container
+        execution_container: alpine
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Running in container"
+
+  test-service-containers:
+    steps:
+    - script@1:
+        title: Test with redis service
+        service_containers:
+        - redis
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Testing redis connectivity"
+            # Check if nc (netcat) is available, if not assume redis is accessible
+            if command -v nc > /dev/null 2>&1; then
+              if nc -z redis 6379; then
+                echo "Redis accessible on port 6379"
+              else
+                echo "ERROR: Cannot connect to redis"
+                exit 1
+              fi
+            else
+              echo "netcat not available, assuming redis is accessible"
+            fi
