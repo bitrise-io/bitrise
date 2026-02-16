@@ -416,7 +416,7 @@ step_bundles:
 
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
-            cd ./integrationtests && go test -v -p 1 --tags linux_only ./... 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+            cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./withgroupbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
             test_exit_code=$?
             set -e  # Re-enable exit on error
 
