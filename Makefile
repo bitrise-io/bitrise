@@ -5,11 +5,15 @@ DOCKER_COMPOSE_FILE=integrationtests/docker/local_docker_test_environment/docker
 SRC_DIR_IN_GOPATH=/bitrise/src
 DOCKERCOMPOSE=$(shell which docker-compose 2> /dev/null || echo '')
 
-.PHONY: docker-test setup-test-environment build-main-container docker-clean
+.PHONY: docker-with-group-test docker-step-based-test setup-test-environment build-main-container docker-clean
 
-docker-test: setup-test-environment
+docker-step-based-test: setup-test-environment
 	@echo "Running docker integration tests..."
-	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests && go test -v -p 1 -timeout 20m --tags linux_only ./docker"
+	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests/docker && go test -v -p 1 -timeout 20m --tags linux_only ./stepbased/"
+
+docker-with-group-test: setup-test-environment
+	@echo "Running docker integration tests..."
+	docker exec -it bitrise-main-container bash -c "export INTEGRATION_TEST_BINARY_PATH=\$$PWD/bitrise-cli; cd integrationtests/docker && go test -v -p 1 -timeout 20m --tags linux_only ./withgroupbased/"
 
 setup-test-environment: build-main-container
 	@echo "Building bitrise binary inside container..."

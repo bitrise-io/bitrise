@@ -1,7 +1,7 @@
 //go:build linux_only
 // +build linux_only
 
-package docker
+package withgroupbased
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/ryanuber/go-glob"
+	glob "github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
 )
 
