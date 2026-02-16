@@ -1,0 +1,39 @@
+format_version: 1.3.0
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+    ports:
+    - "6379:6379"
+    options: --health-cmd "redis-cli ping" --health-interval 1s
+workflows:
+  test-service-from-host:
+    steps:
+    - script:
+        title: Test redis service accessible
+        service_containers:
+        - redis
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Testing service container accessibility"
+
+            # NOTE: In production (Linux host), service containers are accessible via localhost:PORT
+            # In Docker-in-Docker test environment, we can't test localhost connectivity because:
+            # - Port forwarding goes to Docker host (Mac), not the test container
+            # - Script runs on host (test container), not on Docker network with service container
+            # Therefore, we verify the service is running using docker exec
+
+            # Wait for service to be ready
+            sleep 2
+
+            # Verify service container is running and responding
+            if docker exec redis redis-cli ping | grep -q "PONG"; then
+              echo "Redis service container is running and responsive"
+            else
+              echo "Redis service container is not responding"
+              docker ps | grep redis || true
+              exit 1
+            fi

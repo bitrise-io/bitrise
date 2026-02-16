@@ -488,6 +488,59 @@ step_bundles:
             exit $test_exit_code
     - deploy-to-bitrise-io@2: {}
 
+  run_step_based_containerization_integration_tests:
+    steps:
+    - script@1:
+        title: Docker login for pulls
+        run_if: .IsCI
+        inputs:
+        - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
+    - script@1:
+        title: Run Step based containerization integration tests
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -exo pipefail
+
+            # Here we save the original test results and deploy directories and later on we recreate them,
+            #  because during the tests these directories are removed.
+            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+
+            # Build and setup the current binary
+            current_bitrise="$(pwd)/_tmp/test_bitrise"
+            export CGO_ENABLED=0
+            go build -o "$current_bitrise"
+
+            export PR="" PULL_REQUEST_ID=""
+            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+            $current_bitrise setup
+
+            # Setup per OS test name and log file name
+            linux_only_test_name_json='{"test-name":"Step based containerization integration tests"}'
+            linux_only_test_log_file_name="linux_only_integration_tests"
+
+            # Run tests and generate report
+            set +e  # Temporarily disable exit on error
+            cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./stepbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+            test_exit_code=$?
+            set -e  # Re-enable exit on error
+
+            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+            cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
+
+            go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
+
+            # Export the junit test results
+            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
+            mkdir -p "${test_results_dir}"
+            cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
+            echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+
+            # Exit with the original test exit code
+            exit $test_exit_code
+    - deploy-to-bitrise-io@2: {}
+
   test_binary_build:
     steps:
     - script@1:
