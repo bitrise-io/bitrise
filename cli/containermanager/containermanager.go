@@ -101,7 +101,6 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 	var executionContainerToStart string
 	var serviceContainersToStart []string
 
-	// TODO: validate id ExecutionContainer.ContainerID != ""
 	if len(m.runningExecutionContainer) == 0 && stepPlan.ExecutionContainer != nil && len(stepPlan.ExecutionContainer.ContainerID) > 0 {
 		// No running execution container, we need to check the current step's container requirement and start the container if needed.
 		executionContainerToStart = stepPlan.ExecutionContainer.ContainerID
@@ -265,8 +264,7 @@ func (m *Manager) startContainers(containerID string, serviceIDs []string, envir
 	if containerID != "" {
 		containerDef := m.getExecutionContainerDefinition(containerID)
 		if containerDef != nil {
-			// TODO: here we are not in a with group, update logs
-			m.logger.Infof("ℹ️ Running step group in docker container: %s", containerDef.Image)
+			m.logger.Infof("ℹ️ Running step in docker container: %s", containerDef.Image)
 
 			_, err := m.startExecutionContainer(*containerDef, containerID, envList)
 			if err != nil {
@@ -507,7 +505,6 @@ func (m *Manager) findNextStepPlanWithServiceContainerRequirement(containerID st
 					}
 
 					if containerCfg.ContainerID == containerID {
-						// TODO: validate if a given service is referenced only once for the given step
 						return &step, &containerCfg
 					}
 				}

@@ -113,11 +113,17 @@ func validateContainerReferences(containerisable Containerisable, validationCont
 		}
 	}
 
+	serviceContainerIDs := map[string]bool{}
 	serviceContainerCfgs, err := containerisable.GetServiceContainerConfigs()
 	if err != nil {
 		return fmt.Errorf("invalid service container definition: %w", err)
 	}
 	for _, serviceContainerCfg := range serviceContainerCfgs {
+		if _, ok := serviceContainerIDs[serviceContainerCfg.ContainerID]; ok {
+			return fmt.Errorf("duplicate service container reference: %s", serviceContainerCfg.ContainerID)
+		}
+		serviceContainerIDs[serviceContainerCfg.ContainerID] = true
+
 		if _, ok := validationContext.ServiceContainers[serviceContainerCfg.ContainerID]; !ok {
 			return fmt.Errorf("undefined service container (%s) referenced", serviceContainerCfg.ContainerID)
 		}
