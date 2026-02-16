@@ -22,7 +22,7 @@ func GetContainerConfig(ref ContainerReference) (*ContainerConfig, error) {
 
 	switch ref := ref.(type) {
 	case string:
-		return getContainerConfigFromString(ref), nil
+		return getContainerConfigFromString(ref)
 	case map[any]any:
 		return getContainerConfigFromMap(ref)
 	case map[string]any:
@@ -32,15 +32,15 @@ func GetContainerConfig(ref ContainerReference) (*ContainerConfig, error) {
 	}
 }
 
-func getContainerConfigFromString(ctrStr string) *ContainerConfig {
+func getContainerConfigFromString(ctrStr string) (*ContainerConfig, error) {
 	if ctrStr == "" {
-		return nil
+		return nil, fmt.Errorf("empty container id")
 	}
 
 	return &ContainerConfig{
 		ContainerID: ctrStr,
 		Recreate:    false,
-	}
+	}, nil
 }
 
 func getContainerConfigFromMap(ctr any) (*ContainerConfig, error) {
@@ -58,6 +58,9 @@ func getContainerConfigFromMap(ctr any) (*ContainerConfig, error) {
 
 	for k, v := range ctrMap {
 		id = k
+		if id == "" {
+			return nil, fmt.Errorf("empty container id")
+		}
 
 		ctrCfg, ok := toStrMap(v)
 		if !ok {
