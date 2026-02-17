@@ -112,7 +112,7 @@ func Test_Docker(t *testing.T) {
 
 		// Docker Execution Container Start
 		"docker start execution container": {
-			configPath:   "docker_new_syntax_basic_bitrise.yml",
+			configPath:   "docker_basic_usage_bitrise.yml",
 			workflowName: "test-execution-container",
 			requireErr:   false,
 			requireLogs: []string{
@@ -120,6 +120,19 @@ func Test_Docker(t *testing.T) {
 				"Container (alpine) is running",
 				"Step is running in container:",
 				"Running in container",
+				"Removing execution container: alpine",
+			},
+		},
+		"docker start execution container for step bundle": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-bundle-execution-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (alpine) is running",
+				"Step is running in container:",
+				"Reusing execution container: alpine",
+				"Step is running in container:",
 				"Removing execution container: alpine",
 			},
 		},
@@ -134,12 +147,25 @@ func Test_Docker(t *testing.T) {
 
 		// Docker Service Container Start
 		"docker start service containers": {
-			configPath:   "docker_new_syntax_basic_bitrise.yml",
+			configPath:   "docker_basic_usage_bitrise.yml",
 			workflowName: "test-service-containers",
 			requireErr:   false,
 			requireLogs: []string{
 				"Using new containerisation mode",
 				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+				"Removing service container: redis",
+			},
+		},
+		"docker start service containers for step bundle": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-bundle-service-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+				"Reusing service container: redis",
 				"Redis service container is running and responsive",
 				"Removing service container: redis",
 			},
@@ -162,19 +188,10 @@ func Test_Docker(t *testing.T) {
 				"Waiting for container (slow-booting-service) to be healthy",
 			},
 		},
-		"docker start service containers, containers are accessible from host": {
-			configPath:   "docker_service_from_host_bitrise.yml",
-			workflowName: "test-service-from-host",
-			requireErr:   false,
-			requireLogs: []string{
-				"Container (redis) is healthy",
-				"Redis service container is running and responsive",
-			},
-		},
 
 		// Container Lifecycle Management
 		"Execution container reuse across steps": {
-			configPath:   "docker_new_syntax_lifecycle_bitrise.yml",
+			configPath:   "docker_container_lifecycle_bitrise.yml",
 			workflowName: "test-lifecycle",
 			requireErr:   false,
 			requireLogs: []string{
@@ -191,7 +208,7 @@ func Test_Docker(t *testing.T) {
 			},
 		},
 		"Recreate flag forces fresh container": {
-			configPath:   "docker_new_syntax_recreate_bitrise.yml",
+			configPath:   "docker_container_recreate_bitrise.yml",
 			workflowName: "test-recreate",
 			requireErr:   false,
 			requireLogs: []string{
@@ -214,7 +231,7 @@ func Test_Docker(t *testing.T) {
 			if testCase.inventoryPath != "" {
 				cmd.GetCmd().Args = append(cmd.GetCmd().Args, "--inventory", testCase.inventoryPath)
 			} else {
-				cmd.GetCmd().Args = append(cmd.GetCmd().Args, "--inventory", "docker_new_syntax_secrets.yml") // Enable container debug logging
+				cmd.GetCmd().Args = append(cmd.GetCmd().Args, "--inventory", "docker_debug_logging_secrets.yml") // Enable container debug logging
 			}
 
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
