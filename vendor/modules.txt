@@ -62,16 +62,16 @@ github.com/bitrise-io/go-utils/pathutil
 github.com/bitrise-io/go-utils/pointers
 github.com/bitrise-io/go-utils/progress
 github.com/bitrise-io/go-utils/retry
-github.com/bitrise-io/go-utils/sliceutil
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.32.0.20260217120948-2b09b0d0886d
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
 github.com/bitrise-io/go-utils/v2/log/colorstring
+github.com/bitrise-io/go-utils/v2/parseutil
 github.com/bitrise-io/go-utils/v2/pathutil
 github.com/bitrise-io/go-utils/v2/redactwriter
 github.com/bitrise-io/go-utils/v2/retryhttp
@@ -239,6 +239,9 @@ github.com/go-logr/stdr
 # github.com/gofrs/uuid v4.3.1+incompatible
 ## explicit
 github.com/gofrs/uuid
+# github.com/gofrs/uuid/v5 v5.2.0
+## explicit; go 1.19
+github.com/gofrs/uuid/v5
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/proto
