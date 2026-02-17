@@ -24,64 +24,7 @@ func Test_Docker(t *testing.T) {
 		requireLogs         []string
 		requiredLogPatterns []string
 	}{
-		// Basic Container Execution
-		"basic execution - step with execution container": {
-			configPath:   "docker_new_syntax_basic_bitrise.yml",
-			workflowName: "test-execution-container",
-			requireErr:   false,
-			requireLogs: []string{
-				"Using new containerisation mode",
-				"Container (alpine) is running",
-				"Step is running in container:",
-				"Running in container",
-				"Removing execution container: alpine",
-			},
-		},
-		"basic execution - step with service containers": {
-			configPath:   "docker_new_syntax_basic_bitrise.yml",
-			workflowName: "test-service-containers",
-			requireErr:   false,
-			requireLogs: []string{
-				"Using new containerisation mode",
-				"Container (redis) is healthy",
-				"Redis service container is running and responsive",
-				"Removing service container: redis",
-			},
-		},
-
-		// Container Lifecycle Management
-		"lifecycle - container reuse across steps": {
-			configPath:   "docker_new_syntax_lifecycle_bitrise.yml",
-			workflowName: "test-lifecycle",
-			requireErr:   false,
-			requireLogs: []string{
-				"Using new containerisation mode",
-				"Container (container_a) is running",
-				"Step 1 in container_a",
-				"Reusing execution container: container_a",
-				"Step 2 in container_a",
-				"Removing execution container: container_a",
-				"Container (container_b) is running",
-				"Step 3 in container_b",
-				"Removing execution container: container_b",
-				"Step 4 on host",
-			},
-		},
-
-		// Container Recreation Logic
-		"recreation - recreate flag forces fresh container": {
-			configPath:   "docker_new_syntax_recreate_bitrise.yml",
-			workflowName: "test-recreate",
-			requireErr:   false,
-			requireLogs: []string{
-				"Using new containerisation mode",
-				"Creating marker",
-				"SUCCESS: Container reused - marker found",
-				"SUCCESS: Container recreated - marker not found",
-			},
-		},
-
-		// Old tests
+		// Docker Pull and Authentication
 		"docker pull succeeds with existing image": {
 			configPath:   "docker_pull_bitrise.yml",
 			workflowName: "docker-pull-success",
@@ -116,6 +59,19 @@ func Test_Docker(t *testing.T) {
 				"--password [REDACTED]",
 			},
 		},
+		"docker start execution and services containers with credentials": {
+			configPath:    "docker_multiple_containers_bitrise.yml",
+			workflowName:  "docker-login-multiple-containers",
+			inventoryPath: "docker_multiple_containers_secrets.yml",
+			requireErr:    false,
+			requireLogs: []string{
+				"Container (service_1_container) is healthy...",
+				"Container (service_2_container) is healthy...",
+				"Step is running in container: localhost:5001/healthy-image",
+			},
+		},
+
+		// Docker Create and Start Behavior
 		"docker create fails when already-used port is provided": {
 			configPath:   "docker_create_bitrise.yml",
 			workflowName: "docker-create-fails-invalid-port",
@@ -153,7 +109,21 @@ func Test_Docker(t *testing.T) {
 				"Could not start the specified docker image: frolvlad/alpine-bash:latest",
 			},
 		},
-		"docker start fails with container throwing error": {
+
+		// Docker Execution Container Start
+		"docker start execution container": {
+			configPath:   "docker_new_syntax_basic_bitrise.yml",
+			workflowName: "test-execution-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (alpine) is running",
+				"Step is running in container:",
+				"Running in container",
+				"Removing execution container: alpine",
+			},
+		},
+		"docker start execution container fails with container throwing error": {
 			configPath:   "docker_start_fails_bitrise.yml",
 			workflowName: "docker-start-fails",
 			requireErr:   true,
@@ -161,7 +131,20 @@ func Test_Docker(t *testing.T) {
 				"nonexistent-command",
 			},
 		},
-		"docker service start fails, build succeeds, service error is logged": {
+
+		// Docker Service Container Start
+		"docker start service containers": {
+			configPath:   "docker_new_syntax_basic_bitrise.yml",
+			workflowName: "test-service-containers",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+				"Removing service container: redis",
+			},
+		},
+		"docker start service containers fails, build succeeds, container error is logged": {
 			configPath:   "docker_service_bitrise.yml",
 			workflowName: "docker-service-start-fails",
 			requireErr:   false,
@@ -171,7 +154,7 @@ func Test_Docker(t *testing.T) {
 				"nonexistent-command",
 			},
 		},
-		"docker start services succeeds after retries": {
+		"docker start service containers succeeds after retries": {
 			configPath:   "docker_service_bitrise.yml",
 			workflowName: "docker-service-start-succeeds-after-retries",
 			requireErr:   false,
@@ -179,23 +162,7 @@ func Test_Docker(t *testing.T) {
 				"Waiting for container (slow-booting-service) to be healthy",
 			},
 		},
-		"docker start container and services with credentials": {
-			configPath:    "docker_multiple_containers_bitrise.yml",
-			workflowName:  "docker-login-multiple-containers",
-			inventoryPath: "docker_multiple_containers_secrets.yml",
-			requireErr:    false,
-			requireLogs: []string{
-				"Container (service_1_container) is healthy...",
-				"Container (service_2_container) is healthy...",
-				"Step is running in container: localhost:5001/healthy-image",
-			},
-		},
-		"docker stops containers when needed": {
-			configPath:   "docker_stop_containers_bitrise.yml",
-			workflowName: "docker-stops-containers",
-			requireErr:   false,
-		},
-		"docker service accessible from host via localhost (legacy syntax)": {
+		"docker start service containers, containers are accessible from host": {
 			configPath:   "docker_service_from_host_bitrise.yml",
 			workflowName: "test-service-from-host",
 			requireErr:   false,
@@ -203,6 +170,41 @@ func Test_Docker(t *testing.T) {
 				"Container (redis) is healthy",
 				"Redis service container is running and responsive",
 			},
+		},
+
+		// Container Lifecycle Management
+		"Execution container reuse across steps": {
+			configPath:   "docker_new_syntax_lifecycle_bitrise.yml",
+			workflowName: "test-lifecycle",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (container_a) is running",
+				"Step 1 in container_a",
+				"Reusing execution container: container_a",
+				"Step 2 in container_a",
+				"Removing execution container: container_a",
+				"Container (container_b) is running",
+				"Step 3 in container_b",
+				"Removing execution container: container_b",
+				"Step 4 on host",
+			},
+		},
+		"Recreate flag forces fresh container": {
+			configPath:   "docker_new_syntax_recreate_bitrise.yml",
+			workflowName: "test-recreate",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Creating marker",
+				"SUCCESS: Container reused - marker found",
+				"SUCCESS: Container recreated - marker not found",
+			},
+		},
+		"Containers are stopped when needed": {
+			configPath:   "docker_stop_containers_bitrise.yml",
+			workflowName: "docker-stops-containers",
+			requireErr:   false,
 		},
 	}
 

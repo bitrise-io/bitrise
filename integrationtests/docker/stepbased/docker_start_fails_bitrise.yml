@@ -21,4 +21,4 @@ workflows:
         title: Build failing image
         inputs:
         - content: |-
-            docker build --platform linux/amd64 -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/withgroupbased/docker_test.Dockerfile.failing-container .
+            docker build --platform linux/amd64 -t test-failing-image -f ${SRC_DIR_IN_GOPATH}/integrationtests/docker/docker_test.Dockerfile.failing-container .
