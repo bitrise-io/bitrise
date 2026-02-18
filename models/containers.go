@@ -31,28 +31,24 @@ type DockerCredentials struct {
 }
 
 type Containerisable struct {
-	Step       *stepmanModels.StepModel
-	StepBundle *StepBundleListItemModel
+	step       *stepmanModels.StepModel
+	stepBundle *StepBundleListItemModel
 }
 
 func newContainerisableFromStep(step stepmanModels.StepModel) Containerisable {
-	return Containerisable{
-		Step: &step,
-	}
+	return Containerisable{step: &step}
 }
 
 func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel) Containerisable {
-	return Containerisable{
-		StepBundle: &stepBundle,
-	}
+	return Containerisable{stepBundle: &stepBundle}
 }
 
 func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
 	var executionContainer stepmanModels.ContainerReference
-	if c.StepBundle != nil {
-		executionContainer = c.StepBundle.ExecutionContainer
-	} else if c.Step != nil {
-		executionContainer = c.Step.ExecutionContainer
+	if c.stepBundle != nil {
+		executionContainer = c.stepBundle.ExecutionContainer
+	} else if c.step != nil {
+		executionContainer = c.step.ExecutionContainer
 	}
 	if executionContainer == nil {
 		return nil, nil
@@ -72,10 +68,10 @@ func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error)
 
 func (c Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error) {
 	var serviceContainers []stepmanModels.ContainerReference
-	if c.StepBundle != nil {
-		serviceContainers = c.StepBundle.ServiceContainers
-	} else if c.Step != nil {
-		serviceContainers = c.Step.ServiceContainers
+	if c.stepBundle != nil {
+		serviceContainers = c.stepBundle.ServiceContainers
+	} else if c.step != nil {
+		serviceContainers = c.step.ServiceContainers
 	}
 	if serviceContainers == nil {
 		return nil, nil
