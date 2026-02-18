@@ -31,13 +31,21 @@ workflows:
             echo "marker" > /marker.txt
 
     - script@1:
-        title: Step 2 - Reuse container_a
+        title: Step 2 - No container (container_a should kept running)
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Step 2 on host"
+
+    - script@1:
+        title: Step 3 - Reuse container_a
         execution_container: container_a
         inputs:
         - content: |
             #!/bin/bash
             set -e
-            echo "Step 2 in container_a"
+            echo "Step 3 in container_a"
             if [ -f /marker.txt ]; then
               echo "SUCCESS: Container reused - marker found"
             else
@@ -46,18 +54,18 @@ workflows:
             fi
 
     - script@1:
-        title: Step 3 - Switch to container_b (container_a should stop)
+        title: Step 4 - Switch to container_b (container_a should stop)
         execution_container: container_b
         inputs:
         - content: |
             #!/bin/bash
             set -e
-            echo "Step 3 in container_b"
+            echo "Step 4 in container_b"
 
     - script@1:
-        title: Step 4 - No container (container_a should stop)
+        title: Step 5 - No container (container_a should stop)
         inputs:
         - content: |
             #!/bin/bash
             set -e
-            echo "Step 4 on host"
+            echo "Step 5 on host"

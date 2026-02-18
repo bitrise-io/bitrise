@@ -139,11 +139,7 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	// so we check the container requirements of the upcoming steps to decide if we need to stop the currently running containers.
 	// Here we only check what to stop, starting is handled in UpdateWithStepStarted.
 	if len(m.runningExecutionContainer) > 0 {
-		currentExecutionContainerID := ""
-		for containerID := range m.runningExecutionContainer {
-			currentExecutionContainerID = containerID
-			break
-		}
+		currentExecutionContainerID := m.getRunningExecutionContainerID()
 
 		if m.shouldStopExecutionContainer(currentExecutionContainerID, stepPlan) {
 			if container := m.runningExecutionContainer[currentExecutionContainerID]; container != nil {
@@ -205,6 +201,9 @@ func (m *Manager) DestroyAllContainers() error {
 	m.released = true
 
 	for _, executionContainer := range m.executionContainers {
+		if executionContainer == nil {
+			continue
+		}
 		m.logger.Infof("ℹ️ Removing execution container: %s", executionContainer.Name)
 		if err := executionContainer.Destroy(); err != nil {
 			return fmt.Errorf("destroy execution container: %w", err)
@@ -220,6 +219,26 @@ func (m *Manager) DestroyAllContainers() error {
 			if err := serviceContainer.Destroy(); err != nil {
 				return fmt.Errorf("destroy service container: %w", err)
 			}
+		}
+	}
+
+	for _, executionContainer := range m.runningExecutionContainer {
+		if executionContainer == nil {
+			continue
+		}
+		m.logger.Infof("ℹ️ Removing execution container: %s", executionContainer.Name)
+		if err := executionContainer.Destroy(); err != nil {
+			return fmt.Errorf("destroy execution container: %w", err)
+		}
+	}
+
+	for _, serviceContainer := range m.runningServiceContainers {
+		if serviceContainer == nil {
+			continue
+		}
+		m.logger.Infof("Removing service container: %s", serviceContainer.Name)
+		if err := serviceContainer.Destroy(); err != nil {
+			return fmt.Errorf("destroy service container: %w", err)
 		}
 	}
 
@@ -424,7 +443,8 @@ func (m *Manager) debugLogRunningContainers(stepPlan models.StepExecutionPlan) {
 		if stepPlan.ExecutionContainer != nil && len(stepPlan.ExecutionContainer.ContainerID) > 0 {
 			m.logger.Debugf("Reusing execution container: %s", stepPlan.ExecutionContainer.ContainerID)
 		} else {
-			m.logger.Debugf("Keep running execution container: %s", stepPlan.ExecutionContainer.ContainerID)
+			currentExecutionContainerID := m.getRunningExecutionContainerID()
+			m.logger.Debugf("Keep running execution container: %s", currentExecutionContainerID)
 		}
 	}
 
@@ -556,4 +576,13 @@ func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.Run
 
 func (m *Manager) getExecutionContainerForStepGroup(groupID string) *docker.RunningContainer {
 	return m.executionContainers[groupID]
+}
+
+func (m *Manager) getRunningExecutionContainerID() string {
+	currentExecutionContainerID := ""
+	for containerID := range m.runningExecutionContainer {
+		currentExecutionContainerID = containerID
+		break
+	}
+	return currentExecutionContainerID
 }

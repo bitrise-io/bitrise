@@ -91,7 +91,7 @@ type ContainerPlan struct {
 
 type ContainerConfig struct {
 	ContainerID string `json:"container_id,omitempty"`
-	Recreate    bool   `json:"_"`
+	Recreate    bool   `json:"-"`
 }
 
 type WorkflowRunModes struct {

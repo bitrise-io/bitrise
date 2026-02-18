@@ -39,7 +39,7 @@ func (dl *Logger) Warnf(format string, args ...interface{}) {
 func (dl *Logger) Debugf(format string, args ...interface{}) {
 	str := fmt.Sprintf(format, args...)
 	redacted, _ := dl.Redact(str)
-	dl.logger.Debugf(redacted)
+	dl.logger.Debug(redacted)
 }
 
 func (dl *Logger) Redact(s string) (string, error) {
