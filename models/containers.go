@@ -36,6 +36,23 @@ type Containerisable struct {
 	stepBundleDefinition *StepBundleModel
 }
 
+func ProcessContainers(containers map[string]Container) (executionContainers map[string]Container, serviceContainers map[string]Container) {
+	executionContainers = map[string]Container{}
+	serviceContainers = map[string]Container{}
+	for id, container := range containers {
+		switch container.Type {
+		case ContainerTypeExecution:
+			executionContainers[id] = container
+		case ContainerTypeService:
+			serviceContainers[id] = container
+		case "":
+			executionContainers[id] = container
+			serviceContainers[id] = container
+		}
+	}
+	return
+}
+
 func newContainerisableFromStep(step stepmanModels.StepModel) Containerisable {
 	return Containerisable{step: &step}
 }

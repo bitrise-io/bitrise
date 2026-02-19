@@ -719,19 +719,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	}
 	sort.Strings(bundleIDs)
 
-	executionContainers := map[string]Container{}
-	serviceContainers := map[string]Container{}
-	for id, container := range config.Containers {
-		switch container.Type {
-		case ContainerTypeExecution:
-			executionContainers[id] = container
-		case ContainerTypeService:
-			serviceContainers[id] = container
-		default:
-			executionContainers[id] = container
-			serviceContainers[id] = container
-		}
-	}
+	executionContainers, serviceContainers := ProcessContainers(config.Containers)
 	var containerValidationCtx *containerValidationContext
 	if len(config.Containers) > 0 {
 		containerValidationCtx = &containerValidationContext{
@@ -1072,20 +1060,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
-		executionContainers := map[string]Container{}
-		serviceContainers := map[string]Container{}
-		for id, container := range config.Containers {
-			switch container.Type {
-			case ContainerTypeExecution:
-				executionContainers[id] = container
-			case ContainerTypeService:
-				serviceContainers[id] = container
-			default:
-				executionContainers[id] = container
-				serviceContainers[id] = container
-			}
-		}
-
+		executionContainers, serviceContainers := ProcessContainers(config.Containers)
 		containerValidationCtx := &containerValidationContext{
 			ExecutionContainers: executionContainers,
 			ServiceContainers:   serviceContainers,
