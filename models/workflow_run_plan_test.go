@@ -1181,6 +1181,178 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			},
 		},
 		{
+			name:           "step inside step bundle with own containers overrides bundle definition containers, step without containers inherits bundle defaults",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ExecutionContainer: "node",
+					ServiceContainers:  []stepmanModels.ContainerReference{"redis"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-with-containers": stepmanModels.StepModel{
+							ExecutionContainer: "golang",
+							ServiceContainers:  []stepmanModels.ContainerReference{"postgres"},
+						}},
+						{"step-without-containers": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			containers: map[string]Container{
+				"node": {
+					Type:  ContainerTypeExecution,
+					Image: "node:18",
+				},
+				"golang": {
+					Type:  ContainerTypeExecution,
+					Image: "golang:1.22",
+				},
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+				"postgres": {
+					Type:  ContainerTypeService,
+					Image: "postgres:13",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "test_bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"golang": {Image: "golang:1.22"},
+					"node":   {Image: "node:18"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"postgres": {Image: "postgres:13"},
+					"redis":    {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_2",
+							StepID: "step-with-containers",
+							Step: stepmanModels.StepModel{
+								ExecutionContainer: "golang",
+								ServiceContainers:  []stepmanModels.ContainerReference{"postgres"},
+							},
+							StepBundleUUID:     "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "golang"},
+							ServiceContainers:  []ContainerConfig{{ContainerID: "postgres"}},
+						},
+						{
+							UUID:               "uuid_3",
+							StepID:             "step-without-containers",
+							Step:               stepmanModels.StepModel{},
+							StepBundleUUID:     "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "node"},
+							ServiceContainers:  []ContainerConfig{{ContainerID: "redis"}},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "complex step inside step bundle with overrides",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"inner_bundle": {
+					ExecutionContainer: "inner_bundle_definition_execution_container",
+					ServiceContainers:  []stepmanModels.ContainerReference{"inner_bundle_definition_service_container"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-with-containers": stepmanModels.StepModel{
+							ExecutionContainer: "step_execution_container",
+							ServiceContainers:  []stepmanModels.ContainerReference{"step_service_container"},
+						}},
+						{"step-without-containers": stepmanModels.StepModel{}},
+					},
+				},
+				"outer_bundle": {
+					ExecutionContainer: "outer_bundle_definition_execution_container",
+					ServiceContainers:  []stepmanModels.ContainerReference{"outer_bundle_definition_service_container"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle::inner_bundle": StepBundleListItemModel{
+							ExecutionContainer: "inner_bundle_override_execution_container",
+							ServiceContainers:  []stepmanModels.ContainerReference{"inner_bundle_override_service_container"},
+						}},
+					},
+				},
+			},
+			containers: map[string]Container{
+				"step_execution_container":                    {Type: ContainerTypeExecution, Image: "image"},
+				"step_service_container":                      {Type: ContainerTypeService, Image: "image"},
+				"inner_bundle_definition_execution_container": {Type: ContainerTypeExecution, Image: "image"},
+				"inner_bundle_definition_service_container":   {Type: ContainerTypeService, Image: "image"},
+				"inner_bundle_override_execution_container":   {Type: ContainerTypeExecution, Image: "image"},
+				"inner_bundle_override_service_container":     {Type: ContainerTypeService, Image: "image"},
+				"outer_bundle_definition_execution_container": {Type: ContainerTypeExecution, Image: "image"},
+				"outer_bundle_definition_service_container":   {Type: ContainerTypeService, Image: "image"},
+				"outer_bundle_override_execution_container":   {Type: ContainerTypeExecution, Image: "image"},
+				"outer_bundle_override_service_container":     {Type: ContainerTypeService, Image: "image"},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::outer_bundle": StepBundleListItemModel{
+							ExecutionContainer: "outer_bundle_override_execution_container",
+							ServiceContainers:  []stepmanModels.ContainerReference{"outer_bundle_override_service_container"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "outer_bundle"},
+					"uuid_2": {ID: "inner_bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"step_execution_container":                  {Image: "image"},
+					"inner_bundle_override_execution_container": {Image: "image"},
+					"outer_bundle_override_execution_container": {Image: "image"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"step_service_container":                  {Image: "image"},
+					"inner_bundle_override_service_container": {Image: "image"},
+					"outer_bundle_override_service_container": {Image: "image"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_3",
+							StepID: "step-with-containers",
+							Step: stepmanModels.StepModel{
+								ExecutionContainer: "step_execution_container",
+								ServiceContainers:  []stepmanModels.ContainerReference{"step_service_container"},
+							},
+							StepBundleUUID:     "uuid_2",
+							ExecutionContainer: &ContainerConfig{ContainerID: "step_execution_container"},
+							ServiceContainers:  []ContainerConfig{{ContainerID: "step_service_container"}},
+						},
+						{
+							UUID:               "uuid_4",
+							StepID:             "step-without-containers",
+							Step:               stepmanModels.StepModel{},
+							StepBundleUUID:     "uuid_2",
+							ExecutionContainer: &ContainerConfig{ContainerID: "outer_bundle_override_execution_container"},
+							ServiceContainers:  []ContainerConfig{{ContainerID: "outer_bundle_override_service_container"}},
+						},
+					}},
+				},
+			},
+		},
+		{
 			name:           "error - undefined execution container referenced",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",
