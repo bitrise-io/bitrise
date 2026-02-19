@@ -403,7 +403,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	}
 
 	if containerValidationCtx != nil {
-		if err := validateContainerReferences(newContainerisableFromStepBundle(*bundle), *containerValidationCtx); err != nil {
+		if err := validateContainerReferences(newContainerisableFromStepBundle(*bundle, stepBundleDefinition), *containerValidationCtx); err != nil {
 			return fmt.Errorf("step bundle has container reference issue: %w", err)
 		}
 	}
@@ -411,7 +411,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	return nil
 }
 
-func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel) ([]string, error) {
+func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel, containerValidationCtx *containerValidationContext) ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
@@ -446,7 +446,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
 
-			if err := override.Validate(definition, nil); err != nil {
+			if err := override.Validate(definition, containerValidationCtx); err != nil {
 				return warnings, err
 			}
 		}
@@ -461,6 +461,13 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return warnings, err
+		}
+	}
+
+	if containerValidationCtx != nil {
+		containerisable := newContainerisableFromStepBundle(StepBundleListItemModel{}, *bundle)
+		if err := validateContainerReferences(containerisable, *containerValidationCtx); err != nil {
+			return warnings, fmt.Errorf("step bundle has container reference issue: %w", err)
 		}
 	}
 
@@ -712,6 +719,27 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	}
 	sort.Strings(bundleIDs)
 
+	executionContainers := map[string]Container{}
+	serviceContainers := map[string]Container{}
+	for id, container := range config.Containers {
+		switch container.Type {
+		case ContainerTypeExecution:
+			executionContainers[id] = container
+		case ContainerTypeService:
+			serviceContainers[id] = container
+		default:
+			executionContainers[id] = container
+			serviceContainers[id] = container
+		}
+	}
+	var containerValidationCtx *containerValidationContext
+	if len(config.Containers) > 0 {
+		containerValidationCtx = &containerValidationContext{
+			ExecutionContainers: executionContainers,
+			ServiceContainers:   serviceContainers,
+		}
+	}
+
 	for _, bundleID := range bundleIDs {
 		bundle := config.StepBundles[bundleID]
 
@@ -719,7 +747,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 			return warnings, err
 		}
 
-		warns, err := bundle.Validate(config.StepBundles)
+		warns, err := bundle.Validate(config.StepBundles, containerValidationCtx)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)

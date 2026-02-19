@@ -365,14 +365,18 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	}
 
 	if allowContainerDefinition {
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride))
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride, bundleDefinition))
 		if err != nil {
 			return nil, err
 		}
 
 		for i := range plans {
-			plans[i].ExecutionContainer = executionContainerCfg
-			plans[i].ServiceContainers = serviceContainerCfgs
+			if plans[i].ExecutionContainer == nil {
+				plans[i].ExecutionContainer = executionContainerCfg
+			}
+			if len(plans[i].ServiceContainers) == 0 {
+				plans[i].ServiceContainers = serviceContainerCfgs
+			}
 		}
 	}
 
@@ -431,7 +435,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 			return nil, err
 		}
 
-		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, false)
+		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, true)
 		if err != nil {
 			return nil, err
 		}
