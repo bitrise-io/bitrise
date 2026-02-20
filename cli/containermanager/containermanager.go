@@ -61,23 +61,7 @@ func (m *Manager) SetWorkflowRunPlan(plan models.WorkflowRunPlan) {
 		m.logger.Debugf("Using new containerisation mode")
 		// In new containerisation mode, both service and execution containers are defined under the "containers" key,
 		// so we need to separate them based on their type.
-		executionContainers := map[string]models.Container{}
-		serviceContainers := map[string]models.Container{}
-
-		for containerID, container := range m.executionContainerDefinitions {
-			switch container.Type {
-			case models.ContainerTypeExecution:
-				executionContainers[containerID] = container
-			case models.ContainerTypeService:
-				serviceContainers[containerID] = container
-			default:
-				executionContainers[containerID] = container
-				serviceContainers[containerID] = container
-			}
-		}
-
-		m.executionContainerDefinitions = executionContainers
-		m.serviceContainerDefinitions = serviceContainers
+		m.executionContainerDefinitions, m.serviceContainerDefinitions = models.ProcessContainerList(m.executionContainerDefinitions)
 	}
 }
 

@@ -30,6 +30,23 @@ type DockerCredentials struct {
 	Server   string `json:"server,omitempty" yaml:"server,omitempty"`
 }
 
+func ProcessContainerList(containers map[string]Container) (executionContainers map[string]Container, serviceContainers map[string]Container) {
+	executionContainers = map[string]Container{}
+	serviceContainers = map[string]Container{}
+	for id, container := range containers {
+		switch container.Type {
+		case ContainerTypeExecution:
+			executionContainers[id] = container
+		case ContainerTypeService:
+			serviceContainers[id] = container
+		case "":
+			executionContainers[id] = container
+			serviceContainers[id] = container
+		}
+	}
+	return
+}
+
 type Containerisable struct {
 	step       *stepmanModels.StepModel
 	stepBundle *StepBundleListItemModel

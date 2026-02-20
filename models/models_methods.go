@@ -1044,20 +1044,7 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
-		executionContainers := map[string]Container{}
-		serviceContainers := map[string]Container{}
-		for id, container := range config.Containers {
-			switch container.Type {
-			case ContainerTypeExecution:
-				executionContainers[id] = container
-			case ContainerTypeService:
-				serviceContainers[id] = container
-			default:
-				executionContainers[id] = container
-				serviceContainers[id] = container
-			}
-		}
-
+		executionContainers, serviceContainers := ProcessContainerList(config.Containers)
 		containerValidationCtx := &containerValidationContext{
 			ExecutionContainers: executionContainers,
 			ServiceContainers:   serviceContainers,

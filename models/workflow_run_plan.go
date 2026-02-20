@@ -502,20 +502,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
-	executionContainers := map[string]Container{}
-	serviceContainers := map[string]Container{}
-	for id, container := range builder.containers {
-		switch container.Type {
-		case ContainerTypeExecution:
-			executionContainers[id] = container
-		case ContainerTypeService:
-			serviceContainers[id] = container
-		default:
-			executionContainers[id] = container
-			serviceContainers[id] = container
-		}
-	}
-
+	executionContainers, serviceContainers := ProcessContainerList(builder.containers)
 	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
 	if err != nil {
 		return nil, nil, err
