@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-// Logger ...
+// Logger interface designed to provide only the necessary functionality used by our tooling.
+// The lack of in-line printing is intentional.
 type Logger interface {
 	Infof(format string, v ...interface{})
 	Warnf(format string, v ...interface{})
@@ -22,7 +23,6 @@ type Logger interface {
 	TDebugf(format string, v ...interface{})
 	TErrorf(format string, v ...interface{})
 	Println()
-	PrintWithoutNewline(msg string)
 	EnableDebugLog(enable bool)
 }
 
@@ -155,13 +155,6 @@ func (l *logger) TErrorf(format string, v ...interface{}) {
 func (l *logger) Println() {
 	if _, err := fmt.Fprintln(l.stdout); err != nil {
 		fmt.Printf("failed to print newline: %s\n", err)
-	}
-}
-
-// PrintWithoutNewline is similar to Printf but does not add a newline at the end of the message. It is useful for printing progress indicators, such as dots, on the same line.
-func (l *logger) PrintWithoutNewline(msg string) {
-	if _, err := fmt.Fprint(l.stdout, msg); err != nil {
-		fmt.Printf("failed to print message: %s: %s\n", msg, err)
 	}
 }
 

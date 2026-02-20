@@ -65,7 +65,7 @@ github.com/bitrise-io/go-utils/retry
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.32.0.20260217120948-2b09b0d0886d
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.32.0.20260219145834-dc507fba552c
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
