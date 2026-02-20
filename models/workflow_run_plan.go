@@ -28,8 +28,18 @@ type WorkflowRunPlan struct {
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
 
 	ExecutionPlan   []WorkflowExecutionPlan   `json:"execution_plan"`
-	WithGroupPlans  map[string]WithGroupPlan  `json:"with_groups,omitempty"`
 	StepBundlePlans map[string]StepBundlePlan `json:"step_bundles,omitempty"`
+
+	// ----
+	// Container plans
+	// step execution container id to container plan
+	ExecutionContainerPlans map[string]ContainerPlan `json:"execution_container_plans,omitempty"`
+	// service container id to container plan
+	ServiceContainerPlans map[string]ContainerPlan `json:"service_container_plans,omitempty"`
+	// ----
+
+	// TODO: Old container plan, to be removed when containerisation using "With groups" is sunsetted
+	WithGroupPlans map[string]WithGroupPlan `json:"with_groups,omitempty"`
 }
 
 type WorkflowExecutionPlan struct {
@@ -40,6 +50,8 @@ type WorkflowExecutionPlan struct {
 	IsSteplibOfflineMode bool                `json:"-"`
 }
 
+// WithGroupPlan ...
+// TODO: Old container plan, to be removed when containerisation using "With groups" is sunsetted
 type WithGroupPlan struct {
 	Services  []ContainerPlan `json:"services,omitempty"`
 	Container ContainerPlan   `json:"container,omitempty"`
@@ -51,26 +63,35 @@ type StepBundlePlan struct {
 }
 
 type StepExecutionPlan struct {
-	UUID   string `json:"uuid"`
-	StepID string `json:"step_id"`
+	UUID   string                  `json:"uuid"`
+	StepID string                  `json:"step_id"`
+	Step   stepmanModels.StepModel `json:"-"`
 
-	Step stepmanModels.StepModel `json:"-"`
-	// With (container) group
-	WithGroupUUID string   `json:"with_group_uuid,omitempty"`
-	ContainerID   string   `json:"-"`
-	ServiceIDs    []string `json:"-"`
 	// Step Bundle group
 	StepBundleUUID string                              `json:"step_bundle_uuid,omitempty"`
 	StepBundleEnvs []envmanModels.EnvironmentItemModel `json:"-"`
-
 	// StepBundleRunIfs stores each run_if statements of the including Step Bundles.
 	// The first element is the run_if statement of the top most Step Bundle including the given Step.
 	// To execute the Step, all run_if statements must be evaluated to true.
 	StepBundleRunIfs []string `json:"-"`
+
+	// Containers
+	ExecutionContainer *ContainerConfig  `json:"execution_container,omitempty"`
+	ServiceContainers  []ContainerConfig `json:"service_containers,omitempty"`
+
+	// With (container) group
+	WithGroupUUID string   `json:"with_group_uuid,omitempty"`
+	ContainerID   string   `json:"-"`
+	ServiceIDs    []string `json:"-"`
 }
 
 type ContainerPlan struct {
 	Image string `json:"image"`
+}
+
+type ContainerConfig struct {
+	ContainerID string `json:"container_id,omitempty"`
+	Recreate    bool   `json:"-"`
 }
 
 type WorkflowRunModes struct {
@@ -102,19 +123,23 @@ type WorkflowRunPlanBuilder struct {
 	services     map[string]Container
 	uuidProvider func() string
 
-	withGroupPlans  map[string]WithGroupPlan
-	stepBundlePlans map[string]StepBundlePlan
+	stepBundlePlans         map[string]StepBundlePlan
+	executionContainerPlans map[string]ContainerPlan
+	serviceContainerPlans   map[string]ContainerPlan
+	withGroupPlans          map[string]WithGroupPlan
 }
 
 func NewWorkflowRunPlanBuilder(workflows map[string]WorkflowModel, stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container, uuidProvider func() string) *WorkflowRunPlanBuilder {
 	return &WorkflowRunPlanBuilder{
-		workflows:       workflows,
-		stepBundles:     stepBundles,
-		containers:      containers,
-		services:        services,
-		uuidProvider:    uuidProvider,
-		withGroupPlans:  map[string]WithGroupPlan{},
-		stepBundlePlans: map[string]StepBundlePlan{},
+		workflows:               workflows,
+		stepBundles:             stepBundles,
+		containers:              containers,
+		services:                services,
+		uuidProvider:            uuidProvider,
+		stepBundlePlans:         map[string]StepBundlePlan{},
+		executionContainerPlans: map[string]ContainerPlan{},
+		serviceContainerPlans:   map[string]ContainerPlan{},
+		withGroupPlans:          map[string]WithGroupPlan{},
 	}
 }
 
@@ -132,7 +157,7 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 				return WorkflowRunPlan{}, err
 			}
 
-			plans, err := builder.processStepListItem(*genericStep, nil, nil)
+			plans, err := builder.processStepListItem(*genericStep, nil, nil, true)
 			if err != nil {
 				return WorkflowRunPlan{}, err
 			}
@@ -159,7 +184,7 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		cliVersion = fmt.Sprintf("%s (%s)", cliVersion, version.Commit)
 	}
 
-	return WorkflowRunPlan{
+	plan := WorkflowRunPlan{
 		Version:                 cliVersion,
 		LogFormatVersion:        LogFormatVersion,
 		CIMode:                  modes.CIMode,
@@ -169,10 +194,22 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,
-		WithGroupPlans:          builder.withGroupPlans,
-		StepBundlePlans:         builder.stepBundlePlans,
 		ExecutionPlan:           executionPlan,
-	}, nil
+	}
+	if len(builder.withGroupPlans) > 0 {
+		plan.WithGroupPlans = builder.withGroupPlans
+	}
+	if len(builder.stepBundlePlans) > 0 {
+		plan.StepBundlePlans = builder.stepBundlePlans
+	}
+	if len(builder.executionContainerPlans) > 0 {
+		plan.ExecutionContainerPlans = builder.executionContainerPlans
+	}
+	if len(builder.serviceContainerPlans) > 0 {
+		plan.ServiceContainerPlans = builder.serviceContainerPlans
+	}
+
+	return plan, nil
 }
 
 func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflows map[string]WorkflowModel, workflowStack []string) []string {
@@ -190,14 +227,18 @@ func (builder *WorkflowRunPlanBuilder) walkWorkflows(workflowID string, workflow
 	return workflowStack
 }
 
-func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepListItem, stepBundleContext *BundleContext, withGroupContext *WithGroupContext) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepListItem, stepBundleContext *BundleContext, withGroupContext *WithGroupContext, allowContainers bool) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
 
 	key, t := stepListItem.GetKeyAndType()
 
 	switch t {
 	case StepListItemTypeStep:
-		plan := builder.processStep(key, stepListItem, stepBundleContext, withGroupContext)
+		plan, err := builder.processStep(key, stepListItem, stepBundleContext, withGroupContext, allowContainers)
+		if err != nil {
+			return nil, err
+		}
+
 		stepPlans = append(stepPlans, *plan)
 	case StepListItemTypeWith:
 		plans, err := builder.processWithGroup(stepListItem)
@@ -207,7 +248,7 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 
 		stepPlans = append(stepPlans, plans...)
 	case StepListItemTypeBundle:
-		plans, err := builder.processStepBundle(key, stepListItem, stepBundleContext)
+		plans, err := builder.processStepBundle(key, stepListItem, stepBundleContext, allowContainers)
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +261,7 @@ func (builder *WorkflowRunPlanBuilder) processStepListItem(stepListItem StepList
 	return stepPlans, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext) *StepExecutionPlan {
+func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem StepListItem, bundleContext *BundleContext, withGroupContext *WithGroupContext, allowContainerDefinition bool) (*StepExecutionPlan, error) {
 	step := stepListItem.GetStep()
 
 	plan := StepExecutionPlan{
@@ -238,10 +279,20 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 		plan.ContainerID = withGroupContext.ContainerID
 		plan.ServiceIDs = withGroupContext.ServiceIDs
 	}
-	return &plan
+	if allowContainerDefinition {
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStep(*step))
+		if err != nil {
+			return nil, err
+		}
+
+		plan.ExecutionContainer = executionContainerCfg
+		plan.ServiceContainers = serviceContainerCfgs
+
+	}
+	return &plan, nil
 }
 
-func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext) ([]StepExecutionPlan, error) {
+func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepListItem StepListItem, bundleContext *BundleContext, allowContainerDefinition bool) ([]StepExecutionPlan, error) {
 	bundleOverride := stepListItem.GetBundle()
 
 	bundleDefinition, ok := builder.stepBundles[bundleID]
@@ -313,6 +364,18 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		return nil, err
 	}
 
+	if allowContainerDefinition {
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride))
+		if err != nil {
+			return nil, err
+		}
+
+		for i := range plans {
+			plans[i].ExecutionContainer = executionContainerCfg
+			plans[i].ServiceContainers = serviceContainerCfgs
+		}
+	}
+
 	return plans, nil
 }
 
@@ -349,7 +412,7 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 			return nil, err
 		}
 
-		plans, err := builder.processStepListItem(*genericStep, nil, withGroupContext)
+		plans, err := builder.processStepListItem(*genericStep, nil, withGroupContext, false)
 		if err != nil {
 			return nil, err
 		}
@@ -368,7 +431,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 			return nil, err
 		}
 
-		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil)
+		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, false)
 		if err != nil {
 			return nil, err
 		}
@@ -436,4 +499,45 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 	}
 
 	return bundleEnvs, nil
+}
+
+func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
+	executionContainers, serviceContainers := ProcessContainerList(builder.containers)
+	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if executionContainerCfg != nil {
+		container, ok := executionContainers[executionContainerCfg.ContainerID]
+		if !ok {
+			return nil, nil, fmt.Errorf("referenced execution container not defined: %s", executionContainerCfg.ContainerID)
+		}
+
+		if _, ok := builder.executionContainerPlans[executionContainerCfg.ContainerID]; !ok {
+			builder.executionContainerPlans[executionContainerCfg.ContainerID] = ContainerPlan{
+				Image: container.Image,
+			}
+		}
+	}
+
+	serviceContainerCfgs, err := containerisable.GetServiceContainerConfigs()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, containerCfg := range serviceContainerCfgs {
+		container, ok := serviceContainers[containerCfg.ContainerID]
+		if !ok {
+			return nil, nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
+		}
+
+		if _, ok := builder.serviceContainerPlans[containerCfg.ContainerID]; !ok {
+			builder.serviceContainerPlans[containerCfg.ContainerID] = ContainerPlan{
+				Image: container.Image,
+			}
+		}
+	}
+
+	return executionContainerCfg, serviceContainerCfgs, nil
 }

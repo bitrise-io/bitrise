@@ -36,6 +36,12 @@ func (dl *Logger) Warnf(format string, args ...interface{}) {
 	dl.logger.Warn(redacted)
 }
 
+func (dl *Logger) Debugf(format string, args ...interface{}) {
+	str := fmt.Sprintf(format, args...)
+	redacted, _ := dl.Redact(str)
+	dl.logger.Debug(redacted)
+}
+
 func (dl *Logger) Redact(s string) (string, error) {
 	src := bytes.NewReader([]byte(s))
 	dstBuf := new(bytes.Buffer)

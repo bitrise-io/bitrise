@@ -1,7 +1,7 @@
 //go:build linux_only
 // +build linux_only
 
-package docker
+package withgroupbased
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/ryanuber/go-glob"
+	glob "github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
 )
 
@@ -137,6 +137,15 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-stops-containers",
 			requireErr:   false,
 		},
+		"docker service accessible from host via localhost (legacy syntax)": {
+			configPath:   "docker_service_from_host_bitrise.yml",
+			workflowName: "test-service-from-host",
+			requireErr:   false,
+			requireLogs: []string{
+				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+			},
+		},
 	}
 
 	for testName, testCase := range testCases {
@@ -148,16 +157,16 @@ func Test_Docker(t *testing.T) {
 
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 			if testCase.requireErr {
-				require.Error(t, err)
+				require.Error(t, err, "Expected command to fail but it succeeded. Output:\n%s", out)
 			} else {
-				require.NoError(t, err, out)
+				require.NoError(t, err, "Expected command to succeed but it failed. Output:\n%s", out)
 			}
 			for _, log := range testCase.requireLogs {
-				require.Contains(t, out, log)
+				require.Contains(t, out, log, "Expected log message not found in output:\n%s", out)
 			}
 			for _, logPattern := range testCase.requiredLogPatterns {
 				contains := glob.Glob(logPattern, out)
-				require.True(t, contains, out)
+				require.True(t, contains, "Expected log message pattern not found in output:\n%s", out)
 			}
 		})
 	}
