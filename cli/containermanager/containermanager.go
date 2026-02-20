@@ -163,7 +163,11 @@ func (m *Manager) GetExecutionContainerForStep(UUID string) (*models.Container, 
 			return nil, nil
 		}
 
-		containerDefinition := m.executionContainerDefinitions[stepPlan.ContainerID]
+		containerDefinition, ok := m.executionContainerDefinitions[stepPlan.ContainerID]
+		if !ok {
+			// This should not happen, but in case it does, we return nil to avoid breaking the execution.
+			return nil, nil
+		}
 		runningContainer := m.executionContainers[stepPlan.WithGroupUUID]
 
 		return &containerDefinition, runningContainer
@@ -173,7 +177,12 @@ func (m *Manager) GetExecutionContainerForStep(UUID string) (*models.Container, 
 		return nil, nil
 	}
 
-	containerDefinition := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
+	containerDefinition, ok := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
+	if !ok {
+		// This should not happen, but in case it does, we return nil to avoid breaking the execution.
+		return nil, nil
+	}
+
 	runningContainer := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]
 
 	return &containerDefinition, runningContainer
