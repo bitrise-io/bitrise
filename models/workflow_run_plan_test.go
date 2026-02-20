@@ -9,6 +9,7 @@ import (
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
@@ -1415,4 +1416,131 @@ func cliVersion() string {
 		return fmt.Sprintf("%s (%s)", version.VERSION, version.Commit)
 	}
 	return version.VERSION
+}
+
+// TestNewWorkflowRunPlan_ContainersFromYAML demonstrates container priority when building
+// a workflow run plan from a YAML string. The priority hierarchy is:
+//  1. Step-level containers (highest priority, never overridden)
+//  2. Outermost bundle reference explicit override
+//  3. Inner bundle reference override
+//  4. Bundle definition fallback (lowest priority)
+func TestNewWorkflowRunPlan_ContainersFromYAML(t *testing.T) {
+	const bitriseYAML = `
+format_version: "17"
+containers:
+  step_exec:
+    type: execution
+    image: step-exec:latest
+  step_svc:
+    type: service
+    image: step-svc:latest
+  inner_def_exec:
+    type: execution
+    image: inner-def:latest
+  inner_def_svc:
+    type: service
+    image: inner-def-svc:latest
+  inner_override_exec:
+    type: execution
+    image: inner-override:latest
+  inner_override_svc:
+    type: service
+    image: inner-override-svc:latest
+  outer_def_exec:
+    type: execution
+    image: outer-def:latest
+  outer_def_svc:
+    type: service
+    image: outer-def-svc:latest
+  outer_override_exec:
+    type: execution
+    image: outer-override:latest
+  outer_override_svc:
+    type: service
+    image: outer-override-svc:latest
+step_bundles:
+  inner_bundle:
+    execution_container: inner_def_exec
+    service_containers:
+    - inner_def_svc
+    steps:
+    - step-with-own:
+        execution_container: step_exec
+        service_containers:
+        - step_svc
+    - step-without-own: {}
+  outer_bundle:
+    execution_container: outer_def_exec
+    service_containers:
+    - outer_def_svc
+    steps:
+    - bundle::inner_bundle:
+        execution_container: inner_override_exec
+        service_containers:
+        - inner_override_svc
+workflows:
+  workflow1:
+    steps:
+    - bundle::outer_bundle:
+        execution_container: outer_override_exec
+        service_containers:
+        - outer_override_svc
+`
+
+	var config BitriseDataModel
+	require.NoError(t, yaml.Unmarshal([]byte(bitriseYAML), &config))
+	require.NoError(t, config.Normalize())
+
+	uuidProvider := &MockUUIDProvider{}
+	plan, err := NewWorkflowRunPlanBuilder(
+		config.Workflows,
+		config.StepBundles,
+		config.Containers,
+		config.Services,
+		uuidProvider.UUID,
+	).Build(WorkflowRunModes{}, "workflow1")
+	require.NoError(t, err)
+
+	// Collect actual containers per step ID from the execution plan.
+	type stepContainers struct {
+		executionContainer *ContainerConfig
+		serviceContainers  []ContainerConfig
+	}
+	actual := map[string]stepContainers{}
+	for _, wfPlan := range plan.ExecutionPlan {
+		for _, step := range wfPlan.Steps {
+			actual[step.StepID] = stepContainers{
+				executionContainer: step.ExecutionContainer,
+				serviceContainers:  step.ServiceContainers,
+			}
+		}
+	}
+
+	// step-with-own has step-level containers — they must never be overridden.
+	require.Equal(t, &ContainerConfig{ContainerID: "step_exec"}, actual["step-with-own"].executionContainer,
+		"step-with-own: step-level execution container must win")
+	require.Equal(t, []ContainerConfig{{ContainerID: "step_svc"}}, actual["step-with-own"].serviceContainers,
+		"step-with-own: step-level service containers must win")
+
+	// step-without-own has no step-level containers, so the outermost explicit bundle
+	// reference override (outer_override_*) must win over the inner override and definitions.
+	require.Equal(t, &ContainerConfig{ContainerID: "outer_override_exec"}, actual["step-without-own"].executionContainer,
+		"step-without-own: outermost explicit override must win")
+	require.Equal(t, []ContainerConfig{{ContainerID: "outer_override_svc"}}, actual["step-without-own"].serviceContainers,
+		"step-without-own: outermost explicit override must win")
+
+	// Only containers that are actually used in the plan should appear in the container maps.
+	// Definition-only containers (inner_def_exec, inner_def_svc, outer_def_exec, outer_def_svc)
+	// must NOT appear because they were never the winning container for any step.
+	assert.Equal(t, map[string]ContainerPlan{
+		"step_exec":          {Image: "step-exec:latest"},
+		"inner_override_exec": {Image: "inner-override:latest"},
+		"outer_override_exec": {Image: "outer-override:latest"},
+	}, plan.ExecutionContainerPlans)
+
+	assert.Equal(t, map[string]ContainerPlan{
+		"step_svc":          {Image: "step-svc:latest"},
+		"inner_override_svc": {Image: "inner-override-svc:latest"},
+		"outer_override_svc": {Image: "outer-override-svc:latest"},
+	}, plan.ServiceContainerPlans)
 }
