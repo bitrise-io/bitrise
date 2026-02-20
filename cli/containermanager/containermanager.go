@@ -61,7 +61,23 @@ func (m *Manager) SetWorkflowRunPlan(plan models.WorkflowRunPlan) {
 		m.logger.Debugf("Using new containerisation mode")
 		// In new containerisation mode, both service and execution containers are defined under the "containers" key,
 		// so we need to separate them based on their type.
-		m.executionContainerDefinitions, m.serviceContainerDefinitions = models.ProcessContainers(m.executionContainerDefinitions)
+		executionContainers := map[string]models.Container{}
+		serviceContainers := map[string]models.Container{}
+
+		for containerID, container := range m.executionContainerDefinitions {
+			switch container.Type {
+			case models.ContainerTypeExecution:
+				executionContainers[containerID] = container
+			case models.ContainerTypeService:
+				serviceContainers[containerID] = container
+			default:
+				executionContainers[containerID] = container
+				serviceContainers[containerID] = container
+			}
+		}
+
+		m.executionContainerDefinitions = executionContainers
+		m.serviceContainerDefinitions = serviceContainers
 	}
 }
 
@@ -173,12 +189,7 @@ func (m *Manager) GetExecutionContainerForStep(UUID string) (*models.Container, 
 		return nil, nil
 	}
 
-	containerDefinition, ok := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
-	if !ok {
-		// This should not happen, but in case it does, we return nil to avoid breaking the execution.
-		return nil, nil
-	}
-
+	containerDefinition := m.executionContainerDefinitions[stepPlan.ExecutionContainer.ContainerID]
 	runningContainer := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]
 
 	return &containerDefinition, runningContainer

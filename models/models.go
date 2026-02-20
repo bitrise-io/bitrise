@@ -25,15 +25,13 @@ const (
 )
 
 type StepBundleModel struct {
-	Title              string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary            string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description        string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	RunIf              string                              `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Inputs             []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Environments       []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps              []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
-	ExecutionContainer stepmanModels.ContainerReference    `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
-	ServiceContainers  []stepmanModels.ContainerReference  `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
+	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	RunIf        string                              `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 // StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.

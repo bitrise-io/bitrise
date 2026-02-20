@@ -127,28 +127,19 @@ type WorkflowRunPlanBuilder struct {
 	executionContainerPlans map[string]ContainerPlan
 	serviceContainerPlans   map[string]ContainerPlan
 	withGroupPlans          map[string]WithGroupPlan
-
-	// stepLevelExecutionContainerUUIDs/stepLevelServiceContainerUUIDs track which step plan
-	// UUIDs had their containers set directly by the step's own definition (not inherited from a
-	// bundle). This allows outer bundle overrides to overwrite inner-bundle containers while
-	// still respecting step-level containers as the highest priority.
-	stepLevelExecutionContainerUUIDs map[string]bool
-	stepLevelServiceContainerUUIDs   map[string]bool
 }
 
 func NewWorkflowRunPlanBuilder(workflows map[string]WorkflowModel, stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container, uuidProvider func() string) *WorkflowRunPlanBuilder {
 	return &WorkflowRunPlanBuilder{
-		workflows:                        workflows,
-		stepBundles:                      stepBundles,
-		containers:                       containers,
-		services:                         services,
-		uuidProvider:                     uuidProvider,
-		stepBundlePlans:                  map[string]StepBundlePlan{},
-		executionContainerPlans:          map[string]ContainerPlan{},
-		serviceContainerPlans:            map[string]ContainerPlan{},
-		withGroupPlans:                   map[string]WithGroupPlan{},
-		stepLevelExecutionContainerUUIDs: map[string]bool{},
-		stepLevelServiceContainerUUIDs:   map[string]bool{},
+		workflows:               workflows,
+		stepBundles:             stepBundles,
+		containers:              containers,
+		services:                services,
+		uuidProvider:            uuidProvider,
+		stepBundlePlans:         map[string]StepBundlePlan{},
+		executionContainerPlans: map[string]ContainerPlan{},
+		serviceContainerPlans:   map[string]ContainerPlan{},
+		withGroupPlans:          map[string]WithGroupPlan{},
 	}
 }
 
@@ -296,12 +287,7 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 
 		plan.ExecutionContainer = executionContainerCfg
 		plan.ServiceContainers = serviceContainerCfgs
-		if executionContainerCfg != nil {
-			builder.stepLevelExecutionContainerUUIDs[plan.UUID] = true
-		}
-		if len(serviceContainerCfgs) > 0 {
-			builder.stepLevelServiceContainerUUIDs[plan.UUID] = true
-		}
+
 	}
 	return &plan, nil
 }
@@ -379,27 +365,14 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	}
 
 	if allowContainerDefinition {
-		hasExplicitECOverride := bundleOverride.ExecutionContainer != nil
-		hasExplicitSCOverride := bundleOverride.ServiceContainers != nil
-
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride, bundleDefinition))
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride))
 		if err != nil {
 			return nil, err
 		}
 
 		for i := range plans {
-			// TODO: revisit this
-			// Apply execution container if:
-			// - there is a container to apply, AND
-			// - the step did not set its own container, AND
-			// - either this bundle has an explicit override (wins over inner-bundle containers)
-			//   or the plan has no container yet (definition fallback fills the gap)
-			if executionContainerCfg != nil && !builder.stepLevelExecutionContainerUUIDs[plans[i].UUID] && (hasExplicitECOverride || plans[i].ExecutionContainer == nil) {
-				plans[i].ExecutionContainer = executionContainerCfg
-			}
-			if len(serviceContainerCfgs) > 0 && !builder.stepLevelServiceContainerUUIDs[plans[i].UUID] && (hasExplicitSCOverride || len(plans[i].ServiceContainers) == 0) {
-				plans[i].ServiceContainers = serviceContainerCfgs
-			}
+			plans[i].ExecutionContainer = executionContainerCfg
+			plans[i].ServiceContainers = serviceContainerCfgs
 		}
 	}
 
@@ -458,7 +431,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 			return nil, err
 		}
 
-		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, true)
+		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, false)
 		if err != nil {
 			return nil, err
 		}
@@ -529,7 +502,19 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
-	executionContainers, serviceContainers := ProcessContainers(builder.containers)
+	executionContainers := map[string]Container{}
+	serviceContainers := map[string]Container{}
+	for id, container := range builder.containers {
+		switch container.Type {
+		case ContainerTypeExecution:
+			executionContainers[id] = container
+		case ContainerTypeService:
+			serviceContainers[id] = container
+		default:
+			executionContainers[id] = container
+			serviceContainers[id] = container
+		}
+	}
 
 	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
 	if err != nil {

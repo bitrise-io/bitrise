@@ -31,43 +31,22 @@ type DockerCredentials struct {
 }
 
 type Containerisable struct {
-	step                 *stepmanModels.StepModel
-	stepBundle           *StepBundleListItemModel
-	stepBundleDefinition *StepBundleModel
-}
-
-func ProcessContainers(containers map[string]Container) (executionContainers map[string]Container, serviceContainers map[string]Container) {
-	executionContainers = map[string]Container{}
-	serviceContainers = map[string]Container{}
-	for id, container := range containers {
-		switch container.Type {
-		case ContainerTypeExecution:
-			executionContainers[id] = container
-		case ContainerTypeService:
-			serviceContainers[id] = container
-		case "":
-			executionContainers[id] = container
-			serviceContainers[id] = container
-		}
-	}
-	return
+	step       *stepmanModels.StepModel
+	stepBundle *StepBundleListItemModel
 }
 
 func newContainerisableFromStep(step stepmanModels.StepModel) Containerisable {
 	return Containerisable{step: &step}
 }
 
-func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel, definition StepBundleModel) Containerisable {
-	return Containerisable{stepBundle: &stepBundle, stepBundleDefinition: &definition}
+func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel) Containerisable {
+	return Containerisable{stepBundle: &stepBundle}
 }
 
 func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
 	var executionContainer stepmanModels.ContainerReference
 	if c.stepBundle != nil {
 		executionContainer = c.stepBundle.ExecutionContainer
-		if executionContainer == nil && c.stepBundleDefinition != nil {
-			executionContainer = c.stepBundleDefinition.ExecutionContainer
-		}
 	} else if c.step != nil {
 		executionContainer = c.step.ExecutionContainer
 	}
@@ -91,9 +70,6 @@ func (c Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error)
 	var serviceContainers []stepmanModels.ContainerReference
 	if c.stepBundle != nil {
 		serviceContainers = c.stepBundle.ServiceContainers
-		if serviceContainers == nil && c.stepBundleDefinition != nil {
-			serviceContainers = c.stepBundleDefinition.ServiceContainers
-		}
 	} else if c.step != nil {
 		serviceContainers = c.step.ServiceContainers
 	}
