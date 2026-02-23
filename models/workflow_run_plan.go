@@ -33,9 +33,9 @@ type WorkflowRunPlan struct {
 	// ----
 	// Container plans
 	// step execution container id to container plan
-	ExecutionContainerPlans map[string]ContainerPlan `json:"execution_container_plans,omitempty"`
+	ExecutionContainerPlans map[string]ContainerPlan `json:"-"`
 	// service container id to container plan
-	ServiceContainerPlans map[string]ContainerPlan `json:"service_container_plans,omitempty"`
+	ServiceContainerPlans map[string]ContainerPlan `json:"-"`
 	// ----
 
 	// TODO: Old container plan, to be removed when containerisation using "With groups" is sunsetted
@@ -76,8 +76,8 @@ type StepExecutionPlan struct {
 	StepBundleRunIfs []string `json:"-"`
 
 	// Containers
-	ExecutionContainer *ContainerConfig  `json:"execution_container,omitempty"`
-	ServiceContainers  []ContainerConfig `json:"service_containers,omitempty"`
+	ExecutionContainer *ContainerConfig  `json:"-"`
+	ServiceContainers  []ContainerConfig `json:"-"`
 
 	// With (container) group
 	WithGroupUUID string   `json:"with_group_uuid,omitempty"`
@@ -105,9 +105,11 @@ type WorkflowRunModes struct {
 }
 
 type BundleContext struct {
-	UUID   string
-	Envs   []envmanModels.EnvironmentItemModel
-	RunIfs []string
+	UUID               string
+	Envs               []envmanModels.EnvironmentItemModel
+	RunIfs             []string
+	ExecutionContainer *ContainerConfig  // resolved exec container from parent chain
+	ServiceContainers  []ContainerConfig // accumulated services from parent chain
 }
 
 type WithGroupContext struct {
@@ -285,9 +287,18 @@ func (builder *WorkflowRunPlanBuilder) processStep(stepID string, stepListItem S
 			return nil, err
 		}
 
+		// Nesting (execution): if the step has no own container, inherit from parent bundle.
+		if executionContainerCfg == nil && bundleContext != nil {
+			executionContainerCfg = bundleContext.ExecutionContainer
+		}
+
+		// Nesting (services): parent bundle's services + step's own (additive, de-duplicated).
+		if bundleContext != nil {
+			serviceContainerCfgs = mergeServiceContainers(bundleContext.ServiceContainers, serviceContainerCfgs)
+		}
+
 		plan.ExecutionContainer = executionContainerCfg
 		plan.ServiceContainers = serviceContainerCfgs
-
 	}
 	return &plan, nil
 }
@@ -353,27 +364,56 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		Title: title,
 	}
 
-	// Process Bundle Steps
-	newBundleContext := BundleContext{
-		UUID:   bundleUUID,
-		Envs:   bundleEnvs,
-		RunIfs: runIfs,
-	}
-	plans, err := builder.gatherBundleSteps(bundleDefinition, newBundleContext)
-	if err != nil {
-		return nil, err
-	}
-
+	// Resolve effective execution and service containers, then build a context
+	// carrying the inherited state down into nested steps and bundles.
+	var bundleExecCfg *ContainerConfig
+	var bundleSvcCfgs []ContainerConfig
 	if allowContainerDefinition {
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundleOverride(*bundleOverride))
+		// Override rule: usage-side completely replaces definition-side.
+		effectiveBundleContainer := StepBundleListItemModel{}
+		if bundleOverride.ExecutionContainer != nil {
+			effectiveBundleContainer.ExecutionContainer = bundleOverride.ExecutionContainer
+		} else {
+			effectiveBundleContainer.ExecutionContainer = bundleDefinition.ExecutionContainer
+		}
+		if bundleOverride.ServiceContainers != nil {
+			effectiveBundleContainer.ServiceContainers = bundleOverride.ServiceContainers
+		} else {
+			effectiveBundleContainer.ServiceContainers = bundleDefinition.ServiceContainers
+		}
+
+		// Register container plans and resolve configs for the effective containers.
+		effectiveExecCfg, effectiveSvcCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundleOverride(effectiveBundleContainer))
 		if err != nil {
 			return nil, err
 		}
 
-		for i := range plans {
-			plans[i].ExecutionContainer = executionContainerCfg
-			plans[i].ServiceContainers = serviceContainerCfgs
+		// Nesting (execution): use own effective container, or inherit from parent.
+		if effectiveExecCfg != nil {
+			bundleExecCfg = effectiveExecCfg
+		} else if bundleContext != nil {
+			bundleExecCfg = bundleContext.ExecutionContainer
 		}
+
+		// Nesting (services): parent services + own services (additive, de-duplicated).
+		if bundleContext != nil {
+			bundleSvcCfgs = mergeServiceContainers(bundleContext.ServiceContainers, effectiveSvcCfgs)
+		} else {
+			bundleSvcCfgs = effectiveSvcCfgs
+		}
+	}
+
+	// Process Bundle Steps
+	newBundleContext := BundleContext{
+		UUID:               bundleUUID,
+		Envs:               bundleEnvs,
+		RunIfs:             runIfs,
+		ExecutionContainer: bundleExecCfg,
+		ServiceContainers:  bundleSvcCfgs,
+	}
+	plans, err := builder.gatherBundleSteps(bundleDefinition, newBundleContext)
+	if err != nil {
+		return nil, err
 	}
 
 	return plans, nil
@@ -431,7 +471,7 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 			return nil, err
 		}
 
-		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, false)
+		plans, err := builder.processStepListItem(*genericStep, &bundleContext, nil, true)
 		if err != nil {
 			return nil, err
 		}
@@ -499,6 +539,32 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 	}
 
 	return bundleEnvs, nil
+}
+
+// mergeServiceContainers returns base followed by any additional containers not already
+// present in base, de-duplicated by ContainerID. Returns nil when both inputs are empty.
+func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfig {
+	if len(base) == 0 && len(additional) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]bool, len(base)+len(additional))
+	var result []ContainerConfig
+
+	for _, c := range base {
+		if !seen[c.ContainerID] {
+			seen[c.ContainerID] = true
+			result = append(result, c)
+		}
+	}
+	for _, c := range additional {
+		if !seen[c.ContainerID] {
+			seen[c.ContainerID] = true
+			result = append(result, c)
+		}
+	}
+
+	return result
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
