@@ -92,7 +92,7 @@ func Test_Docker(t *testing.T) {
 			requireErr:   true,
 			requireLogs: []string{
 				"unknown flag: --invalid-option",
-				"Could not start the specified docker image for workflow:",
+				"Could not start the specified docker image: frolvlad/alpine-bash:latest",
 			},
 		},
 		"docker start fails with container throwing error": {

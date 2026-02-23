@@ -37,7 +37,7 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{}, fmt.Errorf("activate local step: %w", err)
+			return activator.ActivatedStep{ ActivationType: activator.ActivationTypePathRef }, fmt.Errorf("activate local step: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource == "git" {
@@ -50,7 +50,7 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{}, fmt.Errorf("activate git step reference: %w", err)
+			return activator.ActivatedStep{ ActivationType: activator.ActivationTypeGitRef }, fmt.Errorf("activate git step reference: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource != "" {
