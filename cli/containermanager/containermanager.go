@@ -85,9 +85,10 @@ func (m *Manager) UpdateWithStepStarted(stepPlan models.StepExecutionPlan, envir
 	var executionContainerToStart string
 	var serviceContainersToStart []string
 
-	if len(m.runningExecutionContainer) == 0 && stepPlan.ExecutionContainer != nil && len(stepPlan.ExecutionContainer.ContainerID) > 0 {
-		// No running execution container, we need to check the current step's container requirement and start the container if needed.
-		executionContainerToStart = stepPlan.ExecutionContainer.ContainerID
+	if stepPlan.ExecutionContainer != nil && stepPlan.ExecutionContainer.ContainerID != "" {
+		if _, isRunning := m.runningExecutionContainer[stepPlan.ExecutionContainer.ContainerID]; !isRunning {
+			executionContainerToStart = stepPlan.ExecutionContainer.ContainerID
+		}
 	}
 
 	for _, serviceContainerConfig := range stepPlan.ServiceContainers {
@@ -411,23 +412,18 @@ func (m *Manager) stopContainersForStepGroup(groupID string) {
 }
 
 func (m *Manager) shouldStopExecutionContainer(containerID string, currentStepPlan models.StepExecutionPlan) bool {
-	nextStepPlan := m.findNextStepPlanWithAnyExecutionContainerRequirement(currentStepPlan)
+	nextStepPlan := m.findNextStepPlanWithExecutionContainerRequirement(containerID, currentStepPlan)
 	if nextStepPlan == nil || nextStepPlan.ExecutionContainer == nil {
-		// No more steps with execution container requirement
-		return true
-	}
-
-	if nextStepPlan.ExecutionContainer.ContainerID != containerID {
-		// Next step requires a different execution container
+		// No future step needs this execution container
 		return true
 	}
 
 	if nextStepPlan.ExecutionContainer.Recreate {
-		// Next step requires the same execution container but with recreate option
+		// Next step requires a fresh instance of this execution container
 		return true
 	}
 
-	// Next step requires the same execution container without recreate option
+	// A future step still needs this execution container, keep it running
 	return false
 }
 
@@ -468,7 +464,7 @@ func (m *Manager) findStepPlan(UUID string) *models.StepExecutionPlan {
 	return nil
 }
 
-func (m *Manager) findNextStepPlanWithAnyExecutionContainerRequirement(currentStepPlan models.StepExecutionPlan) *models.StepExecutionPlan {
+func (m *Manager) findNextStepPlanWithExecutionContainerRequirement(containerID string, currentStepPlan models.StepExecutionPlan) *models.StepExecutionPlan {
 	currentStepFound := false
 	for _, workflow := range m.workflowRunPlan.ExecutionPlan {
 		for _, step := range workflow.Steps {
@@ -477,7 +473,7 @@ func (m *Manager) findNextStepPlanWithAnyExecutionContainerRequirement(currentSt
 				continue
 			}
 
-			if currentStepFound && step.ExecutionContainer != nil && step.ExecutionContainer.ContainerID != "" {
+			if currentStepFound && step.ExecutionContainer != nil && step.ExecutionContainer.ContainerID == containerID {
 				return &step
 			}
 		}
