@@ -330,6 +330,50 @@ workflows:
         - postgres:
             recreate: true`,
 		},
+		{
+			name: "Step bundle definition-side containers are normalized",
+			config: `format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+containers:
+  node:
+    type: execution
+    image: node:18
+  ruby:
+    type: execution
+    image: ruby:3.2
+  postgres:
+    type: service
+    image: postgres:15
+
+step_bundles:
+  test-bundle:
+    execution_container: node
+    service_containers:
+    - postgres
+    steps:
+    - script:
+        inputs:
+        - content: echo "Running tests"
+  test-bundle-recreate:
+    execution_container:
+      ruby:
+        recreate: true
+    service_containers:
+    - postgres:
+        recreate: true
+    steps:
+    - script:
+        inputs:
+        - content: echo "Running tests"
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+    - bundle::test-bundle-recreate: {}`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1394,6 +1438,166 @@ workflows:
     - bundle::bundle_1: { }
 `),
 			wantErr: "step bundle reference cycle found: bundle_1 -> bundle_1",
+		},
+		{
+			name: "Valid bitrise.yml: step bundle definition with execution and service containers",
+			config: createConfig(t, `
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  golang:
+    type: execution
+    image: golang:1.22
+  redis:
+    type: service
+    image: redis:latest
+
+step_bundles:
+  test-bundle:
+    execution_container: golang
+    service_containers:
+    - redis
+    steps:
+    - script:
+        inputs:
+        - content: go test ./...
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+`),
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle definition references undefined execution container",
+			config: createConfig(t, `
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  redis:
+    type: service
+    image: redis:latest
+
+step_bundles:
+  test-bundle:
+    execution_container: golang
+    steps:
+    - script:
+        inputs:
+        - content: go test ./...
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+`),
+			wantErr: "step bundle (test-bundle) has config issue: step bundle definition has container reference issue: undefined execution container (golang) referenced",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle definition references undefined service container",
+			config: createConfig(t, `
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  golang:
+    type: execution
+    image: golang:1.22
+
+step_bundles:
+  test-bundle:
+    service_containers:
+    - redis
+    steps:
+    - script:
+        inputs:
+        - content: go test ./...
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+`),
+			wantErr: "step bundle (test-bundle) has config issue: step bundle definition has container reference issue: undefined service container (redis) referenced",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle definition has duplicate service containers",
+			config: createConfig(t, `
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  redis:
+    type: service
+    image: redis:latest
+
+step_bundles:
+  test-bundle:
+    service_containers:
+    - redis
+    - redis
+    steps:
+    - script:
+        inputs:
+        - content: go test ./...
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+`),
+			wantErr: "step bundle (test-bundle) has config issue: step bundle definition has container reference issue: duplicate service container reference: redis",
+		},
+		{
+			name: "Invalid bitrise.yml: step inside bundle definition references undefined execution container",
+			config: createConfig(t, `
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  redis:
+    type: service
+    image: redis:latest
+
+step_bundles:
+  test-bundle:
+    steps:
+    - script:
+        execution_container: golang
+        inputs:
+        - content: go test ./...
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle: {}
+`),
+			wantErr: "step bundle (test-bundle) has config issue: step (script) has container reference issue: undefined execution container (golang) referenced",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle definition has empty execution container reference",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  node:
+    type: execution
+    image: node:18
+step_bundles:
+  test_bundle:
+    execution_container: ""
+    steps:
+    - script:
+        inputs:
+        - content: echo "test"
+workflows:
+  test:
+    steps:
+    - bundle::test_bundle: {}
+`),
+			wantErr: "step bundle (test_bundle) has config issue: step bundle definition has container reference issue: invalid execution container definition: empty container id",
 		},
 	}
 	for _, tt := range tests {
