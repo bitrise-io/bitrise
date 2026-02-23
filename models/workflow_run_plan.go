@@ -365,7 +365,7 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	}
 
 	if allowContainerDefinition {
-		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundle(*bundleOverride))
+		executionContainerCfg, serviceContainerCfgs, err := builder.processContainerConfigs(newContainerisableFromStepBundleOverride(*bundleOverride))
 		if err != nil {
 			return nil, err
 		}
