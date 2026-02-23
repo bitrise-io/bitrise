@@ -5,8 +5,8 @@ go 1.25.5
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.5.5
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
+	github.com/bitrise-io/envman/v2 v2.5.6-0.20260220121501-3c1f27fef18c
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.43.0.20260220120449-2b72452b2be9
 	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.32.0.20260219145834-dc507fba552c
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
