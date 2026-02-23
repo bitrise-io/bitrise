@@ -48,7 +48,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 				},
@@ -98,7 +97,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_3": {ID: "bundle2"},
@@ -141,7 +139,6 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -221,7 +218,6 @@ func TestNewWorkflowRunPlan_StepBundleInputs(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle2"},
 					"uuid_2": {ID: "bundle1"},
@@ -296,7 +292,6 @@ func TestNewWorkflowRunPlan_StepBundleInputs(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -354,7 +349,6 @@ func TestNewWorkflowRunPlan_StepBundleInputs(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1"},
 					"uuid_2": {ID: "bundle2"},
@@ -422,7 +416,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_2": {ID: "bundle1"},
 					"uuid_6": {ID: "bundle1"},
@@ -476,7 +469,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle3"},
 					"uuid_3": {ID: "bundle2"},
@@ -518,7 +510,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle 1"},
@@ -556,7 +547,6 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			want: WorkflowRunPlan{
 				Version:          cliVersion(),
 				LogFormatVersion: "2",
-				WithGroupPlans:   map[string]WithGroupPlan{},
 				StepBundlePlans: map[string]StepBundlePlan{
 					"uuid_1": {ID: "bundle1", Title: "My Bundle 1"},
 					"uuid_3": {ID: "bundle1", Title: "My Bundle Override 1"},
@@ -577,6 +567,459 @@ func TestNewWorkflowRunPlan(t *testing.T) {
 			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, tt.services, tt.uuidProvider).Build(tt.modes, tt.targetWorkflow)
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestNewWorkflowRunPlan_Containers(t *testing.T) {
+	tests := []struct {
+		name           string
+		modes          WorkflowRunModes
+		targetWorkflow string
+		workflows      map[string]WorkflowModel
+		stepBundles    map[string]StepBundleModel
+		containers     map[string]Container
+		services       map[string]Container
+		want           WorkflowRunPlan
+		wantErr        string
+	}{
+		{
+			name:           "step with execution_container - simple string format",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"alpine": {
+					Type:  ContainerTypeExecution,
+					Image: "alpine:latest",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ExecutionContainer: "alpine",
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"alpine": {Image: "alpine:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:               "uuid_1",
+							StepID:             "script",
+							Step:               stepmanModels.StepModel{ExecutionContainer: "alpine"},
+							ExecutionContainer: &ContainerConfig{ContainerID: "alpine", Recreate: false},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with execution_container - recreate flag",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"golang": {
+					Type:  ContainerTypeExecution,
+					Image: "golang:1.22",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ExecutionContainer: map[string]any{
+								"golang": map[any]any{
+									"recreate": true,
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"golang": {Image: "golang:1.22"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:               "uuid_1",
+							StepID:             "script",
+							Step:               stepmanModels.StepModel{ExecutionContainer: map[string]any{"golang": map[any]any{"recreate": true}}},
+							ExecutionContainer: &ContainerConfig{ContainerID: "golang", Recreate: true},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with service_containers - simple string format",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+				"postgres": {
+					Type:  ContainerTypeService,
+					Image: "postgres:13",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"redis", "postgres"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis":    {Image: "redis:latest"},
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_1",
+							StepID: "script",
+							Step:   stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{"redis", "postgres"}},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "redis", Recreate: false},
+								{ContainerID: "postgres", Recreate: false},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with service_containers - recreate flag",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+				"postgres": {
+					Type:  ContainerTypeService,
+					Image: "postgres:13",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{
+								"redis",
+								map[string]any{
+									"postgres": map[string]any{
+										"recreate": true,
+									},
+								},
+							},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis":    {Image: "redis:latest"},
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_1",
+							StepID: "script",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								"redis",
+								map[string]any{
+									"postgres": map[string]any{
+										"recreate": true,
+									},
+								},
+							}},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "redis", Recreate: false},
+								{ContainerID: "postgres", Recreate: true},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step with both execution_container and service_containers",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"golang": {
+					Type:  ContainerTypeExecution,
+					Image: "golang:1.22",
+				},
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ExecutionContainer: "golang",
+							ServiceContainers:  []stepmanModels.ContainerReference{"redis"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"golang": {Image: "golang:1.22"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_2", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:   "uuid_1",
+							StepID: "script",
+							Step: stepmanModels.StepModel{
+								ExecutionContainer: "golang",
+								ServiceContainers:  []stepmanModels.ContainerReference{"redis"},
+							},
+							ExecutionContainer: &ContainerConfig{ContainerID: "golang", Recreate: false},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "redis", Recreate: false},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundle with execution_container",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle-step1": stepmanModels.StepModel{}},
+						{"bundle-step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			containers: map[string]Container{
+				"node": {
+					Type:  ContainerTypeExecution,
+					Image: "node:18",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{
+							ExecutionContainer: "node",
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "test_bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"node": {Image: "node:18"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:               "uuid_2",
+							StepID:             "bundle-step1",
+							Step:               stepmanModels.StepModel{},
+							StepBundleUUID:     "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "node", Recreate: false},
+						},
+						{
+							UUID:               "uuid_3",
+							StepID:             "bundle-step2",
+							Step:               stepmanModels.StepModel{},
+							StepBundleUUID:     "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "node", Recreate: false},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step bundle with service_containers",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"bundle-step1": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			containers: map[string]Container{
+				"redis": {
+					Type:  ContainerTypeService,
+					Image: "redis:latest",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"redis"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "test_bundle"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:           "uuid_2",
+							StepID:         "bundle-step1",
+							Step:           stepmanModels.StepModel{},
+							StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "redis", Recreate: false},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "untyped container can be used as both execution and service",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"alpine": {
+					// No type specified - can be used as both
+					Image: "alpine:latest",
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script1": stepmanModels.StepModel{
+							ExecutionContainer: "alpine",
+						}},
+						{"script2": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"alpine"},
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"alpine": {Image: "alpine:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"alpine": {Image: "alpine:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{
+							UUID:               "uuid_1",
+							StepID:             "script1",
+							Step:               stepmanModels.StepModel{ExecutionContainer: "alpine"},
+							ExecutionContainer: &ContainerConfig{ContainerID: "alpine", Recreate: false},
+						},
+						{
+							UUID:   "uuid_2",
+							StepID: "script2",
+							Step: stepmanModels.StepModel{
+								ServiceContainers: []stepmanModels.ContainerReference{"alpine"},
+							},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "alpine", Recreate: false},
+							},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "error - undefined execution container referenced",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers:     map[string]Container{},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ExecutionContainer: "undefined_container",
+						}},
+					},
+				},
+			},
+			wantErr: "referenced execution container not defined: undefined_container",
+		},
+		{
+			name:           "error - undefined service container referenced",
+			modes:          WorkflowRunModes{},
+			targetWorkflow: "workflow1",
+			containers:     map[string]Container{},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"script": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"undefined_service"},
+						}},
+					},
+				},
+			},
+			wantErr: "referenced service container not defined: undefined_service",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, tt.services, (&MockUUIDProvider{}).UUID).Build(tt.modes, tt.targetWorkflow)
+
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.wantErr)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
 		})
 	}
 }

@@ -240,6 +240,96 @@ workflows:
                 stack: osx-xcode-16.0.x-edge
                 machine_type_id: g2-m1-max.10core`,
 		},
+		{
+			name: "Steps with containers are normalized",
+			config: `format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  node:
+    type: execution
+    image: node:18
+  python:
+    type: execution
+    image: python:3.11
+  redis:
+    type: service
+    image: redis:7
+  postgres:
+    type: service
+    image: postgres:15
+    envs:
+    - POSTGRES_PASSWORD: password
+      opts:
+        is_expand: false
+
+workflows:
+  test:
+    steps:
+    - script:
+        title: Run in node container
+        execution_container: node
+        service_containers:
+        - redis
+        - postgres
+        inputs:
+        - content: npm test
+    - script:
+        title: Run in python container
+        execution_container:
+          python:
+            recreate: true
+        service_containers:
+        - redis:
+            recreate: true
+        inputs:
+        - content: pytest`,
+		},
+		{
+			name: "Step bundles with containers are normalized",
+			config: `format_version: "17"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+containers:
+  node:
+    type: execution
+    image: node:18
+  ruby:
+    type: execution
+    image: ruby:3.2
+  postgres:
+    type: service
+    image: postgres:15
+    envs:
+    - POSTGRES_PASSWORD: password
+
+step_bundles:
+  test-bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Running tests"
+
+workflows:
+  test:
+    steps:
+    - bundle::test-bundle:
+        execution_container: node
+        service_containers:
+        - postgres
+    - script:
+        title: Direct step
+        inputs:
+        - content: echo "Direct step"
+    - bundle::test-bundle:
+        execution_container:
+          ruby:
+            recreate: true
+        service_containers:
+        - postgres:
+            recreate: true`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -966,6 +1056,168 @@ workflows:
         - postgres
         - postgres`),
 			wantErr: "service (postgres) specified multiple times for workflow (primary)",
+		},
+		// New containerization syntax validation tests
+		{
+			name: "Invalid bitrise.yml: empty execution_container reference (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  alpine:
+    type: execution
+    image: alpine:latest
+workflows:
+  test:
+    steps:
+    - script:
+        execution_container: ""`),
+			wantErr: "step (script) has container reference issue: invalid execution container definition: empty container id",
+		},
+		{
+			name: "Invalid bitrise.yml: empty service_container reference (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+workflows:
+  test:
+    steps:
+    - script:
+        service_containers:
+        - ""`),
+			wantErr: "step (script) has container reference issue: invalid service container definition: empty container id",
+		},
+		{
+			name: "Invalid bitrise.yml: empty service_container reference in array (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+  postgres:
+    type: service
+    image: postgres:13
+workflows:
+  test:
+    steps:
+    - script:
+        service_containers:
+        - redis
+        - ""
+        - postgres`),
+			wantErr: "step (script) has container reference issue: invalid service container definition: empty container id",
+		},
+		{
+			name: "Invalid bitrise.yml: service referenced multiple times (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+workflows:
+  test:
+    steps:
+    - script:
+        service_containers:
+        - redis
+        - redis`),
+			wantErr: "step (script) has container reference issue: duplicate service container reference: redis",
+		},
+		{
+			name: "Invalid bitrise.yml: service referenced multiple times with recreate (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+workflows:
+  test:
+    steps:
+    - script:
+        service_containers:
+        - redis
+        - redis:
+            recreate: true`),
+			wantErr: "step (script) has container reference issue: duplicate service container reference: redis",
+		},
+		{
+			name: "Invalid bitrise.yml: empty execution_container in step bundle (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  node:
+    type: execution
+    image: node:18
+step_bundles:
+  test_bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "test"
+workflows:
+  test:
+    steps:
+    - bundle::test_bundle:
+        execution_container: ""`),
+			wantErr: "step bundle (test_bundle) referenced in workflow (test) has config issue: step bundle has container reference issue: invalid execution container definition: empty container id",
+		},
+		{
+			name: "Invalid bitrise.yml: empty service_container in step bundle (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+step_bundles:
+  test_bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "test"
+workflows:
+  test:
+    steps:
+    - bundle::test_bundle:
+        service_containers:
+        - ""`),
+			wantErr: "step bundle (test_bundle) referenced in workflow (test) has config issue: step bundle has container reference issue: invalid service container definition: empty container id",
+		},
+		{
+			name: "Invalid bitrise.yml: service referenced multiple times in step bundle (new syntax)",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  redis:
+    type: service
+    image: redis:latest
+step_bundles:
+  test_bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "test"
+workflows:
+  test:
+    steps:
+    - bundle::test_bundle:
+        service_containers:
+        - redis
+        - redis`),
+			wantErr: "step bundle (test_bundle) referenced in workflow (test) has config issue: step bundle has container reference issue: duplicate service container reference: redis",
 		},
 	}
 	for _, tt := range tests {

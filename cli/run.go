@@ -180,7 +180,11 @@ type WorkflowRunner struct {
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	loggerOpts := log.GetGlobalLoggerOpts()
+	if isContainerDebugLoggingEnabled(config.Secrets) {
+		loggerOpts.DebugLogEnabled = true
+	}
+	logger := log.NewLogger(loggerOpts)
 	dockerLogger := docker.NewLogger(logger, stepSecretValues)
 	dockerManager := docker.NewContainerManager(dockerLogger)
 	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
@@ -316,6 +320,8 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
 	}
 
+	r.containerManager.SetWorkflowRunPlan(plan)
+
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 
 	log.PrintBitriseStartedEvent(plan)
@@ -356,25 +362,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	}
 
 	return buildRunResults, nil
-}
-
-func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
-	container, ok := r.config.Config.Containers[id]
-	if ok {
-		return &container
-	}
-	return nil
-}
-
-func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
-	services := map[string]models.Container{}
-	for _, id := range ids {
-		service, ok := r.config.Config.Services[id]
-		if ok {
-			services[id] = service
-		}
-	}
-	return services
 }
 
 func processArgs(c *cli.Context) (*RunConfig, error) {
@@ -571,4 +558,18 @@ func createWorkflowRunStatusMessage(exitCode int) string {
 		colorMessage = colorstring.Red(message)
 	}
 	return colorMessage
+}
+
+func isContainerDebugLoggingEnabled(Secrets []envmanModels.EnvironmentItemModel) bool {
+	for _, secret := range Secrets {
+		k, v, err := secret.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+
+		if k == "ENABLE_CONTAINER_DEBUG_LOGGING" && v == "true" {
+			return true
+		}
+	}
+	return false
 }
