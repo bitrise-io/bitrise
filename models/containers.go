@@ -48,22 +48,29 @@ func ProcessContainerList(containers map[string]Container) (executionContainers 
 }
 
 type Containerisable struct {
-	step       *stepmanModels.StepModel
-	stepBundle *StepBundleListItemModel
+	step                 *stepmanModels.StepModel
+	stepBundleOverride   *StepBundleListItemModel
+	stepBundleDefinition *StepBundleModel
 }
 
 func newContainerisableFromStep(step stepmanModels.StepModel) Containerisable {
 	return Containerisable{step: &step}
 }
 
-func newContainerisableFromStepBundle(stepBundle StepBundleListItemModel) Containerisable {
-	return Containerisable{stepBundle: &stepBundle}
+func newContainerisableFromStepBundleOverride(stepBundleOverride StepBundleListItemModel) Containerisable {
+	return Containerisable{stepBundleOverride: &stepBundleOverride}
+}
+
+func newContainerisableFromStepBundleDefinition(bundle StepBundleModel) Containerisable {
+	return Containerisable{stepBundleDefinition: &bundle}
 }
 
 func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error) {
 	var executionContainer stepmanModels.ContainerReference
-	if c.stepBundle != nil {
-		executionContainer = c.stepBundle.ExecutionContainer
+	if c.stepBundleOverride != nil {
+		executionContainer = c.stepBundleOverride.ExecutionContainer
+	} else if c.stepBundleDefinition != nil {
+		executionContainer = c.stepBundleDefinition.ExecutionContainer
 	} else if c.step != nil {
 		executionContainer = c.step.ExecutionContainer
 	}
@@ -85,8 +92,10 @@ func (c Containerisable) GetExecutionContainerConfig() (*ContainerConfig, error)
 
 func (c Containerisable) GetServiceContainerConfigs() ([]ContainerConfig, error) {
 	var serviceContainers []stepmanModels.ContainerReference
-	if c.stepBundle != nil {
-		serviceContainers = c.stepBundle.ServiceContainers
+	if c.stepBundleOverride != nil {
+		serviceContainers = c.stepBundleOverride.ServiceContainers
+	} else if c.stepBundleDefinition != nil {
+		serviceContainers = c.stepBundleDefinition.ServiceContainers
 	} else if c.step != nil {
 		serviceContainers = c.step.ServiceContainers
 	}
