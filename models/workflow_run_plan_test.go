@@ -1024,6 +1024,588 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 	}
 }
 
+func TestNewWorkflowRunPlan_ContainerNesting(t *testing.T) {
+	tests := []struct {
+		name           string
+		targetWorkflow string
+		workflows      map[string]WorkflowModel
+		stepBundles    map[string]StepBundleModel
+		containers     map[string]Container
+		want           WorkflowRunPlan
+		wantErr        string
+	}{
+		// Override rules
+		{
+			name:           "usage-side execution container overrides definition-side",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"node":   {Type: ContainerTypeExecution, Image: "node:18"},
+				"golang": {Type: ContainerTypeExecution, Image: "golang:1.22"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ExecutionContainer: "node", // definition-side
+					Steps:              []StepListItemStepOrBundleModel{{"bundle-step1": stepmanModels.StepModel{}}},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{
+							ExecutionContainer: "golang", // usage-side overrides
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"golang": {Image: "golang:1.22"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "golang"},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "usage-side service containers completely replace definition-side (not additive)",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis":    {Type: ContainerTypeService, Image: "redis:latest"},
+				"postgres": {Type: ContainerTypeService, Image: "postgres:13"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"}, // definition-side
+					Steps:             []StepListItemStepOrBundleModel{{"bundle-step1": stepmanModels.StepModel{}}},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"postgres"}, // usage-side overrides
+						}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "postgres"}},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "definition-side execution container used when no usage-side override",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"node": {Type: ContainerTypeExecution, Image: "node:18"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ExecutionContainer: "node", // definition-side
+					Steps:              []StepListItemStepOrBundleModel{{"bundle-step1": stepmanModels.StepModel{}}},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{}}, // no override
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"node": {Image: "node:18"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "node"},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "definition-side service containers used when no usage-side override",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis": {Type: ContainerTypeService, Image: "redis:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"}, // definition-side
+					Steps:             []StepListItemStepOrBundleModel{{"bundle-step1": stepmanModels.StepModel{}}},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"bundle::test_bundle": StepBundleListItemModel{}}, // no override
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "bundle-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}},
+						},
+					}},
+				},
+			},
+		},
+		// Nesting rules - execution container
+		{
+			name:           "step with no own execution container inherits from bundle context",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"bundle_exec": {Type: ContainerTypeExecution, Image: "node:18"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ExecutionContainer: "bundle_exec",
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-no-own": stepmanModels.StepModel{}},   // no own container → inherits
+						{"step-with-own": stepmanModels.StepModel{}}, // same here, different label
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::test_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"bundle_exec": {Image: "node:18"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step-no-own", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "bundle_exec"},
+						},
+						{UUID: "uuid_3", StepID: "step-with-own", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "bundle_exec"},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "step's own execution container takes priority over bundle context",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"bundle_exec": {Type: ContainerTypeExecution, Image: "node:18"},
+				"step_exec":   {Type: ContainerTypeExecution, Image: "golang:1.22"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ExecutionContainer: "bundle_exec",
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-no-own": stepmanModels.StepModel{}}, // inherits bundle_exec
+						{"step-own": stepmanModels.StepModel{
+							ExecutionContainer: "step_exec", // own overrides bundle
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::test_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"bundle_exec": {Image: "node:18"},
+					"step_exec":   {Image: "golang:1.22"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step-no-own", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "bundle_exec"},
+						},
+						{UUID: "uuid_3", StepID: "step-own",
+							Step:               stepmanModels.StepModel{ExecutionContainer: "step_exec"},
+							StepBundleUUID:     "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "step_exec"},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested bundles: inner bundle execution container is used for inner steps; outer resumes after",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"outer_exec": {Type: ContainerTypeExecution, Image: "outer:1"},
+				"inner_exec": {Type: ContainerTypeExecution, Image: "inner:1"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"inner_bundle": {
+					Steps: []StepListItemStepOrBundleModel{
+						{"inner-step": stepmanModels.StepModel{}},
+					},
+				},
+				"outer_bundle": {
+					ExecutionContainer: "outer_exec",
+					Steps: []StepListItemStepOrBundleModel{
+						{"outer-step-before": stepmanModels.StepModel{}},
+						{"bundle::inner_bundle": StepBundleListItemModel{
+							ExecutionContainer: "inner_exec",
+						}},
+						{"outer-step-after": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::outer_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "outer_bundle"},
+					"uuid_3": {ID: "inner_bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"outer_exec": {Image: "outer:1"},
+					"inner_exec": {Image: "inner:1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_6", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "outer-step-before", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "outer_exec"},
+						},
+						{UUID: "uuid_4", StepID: "inner-step", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3",
+							ExecutionContainer: &ContainerConfig{ContainerID: "inner_exec"},
+						},
+						{UUID: "uuid_5", StepID: "outer-step-after", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "outer_exec"},
+						},
+					}},
+				},
+			},
+		},
+		// Nesting rules - service containers
+		{
+			name:           "step's own service containers are added on top of bundle services",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis":    {Type: ContainerTypeService, Image: "redis:latest"},
+				"postgres": {Type: ContainerTypeService, Image: "postgres:13"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"test_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-no-own": stepmanModels.StepModel{}},
+						{"step-own": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"postgres"},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::test_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans:  map[string]StepBundlePlan{"uuid_1": {ID: "test_bundle"}},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis":    {Image: "redis:latest"},
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step-no-own", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}},
+						},
+						{UUID: "uuid_3", StepID: "step-own",
+							Step:           stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{"postgres"}},
+							StepBundleUUID: "uuid_1",
+							// redis from bundle + postgres from step
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}, {ContainerID: "postgres"}},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "nested bundles: inner bundle services added on top of outer bundle services",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis":    {Type: ContainerTypeService, Image: "redis:latest"},
+				"postgres": {Type: ContainerTypeService, Image: "postgres:13"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"inner_bundle": {
+					Steps: []StepListItemStepOrBundleModel{{"inner-step": stepmanModels.StepModel{}}},
+				},
+				"outer_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"outer-step-before": stepmanModels.StepModel{}},
+						{"bundle::inner_bundle": StepBundleListItemModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"postgres"},
+						}},
+						{"outer-step-after": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::outer_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "outer_bundle"},
+					"uuid_3": {ID: "inner_bundle"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis":    {Image: "redis:latest"},
+					"postgres": {Image: "postgres:13"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_6", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "outer-step-before", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}},
+						},
+						{UUID: "uuid_4", StepID: "inner-step", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3",
+							// redis from outer + postgres from inner
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}, {ContainerID: "postgres"}},
+						},
+						{UUID: "uuid_5", StepID: "outer-step-after", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1",
+							// only outer's redis (inner's postgres is not inherited back)
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name:           "service container from outer bundle not duplicated in inner bundle step",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"redis": {Type: ContainerTypeService, Image: "redis:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"inner_bundle": {
+					// inner bundle also lists redis — should not be duplicated
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"},
+					Steps:             []StepListItemStepOrBundleModel{{"inner-step": stepmanModels.StepModel{}}},
+				},
+				"outer_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"redis"},
+					Steps:             []StepListItemStepOrBundleModel{{"bundle::inner_bundle": StepBundleListItemModel{}}},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{{"bundle::outer_bundle": StepBundleListItemModel{}}}},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_1": {ID: "outer_bundle"},
+					"uuid_2": {ID: "inner_bundle"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"redis": {Image: "redis:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_4", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						{UUID: "uuid_3", StepID: "inner-step", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2",
+							ServiceContainers: []ContainerConfig{{ContainerID: "redis"}}, // deduplicated
+						},
+					}},
+				},
+			},
+		},
+		// Complex example
+		{
+			name:           "complex override and nesting example from plan doc",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"outer_override_exec":  {Type: ContainerTypeExecution, Image: "outer-exec:1"},
+				"inner_override_exec":  {Type: ContainerTypeExecution, Image: "inner-exec:1"},
+				"step_exec":            {Type: ContainerTypeExecution, Image: "step-exec:1"},
+				"outer_override_svc_1": {Type: ContainerTypeService, Image: "outer-svc-1:1"},
+				"outer_override_svc_2": {Type: ContainerTypeService, Image: "outer-svc-2:1"},
+				"outer_override_svc_3": {Type: ContainerTypeService, Image: "outer-svc-3:1"},
+				"inner_override_svc":   {Type: ContainerTypeService, Image: "inner-svc:1"},
+				"step_svc_1":           {Type: ContainerTypeService, Image: "step-svc-1:1"},
+				"step_svc_2":           {Type: ContainerTypeService, Image: "step-svc-2:1"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"inner_bundle": {
+					ExecutionContainer: "inner_def_exec", // overridden at usage-side
+					ServiceContainers:  []stepmanModels.ContainerReference{"inner_def_svc_1", "inner_def_svc_2"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-without-own_1": stepmanModels.StepModel{}},
+						{"step-with-own": stepmanModels.StepModel{
+							ExecutionContainer: "step_exec",
+							ServiceContainers:  []stepmanModels.ContainerReference{"step_svc_1", "step_svc_2"},
+						}},
+						{"step-without-own_2": stepmanModels.StepModel{}},
+					},
+				},
+				"outer_bundle": {
+					ExecutionContainer: "outer_def_exec", // overridden at usage-side
+					ServiceContainers:  []stepmanModels.ContainerReference{"outer_def_svc_1", "outer_def_svc_2"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step-without-own_3": stepmanModels.StepModel{}},
+						{"bundle::inner_bundle": StepBundleListItemModel{
+							ExecutionContainer: "inner_override_exec",
+							ServiceContainers:  []stepmanModels.ContainerReference{"inner_override_svc"},
+						}},
+						{"step-without-own_4": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {
+					Steps: []StepListItemModel{
+						{"step-without-own_5": stepmanModels.StepModel{}},
+						{"bundle::outer_bundle": StepBundleListItemModel{
+							ExecutionContainer: "outer_override_exec",
+							ServiceContainers:  []stepmanModels.ContainerReference{"outer_override_svc_1", "outer_override_svc_2", "outer_override_svc_3"},
+						}},
+						{"step-without-own_6": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			want: WorkflowRunPlan{
+				Version:          cliVersion(),
+				LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{
+					"uuid_2": {ID: "outer_bundle"},
+					"uuid_4": {ID: "inner_bundle"},
+				},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"outer_override_exec": {Image: "outer-exec:1"},
+					"inner_override_exec": {Image: "inner-exec:1"},
+					"step_exec":           {Image: "step-exec:1"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"outer_override_svc_1": {Image: "outer-svc-1:1"},
+					"outer_override_svc_2": {Image: "outer-svc-2:1"},
+					"outer_override_svc_3": {Image: "outer-svc-3:1"},
+					"inner_override_svc":   {Image: "inner-svc:1"},
+					"step_svc_1":           {Image: "step-svc-1:1"},
+					"step_svc_2":           {Image: "step-svc-2:1"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{
+					{UUID: "uuid_10", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
+						// step-without-own_5: outside all bundles, no containers
+						{UUID: "uuid_1", StepID: "step-without-own_5", Step: stepmanModels.StepModel{}},
+						// step-without-own_3: inside outer_bundle, inherits outer execution + outer services
+						{UUID: "uuid_3", StepID: "step-without-own_3", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2",
+							ExecutionContainer: &ContainerConfig{ContainerID: "outer_override_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "outer_override_svc_1"},
+								{ContainerID: "outer_override_svc_2"},
+								{ContainerID: "outer_override_svc_3"},
+							},
+						},
+						// step-without-own_1: inside inner_bundle, inherits inner execution + outer+inner services
+						{UUID: "uuid_5", StepID: "step-without-own_1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_4",
+							ExecutionContainer: &ContainerConfig{ContainerID: "inner_override_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "outer_override_svc_1"},
+								{ContainerID: "outer_override_svc_2"},
+								{ContainerID: "outer_override_svc_3"},
+								{ContainerID: "inner_override_svc"},
+							},
+						},
+						// step-with-own: uses its own step_exec; services = outer+inner+own
+						{UUID: "uuid_6", StepID: "step-with-own",
+							Step: stepmanModels.StepModel{
+								ExecutionContainer: "step_exec",
+								ServiceContainers:  []stepmanModels.ContainerReference{"step_svc_1", "step_svc_2"},
+							},
+							StepBundleUUID:     "uuid_4",
+							ExecutionContainer: &ContainerConfig{ContainerID: "step_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "outer_override_svc_1"},
+								{ContainerID: "outer_override_svc_2"},
+								{ContainerID: "outer_override_svc_3"},
+								{ContainerID: "inner_override_svc"},
+								{ContainerID: "step_svc_1"},
+								{ContainerID: "step_svc_2"},
+							},
+						},
+						// step-without-own_2: inside inner_bundle, inherits inner execution + outer+inner services
+						{UUID: "uuid_7", StepID: "step-without-own_2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_4",
+							ExecutionContainer: &ContainerConfig{ContainerID: "inner_override_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "outer_override_svc_1"},
+								{ContainerID: "outer_override_svc_2"},
+								{ContainerID: "outer_override_svc_3"},
+								{ContainerID: "inner_override_svc"},
+							},
+						},
+						// step-without-own_4: back in outer_bundle, inherits outer execution + outer services
+						{UUID: "uuid_8", StepID: "step-without-own_4", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2",
+							ExecutionContainer: &ContainerConfig{ContainerID: "outer_override_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "outer_override_svc_1"},
+								{ContainerID: "outer_override_svc_2"},
+								{ContainerID: "outer_override_svc_3"},
+							},
+						},
+						// step-without-own_6: outside all bundles, no containers
+						{UUID: "uuid_9", StepID: "step-without-own_6", Step: stepmanModels.StepModel{}},
+					}},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewWorkflowRunPlanBuilder(tt.workflows, tt.stepBundles, tt.containers, nil, (&MockUUIDProvider{}).UUID).Build(WorkflowRunModes{}, tt.targetWorkflow)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
 type MockUUIDProvider struct {
 	i int
 }
