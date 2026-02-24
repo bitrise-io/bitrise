@@ -1153,6 +1153,12 @@ func isUtilityWorkflow(workflowID string) bool {
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 	var warnings []string
 
+	executionContainers, serviceContainers := ProcessContainerList(config.Containers)
+	containerValidationCtx := &containerValidationContext{
+		ExecutionContainers: executionContainers,
+		ServiceContainers:   serviceContainers,
+	}
+
 	for workflowID, workflow := range config.Workflows {
 		idWarning, err := validateID(workflowID, "workflow")
 		if idWarning != "" {
@@ -1174,11 +1180,6 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
-		executionContainers, serviceContainers := ProcessContainerList(config.Containers)
-		containerValidationCtx := &containerValidationContext{
-			ExecutionContainers: executionContainers,
-			ServiceContainers:   serviceContainers,
-		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {

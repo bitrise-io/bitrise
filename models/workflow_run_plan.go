@@ -119,11 +119,15 @@ type WithGroupContext struct {
 }
 
 type WorkflowRunPlanBuilder struct {
-	workflows    map[string]WorkflowModel
-	stepBundles  map[string]StepBundleModel
-	containers   map[string]Container
-	services     map[string]Container
-	uuidProvider func() string
+	workflows   map[string]WorkflowModel
+	stepBundles map[string]StepBundleModel
+	// With group based containerisation
+	containers map[string]Container
+	services   map[string]Container
+	// Step based containerisation
+	executionContainers map[string]Container
+	serviceContainers   map[string]Container
+	uuidProvider        func() string
 
 	stepBundlePlans         map[string]StepBundlePlan
 	executionContainerPlans map[string]ContainerPlan
@@ -132,11 +136,14 @@ type WorkflowRunPlanBuilder struct {
 }
 
 func NewWorkflowRunPlanBuilder(workflows map[string]WorkflowModel, stepBundles map[string]StepBundleModel, containers map[string]Container, services map[string]Container, uuidProvider func() string) *WorkflowRunPlanBuilder {
+	executionContainers, serviceContainers := ProcessContainerList(containers)
 	return &WorkflowRunPlanBuilder{
 		workflows:               workflows,
 		stepBundles:             stepBundles,
 		containers:              containers,
 		services:                services,
+		executionContainers:     executionContainers,
+		serviceContainers:       serviceContainers,
 		uuidProvider:            uuidProvider,
 		stepBundlePlans:         map[string]StepBundlePlan{},
 		executionContainerPlans: map[string]ContainerPlan{},
@@ -568,14 +575,13 @@ func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfi
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {
-	executionContainers, serviceContainers := ProcessContainerList(builder.containers)
 	executionContainerCfg, err := containerisable.GetExecutionContainerConfig()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if executionContainerCfg != nil {
-		container, ok := executionContainers[executionContainerCfg.ContainerID]
+		container, ok := builder.executionContainers[executionContainerCfg.ContainerID]
 		if !ok {
 			return nil, nil, fmt.Errorf("referenced execution container not defined: %s", executionContainerCfg.ContainerID)
 		}
@@ -593,7 +599,7 @@ func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable C
 	}
 
 	for _, containerCfg := range serviceContainerCfgs {
-		container, ok := serviceContainers[containerCfg.ContainerID]
+		container, ok := builder.serviceContainers[containerCfg.ContainerID]
 		if !ok {
 			return nil, nil, fmt.Errorf("referenced service container not defined: %s", containerCfg.ContainerID)
 		}
