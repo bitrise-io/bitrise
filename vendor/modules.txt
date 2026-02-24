@@ -38,7 +38,7 @@ github.com/ProtonMail/go-crypto/openpgp/x448
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman/v2 v2.5.6-0.20260220121501-3c1f27fef18c
+# github.com/bitrise-io/envman/v2 v2.5.6
 ## explicit; go 1.25.3
 github.com/bitrise-io/envman/v2/cli
 github.com/bitrise-io/envman/v2/env
@@ -46,7 +46,7 @@ github.com/bitrise-io/envman/v2/envman
 github.com/bitrise-io/envman/v2/models
 github.com/bitrise-io/envman/v2/output
 github.com/bitrise-io/envman/v2/version
-# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.43.0.20260220120449-2b72452b2be9
+# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/secretkeys
 # github.com/bitrise-io/go-utils v1.0.15
@@ -64,7 +64,7 @@ github.com/bitrise-io/go-utils/retry
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
 github.com/bitrise-io/go-utils/versions
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.32.0.20260219145834-dc507fba552c
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
