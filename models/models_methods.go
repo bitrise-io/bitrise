@@ -695,13 +695,30 @@ func (config *BitriseDataModel) internalValidation(full bool) ([]string, error) 
 	return warnings, nil
 }
 
+func configHasWithGroups(config BitriseDataModel) bool {
+	for _, workflow := range config.Workflows {
+		for _, stepListItem := range workflow.Steps {
+			_, t, err := stepListItem.GetKeyAndType()
+			if err == nil && t == StepListItemTypeWith {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func validateContainers(config BitriseDataModel) error {
+	requiresType := !configHasWithGroups(config)
+
 	for containerID, containerDef := range config.Containers {
 		if containerID == "" {
 			return fmt.Errorf("container (image: %s) has empty ID defined", containerDef.Image)
 		}
 		if strings.TrimSpace(containerDef.Image) == "" {
 			return fmt.Errorf("container (%s) has no image defined", containerID)
+		}
+		if requiresType && containerDef.Type == "" {
+			return fmt.Errorf("container (%s) has no type defined (must be %s or %s)", containerID, ContainerTypeExecution, ContainerTypeService)
 		}
 		if err := containerDef.Validate(); err != nil {
 			return fmt.Errorf("container (%s) has config issue: %w", containerID, err)

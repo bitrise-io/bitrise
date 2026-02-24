@@ -39,9 +39,6 @@ func ProcessContainerList(containers map[string]Container) (executionContainers 
 			executionContainers[id] = container
 		case ContainerTypeService:
 			serviceContainers[id] = container
-		case "":
-			executionContainers[id] = container
-			serviceContainers[id] = container
 		}
 	}
 	return

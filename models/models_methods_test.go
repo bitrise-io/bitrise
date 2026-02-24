@@ -1263,6 +1263,60 @@ workflows:
         - redis`),
 			wantErr: "step bundle (test_bundle) referenced in workflow (test) has config issue: step bundle has container reference issue: duplicate service container reference: redis",
 		},
+		// Container type validation
+		{
+			name: "Valid bitrise.yml: new containerisation with all containers typed",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  alpine:
+    type: execution
+    image: alpine:latest
+  redis:
+    type: service
+    image: redis:latest
+workflows:
+  test:
+    steps:
+    - script:
+        execution_container: alpine
+        service_containers:
+        - redis`),
+		},
+		{
+			name: "Invalid bitrise.yml: new containerisation with container missing type",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - script:
+        execution_container: ruby`),
+			wantErr: `container (ruby) has no type defined (must be "execution" or "service")`,
+		},
+		{
+			name: "Valid bitrise.yml: legacy with-group config, container type not required",
+			config: createConfig(t, `
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script:
+            inputs:
+            - content: echo "test"`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
