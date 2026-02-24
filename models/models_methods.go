@@ -707,7 +707,90 @@ func configHasWithGroups(config BitriseDataModel) bool {
 	return false
 }
 
+func configUsesNewContainerisation(config BitriseDataModel) bool {
+	for _, c := range config.Containers {
+		if c.Type != "" {
+			return true
+		}
+	}
+
+	visited := map[string]bool{}
+
+	for _, workflow := range config.Workflows {
+		for _, stepListItem := range workflow.Steps {
+			key, t, err := stepListItem.GetKeyAndType()
+			if err != nil {
+				continue
+			}
+			if t == StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err == nil && step != nil && (step.ExecutionContainer != nil || len(step.ServiceContainers) > 0) {
+					return true
+				}
+			} else if t == StepListItemTypeBundle {
+				bundleOverride, err := stepListItem.GetBundle()
+				if err == nil && bundleOverride != nil && (bundleOverride.ExecutionContainer != nil || len(bundleOverride.ServiceContainers) > 0) {
+					return true
+				}
+				if bundleDef, ok := config.StepBundles[key]; ok {
+					if bundleDefUsesNewContainerisation(bundleDef, key, config.StepBundles, visited) {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	for bundleID, bundle := range config.StepBundles {
+		if bundleDefUsesNewContainerisation(bundle, bundleID, config.StepBundles, visited) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func bundleDefUsesNewContainerisation(bundle StepBundleModel, bundleID string, allBundles map[string]StepBundleModel, visited map[string]bool) bool {
+	if visited[bundleID] {
+		return false
+	}
+	visited[bundleID] = true
+
+	if bundle.ExecutionContainer != nil || len(bundle.ServiceContainers) > 0 {
+		return true
+	}
+
+	for _, stepListItem := range bundle.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			continue
+		}
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err == nil && step != nil && (step.ExecutionContainer != nil || len(step.ServiceContainers) > 0) {
+				return true
+			}
+		} else if t == StepListItemTypeBundle {
+			bundleOverride, err := stepListItem.GetBundle()
+			if err == nil && bundleOverride != nil && (bundleOverride.ExecutionContainer != nil || len(bundleOverride.ServiceContainers) > 0) {
+				return true
+			}
+			if nestedBundleDef, ok := allBundles[key]; ok {
+				if bundleDefUsesNewContainerisation(nestedBundleDef, key, allBundles, visited) {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 func validateContainers(config BitriseDataModel) error {
+	if configHasWithGroups(config) && configUsesNewContainerisation(config) {
+		return fmt.Errorf("mixing legacy with-group and step-based containerisation is not allowed")
+	}
+
 	requiresType := !configHasWithGroups(config)
 
 	for containerID, containerDef := range config.Containers {
@@ -718,7 +801,7 @@ func validateContainers(config BitriseDataModel) error {
 			return fmt.Errorf("container (%s) has no image defined", containerID)
 		}
 		if requiresType && containerDef.Type == "" {
-			return fmt.Errorf("container (%s) has no type defined (must be %s or %s)", containerID, ContainerTypeExecution, ContainerTypeService)
+			return fmt.Errorf("container (%s) has no type defined (must be %q or %q)", containerID, ContainerTypeExecution, ContainerTypeService)
 		}
 		if err := containerDef.Validate(); err != nil {
 			return fmt.Errorf("container (%s) has config issue: %w", containerID, err)

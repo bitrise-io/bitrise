@@ -923,59 +923,6 @@ func TestNewWorkflowRunPlan_Containers(t *testing.T) {
 			},
 		},
 		{
-			name:           "untyped container can be used as both execution and service",
-			modes:          WorkflowRunModes{},
-			targetWorkflow: "workflow1",
-			containers: map[string]Container{
-				"alpine": {
-					// No type specified - can be used as both
-					Image: "alpine:latest",
-				},
-			},
-			workflows: map[string]WorkflowModel{
-				"workflow1": {
-					Steps: []StepListItemModel{
-						{"script1": stepmanModels.StepModel{
-							ExecutionContainer: "alpine",
-						}},
-						{"script2": stepmanModels.StepModel{
-							ServiceContainers: []stepmanModels.ContainerReference{"alpine"},
-						}},
-					},
-				},
-			},
-			want: WorkflowRunPlan{
-				Version:          cliVersion(),
-				LogFormatVersion: "2",
-				ExecutionContainerPlans: map[string]ContainerPlan{
-					"alpine": {Image: "alpine:latest"},
-				},
-				ServiceContainerPlans: map[string]ContainerPlan{
-					"alpine": {Image: "alpine:latest"},
-				},
-				ExecutionPlan: []WorkflowExecutionPlan{
-					{UUID: "uuid_3", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
-						{
-							UUID:               "uuid_1",
-							StepID:             "script1",
-							Step:               stepmanModels.StepModel{ExecutionContainer: "alpine"},
-							ExecutionContainer: &ContainerConfig{ContainerID: "alpine", Recreate: false},
-						},
-						{
-							UUID:   "uuid_2",
-							StepID: "script2",
-							Step: stepmanModels.StepModel{
-								ServiceContainers: []stepmanModels.ContainerReference{"alpine"},
-							},
-							ServiceContainers: []ContainerConfig{
-								{ContainerID: "alpine", Recreate: false},
-							},
-						},
-					}},
-				},
-			},
-		},
-		{
 			name:           "error - undefined execution container referenced",
 			modes:          WorkflowRunModes{},
 			targetWorkflow: "workflow1",

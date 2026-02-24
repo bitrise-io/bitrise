@@ -1317,6 +1317,77 @@ workflows:
             inputs:
             - content: echo "test"`),
 		},
+		// Mixing legacy and new containerisation
+		{
+			name: "Invalid bitrise.yml: typed container mixed with with-group",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    type: execution
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script:
+            inputs:
+            - content: echo "test"`),
+			wantErr: "mixing legacy with-group and step-based containerisation is not allowed",
+		},
+		{
+			name: "Invalid bitrise.yml: step execution_container mixed with with-group",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    image: ruby:3.2
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script:
+            inputs:
+            - content: echo "test"
+    - script:
+        execution_container: ruby
+        inputs:
+        - content: echo "test"`),
+			wantErr: "mixing legacy with-group and step-based containerisation is not allowed",
+		},
+		{
+			name: "Invalid bitrise.yml: step bundle with execution_container mixed with with-group",
+			config: createConfig(t, `
+format_version: '25'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+containers:
+  ruby:
+    image: ruby:3.2
+step_bundles:
+  test_bundle:
+    steps:
+    - script:
+        inputs:
+        - content: echo "test"
+workflows:
+  test:
+    steps:
+    - with:
+        container: ruby
+        steps:
+        - script:
+            inputs:
+            - content: echo "test"
+    - bundle::test_bundle:
+        execution_container: ruby`),
+			wantErr: "mixing legacy with-group and step-based containerisation is not allowed",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
