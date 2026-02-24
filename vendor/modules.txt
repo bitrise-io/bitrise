@@ -38,7 +38,7 @@ github.com/ProtonMail/go-crypto/openpgp/x448
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman/v2 v2.5.5
+# github.com/bitrise-io/envman/v2 v2.5.6
 ## explicit; go 1.25.3
 github.com/bitrise-io/envman/v2/cli
 github.com/bitrise-io/envman/v2/env
@@ -46,7 +46,7 @@ github.com/bitrise-io/envman/v2/envman
 github.com/bitrise-io/envman/v2/models
 github.com/bitrise-io/envman/v2/output
 github.com/bitrise-io/envman/v2/version
-# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
+# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/secretkeys
 # github.com/bitrise-io/go-utils v1.0.15
@@ -57,19 +57,19 @@ github.com/bitrise-io/go-utils/command/git
 github.com/bitrise-io/go-utils/errorutil
 github.com/bitrise-io/go-utils/fileutil
 github.com/bitrise-io/go-utils/log
-github.com/bitrise-io/go-utils/parseutil
 github.com/bitrise-io/go-utils/pathutil
 github.com/bitrise-io/go-utils/pointers
 github.com/bitrise-io/go-utils/progress
 github.com/bitrise-io/go-utils/retry
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
-# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33
 ## explicit; go 1.17
 github.com/bitrise-io/go-utils/v2/analytics
 github.com/bitrise-io/go-utils/v2/env
 github.com/bitrise-io/go-utils/v2/log
 github.com/bitrise-io/go-utils/v2/log/colorstring
+github.com/bitrise-io/go-utils/v2/parseutil
 github.com/bitrise-io/go-utils/v2/pathutil
 github.com/bitrise-io/go-utils/v2/redactwriter
 github.com/bitrise-io/go-utils/v2/retryhttp
@@ -237,6 +237,9 @@ github.com/go-logr/stdr
 # github.com/gofrs/uuid v4.3.1+incompatible
 ## explicit
 github.com/gofrs/uuid
+# github.com/gofrs/uuid/v5 v5.2.0
+## explicit; go 1.19
+github.com/gofrs/uuid/v5
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/proto
