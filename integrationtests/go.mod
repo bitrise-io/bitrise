@@ -1,6 +1,6 @@
 module github.com/bitrise-io/bitrise/v2/integrationtests
 
-go 1.25.5
+go 1.25.7
 
 // Magic trick that allows us to exclude integration tests from the main Go package
 // (other repos consume the main package as a Go lib) and keep full Go LSP support for this package.
@@ -10,7 +10,7 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/bitrise/v2 v2.0.0
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/stepman v0.18.6-0.20260105132316-2401f656745d
+	github.com/bitrise-io/stepman v0.18.7
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0
@@ -48,7 +48,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-version v1.4.0 // indirect
+	github.com/hashicorp/go-version v1.8.0 // indirect
 	github.com/heimdalr/dag v1.4.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
