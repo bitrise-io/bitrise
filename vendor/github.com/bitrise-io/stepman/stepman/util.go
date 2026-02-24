@@ -17,8 +17,8 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/urlutil"
-	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
+	version "github.com/hashicorp/go-version"
 	"gopkg.in/yaml.v2"
 )
 
@@ -171,19 +171,23 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	return errors.New("failed to download step")
 }
 
-func addStepVersionToStepGroup(step models.StepModel, version string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
+func addStepVersionToStepGroup(step models.StepModel, stepVersionStr string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
 	if stepGroup.LatestVersionNumber != "" {
-		r, err := versions.CompareVersions(stepGroup.LatestVersionNumber, version)
+		latestVersion, err := version.NewVersion(stepGroup.LatestVersionNumber)
 		if err != nil {
 			return models.StepGroupModel{}, err
 		}
-		if r == 1 {
-			stepGroup.LatestVersionNumber = version
+		stepVersion, err := version.NewVersion(stepVersionStr)
+		if err != nil {
+			return models.StepGroupModel{}, err
+		}
+		if latestVersion.LessThan(stepVersion) {
+			stepGroup.LatestVersionNumber = stepVersionStr
 		}
 	} else {
-		stepGroup.LatestVersionNumber = version
+		stepGroup.LatestVersionNumber = stepVersionStr
 	}
-	stepGroup.Versions[version] = step
+	stepGroup.Versions[stepVersionStr] = step
 	return stepGroup, nil
 }
 
@@ -194,7 +198,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 		SteplibSource:         templateCollection.SteplibSource,
 		DownloadLocations:     templateCollection.DownloadLocations,
 		AssetsDownloadBaseURI: templateCollection.AssetsDownloadBaseURI,
-		Steps: models.StepHash{},
+		Steps:                 models.StepHash{},
 	}
 
 	stepsCollectionDirPth := GetLibraryBaseDirPath(route)
@@ -268,8 +272,8 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 				stepGroup, found := collection.Steps[stepID]
 				if !found {
 					stepGroup = models.StepGroupModel{
-						Versions: map[string]models.StepModel{},
-						Info: models.StepGroupInfoModel{},
+						Versions:            map[string]models.StepModel{},
+						Info:                models.StepGroupInfoModel{},
 						LatestVersionNumber: "",
 					}
 				}
@@ -300,13 +304,13 @@ func generateSlimStepModel(collection models.StepCollectionModel) models.StepCol
 		SteplibSource:         collection.SteplibSource,
 		DownloadLocations:     collection.DownloadLocations,
 		AssetsDownloadBaseURI: collection.AssetsDownloadBaseURI,
-		Steps: models.StepHash{},
+		Steps:                 models.StepHash{},
 	}
 
 	for stepID, stepGroupModel := range collection.Steps {
 		slimCollection.Steps[stepID] = models.StepGroupModel{
-			Info:     stepGroupModel.Info,
-			Versions: map[string]models.StepModel{stepGroupModel.LatestVersionNumber: stepGroupModel.Versions[stepGroupModel.LatestVersionNumber]},
+			Info:                stepGroupModel.Info,
+			Versions:            map[string]models.StepModel{stepGroupModel.LatestVersionNumber: stepGroupModel.Versions[stepGroupModel.LatestVersionNumber]},
 			LatestVersionNumber: stepGroupModel.LatestVersionNumber,
 		}
 	}
