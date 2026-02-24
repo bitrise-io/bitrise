@@ -8,6 +8,12 @@ containers:
   inner_exec:
     type: execution
     image: frolvlad/alpine-bash:latest
+  outer_srvc:
+    type: service
+    image: frolvlad/alpine-bash:latest
+  inner_srvc:
+    type: service
+    image: frolvlad/alpine-bash:latest
 
 step_bundles:
   inner_bundle:
@@ -15,6 +21,8 @@ step_bundles:
     steps:
     - script@1:
         title: Inner bundle step
+        service_containers:
+        - inner_srvc
         inputs:
         - content: |
             #!/bin/bash
@@ -23,6 +31,8 @@ step_bundles:
 
   outer_bundle:
     execution_container: outer_exec
+    service_containers:
+    - outer_srvc
     steps:
     - script@1:
         title: Outer bundle step 1 - create marker

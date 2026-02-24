@@ -4,6 +4,7 @@
 package stepbased
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
@@ -52,8 +53,10 @@ func Test_Docker(t *testing.T) {
 			requireErr:    false,
 			requireLogs: []string{
 				"Logging into docker registry:",
-				"Step is running in container:",
 				"--password [REDACTED]",
+				"Container (login-success) is running",
+				"Step is running in container:",
+				"Removing execution container: login-success",
 			},
 		},
 		"docker start execution and services containers with credentials": {
@@ -74,8 +77,8 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-create-fails-invalid-port",
 			requireErr:   true,
 			requireLogs: []string{
-				"failed to start containers:",
 				"address already in use",
+				"failed to start containers:",
 			},
 		},
 		"docker create succeeds when valid port is provided": {
@@ -172,9 +175,9 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-service-start-fails",
 			requireErr:   false,
 			requireLogs: []string{
-				"Some services failed to start properly",
-				"start docker container (failing-service): exit status 1",
 				"nonexistent-command",
+				"start docker container (failing-service): exit status 1",
+				"Some services failed to start properly",
 			},
 		},
 		"docker start service containers succeeds after retries": {
@@ -224,15 +227,27 @@ func Test_Docker(t *testing.T) {
 		},
 
 		// Nested bundle container resolution
-		"nested bundle: outer container state is preserved while inner bundle runs in different container": {
+		"nested bundle: outer container state is preserved while inner bundle runs in different container, services are appended": {
 			configPath:   "docker_nested_bundle_bitrise.yml",
 			workflowName: "test-nested-bundle-containers",
 			requireErr:   false,
 			requireLogs: []string{
 				"Using new containerisation mode",
+				"Container (outer_exec) is running",
+				"Container (outer_srvc) is running",
 				"Outer bundle step 1 running",
+				"Keep running execution container: outer_exec",
+				"Reusing service container: outer_srvc",
+				"Container (inner_exec) is running",
+				"Container (inner_srvc) is running",
 				"Inner bundle step running in inner_exec",
+				"Removing execution container: inner_exec",
+				"Removing service container: inner_srvc",
+				"Reusing execution container: outer_exec",
+				"Reusing service container: outer_srvc",
 				"SUCCESS: Outer container state preserved",
+				"Removing execution container: outer_exec",
+				"Removing service container: outer_srvc",
 			},
 		},
 	}
@@ -252,13 +267,32 @@ func Test_Docker(t *testing.T) {
 			} else {
 				require.NoError(t, err, "Expected command to succeed but it failed. Output:\n%s", out)
 			}
-			for _, log := range testCase.requireLogs {
-				require.Contains(t, out, log, "Expected log message not found in output:\n%s", out)
+			if len(testCase.requireLogs) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requireLogs, true)
 			}
-			for _, logPattern := range testCase.requiredLogPatterns {
-				contains := glob.Glob(logPattern, out)
-				require.True(t, contains, "Expected log message pattern not found in output:\n%s", out)
+			if len(testCase.requiredLogPatterns) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requiredLogPatterns, false)
 			}
 		})
 	}
+}
+
+func findLogPatternsInOrder(t *testing.T, out string, patterns []string, exactmatch bool) {
+	lines := strings.Split(out, "\n")
+	patternIdx := 0
+	for _, line := range lines {
+		if patternIdx >= len(patterns) {
+			break
+		}
+		if exactmatch {
+			if strings.Contains(line, patterns[patternIdx]) {
+				patternIdx++
+			}
+		} else {
+			if glob.Glob(patterns[patternIdx], line) {
+				patternIdx++
+			}
+		}
+	}
+	require.Equalf(t, len(patterns), patternIdx, "Missing logs: %s\nFull output: %s", strings.Join(patterns[patternIdx:], "\n"), out)
 }
