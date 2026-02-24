@@ -2,6 +2,7 @@ package containermanager
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
@@ -124,7 +125,8 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	// so we check the container requirements of the upcoming steps to decide if we need to stop the currently running containers.
 	// Here we only check what to stop, starting is handled in UpdateWithStepStarted.
 	if len(m.runningExecutionContainer) > 0 {
-		for containerID := range m.runningExecutionContainer {
+		containerIDs := sortedRunningContainerIDs(m.runningExecutionContainer)
+		for _, containerID := range containerIDs {
 			if m.shouldStopExecutionContainer(containerID, stepPlan) {
 				if container := m.runningExecutionContainer[containerID]; container != nil {
 					m.logger.Infof("ℹ️ Removing execution container: %s", containerID)
@@ -138,7 +140,8 @@ func (m *Manager) UpdateWithStepFinished(stepIDX int, plan models.WorkflowExecut
 	}
 
 	if len(m.runningServiceContainers) > 0 {
-		for containerID := range m.runningServiceContainers {
+		containerIDs := sortedRunningContainerIDs(m.runningServiceContainers)
+		for _, containerID := range containerIDs {
 			if m.shouldStopServiceContainer(containerID, stepPlan) {
 				if container := m.runningServiceContainers[containerID]; container != nil {
 					m.logger.Infof("ℹ️ Removing service container: %s", container.Name)
@@ -359,7 +362,8 @@ func (m *Manager) startServiceContainers(containers map[string]models.Container,
 	var runningContainers []*docker.RunningContainer
 	failedServices := make(map[string]error)
 
-	for containerID := range containers {
+	containerIDs := sortedContainerIDs(containers)
+	for _, containerID := range containerIDs {
 		serviceContainer := containers[containerID]
 
 		runningContainer, err := m.loginAndRunContainer(docker.ServiceContainerType, serviceContainer, containerID, envs)
@@ -565,4 +569,22 @@ func (m *Manager) getServiceContainersForStepGroup(groupID string) []*docker.Run
 
 func (m *Manager) getExecutionContainerForStepGroup(groupID string) *docker.RunningContainer {
 	return m.executionContainers[groupID]
+}
+
+func sortedContainerIDs(containers map[string]models.Container) []string {
+	containerIDs := make([]string, 0, len(containers))
+	for containerID := range containers {
+		containerIDs = append(containerIDs, containerID)
+	}
+	slices.Sort(containerIDs)
+	return containerIDs
+}
+
+func sortedRunningContainerIDs(containers map[string]*docker.RunningContainer) []string {
+	containerIDs := make([]string, 0, len(containers))
+	for containerID := range containers {
+		containerIDs = append(containerIDs, containerID)
+	}
+	slices.Sort(containerIDs)
+	return containerIDs
 }
