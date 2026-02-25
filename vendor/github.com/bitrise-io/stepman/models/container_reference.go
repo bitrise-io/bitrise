@@ -23,12 +23,8 @@ func GetContainerConfig(ref ContainerReference) (*ContainerConfig, error) {
 	switch ref := ref.(type) {
 	case string:
 		return getContainerConfigFromString(ref)
-	case map[any]any:
-		return getContainerConfigFromMap(ref)
-	case map[string]any:
-		return getContainerConfigFromMap(ref)
 	default:
-		return nil, fmt.Errorf("invalid container config type: %T", ref)
+		return getContainerConfigFromMap(ref)
 	}
 }
 
@@ -46,7 +42,7 @@ func getContainerConfigFromString(ctrStr string) (*ContainerConfig, error) {
 func getContainerConfigFromMap(ctr any) (*ContainerConfig, error) {
 	ctrMap, ok := toStrMap(ctr)
 	if !ok {
-		return nil, fmt.Errorf("invalid container config map type: %T", ctr)
+		return nil, fmt.Errorf("invalid container config type: %T", ctr)
 	}
 
 	if len(ctrMap) != 1 {
