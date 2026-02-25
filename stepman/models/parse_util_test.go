@@ -95,7 +95,7 @@ func Test_castRecursiveToMapStringInterface(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := recursiveJSONMarshallable(tt.source)
+			got, err := RecursiveJSONMarshallable(tt.source)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("castRecursiveToMapStringInterface() error = %v, wantErr %v", err, tt.wantErr)
 				return

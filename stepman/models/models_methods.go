@@ -114,6 +114,24 @@ func (step *StepModel) Normalize() error {
 	}
 	step.Meta = normalizedMeta
 
+	if step.ExecutionContainer != nil {
+		normalized, err := RecursiveJSONMarshallable(step.ExecutionContainer)
+		if err != nil {
+			return err
+		}
+		step.ExecutionContainer = normalized
+	}
+
+	if step.ServiceContainers != nil {
+		for i, container := range step.ServiceContainers {
+			normalized, err := RecursiveJSONMarshallable(container)
+			if err != nil {
+				return err
+			}
+			step.ServiceContainers[i] = normalized
+		}
+	}
+
 	return nil
 }
 
@@ -254,7 +272,7 @@ func (step *StepModel) FillMissingDefaults() error {
 // IsStepExist ...
 func (collection StepCollectionModel) IsStepExist(id, version string) bool {
 	_, stepFound, versionFound := collection.GetStep(id, version)
-	return (stepFound && versionFound)
+	return stepFound && versionFound
 }
 
 // GetStep ...

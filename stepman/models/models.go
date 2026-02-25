@@ -73,7 +73,7 @@ type StepModel struct {
 	// auto-generated at share
 	PublishedAt *time.Time        `json:"published_at,omitempty" yaml:"published_at,omitempty"`
 	Source      *StepSourceModel  `json:"source,omitempty" yaml:"source,omitempty"`
-	Executables *Executables       `json:"executables,omitempty" yaml:"executables,omitempty"`
+	Executables *Executables      `json:"executables,omitempty" yaml:"executables,omitempty"`
 	AssetURLs   map[string]string `json:"asset_urls,omitempty" yaml:"asset_urls,omitempty"`
 
 	//
@@ -96,8 +96,18 @@ type StepModel struct {
 	Timeout *int    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 	// The timeout (in seconds) until a Step with no output (stdout/stderr) is aborted
 	// 0 means timeout is disabled.
-	NoOutputTimeout *int                   `json:"no_output_timeout,omitempty" yaml:"no_output_timeout,omitempty"`
-	Meta            map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
+	NoOutputTimeout *int           `json:"no_output_timeout,omitempty" yaml:"no_output_timeout,omitempty"`
+	Meta            map[string]any `json:"meta,omitempty" yaml:"meta,omitempty"`
+
+	// Containers (execution and service) to be used for the step.
+	// The value is either the container id, or a map with the container id and additional configuration.
+	//
+	// service_containers:
+	// - redis
+	// - postgres:
+	//    recreate: true
+	ExecutionContainer ContainerReference   `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
+	ServiceContainers  []ContainerReference `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
 	//
 	Inputs  []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Outputs []envmanModels.EnvironmentItemModel `json:"outputs,omitempty" yaml:"outputs,omitempty"`
