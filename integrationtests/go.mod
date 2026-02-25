@@ -1,6 +1,6 @@
 module github.com/bitrise-io/bitrise/v2/integrationtests
 
-go 1.25.5
+go 1.25.7
 
 // Magic trick that allows us to exclude integration tests from the main Go package
 // (other repos consume the main package as a Go lib) and keep full Go LSP support for this package.
@@ -22,9 +22,9 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 // indirect
-	github.com/bitrise-io/envman/v2 v2.5.5 // indirect
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19 // indirect
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22 // indirect
+	github.com/bitrise-io/envman/v2 v2.5.6 // indirect
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 // indirect
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33 // indirect
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
@@ -43,6 +43,7 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gofrs/uuid v4.3.1+incompatible // indirect
+	github.com/gofrs/uuid/v5 v5.2.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect
