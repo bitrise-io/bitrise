@@ -14,10 +14,10 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/stepman"
+	version "github.com/hashicorp/go-version"
 )
 
 type GoToolkit struct {
@@ -62,11 +62,15 @@ func checkGoConfiguration(goConfig GoConfigurationModel) (bool, ToolkitCheckResu
 	}
 
 	// version check
-	isVersionOk, err := versions.IsVersionGreaterOrEqual(verStr, minGoVersionForToolkit)
+	currentVer, err := version.NewVersion(verStr)
 	if err != nil {
-		return false, checkRes, fmt.Errorf("validate installed go version: %s", err)
+		return false, checkRes, fmt.Errorf("parse installed go version: %s", err)
 	}
-	if !isVersionOk {
+	minVer, err := version.NewVersion(minGoVersionForToolkit)
+	if err != nil {
+		return false, checkRes, fmt.Errorf("parse minimum go version: %s", err)
+	}
+	if currentVer.LessThan(minVer) {
 		return true, checkRes, nil
 	}
 

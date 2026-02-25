@@ -1,20 +1,20 @@
 module github.com/bitrise-io/bitrise/v2
 
-go 1.25.5
+go 1.25.7
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.5.5
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.19
+	github.com/bitrise-io/envman/v2 v2.5.6
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.22
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.18.6-0.20260105132316-2401f656745d
+	github.com/bitrise-io/stepman v0.18.7
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/hashicorp/go-version v1.4.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.10.0
@@ -25,6 +25,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+require github.com/gofrs/uuid/v5 v5.2.0 // indirect
 
 require (
 	dario.cat/mergo v1.0.0 // indirect

@@ -1,5 +1,13 @@
 # Integration Tests
 
+Integration tests are treated as separate from the main Go package.
+This is intentional in order for these to be executed on-demand and decoupled from the main test suite. Running these integration tests can take a long time.
+
+> [!WARNING]
+> Because of this whenever dependencies change you'll have to run `go mod tidy` in this directory too!
+> 
+> Keep in mind that the integration test do not use vendoring. You SHOULD NOT run `go mod vendor` and MUST NOT push vendor folder here.
+
 ## Docker Tests
 
 ### Prerequisites

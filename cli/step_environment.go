@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/envman/v2/env"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
-	"github.com/bitrise-io/go-utils/parseutil"
+	"github.com/bitrise-io/go-utils/v2/parseutil"
 )
 
 type prepareStepInputParams struct {
@@ -58,7 +58,7 @@ func prepareStepEnvironment(params prepareStepInputParams, envSource env.Environ
 					fmt.Errorf("GetDeclarationsSideEffects() failed, %s", err)
 			}
 
-			evaluatedValue, err := bitrise.EvaluateTemplateToString(parseutil.CastToString(value), params.isCIMode, params.isPullRequestMode, params.buildRunResults, envs.ResultEnvironment)
+			evaluatedValue, err := bitrise.EvaluateTemplateToString(parseutil.StringFrom(value), params.isCIMode, params.isPullRequestMode, params.buildRunResults, envs.ResultEnvironment)
 			if err != nil {
 				return []envmanModels.EnvironmentItemModel{}, map[string]string{}, map[string]interface{}{},
 					fmt.Errorf("failed to evaluate template: %s", err)
