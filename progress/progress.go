@@ -9,9 +9,7 @@ import (
 func ShowIndicator(message string, action func()) {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	output := logwriter.NewLogWriter(logger)
-	spinner := NewDefaultSpinnerWithOutput(message, output)
+	spinner := NewDefaultSpinnerWithOutput(message, output, logger)
 	
-	spinner.Start()
-	defer spinner.Stop()
-	action()
+	spinner.Run(action)
 }
