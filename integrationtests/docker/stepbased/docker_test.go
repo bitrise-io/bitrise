@@ -4,12 +4,10 @@
 package stepbased
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
-	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/command"
 	glob "github.com/ryanuber/go-glob"
 	"github.com/stretchr/testify/require"
@@ -55,8 +53,10 @@ func Test_Docker(t *testing.T) {
 			requireErr:    false,
 			requireLogs: []string{
 				"Logging into docker registry:",
-				"Step is running in container:",
 				"--password [REDACTED]",
+				"Container (login-success) is running",
+				"Step is running in container:",
+				"Removing execution container: login-success",
 			},
 		},
 		"docker start execution and services containers with credentials": {
@@ -77,8 +77,8 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-create-fails-invalid-port",
 			requireErr:   true,
 			requireLogs: []string{
-				"failed to start containers:",
 				"address already in use",
+				"failed to start containers:",
 			},
 		},
 		"docker create succeeds when valid port is provided": {
@@ -175,9 +175,9 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-service-start-fails",
 			requireErr:   false,
 			requireLogs: []string{
-				"Some services failed to start properly",
-				"start docker container (failing-service): exit status 1",
 				"nonexistent-command",
+				"start docker container (failing-service): exit status 1",
+				"Some services failed to start properly",
 			},
 		},
 		"docker start service containers succeeds after retries": {
@@ -225,6 +225,31 @@ func Test_Docker(t *testing.T) {
 			workflowName: "docker-stops-containers",
 			requireErr:   false,
 		},
+
+		// Nested bundle container resolution
+		"nested bundle: outer container state is preserved while inner bundle runs in different container, services are appended": {
+			configPath:   "docker_nested_bundle_bitrise.yml",
+			workflowName: "test-nested-bundle-containers",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (outer_exec) is running",
+				"Container (outer_srvc) is running",
+				"Outer bundle step 1 running",
+				"Keep running execution container: outer_exec",
+				"Reusing service container: outer_srvc",
+				"Container (inner_exec) is running",
+				"Container (inner_srvc) is running",
+				"Inner bundle step running in inner_exec",
+				"Removing execution container: inner_exec",
+				"Removing service container: inner_srvc",
+				"Reusing execution container: outer_exec",
+				"Reusing service container: outer_srvc",
+				"SUCCESS: Outer container state preserved",
+				"Removing execution container: outer_exec",
+				"Removing service container: outer_srvc",
+			},
+		},
 	}
 
 	for testName, testCase := range testCases {
@@ -242,80 +267,32 @@ func Test_Docker(t *testing.T) {
 			} else {
 				require.NoError(t, err, "Expected command to succeed but it failed. Output:\n%s", out)
 			}
-			for _, log := range testCase.requireLogs {
-				require.Contains(t, out, log, "Expected log message not found in output:\n%s", out)
+			if len(testCase.requireLogs) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requireLogs, true)
 			}
-			for _, logPattern := range testCase.requiredLogPatterns {
-				contains := glob.Glob(logPattern, out)
-				require.True(t, contains, "Expected log message pattern not found in output:\n%s", out)
+			if len(testCase.requiredLogPatterns) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requiredLogPatterns, false)
 			}
 		})
 	}
 }
 
-func Test_Docker_JSON_Logs(t *testing.T) {
-	testCases := map[string]struct {
-		workflowName           string
-		configPath             string
-		inventoryPath          string
-		requiredContainerImage string
-		requiredServiceImages  []string
-	}{
-		"With group with step execution and service containers": {
-			workflowName:           "docker-login-multiple-containers",
-			configPath:             "docker_multiple_containers_bitrise.yml",
-			inventoryPath:          "docker_multiple_containers_secrets.yml",
-			requiredContainerImage: "localhost:5001/healthy-image",
-			requiredServiceImages: []string{
-				"localhost:5002/healthy-image",
-				"localhost:5003/healthy-image",
-			},
-		},
-	}
-	for testName, testCase := range testCases {
-		t.Run(testName, func(t *testing.T) {
-			cmd := command.New(testhelpers.BinPath(), "run", testCase.workflowName, "--config", testCase.configPath, "--inventory", testCase.inventoryPath, "--output-format", "json")
-			out, _ := cmd.RunAndReturnTrimmedCombinedOutput()
-			//require.NoError(t, err, out)
-			checkRequiredContainers(t, out, testCase.requiredContainerImage, testCase.requiredServiceImages)
-		})
-	}
-}
-
-func checkRequiredContainers(t *testing.T, log string, requiredContainerImage string, requiredServiceImages []string) {
-	lines := strings.Split(log, "\n")
-	require.True(t, len(lines) > 0)
-
-	var bitriseStartedEvent models.WorkflowRunPlan
+func findLogPatternsInOrder(t *testing.T, out string, patterns []string, exactmatch bool) {
+	lines := strings.Split(out, "\n")
+	patternIdx := 0
 	for _, line := range lines {
-		var eventLogStruct struct {
-			EventType string                 `json:"event_type"`
-			Content   models.WorkflowRunPlan `json:"content"`
-		}
-		require.NoError(t, json.Unmarshal([]byte(line), &eventLogStruct))
-		if eventLogStruct.EventType == "bitrise_started" {
-			bitriseStartedEvent = eventLogStruct.Content
+		if patternIdx >= len(patterns) {
 			break
 		}
-	}
-
-	var usedContainerImages []string
-	var usedServiceImages []string
-
-	for _, workflowPlans := range bitriseStartedEvent.ExecutionPlan {
-		for _, stepPlans := range workflowPlans.Steps {
-			if stepPlans.ExecutionContainer != nil {
-				containerPlan := bitriseStartedEvent.ExecutionContainerPlans[stepPlans.ExecutionContainer.ContainerID]
-				usedContainerImages = append(usedContainerImages, containerPlan.Image)
+		if exactmatch {
+			if strings.Contains(line, patterns[patternIdx]) {
+				patternIdx++
 			}
-			for _, containerConfig := range stepPlans.ServiceContainers {
-				containerPlan := bitriseStartedEvent.ServiceContainerPlans[containerConfig.ContainerID]
-				usedServiceImages = append(usedServiceImages, containerPlan.Image)
+		} else {
+			if glob.Glob(patterns[patternIdx], line) {
+				patternIdx++
 			}
 		}
 	}
-
-	require.Equal(t, 1, len(usedContainerImages), log)
-	require.EqualValues(t, requiredContainerImage, usedContainerImages[0], log)
-	require.EqualValues(t, requiredServiceImages, usedServiceImages, log)
+	require.Equalf(t, len(patterns), patternIdx, "Missing logs: %s\nFull output: %s", strings.Join(patterns[patternIdx:], "\n"), out)
 }

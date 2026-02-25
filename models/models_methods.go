@@ -187,6 +187,24 @@ func (bundle *StepBundleModel) Normalize() error {
 		bundle.Environments[i] = env
 	}
 
+	if bundle.ExecutionContainer != nil {
+		normalized, err := stepmanModels.RecursiveJSONMarshallable(bundle.ExecutionContainer)
+		if err != nil {
+			return err
+		}
+		bundle.ExecutionContainer = normalized
+	}
+
+	if bundle.ServiceContainers != nil {
+		for i, container := range bundle.ServiceContainers {
+			normalized, err := stepmanModels.RecursiveJSONMarshallable(container)
+			if err != nil {
+				return err
+			}
+			bundle.ServiceContainers[i] = normalized
+		}
+	}
+
 	return nil
 }
 
@@ -403,7 +421,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	}
 
 	if containerValidationCtx != nil {
-		if err := validateContainerReferences(newContainerisableFromStepBundle(*bundle), *containerValidationCtx); err != nil {
+		if err := validateContainerReferences(newContainerisableFromStepBundleOverride(*bundle), *containerValidationCtx); err != nil {
 			return fmt.Errorf("step bundle has container reference issue: %w", err)
 		}
 	}
@@ -411,7 +429,7 @@ func (bundle *StepBundleListItemModel) Validate(stepBundleDefinition StepBundleM
 	return nil
 }
 
-func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel) ([]string, error) {
+func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBundleModel, containerValidationCtx *containerValidationContext) ([]string, error) {
 	var warnings []string
 
 	for _, stepListItem := range bundle.Steps {
@@ -430,7 +448,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, err
 			}
 
-			warns, err := validateStep(key, *step, nil)
+			warns, err := validateStep(key, *step, containerValidationCtx)
 			warnings = append(warnings, warns...)
 			if err != nil {
 				return warnings, err
@@ -446,7 +464,7 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 				return warnings, fmt.Errorf("referenced step bundle not defined: %s", key)
 			}
 
-			if err := override.Validate(definition, nil); err != nil {
+			if err := override.Validate(definition, containerValidationCtx); err != nil {
 				return warnings, err
 			}
 		}
@@ -461,6 +479,12 @@ func (bundle *StepBundleModel) Validate(stepBundleDefinitions map[string]StepBun
 	for _, env := range bundle.Environments {
 		if err := env.Validate(); err != nil {
 			return warnings, err
+		}
+	}
+
+	if containerValidationCtx != nil {
+		if err := validateContainerReferences(newContainerisableFromStepBundleDefinition(*bundle), *containerValidationCtx); err != nil {
+			return warnings, fmt.Errorf("step bundle definition has container reference issue: %w", err)
 		}
 	}
 
@@ -671,13 +695,113 @@ func (config *BitriseDataModel) internalValidation(full bool) ([]string, error) 
 	return warnings, nil
 }
 
+func configHasWithGroups(config BitriseDataModel) bool {
+	for _, workflow := range config.Workflows {
+		for _, stepListItem := range workflow.Steps {
+			_, t, err := stepListItem.GetKeyAndType()
+			if err == nil && t == StepListItemTypeWith {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func configUsesNewContainerisation(config BitriseDataModel) bool {
+	for _, c := range config.Containers {
+		if c.Type != "" {
+			return true
+		}
+	}
+
+	visited := map[string]bool{}
+
+	for _, workflow := range config.Workflows {
+		for _, stepListItem := range workflow.Steps {
+			key, t, err := stepListItem.GetKeyAndType()
+			if err != nil {
+				continue
+			}
+			if t == StepListItemTypeStep {
+				step, err := stepListItem.GetStep()
+				if err == nil && step != nil && (step.ExecutionContainer != nil || len(step.ServiceContainers) > 0) {
+					return true
+				}
+			} else if t == StepListItemTypeBundle {
+				bundleOverride, err := stepListItem.GetBundle()
+				if err == nil && bundleOverride != nil && (bundleOverride.ExecutionContainer != nil || len(bundleOverride.ServiceContainers) > 0) {
+					return true
+				}
+				if bundleDef, ok := config.StepBundles[key]; ok {
+					if bundleDefUsesNewContainerisation(bundleDef, key, config.StepBundles, visited) {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	for bundleID, bundle := range config.StepBundles {
+		if bundleDefUsesNewContainerisation(bundle, bundleID, config.StepBundles, visited) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func bundleDefUsesNewContainerisation(bundle StepBundleModel, bundleID string, allBundles map[string]StepBundleModel, visited map[string]bool) bool {
+	if visited[bundleID] {
+		return false
+	}
+	visited[bundleID] = true
+
+	if bundle.ExecutionContainer != nil || len(bundle.ServiceContainers) > 0 {
+		return true
+	}
+
+	for _, stepListItem := range bundle.Steps {
+		key, t, err := stepListItem.GetKeyAndType()
+		if err != nil {
+			continue
+		}
+		if t == StepListItemTypeStep {
+			step, err := stepListItem.GetStep()
+			if err == nil && step != nil && (step.ExecutionContainer != nil || len(step.ServiceContainers) > 0) {
+				return true
+			}
+		} else if t == StepListItemTypeBundle {
+			bundleOverride, err := stepListItem.GetBundle()
+			if err == nil && bundleOverride != nil && (bundleOverride.ExecutionContainer != nil || len(bundleOverride.ServiceContainers) > 0) {
+				return true
+			}
+			if nestedBundleDef, ok := allBundles[key]; ok {
+				if bundleDefUsesNewContainerisation(nestedBundleDef, key, allBundles, visited) {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 func validateContainers(config BitriseDataModel) error {
+	if configHasWithGroups(config) && configUsesNewContainerisation(config) {
+		return fmt.Errorf("mixing legacy with-group and step-based containerisation is not allowed")
+	}
+
+	requiresType := !configHasWithGroups(config)
+
 	for containerID, containerDef := range config.Containers {
 		if containerID == "" {
 			return fmt.Errorf("container (image: %s) has empty ID defined", containerDef.Image)
 		}
 		if strings.TrimSpace(containerDef.Image) == "" {
 			return fmt.Errorf("container (%s) has no image defined", containerID)
+		}
+		if requiresType && containerDef.Type == "" {
+			return fmt.Errorf("container (%s) has no type defined (must be %q or %q)", containerID, ContainerTypeExecution, ContainerTypeService)
 		}
 		if err := containerDef.Validate(); err != nil {
 			return fmt.Errorf("container (%s) has config issue: %w", containerID, err)
@@ -712,6 +836,12 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 	}
 	sort.Strings(bundleIDs)
 
+	executionContainers, serviceContainers := ProcessContainerList(config.Containers)
+	containerValidationCtx := &containerValidationContext{
+		ExecutionContainers: executionContainers,
+		ServiceContainers:   serviceContainers,
+	}
+
 	for _, bundleID := range bundleIDs {
 		bundle := config.StepBundles[bundleID]
 
@@ -719,7 +849,7 @@ func validateStepBundles(config BitriseDataModel) ([]string, error) {
 			return warnings, err
 		}
 
-		warns, err := bundle.Validate(config.StepBundles)
+		warns, err := bundle.Validate(config.StepBundles, containerValidationCtx)
 		warnings = append(warnings, warns...)
 		if err != nil {
 			return warnings, fmt.Errorf("step bundle (%s) has config issue: %w", bundleID, err)
@@ -1023,6 +1153,12 @@ func isUtilityWorkflow(workflowID string) bool {
 func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 	var warnings []string
 
+	executionContainers, serviceContainers := ProcessContainerList(config.Containers)
+	containerValidationCtx := &containerValidationContext{
+		ExecutionContainers: executionContainers,
+		ServiceContainers:   serviceContainers,
+	}
+
 	for workflowID, workflow := range config.Workflows {
 		idWarning, err := validateID(workflowID, "workflow")
 		if idWarning != "" {
@@ -1044,11 +1180,6 @@ func validateWorkflows(config *BitriseDataModel) ([]string, error) {
 			return warnings, fmt.Errorf("workflow (%s) has invalid priority: %w", workflowID, err)
 		}
 
-		executionContainers, serviceContainers := ProcessContainerList(config.Containers)
-		containerValidationCtx := &containerValidationContext{
-			ExecutionContainers: executionContainers,
-			ServiceContainers:   serviceContainers,
-		}
 		for _, stepListItem := range workflow.Steps {
 			key, t, err := stepListItem.GetKeyAndType()
 			if err != nil {
