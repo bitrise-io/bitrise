@@ -10,3 +10,4 @@ _FAKE_HOME/
 .DS_Store
 .idea/
 dist/
+.claude/

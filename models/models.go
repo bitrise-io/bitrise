@@ -19,31 +19,35 @@ const (
 )
 
 const (
-	FormatVersion                   = "25"
+	FormatVersion                   = "26"
 	StepListItemWithKey             = "with"
 	StepListItemStepBundleKeyPrefix = "bundle::"
 )
 
 type StepBundleModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	RunIf        string                              `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Steps        []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
+	Title              string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary            string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description        string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	RunIf              string                              `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Inputs             []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Environments       []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	ExecutionContainer stepmanModels.ContainerReference    `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
+	ServiceContainers  []stepmanModels.ContainerReference  `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
+	Steps              []StepListItemStepOrBundleModel     `json:"steps,omitempty" yaml:"steps,omitempty"`
 }
 
 // StepListItemStepOrBundleModel is a map representing a step list item of a Step Bundle, the value is either a Step or a Step Bundle.
 type StepListItemStepOrBundleModel map[string]any
 
 type StepBundleListItemModel struct {
-	Title        string                              `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                              `json:"description,omitempty" yaml:"description,omitempty"`
-	RunIf        *string                             `json:"run_if,omitempty" yaml:"run_if,omitempty"`
-	Inputs       []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
-	Environments []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	Title              string                              `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary            string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description        string                              `json:"description,omitempty" yaml:"description,omitempty"`
+	RunIf              *string                             `json:"run_if,omitempty" yaml:"run_if,omitempty"`
+	Inputs             []envmanModels.EnvironmentItemModel `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Environments       []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
+	ExecutionContainer stepmanModels.ContainerReference    `json:"execution_container,omitempty" yaml:"execution_container,omitempty"`
+	ServiceContainers  []stepmanModels.ContainerReference  `json:"service_containers,omitempty" yaml:"service_containers,omitempty"`
 }
 
 type StepListStepBundleItemModel map[string]StepBundleListItemModel
@@ -165,20 +169,6 @@ type WorkflowModel struct {
 	Meta             map[string]interface{}              `json:"meta,omitempty" yaml:"meta,omitempty"`
 }
 
-type DockerCredentials struct {
-	Username string `json:"username,omitempty" yaml:"username,omitempty"`
-	Password string `json:"password,omitempty" yaml:"password,omitempty"`
-	Server   string `json:"server,omitempty" yaml:"server,omitempty"`
-}
-
-type Container struct {
-	Image       string                              `json:"image,omitempty" yaml:"image,omitempty"`
-	Credentials DockerCredentials                   `json:"credentials,omitempty" yaml:"credentials,omitempty"`
-	Ports       []string                            `json:"ports,omitempty" yaml:"ports,omitempty"`
-	Envs        []envmanModels.EnvironmentItemModel `json:"envs,omitempty" yaml:"envs,omitempty"`
-	Options     string                              `json:"options,omitempty" yaml:"options,omitempty"`
-}
-
 type AppModel struct {
 	Title            string                              `json:"title,omitempty" yaml:"title,omitempty"`
 	Summary          string                              `json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -196,8 +186,6 @@ type BitriseDataModel struct {
 	Summary     string `json:"summary,omitempty" yaml:"summary,omitempty"`
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 	//
-	Services    map[string]Container       `json:"services,omitempty" yaml:"services,omitempty"`
-	Containers  map[string]Container       `json:"containers,omitempty" yaml:"containers,omitempty"`
 	App         AppModel                   `json:"app,omitempty" yaml:"app,omitempty"`
 	Meta        map[string]interface{}     `json:"meta,omitempty" yaml:"meta,omitempty"`
 	TriggerMap  TriggerMapModel            `json:"trigger_map,omitempty" yaml:"trigger_map,omitempty"`
@@ -207,6 +195,11 @@ type BitriseDataModel struct {
 	StepBundles map[string]StepBundleModel `json:"step_bundles,omitempty" yaml:"step_bundles,omitempty"`
 	Tools       ToolsModel                 `json:"tools,omitempty" yaml:"tools,omitempty"`
 	ToolConfig  *ToolConfigModel           `json:"tool_config,omitempty" yaml:"tool_config,omitempty"`
+	// Docker container definitions
+	Services map[string]Container `json:"services,omitempty" yaml:"services,omitempty"`
+	// The new containerization syntax uses the "containers" property to define both execution and service containers.
+	// The new "type" property on the Container model defines whether the container is an execution or service container.
+	Containers map[string]Container `json:"containers,omitempty" yaml:"containers,omitempty"`
 }
 
 type BuildRunStartModel struct {
