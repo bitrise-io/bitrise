@@ -1,0 +1,62 @@
+format_version: "25"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  outer_exec:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+  inner_exec:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+  outer_srvc:
+    type: service
+    image: frolvlad/alpine-bash:latest
+  inner_srvc:
+    type: service
+    image: frolvlad/alpine-bash:latest
+
+step_bundles:
+  inner_bundle:
+    execution_container: inner_exec
+    steps:
+    - script@1:
+        title: Inner bundle step
+        service_containers:
+        - inner_srvc
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Inner bundle step running in inner_exec"
+
+  outer_bundle:
+    execution_container: outer_exec
+    service_containers:
+    - outer_srvc
+    steps:
+    - script@1:
+        title: Outer bundle step 1 - create marker
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Outer bundle step 1 running"
+            touch /outer_marker.txt
+    - bundle::inner_bundle: {}
+    - script@1:
+        title: Outer bundle step 2 - verify marker
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            if [ -f /outer_marker.txt ]; then
+              echo "SUCCESS: Outer container state preserved"
+            else
+              echo "ERROR: Outer container state lost - marker not found"
+              exit 1
+            fi
+
+workflows:
+  test-nested-bundle-containers:
+    steps:
+    - bundle::outer_bundle: {}
