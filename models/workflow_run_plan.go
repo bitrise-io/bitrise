@@ -554,10 +554,15 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 	return bundleEnvs, nil
 }
 
-// mergeServiceContainers returns base containers in order, replacing any container that also
-// appears in additional with additional's config (so the more specific level's settings win,
-// e.g. a step's own recreate flag takes priority over the inherited bundle value).
-// Containers in additional not present in base are appended after. Returns nil when both inputs are empty.
+// mergeServiceContainers combines inherited and own service containers into a single list.
+//
+//   - base      — containers inherited from the parent bundle context (lower specificity)
+//   - additional — containers declared directly on the current step or bundle (higher specificity)
+//
+// The result preserves the order of base. When the same container ID appears in both,
+// the additional entry wins (e.g. a step's own recreate flag overrides the inherited value).
+// Containers in additional that are not in base are appended after the base entries.
+// Returns nil when both inputs are empty.
 func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfig {
 	if len(base) == 0 && len(additional) == 0 {
 		return nil
