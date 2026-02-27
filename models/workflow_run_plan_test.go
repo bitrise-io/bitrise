@@ -1453,23 +1453,27 @@ func TestNewWorkflowRunPlan_ContainerNesting(t *testing.T) {
 			name:           "bundle: complex recreate - exec and service recreate applied only at bundle boundary",
 			targetWorkflow: "workflow1",
 			containers: map[string]Container{
-				"inner_def_exec":  {Type: ContainerTypeExecution, Image: "inner-def:latest"},
-				"inner_def_svc_1": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
-				"inner_def_svc_2": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
+				"def_exec":  {Type: ContainerTypeExecution, Image: "inner-def:latest"},
+				"def_svc_1": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
+				"def_svc_2": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
 			},
 			stepBundles: map[string]StepBundleModel{
 				"bundle": {
-					ExecutionContainer: map[string]any{"inner_def_exec": map[string]any{"recreate": true}},
+					ExecutionContainer: map[string]any{"def_exec": map[string]any{"recreate": true}},
 					ServiceContainers: []stepmanModels.ContainerReference{
-						"inner_def_svc_1",
-						map[string]any{"inner_def_svc_2": map[string]any{"recreate": true}},
+						"def_svc_1",
+						map[string]any{"def_svc_2": map[string]any{"recreate": true}},
 					},
 					Steps: []StepListItemStepOrBundleModel{
-						{"step-without-own_1": stepmanModels.StepModel{}},
-						{"step-with-own": stepmanModels.StepModel{ExecutionContainer: "inner_def_exec"}},
-						{"step-without-own_2": stepmanModels.StepModel{
+						// step_1 has a plain def_svc_2 reference (no recreate); the bundle's recreate
+						// still applies for the first step via OR semantics in mergeServiceContainers.
+						{"step_1": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"def_svc_2"},
+						}},
+						{"step_2": stepmanModels.StepModel{ExecutionContainer: "def_exec"}},
+						{"step_3": stepmanModels.StepModel{
 							ServiceContainers: []stepmanModels.ContainerReference{
-								map[string]any{"inner_def_svc_1": map[string]any{"recreate": true}},
+								map[string]any{"def_svc_1": map[string]any{"recreate": true}},
 							},
 						}},
 					},
@@ -1477,52 +1481,56 @@ func TestNewWorkflowRunPlan_ContainerNesting(t *testing.T) {
 			},
 			workflows: map[string]WorkflowModel{
 				"workflow1": {Steps: []StepListItemModel{
-					{"step-without-own_3": stepmanModels.StepModel{}},
+					{"step_4": stepmanModels.StepModel{}},
 					{"bundle::bundle": StepBundleListItemModel{}},
-					{"step-without-own_4": stepmanModels.StepModel{}},
+					{"step_5": stepmanModels.StepModel{}},
 				}},
 			},
 			want: WorkflowRunPlan{
 				Version: cliVersion(), LogFormatVersion: "2",
 				StepBundlePlans: map[string]StepBundlePlan{"uuid_2": {ID: "bundle"}},
 				ExecutionContainerPlans: map[string]ContainerPlan{
-					"inner_def_exec": {Image: "inner-def:latest"},
+					"def_exec": {Image: "inner-def:latest"},
 				},
 				ServiceContainerPlans: map[string]ContainerPlan{
-					"inner_def_svc_1": {Image: "inner-def-svc:latest"},
-					"inner_def_svc_2": {Image: "inner-def-svc:latest"},
+					"def_svc_1": {Image: "inner-def-svc:latest"},
+					"def_svc_2": {Image: "inner-def-svc:latest"},
 				},
 				ExecutionPlan: []WorkflowExecutionPlan{{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1",
 					Steps: []StepExecutionPlan{
 						// top-level step before bundle — no containers
-						{UUID: "uuid_1", StepID: "step-without-own_3"},
-						// first step in bundle — exec + svc2 with recreate (bundle boundary)
-						{UUID: "uuid_3", StepID: "step-without-own_1", StepBundleUUID: "uuid_2",
-							ExecutionContainer: &ContainerConfig{ContainerID: "inner_def_exec", Recreate: true},
+						{UUID: "uuid_1", StepID: "step_4"},
+						// first step in bundle — exec + svc2 with recreate (bundle boundary);
+						// step_1's plain def_svc_2 reference does not suppress the bundle's recreate (OR semantics)
+						{UUID: "uuid_3", StepID: "step_1", StepBundleUUID: "uuid_2",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								"def_svc_2",
+							}},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec", Recreate: true},
 							ServiceContainers: []ContainerConfig{
-								{ContainerID: "inner_def_svc_1"},
-								{ContainerID: "inner_def_svc_2", Recreate: true},
+								{ContainerID: "def_svc_1"},
+								{ContainerID: "def_svc_2", Recreate: true},
 							}},
 						// second step — own exec (no recreate), bundle svcs without recreate
-						{UUID: "uuid_4", StepID: "step-with-own", StepBundleUUID: "uuid_2",
-							Step:               stepmanModels.StepModel{ExecutionContainer: "inner_def_exec"},
-							ExecutionContainer: &ContainerConfig{ContainerID: "inner_def_exec"},
+						{UUID: "uuid_4", StepID: "step_2", StepBundleUUID: "uuid_2",
+							Step:               stepmanModels.StepModel{ExecutionContainer: "def_exec"},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec"},
 							ServiceContainers: []ContainerConfig{
-								{ContainerID: "inner_def_svc_1"},
-								{ContainerID: "inner_def_svc_2"},
+								{ContainerID: "def_svc_1"},
+								{ContainerID: "def_svc_2"},
 							}},
-						// third step — inherited exec (no recreate); step's own svc1 recreate wins
-						{UUID: "uuid_5", StepID: "step-without-own_2", StepBundleUUID: "uuid_2",
+						// third step — inherited exec (no recreate); step's own svc1 recreate wins via OR
+						{UUID: "uuid_5", StepID: "step_3", StepBundleUUID: "uuid_2",
 							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
-								map[string]any{"inner_def_svc_1": map[string]any{"recreate": true}},
+								map[string]any{"def_svc_1": map[string]any{"recreate": true}},
 							}},
-							ExecutionContainer: &ContainerConfig{ContainerID: "inner_def_exec"},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec"},
 							ServiceContainers: []ContainerConfig{
-								{ContainerID: "inner_def_svc_1", Recreate: true},
-								{ContainerID: "inner_def_svc_2"},
+								{ContainerID: "def_svc_1", Recreate: true},
+								{ContainerID: "def_svc_2"},
 							}},
 						// top-level step after bundle — no containers
-						{UUID: "uuid_6", StepID: "step-without-own_4"},
+						{UUID: "uuid_6", StepID: "step_5"},
 					},
 				}},
 			},

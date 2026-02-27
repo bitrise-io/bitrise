@@ -560,7 +560,8 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 //   - additional — containers declared directly on the current step or bundle (higher specificity)
 //
 // The result preserves the order of base. When the same container ID appears in both,
-// the additional entry wins (e.g. a step's own recreate flag overrides the inherited value).
+// the Recreate flag is OR-ed: the container is recreated if either the inherited context
+// or the step's own definition requests it. All other fields come from base ordering.
 // Containers in additional that are not in base are appended after the base entries.
 // Returns nil when both inputs are empty.
 func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfig {
@@ -577,12 +578,15 @@ func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfi
 	seen := make(map[string]bool, len(base)+len(additional))
 	var result []ContainerConfig
 
-	// Walk base in order; if a container also exists in additional, use additional's config.
+	// Walk base in order; OR the Recreate flag when a container also exists in additional.
 	for _, c := range base {
 		if !seen[c.ContainerID] {
 			seen[c.ContainerID] = true
 			if override, ok := additionalByID[c.ContainerID]; ok {
-				result = append(result, override)
+				result = append(result, ContainerConfig{
+					ContainerID: c.ContainerID,
+					Recreate:    c.Recreate || override.Recreate,
+				})
 			} else {
 				result = append(result, c)
 			}
