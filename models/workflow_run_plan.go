@@ -472,7 +472,7 @@ func (builder *WorkflowRunPlanBuilder) processWithGroup(stepListItem StepListIte
 
 func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBundleModel, bundleContext BundleContext) ([]StepExecutionPlan, error) {
 	var stepPlans []StepExecutionPlan
-	for _, stepListStepOrBundleItem := range bundleDefinition.Steps {
+	for i, stepListStepOrBundleItem := range bundleDefinition.Steps {
 		genericStep, err := NewStepListItemFromBundleStep(stepListStepOrBundleItem)
 		if err != nil {
 			return nil, err
@@ -484,6 +484,12 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleSteps(bundleDefinition StepBu
 		}
 
 		stepPlans = append(stepPlans, plans...)
+
+		// Bundle-level recreate applies only at the bundle boundary (first item).
+		// Strip recreate flags after the first item so subsequent steps don't recreate.
+		if i == 0 {
+			stripBundleContextRecreate(&bundleContext)
+		}
 	}
 
 	return stepPlans, nil
@@ -548,22 +554,45 @@ func (builder *WorkflowRunPlanBuilder) gatherBundleEnvs(bundleOverride StepBundl
 	return bundleEnvs, nil
 }
 
-// mergeServiceContainers returns base followed by any additional containers not already
-// present in base, de-duplicated by ContainerID. Returns nil when both inputs are empty.
+// mergeServiceContainers combines inherited and own service containers into a single list.
+//
+//   - base      — containers inherited from the parent bundle context (lower specificity)
+//   - additional — containers declared directly on the current step or bundle (higher specificity)
+//
+// The result preserves the order of base. When the same container ID appears in both,
+// the Recreate flag is OR-ed: the container is recreated if either the inherited context
+// or the step's own definition requests it. All other fields come from base ordering.
+// Containers in additional that are not in base are appended after the base entries.
+// Returns nil when both inputs are empty.
 func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfig {
 	if len(base) == 0 && len(additional) == 0 {
 		return nil
 	}
 
+	// Build a lookup for additional so step/inner-bundle-level config takes priority.
+	additionalByID := make(map[string]ContainerConfig, len(additional))
+	for _, c := range additional {
+		additionalByID[c.ContainerID] = c
+	}
+
 	seen := make(map[string]bool, len(base)+len(additional))
 	var result []ContainerConfig
 
+	// Walk base in order; OR the Recreate flag when a container also exists in additional.
 	for _, c := range base {
 		if !seen[c.ContainerID] {
 			seen[c.ContainerID] = true
-			result = append(result, c)
+			if override, ok := additionalByID[c.ContainerID]; ok {
+				result = append(result, ContainerConfig{
+					ContainerID: c.ContainerID,
+					Recreate:    c.Recreate || override.Recreate,
+				})
+			} else {
+				result = append(result, c)
+			}
 		}
 	}
+	// Append any additional containers not already present in base.
 	for _, c := range additional {
 		if !seen[c.ContainerID] {
 			seen[c.ContainerID] = true
@@ -572,6 +601,20 @@ func mergeServiceContainers(base, additional []ContainerConfig) []ContainerConfi
 	}
 
 	return result
+}
+
+// stripBundleContextRecreate removes the Recreate flag from a bundle context's containers.
+// Bundle-level recreate applies only at the bundle boundary (first step/bundle item).
+// Subsequent steps within the same bundle reuse the containers without recreating.
+func stripBundleContextRecreate(ctx *BundleContext) {
+	if ctx.ExecutionContainer != nil && ctx.ExecutionContainer.Recreate {
+		stripped := *ctx.ExecutionContainer
+		stripped.Recreate = false
+		ctx.ExecutionContainer = &stripped
+	}
+	for i := range ctx.ServiceContainers {
+		ctx.ServiceContainers[i].Recreate = false
+	}
 }
 
 func (builder *WorkflowRunPlanBuilder) processContainerConfigs(containerisable Containerisable) (*ContainerConfig, []ContainerConfig, error) {

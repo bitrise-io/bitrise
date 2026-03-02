@@ -1329,7 +1329,214 @@ func TestNewWorkflowRunPlan_ContainerNesting(t *testing.T) {
 			},
 		},
 
-		// Complex example
+		// Bundle-level recreate rules
+		{
+			name:           "bundle: exec container recreate applies only to first step",
+			targetWorkflow: "wf",
+			containers: map[string]Container{
+				"exec": {Type: ContainerTypeExecution, Image: "exec:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"my_bundle": {
+					ExecutionContainer: map[string]any{"exec": map[string]any{"recreate": true}},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step1": stepmanModels.StepModel{}},
+						{"step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"wf": {Steps: []StepListItemModel{
+					{"bundle::my_bundle": StepBundleListItemModel{}},
+				}},
+			},
+			want: WorkflowRunPlan{
+				Version: cliVersion(), LogFormatVersion: "2",
+				StepBundlePlans:         map[string]StepBundlePlan{"uuid_1": {ID: "my_bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{"exec": {Image: "exec:latest"}},
+				ExecutionPlan: []WorkflowExecutionPlan{{UUID: "uuid_4", WorkflowID: "wf", WorkflowTitle: "wf",
+					Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step1", StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "exec", Recreate: true}},
+						{UUID: "uuid_3", StepID: "step2", StepBundleUUID: "uuid_1",
+							ExecutionContainer: &ContainerConfig{ContainerID: "exec"}},
+					},
+				}},
+			},
+		},
+		{
+			name:           "bundle: service container recreate applies only to first step",
+			targetWorkflow: "wf",
+			containers: map[string]Container{
+				"svc": {Type: ContainerTypeService, Image: "svc:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"my_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{
+						map[string]any{"svc": map[string]any{"recreate": true}},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step1": stepmanModels.StepModel{}},
+						{"step2": stepmanModels.StepModel{}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"wf": {Steps: []StepListItemModel{
+					{"bundle::my_bundle": StepBundleListItemModel{}},
+				}},
+			},
+			want: WorkflowRunPlan{
+				Version: cliVersion(), LogFormatVersion: "2",
+				StepBundlePlans:       map[string]StepBundlePlan{"uuid_1": {ID: "my_bundle"}},
+				ServiceContainerPlans: map[string]ContainerPlan{"svc": {Image: "svc:latest"}},
+				ExecutionPlan: []WorkflowExecutionPlan{{UUID: "uuid_4", WorkflowID: "wf", WorkflowTitle: "wf",
+					Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step1", StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "svc", Recreate: true}}},
+						{UUID: "uuid_3", StepID: "step2", StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "svc"}}},
+					},
+				}},
+			},
+		},
+		{
+			name:           "step: own service container recreate overrides inherited bundle container",
+			targetWorkflow: "wf",
+			containers: map[string]Container{
+				"svc1": {Type: ContainerTypeService, Image: "svc1:latest"},
+				"svc2": {Type: ContainerTypeService, Image: "svc2:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"my_bundle": {
+					ServiceContainers: []stepmanModels.ContainerReference{"svc1", "svc2"},
+					Steps: []StepListItemStepOrBundleModel{
+						{"step1": stepmanModels.StepModel{}},
+						{"step2": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{
+								map[string]any{"svc1": map[string]any{"recreate": true}},
+							},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"wf": {Steps: []StepListItemModel{
+					{"bundle::my_bundle": StepBundleListItemModel{}},
+				}},
+			},
+			want: WorkflowRunPlan{
+				Version: cliVersion(), LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{"uuid_1": {ID: "my_bundle"}},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"svc1": {Image: "svc1:latest"},
+					"svc2": {Image: "svc2:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{{UUID: "uuid_4", WorkflowID: "wf", WorkflowTitle: "wf",
+					Steps: []StepExecutionPlan{
+						{UUID: "uuid_2", StepID: "step1", StepBundleUUID: "uuid_1",
+							ServiceContainers: []ContainerConfig{{ContainerID: "svc1"}, {ContainerID: "svc2"}}},
+						{UUID: "uuid_3", StepID: "step2", StepBundleUUID: "uuid_1",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								map[string]any{"svc1": map[string]any{"recreate": true}},
+							}},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "svc1", Recreate: true},
+								{ContainerID: "svc2"},
+							}},
+					},
+				}},
+			},
+		},
+		{
+			// Complex recreate example
+			name:           "bundle: complex recreate - exec and service recreate applied only at bundle boundary",
+			targetWorkflow: "workflow1",
+			containers: map[string]Container{
+				"def_exec":  {Type: ContainerTypeExecution, Image: "inner-def:latest"},
+				"def_svc_1": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
+				"def_svc_2": {Type: ContainerTypeService, Image: "inner-def-svc:latest"},
+			},
+			stepBundles: map[string]StepBundleModel{
+				"bundle": {
+					ExecutionContainer: map[string]any{"def_exec": map[string]any{"recreate": true}},
+					ServiceContainers: []stepmanModels.ContainerReference{
+						"def_svc_1",
+						map[string]any{"def_svc_2": map[string]any{"recreate": true}},
+					},
+					Steps: []StepListItemStepOrBundleModel{
+						// step_1 has a plain def_svc_2 reference (no recreate); the bundle's recreate
+						// still applies for the first step via OR semantics in mergeServiceContainers.
+						{"step_1": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{"def_svc_2"},
+						}},
+						{"step_2": stepmanModels.StepModel{ExecutionContainer: "def_exec"}},
+						{"step_3": stepmanModels.StepModel{
+							ServiceContainers: []stepmanModels.ContainerReference{
+								map[string]any{"def_svc_1": map[string]any{"recreate": true}},
+							},
+						}},
+					},
+				},
+			},
+			workflows: map[string]WorkflowModel{
+				"workflow1": {Steps: []StepListItemModel{
+					{"step_4": stepmanModels.StepModel{}},
+					{"bundle::bundle": StepBundleListItemModel{}},
+					{"step_5": stepmanModels.StepModel{}},
+				}},
+			},
+			want: WorkflowRunPlan{
+				Version: cliVersion(), LogFormatVersion: "2",
+				StepBundlePlans: map[string]StepBundlePlan{"uuid_2": {ID: "bundle"}},
+				ExecutionContainerPlans: map[string]ContainerPlan{
+					"def_exec": {Image: "inner-def:latest"},
+				},
+				ServiceContainerPlans: map[string]ContainerPlan{
+					"def_svc_1": {Image: "inner-def-svc:latest"},
+					"def_svc_2": {Image: "inner-def-svc:latest"},
+				},
+				ExecutionPlan: []WorkflowExecutionPlan{{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1",
+					Steps: []StepExecutionPlan{
+						// top-level step before bundle — no containers
+						{UUID: "uuid_1", StepID: "step_4"},
+						// first step in bundle — exec + svc2 with recreate (bundle boundary);
+						// step_1's plain def_svc_2 reference does not suppress the bundle's recreate (OR semantics)
+						{UUID: "uuid_3", StepID: "step_1", StepBundleUUID: "uuid_2",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								"def_svc_2",
+							}},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec", Recreate: true},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "def_svc_1"},
+								{ContainerID: "def_svc_2", Recreate: true},
+							}},
+						// second step — own exec (no recreate), bundle svcs without recreate
+						{UUID: "uuid_4", StepID: "step_2", StepBundleUUID: "uuid_2",
+							Step:               stepmanModels.StepModel{ExecutionContainer: "def_exec"},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "def_svc_1"},
+								{ContainerID: "def_svc_2"},
+							}},
+						// third step — inherited exec (no recreate); step's own svc1 recreate wins via OR
+						{UUID: "uuid_5", StepID: "step_3", StepBundleUUID: "uuid_2",
+							Step: stepmanModels.StepModel{ServiceContainers: []stepmanModels.ContainerReference{
+								map[string]any{"def_svc_1": map[string]any{"recreate": true}},
+							}},
+							ExecutionContainer: &ContainerConfig{ContainerID: "def_exec"},
+							ServiceContainers: []ContainerConfig{
+								{ContainerID: "def_svc_1", Recreate: true},
+								{ContainerID: "def_svc_2"},
+							}},
+						// top-level step after bundle — no containers
+						{UUID: "uuid_6", StepID: "step_5"},
+					},
+				}},
+			},
+		},
+
+		// Complex nesting example
 		{
 			name:           "complex nesting: override and service accumulation across two bundle levels",
 			targetWorkflow: "wf",
