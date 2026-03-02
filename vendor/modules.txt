@@ -87,7 +87,7 @@ github.com/bitrise-io/stepman/stepid
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/toolkits
 github.com/bitrise-io/stepman/version
-# github.com/cloudflare/circl v1.6.1
+# github.com/cloudflare/circl v1.6.3
 ## explicit; go 1.22.0
 github.com/cloudflare/circl/dh/x25519
 github.com/cloudflare/circl/dh/x448
