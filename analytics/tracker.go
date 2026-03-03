@@ -404,10 +404,10 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 		"cli_version":   cliVersion.String(),
 		"is_ci":         isCI,
 		"build_slug":    buildSlug,
+		"activation_type": activationType,
 	}
 
 	if isSuccessful {
-		props["activation_type"] = activationType
 		props["did_steplib_update"] = didSteplibUpdate
 	}
 
