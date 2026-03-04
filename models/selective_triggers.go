@@ -212,17 +212,17 @@ func parsePushTriggerItem(pushTriggerRaw any) (*PushGitEventTriggerItem, error) 
 		return nil, err
 	}
 
-	branch, err := globOrRegexValue(stringKeyedPushTrigger, "branch")
+	branch, err := globOrRegexFilterValue(stringKeyedPushTrigger, "branch", false)
 	if err != nil {
 		return nil, err
 	}
 
-	commitMessage, err := commitCollectionFilterValue(stringKeyedPushTrigger, "commit_message")
+	commitMessage, err := globOrRegexFilterValue(stringKeyedPushTrigger, "commit_message", true)
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := commitCollectionFilterValue(stringKeyedPushTrigger, "changed_files")
+	changedFiles, err := globOrRegexFilterValue(stringKeyedPushTrigger, "changed_files", true)
 	if err != nil {
 		return nil, err
 	}
@@ -266,32 +266,32 @@ func parsePullRequestTriggerItem(pullRequestTriggerRaw any) (*PullRequestGitEven
 		return nil, err
 	}
 
-	sourceBranch, err := globOrRegexValue(stringKeyedPullRequestTrigger, "source_branch")
+	sourceBranch, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "source_branch", false)
 	if err != nil {
 		return nil, err
 	}
 
-	targetBranch, err := globOrRegexValue(stringKeyedPullRequestTrigger, "target_branch")
+	targetBranch, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "target_branch", false)
 	if err != nil {
 		return nil, err
 	}
 
-	label, err := globOrRegexValue(stringKeyedPullRequestTrigger, "label")
+	label, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "label", false)
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := globOrRegexValue(stringKeyedPullRequestTrigger, "comment")
+	comment, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "comment", false)
 	if err != nil {
 		return nil, err
 	}
 
-	commitMessage, err := globOrRegexValue(stringKeyedPullRequestTrigger, "commit_message")
+	commitMessage, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "commit_message", false)
 	if err != nil {
 		return nil, err
 	}
 
-	changedFiles, err := globOrRegexValue(stringKeyedPullRequestTrigger, "changed_files")
+	changedFiles, err := globOrRegexFilterValue(stringKeyedPullRequestTrigger, "changed_files", false)
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +334,7 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 		return nil, err
 	}
 
-	name, err := globOrRegexValue(stringKeyedTagTrigger, "name")
+	name, err := globOrRegexFilterValue(stringKeyedTagTrigger, "name", false)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +346,7 @@ func parseTagTriggerItem(tagTriggerRaw any) (*TagGitEventTriggerItem, error) {
 	}, nil
 }
 
-func globOrRegexValue(item map[string]any, key string) (any, error) {
+func globOrRegexFilterValue(item map[string]any, key string, allowLastCommitFilter bool) (any, error) {
 	value, ok := item[key]
 	if !ok {
 		return nil, nil
@@ -356,38 +356,21 @@ func globOrRegexValue(item map[string]any, key string) (any, error) {
 	case string:
 		return value, nil
 	case map[any]any:
-		regexRaw := value["regex"]
-		regex, ok := regexRaw.(string)
-		if !ok {
-			return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' key and string value", key)
-		}
-		return map[string]string{"regex": regex}, nil
-	default:
-		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' key and string value", key)
-	}
-}
-
-func commitCollectionFilterValue(item map[string]any, key string) (any, error) {
-	value, ok := item[key]
-	if !ok {
-		return nil, nil
-	}
-
-	switch value := value.(type) {
-	case string:
-		return value, nil
-	case map[any]any:
-		stringKeyedTriggers, err := stringKeyedMap(value)
+		stringKeyedValue, err := stringKeyedMap(value)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := ensureKeys(stringKeyedTriggers, "pattern", "regex", "last_commit"); err != nil {
+		allowedKeys := []string{"pattern", "regex"}
+		if allowLastCommitFilter {
+			allowedKeys = append(allowedKeys, "last_commit")
+		}
+		if err := ensureKeys(stringKeyedValue, allowedKeys...); err != nil {
 			return nil, fmt.Errorf("'%s': %w", key, err)
 		}
 
-		regexRaw, regexPresent := value["regex"]
-		patternRaw, patternPresent := value["pattern"]
+		regexRaw, regexPresent := stringKeyedValue["regex"]
+		patternRaw, patternPresent := stringKeyedValue["pattern"]
 
 		if regexPresent && patternPresent || !regexPresent && !patternPresent {
 			return nil, fmt.Errorf("'%s' should contain exactly one of 'regex' and 'pattern' keys", key)
@@ -410,19 +393,24 @@ func commitCollectionFilterValue(item map[string]any, key string) (any, error) {
 			result["pattern"] = pattern
 		}
 
-		lastCommitRaw, ok := value["last_commit"]
-		if ok {
-			lastCommit, ok := lastCommitRaw.(bool)
-			if !ok {
-				return nil, fmt.Errorf("'last_commit' value invalid for '%s', should be a bool", key)
-			}
+		if allowLastCommitFilter {
+			lastCommitRaw, ok := stringKeyedValue["last_commit"]
+			if ok {
+				lastCommit, ok := lastCommitRaw.(bool)
+				if !ok {
+					return nil, fmt.Errorf("'last_commit' value invalid for '%s', should be a bool", key)
+				}
 
-			result["last_commit"] = lastCommit
+				result["last_commit"] = lastCommit
+			}
 		}
 
 		return result, nil
 	default:
-		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'regex' or 'pattern' key and string value", key)
+		if allowLastCommitFilter {
+			return nil, fmt.Errorf("'%s' value should be a string or a map with a 'pattern' or 'regex' and optionally 'last_commit' keys", key)
+		}
+		return nil, fmt.Errorf("'%s' value should be a string or a map with a 'pattern' or 'regex' key", key)
 	}
 }
 
