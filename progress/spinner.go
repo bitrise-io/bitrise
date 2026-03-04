@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/bitrise-io/bitrise/v2/log"
+	"golang.org/x/term"
 )
 
 // Spinner displays an animated progress indicator in the terminal.
@@ -100,4 +101,7 @@ func (s *Spinner) Run(action func()) {
 	action()
 }
 
-
+// OutputDeviceIsTerminal returns true if stdout is a terminal.
+func OutputDeviceIsTerminal() bool {
+	return term.IsTerminal(int(os.Stdout.Fd()))
+}

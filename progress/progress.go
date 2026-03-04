@@ -6,7 +6,13 @@ import (
 )
 
 // ShowIndicator displays a spinner animation while the action executes.
+// In non-terminal environments (CI), it just executes the action without spinner.
 func ShowIndicator(message string, action func()) {
+	if !OutputDeviceIsTerminal() {
+		action()
+		return
+	}
+
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	output := logwriter.NewLogWriter(logger)
 	spinner := NewDefaultSpinnerWithOutput(message, output, logger)
