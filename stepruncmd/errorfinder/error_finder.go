@@ -66,6 +66,9 @@ func (e *ErrorFinder) findString(s string) {
 		if endIndex := getEndColorIndex(haystack); len(endIndex) > 0 {
 			if endIndex[0] != 0 {
 				e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(haystack[0:endIndex[0]], ""))
+			} else if e.chunk != "" {
+				// If closing color is at start but we have collected text, save it
+				e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(e.chunk, ""))
 			}
 			e.chunk = ""
 			e.collecting = false
