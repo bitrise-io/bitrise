@@ -2,6 +2,7 @@ package versionfile
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,16 +19,21 @@ type ToolVersion struct {
 }
 
 func Parse(path string) ([]ToolVersion, error) {
-	if filepath.Base(path) == ".tool-versions" {
+	base := filepath.Base(path)
+	switch base {
+	case ".tool-versions":
 		return parseToolVersionsFile(path)
+	case ".fvmrc":
+		return parseFVMRC(path)
+	case "fvm_config.json":
+		return parseFVMConfigJSON(path)
+	default:
+		tool, err := parseSingleToolVersion(path)
+		if err != nil {
+			return nil, err
+		}
+		return []ToolVersion{tool}, nil
 	}
-
-	tool, err := parseSingleToolVersion(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return []ToolVersion{tool}, nil
 }
 
 // FindVersionFiles searches for version files in the given directory,
@@ -44,6 +50,8 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".go-version",
 		".terraform-version",
 		".kubectl-version",
+		".fvmrc",
+		"fvm_config.json",
 	}
 
 	for _, filename := range commonVersionFiles {
@@ -95,6 +103,65 @@ func inferToolID(filename string) provider.ToolID {
 	name := strings.TrimPrefix(filename, ".")
 	name = strings.TrimSuffix(name, "-version")
 	return alias.GetCanonicalToolID(provider.ToolID(name))
+}
+
+// parseFVMRC parses an FVM 3.x .fvmrc JSON file to extract the Flutter version.
+// The file format is: {"flutter": "3.19.0"} or {"flutter": "3.19.0@stable"}
+func parseFVMRC(path string) ([]ToolVersion, error) {
+	return parseVersionFromJSON(path, "flutter", "flutter")
+}
+
+// parseFVMConfigJSON parses a legacy .fvm/fvm_config.json file to extract the Flutter version.
+// The file format is: {"flutterSdkVersion": "3.19.0"} or {"flutterSdkVersion": "3.19.0@stable"}
+func parseFVMConfigJSON(path string) ([]ToolVersion, error) {
+	return parseVersionFromJSON(path, "flutterSdkVersion", "flutter")
+}
+
+// flutterChannels are Flutter release channels that are not valid version specifiers
+// for asdf/mise installation.
+var flutterChannels = map[string]bool{
+	"stable": true,
+	"beta":   true,
+	"dev":    true,
+	"master": true,
+	"main":   true,
+}
+
+// parseVersionFromJSON reads a JSON file and extracts a version string for the given tool
+// from the given key. Converts "version@channel" format to "version-channel" format
+// expected by the asdf-flutter plugin.
+func parseVersionFromJSON(path string, key string, toolName provider.ToolID) ([]ToolVersion, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+
+	var config map[string]any
+	if err := json.Unmarshal(content, &config); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+
+	value, ok := config[key]
+	if !ok {
+		return nil, fmt.Errorf("%s: missing '%s' key", path, key)
+	}
+
+	versionStr, ok := value.(string)
+	if !ok || versionStr == "" {
+		return nil, fmt.Errorf("%s: '%s' key is not a non-empty string", path, key)
+	}
+
+	// Convert "version@channel" format (e.g. "3.19.0@stable") to "version-channel" (e.g. "3.19.0-stable")
+	// which is the format expected by the asdf-flutter plugin.
+	versionStr = strings.Replace(versionStr, "@", "-", 1)
+
+	if flutterChannels[versionStr] {
+		return nil, fmt.Errorf("%s: channel-only value %q is not supported, specify a version (e.g. \"3.22.0\") or use \"latest\" to install the latest stable release", path, versionStr)
+	}
+
+	return []ToolVersion{
+		{ToolName: toolName, Version: versionStr},
+	}, nil
 }
 
 // parseToolVersionsFile parses a .tool-versions file (asdf/mise format).

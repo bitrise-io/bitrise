@@ -182,7 +182,7 @@ func TestFindVersionFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create some version files
-	files := []string{".tool-versions", ".ruby-version", ".node-version"}
+	files := []string{".tool-versions", ".ruby-version", ".node-version", ".fvmrc", "fvm_config.json"}
 	for _, f := range files {
 		err := os.WriteFile(filepath.Join(tmpDir, f), []byte("test"), 0644)
 		require.NoError(t, err)
@@ -194,7 +194,7 @@ func TestFindVersionFiles(t *testing.T) {
 
 	found, err := FindVersionFiles(tmpDir)
 	require.NoError(t, err)
-	assert.Len(t, found, 3)
+	assert.Len(t, found, 5)
 
 	// Check that all expected files are found
 	foundMap := make(map[string]bool)
@@ -207,31 +207,177 @@ func TestFindVersionFiles(t *testing.T) {
 }
 
 func TestParseVersionFile(t *testing.T) {
-	t.Run(".tool-versions format", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		path := filepath.Join(tmpDir, ".tool-versions")
-		content := `ruby 3.2.0
-nodejs 18.0.0`
-		err := os.WriteFile(path, []byte(content), 0644)
-		require.NoError(t, err)
+	tests := []struct {
+		name     string
+		filePath string
+		content  string
+		want     []ToolVersion
+	}{
+		{
+			name:     ".tool-versions format",
+			filePath: ".tool-versions",
+			content:  "ruby 3.2.0\nnodejs 18.0.0",
+			want: []ToolVersion{
+				{ToolName: "ruby", Version: "3.2.0"},
+				{ToolName: "nodejs", Version: "18.0.0"},
+			},
+		},
+		{
+			name:     "single tool version format",
+			filePath: ".ruby-version",
+			content:  "3.2.0",
+			want:     []ToolVersion{{ToolName: "ruby", Version: "3.2.0"}},
+		},
+		{
+			name:     ".fvmrc format",
+			filePath: ".fvmrc",
+			content:  `{"flutter": "3.22.0"}`,
+			want:     []ToolVersion{{ToolName: "flutter", Version: "3.22.0"}},
+		},
+		{
+			name:     "fvm_config.json format",
+			filePath: "fvm_config.json",
+			content:  `{"flutterSdkVersion": "3.22.0"}`,
+			want:     []ToolVersion{{ToolName: "flutter", Version: "3.22.0"}},
+		},
+	}
 
-		tools, err := Parse(path)
-		require.NoError(t, err)
-		assert.Len(t, tools, 2)
-		assert.Equal(t, provider.ToolID("ruby"), tools[0].ToolName)
-		assert.Equal(t, "3.2.0", tools[0].Version)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, tt.filePath)
+			require.NoError(t, os.MkdirAll(filepath.Dir(path), 0755))
+			require.NoError(t, os.WriteFile(path, []byte(tt.content), 0644))
 
-	t.Run("single tool version format", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		path := filepath.Join(tmpDir, ".ruby-version")
-		err := os.WriteFile(path, []byte("3.2.0"), 0644)
-		require.NoError(t, err)
+			got, err := Parse(path)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
 
-		tools, err := Parse(path)
-		require.NoError(t, err)
-		assert.Len(t, tools, 1)
-		assert.Equal(t, provider.ToolID("ruby"), tools[0].ToolName)
-		assert.Equal(t, "3.2.0", tools[0].Version)
-	})
+func TestParseFVMRC(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    []ToolVersion
+		wantErr bool
+	}{
+		{
+			name:    "exact version",
+			content: `{"flutter": "3.19.0"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "3.19.0"}},
+		},
+		{
+			name:    "version with channel suffix",
+			content: `{"flutter": "3.19.0@stable"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "3.19.0-stable"}},
+		},
+		{
+			name:    "latest",
+			content: `{"flutter": "latest"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "latest"}},
+		},
+		{
+			name:    "channel only is rejected",
+			content: `{"flutter": "stable"}`,
+			wantErr: true,
+		},
+		{
+			name:    "missing flutter key",
+			content: `{"dart": "3.0.0"}`,
+			wantErr: true,
+		},
+		{
+			name:    "empty flutter value",
+			content: `{"flutter": ""}`,
+			wantErr: true,
+		},
+		{
+			name:    "invalid JSON",
+			content: `not json`,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, ".fvmrc")
+			err := os.WriteFile(path, []byte(tt.content), 0644)
+			require.NoError(t, err)
+
+			got, err := parseFVMRC(path)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParseFVMConfigJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    []ToolVersion
+		wantErr bool
+	}{
+		{
+			name:    "exact version",
+			content: `{"flutterSdkVersion": "3.19.0"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "3.19.0"}},
+		},
+		{
+			name:    "version with channel suffix",
+			content: `{"flutterSdkVersion": "3.19.0@stable"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "3.19.0-stable"}},
+		},
+		{
+			name:    "latest",
+			content: `{"flutterSdkVersion": "latest"}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "latest"}},
+		},
+		{
+			name:    "channel only is rejected",
+			content: `{"flutterSdkVersion": "stable"}`,
+			wantErr: true,
+		},
+		{
+			name:    "missing flutterSdkVersion key",
+			content: `{"dart": "3.0.0"}`,
+			wantErr: true,
+		},
+		{
+			name:    "empty flutterSdkVersion value",
+			content: `{"flutterSdkVersion": ""}`,
+			wantErr: true,
+		},
+		{
+			name:    "invalid JSON",
+			content: `not json`,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "fvm_config.json")
+			err := os.WriteFile(path, []byte(tt.content), 0644)
+			require.NoError(t, err)
+
+			got, err := parseFVMConfigJSON(path)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
