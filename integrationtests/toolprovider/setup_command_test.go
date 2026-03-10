@@ -153,11 +153,12 @@ workflows:
 			},
 		},
 		{
-			name:        "setup from .fvmrc with channel only fails",
-			fileContent: `{"flutter": "stable"}`,
-			fileName:    ".fvmrc",
-			wantErr:     true,
-			errContains: "channel-only value",
+			name:         "setup from .fvmrc with channel only fails",
+			fileContent:  `{"flutter": "stable"}`,
+			fileName:     ".fvmrc",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "channel-only value",
 		},
 		{
 			name:         "setup from .fvmrc with flavors",
@@ -171,7 +172,7 @@ workflows:
 			},
 		},
 		{
-			name:         "setup from .fvmrc with flavors",
+			name:         "setup from .fvmrc with same flavor version",
 			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "3.32.1"}}`,
 			fileName:     ".fvmrc",
 			outputFormat: "plaintext",
@@ -181,11 +182,12 @@ workflows:
 			},
 		},
 		{
-			name:        "setup from .fvmrc with flavors",
-			fileContent: `{"flutter": "3.32.1", "flavors": {"staging": "beta"}}`,
-			fileName:    ".fvmrc",
-			wantErr:     true,
-			errContains: "channel-only value",
+			name:         "setup from .fvmrc with flavor channel only fails",
+			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "beta"}}`,
+			fileName:     ".fvmrc",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "channel-only value",
 		},
 		// fvm_config.json tests
 		{
@@ -199,9 +201,9 @@ workflows:
 			},
 		},
 		{
-			name:         "setup from .fmv/fvm_config.json subdirectory",
+			name:         "setup from .fvm/fvm_config.json subdirectory",
 			fileContent:  `{"flutterSdkVersion": "3.32.1"}`,
-			fileName:     ".fvm/fvm_config.json",
+			fileName:     filepath.Join(".fvm", "fvm_config.json"),
 			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "flutter")
@@ -219,22 +221,23 @@ workflows:
 			},
 		},
 		{
-			name:        "setup from fvm_config.json with channel only fails",
-			fileContent: `{"flutterSdkVersion": "stable"}`,
-			fileName:    "fvm_config.json",
-			wantErr:     true,
-			errContains: "channel-only value",
+			name:         "setup from fvm_config.json with channel only fails",
+			fileContent:  `{"flutterSdkVersion": "stable"}`,
+			fileName:     "fvm_config.json",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "channel-only value",
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			var configPath string
-			var tmpDir string
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, tc.fileName)
 
-			tmpDir = t.TempDir()
-			configPath = filepath.Join(tmpDir, tc.fileName)
-			err := os.WriteFile(configPath, []byte(tc.fileContent), 0644)
+			err := os.MkdirAll(filepath.Dir(configPath), 0755)
+			require.NoError(t, err)
+			err = os.WriteFile(configPath, []byte(tc.fileContent), 0644)
 			require.NoError(t, err)
 
 			args := []string{"tools", "setup", "--config", configPath, "--format", tc.outputFormat}
@@ -247,9 +250,7 @@ workflows:
 			}
 
 			cmd := command.New(testhelpers.BinPath(), args...)
-			if tmpDir != "" {
-				cmd.SetDir(tmpDir)
-			}
+			cmd.SetDir(tmpDir)
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
 			if tc.wantErr {
