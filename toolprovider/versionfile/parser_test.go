@@ -298,6 +298,24 @@ func TestParseFVMRC(t *testing.T) {
 			content: `not json`,
 			wantErr: true,
 		},
+		{
+			name:    "with flavors",
+			content: `{"flutter": "3.19.0", "flavors": {"development": "3.22.0@beta", "production": "3.19.0"}}`,
+			want: []ToolVersion{
+				{ToolName: "flutter", Version: "3.19.0"},
+				{ToolName: "flutter", Version: "3.22.0-beta"},
+			},
+		},
+		{
+			name:    "with flavors - channel only is rejected",
+			content: `{"flutter": "3.19.0", "flavors": {"development": "beta"}}`,
+			wantErr: true,
+		},
+		{
+			name:    "with flavors - deduplicates main version",
+			content: `{"flutter": "3.19.0", "flavors": {"production": "3.19.0"}}`,
+			want:    []ToolVersion{{ToolName: "flutter", Version: "3.19.0"}},
+		},
 	}
 
 	for _, tt := range tests {

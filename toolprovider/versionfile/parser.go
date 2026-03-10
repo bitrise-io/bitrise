@@ -105,18 +105,6 @@ func inferToolID(filename string) provider.ToolID {
 	return alias.GetCanonicalToolID(provider.ToolID(name))
 }
 
-// parseFVMRC parses an FVM 3.x .fvmrc JSON file to extract the Flutter version.
-// The file format is: {"flutter": "3.19.0"} or {"flutter": "3.19.0@stable"}
-func parseFVMRC(path string) ([]ToolVersion, error) {
-	return parseVersionFromJSON(path, "flutter", "flutter")
-}
-
-// parseFVMConfigJSON parses a legacy .fvm/fvm_config.json file to extract the Flutter version.
-// The file format is: {"flutterSdkVersion": "3.19.0"} or {"flutterSdkVersion": "3.19.0@stable"}
-func parseFVMConfigJSON(path string) ([]ToolVersion, error) {
-	return parseVersionFromJSON(path, "flutterSdkVersion", "flutter")
-}
-
 // flutterChannels are Flutter release channels that are not valid version specifiers
 // for asdf/mise installation.
 var flutterChannels = map[string]bool{
@@ -127,10 +115,20 @@ var flutterChannels = map[string]bool{
 	"main":   true,
 }
 
-// parseVersionFromJSON reads a JSON file and extracts a version string for the given tool
-// from the given key. Converts "version@channel" format to "version-channel" format
-// expected by the asdf-flutter plugin.
-func parseVersionFromJSON(path string, key string, toolName provider.ToolID) ([]ToolVersion, error) {
+// normalizeFlutterVersion converts FVM's "version@channel" format to "version-channel"
+// and rejects channel-only values.
+func normalizeFlutterVersion(version string) (string, error) {
+	version = strings.Replace(version, "@", "-", 1)
+
+	if flutterChannels[version] {
+		return "", fmt.Errorf("channel-only value %q is not supported, specify a version (e.g. \"3.22.0\") or use \"latest\" to install the latest stable release", version)
+	}
+
+	return version, nil
+}
+
+// readJSONFile reads and unmarshals a JSON file into a map.
+func readJSONFile(path string) (map[string]any, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
@@ -141,26 +139,95 @@ func parseVersionFromJSON(path string, key string, toolName provider.ToolID) ([]
 		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 
+	return config, nil
+}
+
+// extractStringValue extracts a non-empty string from a map by key.
+func extractStringValue(config map[string]any, path string, key string) (string, error) {
 	value, ok := config[key]
 	if !ok {
-		return nil, fmt.Errorf("%s: missing '%s' key", path, key)
+		return "", fmt.Errorf("%s: missing '%s' key", path, key)
 	}
 
-	versionStr, ok := value.(string)
-	if !ok || versionStr == "" {
-		return nil, fmt.Errorf("%s: '%s' key is not a non-empty string", path, key)
+	str, ok := value.(string)
+	if !ok || str == "" {
+		return "", fmt.Errorf("%s: '%s' key is not a non-empty string", path, key)
 	}
 
-	// Convert "version@channel" format (e.g. "3.19.0@stable") to "version-channel" (e.g. "3.19.0-stable")
-	// which is the format expected by the asdf-flutter plugin.
-	versionStr = strings.Replace(versionStr, "@", "-", 1)
+	return str, nil
+}
 
-	if flutterChannels[versionStr] {
-		return nil, fmt.Errorf("%s: channel-only value %q is not supported, specify a version (e.g. \"3.22.0\") or use \"latest\" to install the latest stable release", path, versionStr)
+// parseFVMRC parses an FVM 3.x .fvmrc JSON file to extract the Flutter version(s).
+// Supports the main "flutter" key and optional "flavors" map.
+func parseFVMRC(path string) ([]ToolVersion, error) {
+	config, err := readJSONFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	mainVersion, err := extractStringValue(config, path, "flutter")
+	if err != nil {
+		return nil, err
+	}
+
+	mainVersion, err = normalizeFlutterVersion(mainVersion)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
+
+	// Collect unique versions to avoid duplicate installs
+	seen := map[string]bool{mainVersion: true}
+	tools := []ToolVersion{
+		{ToolName: "flutter", Version: mainVersion},
+	}
+
+	if flavorsValue, ok := config["flavors"]; ok {
+		flavors, ok := flavorsValue.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("%s: 'flavors' is not a map", path)
+		}
+
+		for name, v := range flavors {
+			vStr, ok := v.(string)
+			if !ok || vStr == "" {
+				return nil, fmt.Errorf("%s: flavor %q is not a non-empty string", path, name)
+			}
+
+			normalized, err := normalizeFlutterVersion(vStr)
+			if err != nil {
+				return nil, fmt.Errorf("%s: flavor %q: %w", path, name, err)
+			}
+
+			if !seen[normalized] {
+				seen[normalized] = true
+				tools = append(tools, ToolVersion{ToolName: "flutter", Version: normalized})
+			}
+		}
+	}
+
+	return tools, nil
+}
+
+// parseFVMConfigJSON parses a legacy .fvm/fvm_config.json file to extract the Flutter version.
+// The file format is: {"flutterSdkVersion": "3.19.0"} or {"flutterSdkVersion": "3.19.0@stable"}
+func parseFVMConfigJSON(path string) ([]ToolVersion, error) {
+	config, err := readJSONFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	versionStr, err := extractStringValue(config, path, "flutterSdkVersion")
+	if err != nil {
+		return nil, err
+	}
+
+	normalized, err := normalizeFlutterVersion(versionStr)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 
 	return []ToolVersion{
-		{ToolName: toolName, Version: versionStr},
+		{ToolName: "flutter", Version: normalized},
 	}, nil
 }
 
