@@ -121,7 +121,7 @@ func normalizeFlutterVersion(version string) (string, error) {
 	version = strings.Replace(version, "@", "-", 1)
 
 	if flutterChannels[version] {
-		return "", fmt.Errorf("channel-only value %q is not supported, specify a version (e.g. \"3.22.0\") or use \"latest\" to install the latest stable release", version)
+		return "", fmt.Errorf("channel-only value %q is not supported, specify a version to install the latest stable release", version)
 	}
 
 	return version, nil
