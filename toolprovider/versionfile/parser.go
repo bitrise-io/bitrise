@@ -51,7 +51,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".terraform-version",
 		".kubectl-version",
 		".fvmrc",
-		"fvm_config.json",
+		".fvm/fvm_config.json",
 	}
 
 	for _, filename := range commonVersionFiles {

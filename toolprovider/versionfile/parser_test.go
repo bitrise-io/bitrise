@@ -182,9 +182,19 @@ func TestFindVersionFiles(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create some version files
-	files := []string{".tool-versions", ".ruby-version", ".node-version", ".fvmrc", "fvm_config.json"}
+	files := []struct {
+		directory string
+		filename  string
+	}{{"", ".tool-versions"}, {"", ".ruby-version"}, {"", ".node-version"}, {"", ".fvmrc"}, {".fvm", "fvm_config.json"}}
 	for _, f := range files {
-		err := os.WriteFile(filepath.Join(tmpDir, f), []byte("test"), 0644)
+		fullDirectory := filepath.Join(tmpDir, f.directory)
+		if f.directory != "" {
+			err := os.MkdirAll(fullDirectory, 0755)
+			require.NoError(t, err)
+		} else {
+			fullDirectory = tmpDir
+		}
+		err := os.WriteFile(filepath.Join(fullDirectory, f.filename), []byte("test"), 0644)
 		require.NoError(t, err)
 	}
 
@@ -201,8 +211,8 @@ func TestFindVersionFiles(t *testing.T) {
 	for _, f := range found {
 		foundMap[filepath.Base(f)] = true
 	}
-	for _, expectedFile := range files {
-		assert.True(t, foundMap[expectedFile], "expected to find %s", expectedFile)
+	for _, toolFile := range files {
+		assert.True(t, foundMap[toolFile.filename], "expected to find %s", toolFile.filename)
 	}
 }
 
