@@ -353,3 +353,54 @@ workflows:
 	assert.Contains(t, out, "python")
 	assert.Contains(t, out, "3.11.0")
 }
+
+func TestToolsSetupCommandNoArg(t *testing.T) {
+	cases := []setupCommandCase{
+		{
+			name:         "setup from .tool-versions file",
+			fileContent:  "golang 1.21.0",
+			fileName:     ".tool-versions",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "golang")
+				assert.Contains(t, output, "1.21.0")
+			},
+		},
+		{
+			name:         "setup from .fvm/fvm_config.json subdirectory",
+			fileContent:  `{"flutterSdkVersion": "3.32.1"}`,
+			fileName:     filepath.Join(".fvm", "fvm_config.json"),
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "flutter")
+				assert.Contains(t, output, "3.32.1")
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, tc.fileName)
+
+			err := os.MkdirAll(filepath.Dir(configPath), 0755)
+			require.NoError(t, err)
+			err = os.WriteFile(configPath, []byte(tc.fileContent), 0644)
+			require.NoError(t, err)
+
+			args := []string{"tools", "setup", "--format", tc.outputFormat}
+
+			cmd := command.New(testhelpers.BinPath(), args...)
+			cmd.SetDir(tmpDir)
+			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+
+			if err != nil {
+				t.Logf("Setup output: %s", out)
+				t.Logf("Setup error (may be expected): %v", err)
+			}
+			if tc.validateOutput != nil {
+				tc.validateOutput(t, out)
+			}
+		})
+	}
+}
