@@ -51,7 +51,7 @@ workflows:
     - bundle::run_unit_tests: {}
     meta:
       bitrise.io:
-        stack: osx-xcode-16.4.x
+        stack: osx-xcode-latest-stable
         machine_type_id: g2.mac.large
 
   run_unit_tests_linux:
@@ -133,7 +133,7 @@ workflows:
     - bundle::test_binary_build: {}
     meta:
       bitrise.io:
-        stack: osx-xcode-16.4.x
+        stack: osx-xcode-latest-stable
         machine_type_id: g2.mac.large
 
   test_binary_build_linux:
