@@ -73,6 +73,8 @@ var (
 		Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
 	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
 	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
+	- .fvmrc (FVM 3.x): Flutter version from JSON {"flutter": "<version>"}
+	- .fvm/fvm_config.json (legacy FVM): Flutter version from {"flutterSdkVersion": "<version>"}
 	- bitrise.yml: tools defined in the "tools" section`,
 		TakesFile: true,
 	}
@@ -171,10 +173,12 @@ var toolsSetupSubcommand = cli.Command{
 	Name:      toolsSetupSubcommandName,
 	Usage:     "Install tools from version files or bitrise.yml",
 	UsageText: "bitrise tools setup [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
-	Description: `Install tools from version files (e.g. .tool-versions, .node-version, etc.) or bitrise.yml.
+	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .fvmrc, .fvm/fvm_config.json) or bitrise.yml.
 
 EXAMPLES:
    bitrise tools setup --config .tool-versions
+   bitrise tools setup --config .fvmrc
+   bitrise tools setup --config .fvm/fvm_config.json
    bitrise tools setup --config bitrise.yml
    bitrise tools setup --provider mise --fast-install true
 
