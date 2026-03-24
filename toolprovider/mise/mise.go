@@ -23,22 +23,22 @@ import (
 // 3. Verify checksums
 // 4. Update version string and checksums below
 // 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
-const misePreviewVersion = "v2025.12.1"
+const misePreviewVersion = "v2026.3.16"
 
 var misePreviewChecksums = map[string]string{
+	"linux-x64":   "96417e479462d9a1836654461ec4b86eba8ff4f12260c09b93800fd50c25490c",
+	"linux-arm64": "6e0362723bddec3b25923a6c7c447c3f10eba4bf6e3db6973e175fa0a60ab974",
+	"macos-x64":   "a6f6f320b547dec3eff321e301fa05268dfc73a620d35ec3292603fbab1c4c29",
+	"macos-arm64": "9d6e2bfea3e00ffb566ad1a369914cb029c32a28eb4b699e8655cf3c3d4ef87e",
+}
+
+const miseStableVersion = "v2025.12.1"
+
+var miseStableChecksums = map[string]string{
 	"linux-x64":   "0e62b1a0a8b87329d0cf24fc6af5d1c3aae0819194bea2f43fcf3f556edc9c29",
 	"linux-arm64": "35573ccc8f13895884b8e7a3365736c2942ad531ce24fc420ba0a941dbb57ce5",
 	"macos-x64":   "68b250632b1f1f29f6116ca513d1641097dfdc2cf05520ee0ca23907962b3d6f",
 	"macos-arm64": "94659ac9b7b30d149464ef4a76498182b0c5cadeccef1811ab9e75ff3d1ad159",
-}
-
-const miseStableVersion = "v2025.10.8"
-
-var miseStableChecksums = map[string]string{
-	"linux-x64":   "895db0eb777b90c449c4c79a36bd5f749fd614749876782ea32ede02c45e6bc2",
-	"linux-arm64": "c949d574a46b68bf8d5834d099614818d6774935d908f53051f47d24ac0601c8",
-	"macos-x64":   "422260046b8a24f0c72bfad60ac94837f834c83b5e7823e79f997ae7ff660de2",
-	"macos-arm64": "bc7c40c48a43dfd80537e7ca5e55a2cf7dd37924bf7595d74b29848a6ab0e2ea",
 }
 
 type MiseToolProvider struct {
@@ -138,10 +138,10 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		}
 		return provider.ToolInstallResult{}, fmt.Errorf("resolve %s@%s: %w", installRequest.ToolName, installRequest.UnparsedVersion, err)
 	}
-  if !m.Silent {
-    log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
-      installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
-  }
+	if !m.Silent {
+		log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
+			installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
+	}
 	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
 		return provider.ToolInstallResult{}, err

@@ -7,6 +7,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/workarounds"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -93,7 +94,12 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, u
 func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concreteVersion string) error {
 	versionString := miseVersionString(toolName, concreteVersion)
 
-	output, err := m.ExecEnv.RunMiseWithTimeout(execenv.InstallTimeout, "install", "--yes", versionString)
+	extraEnvs := make(map[string]string)
+	if key, value := workarounds.GetPythonPrecompiledFlavorEnv(toolName, concreteVersion, GetMiseVersion(), m.Silent); key != "" {
+		extraEnvs[key] = value
+	}
+
+	output, err := m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
 	if err != nil {
 		return provider.ToolInstallError{
 			ToolName:         toolName,
