@@ -138,10 +138,10 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 		}
 		return provider.ToolInstallResult{}, fmt.Errorf("resolve %s@%s: %w", installRequest.ToolName, installRequest.UnparsedVersion, err)
 	}
-  if !m.Silent {
-    log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
-      installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
-  }
+	if !m.Silent {
+		log.Debugf("[TOOLPROVIDER] Resolved %s@%s to concrete version: %s",
+			installRequest.ToolName, installRequest.UnparsedVersion, concreteVersion)
+	}
 	isAlreadyInstalled, err := m.isAlreadyInstalled(installRequest.ToolName, concreteVersion)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
