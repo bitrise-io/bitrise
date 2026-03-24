@@ -2,6 +2,7 @@ package versionfile
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -25,6 +26,8 @@ func Parse(path string) ([]ToolVersion, error) {
 		return parseToolVersionsFile(path)
 	case ".fvmrc":
 		return parseFVMRC(path)
+	case ".nvmrc":
+		return parseNVMRC(path)
 	case "fvm_config.json":
 		return parseFVMConfigJSON(path)
 	default:
@@ -45,6 +48,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".tool-versions",
 		".ruby-version",
 		".node-version",
+		".nvmrc",
 		".python-version",
 		".java-version",
 		".go-version",
@@ -155,6 +159,36 @@ func extractStringValue(config map[string]any, path string, key string) (string,
 	}
 
 	return str, nil
+}
+
+// parseNVMRC parses an NVM .nvmrc file to extract the Node.js version.
+func parseNVMRC(path string) ([]ToolVersion, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+
+	content = bytes.TrimSpace(content)
+
+	if len(content) == 0 {
+		return nil, fmt.Errorf("%s: empty version file", path)
+	}
+
+	for line := range strings.SplitSeq(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.Contains(line, "=") {
+			continue
+		}
+		version := strings.TrimPrefix(line, "v")
+		if version == "" {
+			return nil, fmt.Errorf("%s: invalid version (empty after removing 'v' prefix)", path)
+		}
+		return []ToolVersion{
+			{ToolName: "node", Version: version},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("%s: no valid version found", path)
 }
 
 // parseFVMRC parses an FVM 3.x .fvmrc JSON file to extract the Flutter version(s).

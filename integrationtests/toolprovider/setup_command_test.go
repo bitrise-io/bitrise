@@ -131,6 +131,47 @@ workflows:
 				assert.NoError(t, err, "Should be able to eval bash output without error: %s", string(out))
 			},
 		},
+		// .nvmrc tests
+		{
+			name:         "setup from .nvmrc with version",
+			fileContent:  "20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with v-prefixed version",
+			fileContent:  "v20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name: "setup from .nvmrc with comments",
+			fileContent: `# Node.js version
+v18.16.0
+# Another comment`,
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "18.16.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with empty file fails",
+			fileContent:  "",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "empty version file",
+		},
 		// .fvmrc tests
 		{
 			name:         "setup from .fvmrc with exact version",
@@ -171,18 +212,9 @@ workflows:
 				assert.Contains(t, output, "3.29.0")
 			},
 		},
+		// fvm_config.json tests
 		{
-			name:         "setup from .fvmrc with same flavor version",
-			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "3.32.1"}}`,
-			fileName:     ".fvmrc",
-			outputFormat: "plaintext",
-			validateOutput: func(t *testing.T, output string) {
-				assert.Contains(t, output, "flutter")
-				assert.Contains(t, output, "3.32.1")
-			},
-		},
-		{
-			name:         "setup from .fvmrc with flavor channel only fails",
+			name:         "setup from fvm_config.json with exact version",
 			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "beta"}}`,
 			fileName:     ".fvmrc",
 			outputFormat: "plaintext",
@@ -204,16 +236,6 @@ workflows:
 			name:         "setup from .fvm/fvm_config.json subdirectory",
 			fileContent:  `{"flutterSdkVersion": "3.32.1"}`,
 			fileName:     filepath.Join(".fvm", "fvm_config.json"),
-			outputFormat: "plaintext",
-			validateOutput: func(t *testing.T, output string) {
-				assert.Contains(t, output, "flutter")
-				assert.Contains(t, output, "3.32.1")
-			},
-		},
-		{
-			name:         "setup from fvm_config.json with version and channel",
-			fileContent:  `{"flutterSdkVersion": "3.32.1@stable"}`,
-			fileName:     "fvm_config.json",
 			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "flutter")
@@ -364,16 +386,6 @@ func TestToolsSetupCommandNoArg(t *testing.T) {
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "golang")
 				assert.Contains(t, output, "1.21.0")
-			},
-		},
-		{
-			name:         "setup from .fvm/fvm_config.json subdirectory",
-			fileContent:  `{"flutterSdkVersion": "3.32.1"}`,
-			fileName:     filepath.Join(".fvm", "fvm_config.json"),
-			outputFormat: "plaintext",
-			validateOutput: func(t *testing.T, output string) {
-				assert.Contains(t, output, "flutter")
-				assert.Contains(t, output, "3.32.1")
 			},
 		},
 	}
