@@ -54,6 +54,7 @@ func TestMiseInstallJavaVersion(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			request := provider.ToolRequest{
 				ToolName:           provider.ToolID("java"),
 				UnparsedVersion:    tt.requestedVersion,
