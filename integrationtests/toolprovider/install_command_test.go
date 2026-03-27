@@ -161,11 +161,11 @@ func TestToolsInstallCommand(t *testing.T) {
 			toolVersion:  "3.12.0",
 			outputFormat: "bash",
 			validateOutput: func(t *testing.T, output string, err error) {
-				require.NoError(t, err)
-				assert.Contains(t, output, "export PATH=")
-				assert.True(t, strings.HasPrefix(output, "export "))
+				require.NoError(t, err, "Failed to install python 3.12.0. Output: %s", output)
+				assert.Contains(t, output, "export PATH=", "Output should contain PATH export")
+				assert.True(t, strings.HasPrefix(output, "export "), "Output should start with 'export', but was: %s", output)
 				// Should contain python in the PATH
-				assert.Contains(t, output, "python")
+				assert.Contains(t, output, "python", "PATH should contain python")
 			},
 		},
 		{
