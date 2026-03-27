@@ -3,12 +3,11 @@ package mise
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/workarounds"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -92,63 +91,12 @@ func canBeInstalledWithNix(tool provider.ToolRequest, execEnv execenv.ExecEnv, u
 	return true
 }
 
-// shouldSetPythonPrecompiledFlavor determines if MISE_PYTHON_PRECOMPILED_FLAVOR should be set.
-// This is needed for Python 3.14+ with mise versions before 2026 to avoid missing lib directory errors.
-// The fix was implemented in mise v2026.3.10.
-func shouldSetPythonPrecompiledFlavor(toolName provider.ToolID, concreteVersion string, miseVersion string) bool {
-	toolNameStr := string(toolName)
-	if !strings.HasSuffix(toolNameStr, "python") {
-		return false
-	}
-
-	if strings.HasPrefix(miseVersion, "v2026") {
-		return false
-	}
-
-	parts := strings.Split(concreteVersion, ".")
-	if len(parts) < 2 {
-		return false
-	}
-
-	major, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return false
-	}
-
-	// Extract minor version (may have letters like "14a1")
-	minorStr := parts[1]
-	var minor int
-	for i, c := range minorStr {
-		if c < '0' || c > '9' {
-			minorStr = minorStr[:i]
-			break
-		}
-	}
-	minor, err = strconv.Atoi(minorStr)
-	if err != nil {
-		return false
-	}
-
-	if major > 3 || (major == 3 && minor >= 14) {
-		return true
-	}
-
-	return false
-}
-
 func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concreteVersion string) error {
 	versionString := miseVersionString(toolName, concreteVersion)
 
-	// Conditionally set MISE_PYTHON_PRECOMPILED_FLAVOR for Python 3.14+ with mise versions before 2026
-	// to avoid missing lib directory errors. The fix was implemented in mise v2026.3.10.
-	// https://mise.jdx.dev/lang/python.html#python.precompiled_flavor
-	// https://github.com/jdx/mise/releases/tag/v2026.3.10
 	extraEnvs := make(map[string]string)
-	if shouldSetPythonPrecompiledFlavor(toolName, concreteVersion, GetMiseVersion()) {
-		extraEnvs["MISE_PYTHON_PRECOMPILED_FLAVOR"] = "install_only_stripped"
-		if !m.Silent {
-			log.Debugf("[TOOLPROVIDER] Setting MISE_PYTHON_PRECOMPILED_FLAVOR for Python %s", concreteVersion)
-		}
+	if key, value := workarounds.GetPythonPrecompiledFlavorEnv(toolName, concreteVersion, GetMiseVersion(), m.Silent); key != "" {
+		extraEnvs[key] = value
 	}
 
 	output, err := m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
