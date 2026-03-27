@@ -44,6 +44,10 @@ func (m *fakeExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) 
 	return m.runCommand(args...)
 }
 
+func (m *fakeExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, extraEnvs map[string]string, args ...string) (string, error) {
+	return m.runCommand(args...)
+}
+
 func (m *fakeExecEnv) runCommand(args ...string) (string, error) {
 	cmdKey := strings.Join(args, " ")
 
