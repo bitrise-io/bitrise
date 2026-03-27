@@ -21,6 +21,7 @@ type ExecEnv interface {
 	InstallDir() string
 	RunMise(args ...string) (string, error)
 	RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error)
+	RunMiseWithTimeoutAndEnvs(timeout time.Duration, extraEnvs map[string]string, args ...string) (string, error)
 	RunMisePlugin(args ...string) (string, error)
 }
 
@@ -52,6 +53,11 @@ func (e MiseExecEnv) RunMisePlugin(args ...string) (string, error) {
 // RunMiseWithTimeout runs mise commands that involve untrusted operations (plugin execution, remote network calls)
 // with a timeout to prevent hanging.
 func (e MiseExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) (string, error) {
+	return e.RunMiseWithTimeoutAndEnvs(timeout, nil, args...)
+}
+
+// RunMiseWithTimeoutAndEnvs runs mise commands with optional timeout and additional environment variables.
+func (e MiseExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, additionalEnvs map[string]string, args ...string) (string, error) {
 	var ctx context.Context
 	if timeout == 0 {
 		ctx = context.Background()
@@ -65,6 +71,9 @@ func (e MiseExecEnv) RunMiseWithTimeout(timeout time.Duration, args ...string) (
 	cmd := exec.CommandContext(ctx, executable, args...)
 	cmd.Env = os.Environ()
 	for k, v := range e.extraEnvs {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+	for k, v := range additionalEnvs {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 	output, err := cmd.CombinedOutput()
