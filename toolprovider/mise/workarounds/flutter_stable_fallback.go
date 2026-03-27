@@ -5,65 +5,52 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
 // Flutter versions in mise can be inconsistent with the -stable suffix.
 // Some versions are available as "3.32.1" but not "3.32.1-stable", even though
 // FVM uses the "@stable" notation (which we convert to "-stable").
-// This workaround checks if a version without -stable exists when the original fails.
+// This workaround proactively checks if a Flutter version with -stable suffix exists,
+// and if not, attempts to use the version without the suffix.
 
-// ShouldTryStableFallback checks if we should retry a Flutter installation without the -stable suffix.
-// Returns the fallback version to try, or empty string if no fallback should be attempted.
-func ShouldTryStableFallback(
-	execEnv execenv.ExecEnv,
-	toolErr provider.ToolInstallError,
+// AdjustFlutterStableVersion proactively checks and adjusts Flutter versions with -stable suffix.
+// If the requested version ends with -stable and doesn't exist remotely, but the version without
+// -stable does exist, it returns the adjusted version (without -stable).
+// Returns empty string if no adjustment is needed.
+func AdjustFlutterStableVersion(
+	versionExistsRemote func(provider.ToolID, string) (bool, error),
+	toolName provider.ToolID,
+	version string,
 	silent bool,
 ) (string, error) {
-	if toolErr.ToolName != "flutter" {
+	if toolName != "flutter" || !strings.HasSuffix(version, "-stable") {
 		return "", nil
 	}
 
-	if !strings.HasSuffix(toolErr.RequestedVersion, "-stable") {
+	exists, err := versionExistsRemote(toolName, version)
+	if err != nil {
+		return "", fmt.Errorf("check if flutter %s exists remotely: %w", version, err)
+	}
+	if exists {
 		return "", nil
 	}
 
-	if !strings.Contains(toolErr.Cause, "no match for requested version") {
-		return "", nil
-	}
-
-	fallbackVersion := strings.TrimSuffix(toolErr.RequestedVersion, "-stable")
-	exists, err := versionExistsRemote(execEnv, provider.ToolID("flutter"), fallbackVersion)
+	fallbackVersion := strings.TrimSuffix(version, "-stable")
+	fallbackExists, err := versionExistsRemote(toolName, fallbackVersion)
 	if err != nil {
 		return "", fmt.Errorf("check if flutter %s exists remotely: %w", fallbackVersion, err)
 	}
-
-	if !exists {
+	if !fallbackExists {
 		if !silent {
-			log.Debugf("[WORKAROUND] Flutter %s does not exist remotely, no fallback available", fallbackVersion)
+			log.Debugf("Flutter %s not found (with or without -stable suffix)", version)
 		}
 		return "", nil
 	}
 
 	if !silent {
-		log.Infof("Flutter %s not found, but %s exists - using fallback", toolErr.RequestedVersion, fallbackVersion)
+		log.Infof("Flutter %s not found, using %s instead", version, fallbackVersion)
 	}
 
 	return fallbackVersion, nil
-}
-
-// versionExistsRemote checks if a version exists in the remote registry using mise ls-remote.
-func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
-	versionString := string(toolName)
-	if version != "" && version != "latest" {
-		versionString = fmt.Sprintf("%s@%s", toolName, version)
-	}
-
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", versionString)
-	if err != nil {
-		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
-	}
-
-	return strings.TrimSpace(string(output)) != "", nil
 }

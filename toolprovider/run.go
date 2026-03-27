@@ -14,7 +14,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/workarounds"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -98,30 +97,6 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 		if err != nil {
 			var toolErr provider.ToolInstallError
 			if errors.As(err, &toolErr) {
-				// Try Flutter -stable suffix workaround for mise provider
-				if miseProvider, ok := toolProvider.(*mise.MiseToolProvider); ok {
-					fallbackVersion, fallbackErr := workarounds.ShouldTryStableFallback(miseProvider.ExecEnv, toolErr, silent)
-					if fallbackErr != nil && !silent {
-						log.Debugf("[WORKAROUND] Error checking Flutter fallback: %v", fallbackErr)
-					}
-					if fallbackVersion != "" {
-						fallbackRequest := toolRequest
-						fallbackRequest.UnparsedVersion = fallbackVersion
-						result, err = toolProvider.InstallTool(fallbackRequest)
-						if err == nil {
-							// Fallback succeeded
-							toolInstalls = append(toolInstalls, result)
-							duration := time.Since(toolStartTime)
-							if !silent {
-								printInstallResult(fallbackRequest, result, duration)
-							}
-							tracker.SendToolSetupEvent(providerID, fallbackRequest, result, true, duration)
-							continue
-						}
-						// Fallback also failed, show original error
-					}
-				}
-
 				printInstallError(toolErr)
 				return nil, fmt.Errorf("see error details above")
 			}
