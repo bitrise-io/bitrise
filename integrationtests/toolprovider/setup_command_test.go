@@ -242,10 +242,7 @@ workflows:
 				return
 			}
 
-			if err != nil {
-				t.Logf("Setup output: %s", out)
-				t.Logf("Setup error (may be expected): %v", err)
-			}
+			require.NoError(t, err, "Setup output: %s", out)
 			if tc.validateOutput != nil {
 				tc.validateOutput(t, out)
 			}
@@ -365,10 +362,7 @@ func TestToolsSetupCommandNoArg(t *testing.T) {
 			cmd.SetDir(tmpDir)
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
-			if err != nil {
-				t.Logf("Setup output: %s", out)
-				t.Logf("Setup error (may be expected): %v", err)
-			}
+			require.NoError(t, err, "Setup output: %s", out)
 			if tc.validateOutput != nil {
 				tc.validateOutput(t, out)
 			}

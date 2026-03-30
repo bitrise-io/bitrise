@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/workarounds"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
@@ -120,6 +121,22 @@ func (m *MiseToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	normalizedRequest, err := normalizeRequest(m.ExecEnv, installRequest, m.Silent)
 	if err != nil {
 		return provider.ToolInstallResult{}, err
+	}
+
+	// Flutter stable suffix workaround.
+	adjustedVersion, err := workarounds.AdjustFlutterStableVersion(
+		func(toolName provider.ToolID, version string) (bool, error) {
+			return versionExistsRemote(m.ExecEnv, toolName, version)
+		},
+		normalizedRequest.ToolName,
+		normalizedRequest.UnparsedVersion,
+		m.Silent,
+	)
+	if err != nil {
+		return provider.ToolInstallResult{}, fmt.Errorf("adjust flutter version: %w", err)
+	}
+	if adjustedVersion != "" {
+		normalizedRequest.UnparsedVersion = adjustedVersion
 	}
 
 	concreteVersion, err := resolveToConcreteVersion(
