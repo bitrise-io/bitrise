@@ -185,7 +185,7 @@ func TestFindVersionFiles(t *testing.T) {
 	files := []struct {
 		directory string
 		filename  string
-	}{{"", ".tool-versions"}, {"", ".ruby-version"}, {"", ".node-version"}, {"", ".fvmrc"}, {".fvm", "fvm_config.json"}}
+	}{{"", ".tool-versions"}, {"", ".ruby-version"}, {"", ".node-version"}, {"", ".fvmrc"}, {".fvm", "fvm_config.json"}, {"", ".nvmrc"}}
 	for _, f := range files {
 		fullDirectory := filepath.Join(tmpDir, f.directory)
 		if f.directory != "" {
@@ -204,7 +204,7 @@ func TestFindVersionFiles(t *testing.T) {
 
 	found, err := FindVersionFiles(tmpDir)
 	require.NoError(t, err)
-	assert.Len(t, found, 5)
+	assert.Len(t, found, len(files))
 
 	// Check that all expected files are found
 	foundMap := make(map[string]bool)
