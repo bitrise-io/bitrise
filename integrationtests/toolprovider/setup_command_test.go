@@ -131,6 +131,47 @@ workflows:
 				assert.NoError(t, err, "Should be able to eval bash output without error: %s", string(out))
 			},
 		},
+		// .nvmrc tests
+		{
+			name:         "setup from .nvmrc with version",
+			fileContent:  "20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with v-prefixed version",
+			fileContent:  "v20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name: "setup from .nvmrc with comments",
+			fileContent: `# Node.js version
+v18.16.0
+# Another comment`,
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "18.16.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with empty file fails",
+			fileContent:  "",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "empty version file",
+		},
 		// .fvmrc tests
 		{
 			name:         "setup from .fvmrc with exact version",
