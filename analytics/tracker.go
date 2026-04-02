@@ -217,14 +217,12 @@ func (t tracker) SendCommandInfo(command, subcommand string, flags []string) {
 	}
 
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
-	cliVersion, _ := version.BitriseCliVersion()
-
 	properties := analytics.Properties{
 		commandProperty:    command,
 		subcommandProperty: subcommand,
 		flagsProperty:      flags,
 		buildSlugProperty:  buildSlug,
-		cliVersionProperty: cliVersion.String(),
+		cliVersionProperty: version.VERSION,
 	}
 
 	t.tracker.Enqueue(cliCommandEventName, properties)
@@ -358,7 +356,6 @@ func (t tracker) SendToolSetupEvent(
 		return
 	}
 
-	cliVersion, _ := version.BitriseCliVersion()
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 	var resolutionStrategy string
@@ -381,7 +378,7 @@ func (t tracker) SendToolSetupEvent(
 		"setup_time_ms":        setupTime.Milliseconds(),
 		"is_already_installed": result.IsAlreadyInstalled,
 		"concrete_version":     result.ConcreteVersion,
-		"cli_version":          cliVersion.String(),
+		"cli_version":          version.VERSION,
 		"is_ci":                isCI,
 		"build_slug":           buildSlug,
 	}
@@ -393,7 +390,6 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 		return
 	}
 
-	cliVersion, _ := version.BitriseCliVersion()
 	buildSlug := t.envRepository.Get(buildSlugEnvKey)
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 
@@ -401,7 +397,7 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 		"is_successful": isSuccessful,
 		"step_ref":      ref,
 		"duration_ms":   duration.Milliseconds(),
-		"cli_version":   cliVersion.String(),
+		"cli_version":   version.VERSION,
 		"is_ci":         isCI,
 		"build_slug":    buildSlug,
 		"activation_type": activationType,
