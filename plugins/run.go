@@ -101,11 +101,7 @@ func runPlugin(plugin Plugin, args []string, envKeyValues PluginConfig, input []
 	}
 
 	// Append common data to plugin inputs
-	bitriseVersion, err := version.BitriseCliVersion()
-	if err != nil {
-		return err
-	}
-	envKeyValues[PluginConfigBitriseVersionKey] = bitriseVersion.String()
+	envKeyValues[PluginConfigBitriseVersionKey] = version.VERSION
 	envKeyValues[PluginConfigDataDirKey] = GetPluginDataDir(plugin.Name)
 	envKeyValues[PluginConfigFormatVersionKey] = models.FormatVersion
 
