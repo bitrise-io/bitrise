@@ -11,6 +11,7 @@
 -->
 - [ ] I've read and followed the [Contribution Guidelines](https://github.com/bitrise-io/bitrise/blob/master/.github/CONTRIBUTING.md)
 - [ ] `README.md` is updated with the changes (if needed)
+- [ ] I've run `go mod tidy` both in root and in `integrationtests/` if any dependencies have changed. <!-- Integration tests are treated separate. See `integrationtests/README.md` -->
 
 ### Version
 <!-- Leave this untouched if you don't know, we'll help -->

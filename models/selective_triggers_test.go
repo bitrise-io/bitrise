@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 func TestYAMLUnmarshalTriggers(t *testing.T) {
@@ -39,15 +40,33 @@ push:
 push:
 - branch:
     regex: branch
-  commit_message: 
+  commit_message:
     regex: message
-  changed_files: 
+  changed_files:
     regex: file
   enabled: false`,
 			wantTriggers: Triggers{PushTriggers: []PushGitEventTriggerItem{{
-				Branch:        map[string]string{"regex": "branch"},
+				Branch:        map[string]any{"regex": "branch"},
 				CommitMessage: map[string]any{"regex": "message"},
 				ChangedFiles:  map[string]any{"regex": "file"},
+				Enabled:       pointers.NewBoolPtr(false)},
+			}},
+		},
+		{
+			name: "Parses push event trigger item with pattern filters",
+			yamlContent: `
+push:
+- branch:
+    pattern: branch
+  commit_message:
+    pattern: message
+  changed_files:
+    pattern: file
+  enabled: false`,
+			wantTriggers: Triggers{PushTriggers: []PushGitEventTriggerItem{{
+				Branch:        map[string]any{"pattern": "branch"},
+				CommitMessage: map[string]any{"pattern": "message"},
+				ChangedFiles:  map[string]any{"pattern": "file"},
 				Enabled:       pointers.NewBoolPtr(false)},
 			}},
 		},
@@ -125,7 +144,7 @@ pull_request:
 - source_branch:
     regex: source_branch
   target_branch:
-    regex: target_branch 
+    regex: target_branch
   draft_enabled: false
   label:
     regex: label
@@ -137,13 +156,42 @@ pull_request:
     regex: file
   enabled: false`,
 			wantTriggers: Triggers{PullRequestTriggers: []PullRequestGitEventTriggerItem{{
-				SourceBranch:  map[string]string{"regex": "source_branch"},
-				TargetBranch:  map[string]string{"regex": "target_branch"},
+				SourceBranch:  map[string]any{"regex": "source_branch"},
+				TargetBranch:  map[string]any{"regex": "target_branch"},
 				DraftEnabled:  pointers.NewBoolPtr(false),
-				Label:         map[string]string{"regex": "label"},
-				Comment:       map[string]string{"regex": "comment"},
-				CommitMessage: map[string]string{"regex": "message"},
-				ChangedFiles:  map[string]string{"regex": "file"},
+				Label:         map[string]any{"regex": "label"},
+				Comment:       map[string]any{"regex": "comment"},
+				CommitMessage: map[string]any{"regex": "message"},
+				ChangedFiles:  map[string]any{"regex": "file"},
+				Enabled:       pointers.NewBoolPtr(false)},
+			}},
+		},
+		{
+			name: "Parses pull request event trigger item with pattern filters",
+			yamlContent: `
+pull_request:
+- source_branch:
+    pattern: source_branch
+  target_branch:
+    pattern: target_branch
+  draft_enabled: false
+  label:
+    pattern: label
+  comment:
+    pattern: comment
+  commit_message:
+    pattern: message
+  changed_files:
+    pattern: file
+  enabled: false`,
+			wantTriggers: Triggers{PullRequestTriggers: []PullRequestGitEventTriggerItem{{
+				SourceBranch:  map[string]any{"pattern": "source_branch"},
+				TargetBranch:  map[string]any{"pattern": "target_branch"},
+				DraftEnabled:  pointers.NewBoolPtr(false),
+				Label:         map[string]any{"pattern": "label"},
+				Comment:       map[string]any{"pattern": "comment"},
+				CommitMessage: map[string]any{"pattern": "message"},
+				ChangedFiles:  map[string]any{"pattern": "file"},
 				Enabled:       pointers.NewBoolPtr(false)},
 			}},
 		},
@@ -164,22 +212,34 @@ tag:
 			name: "Parses tag event trigger item with regex filters",
 			yamlContent: `
 tag:
-- name: 
+- name:
     regex: tag
   enabled: false`,
 			wantTriggers: Triggers{TagTriggers: []TagGitEventTriggerItem{{
-				Name:    map[string]string{"regex": "tag"},
+				Name:    map[string]any{"regex": "tag"},
 				Enabled: pointers.NewBoolPtr(false)},
 			}},
 		},
 		{
-			name: "Throws error when filter value is not a string or an object with a 'regex' key and string value",
+			name: "Parses tag event trigger item with pattern filters",
 			yamlContent: `
 tag:
-- name: 
+- name:
+    pattern: tag
+  enabled: false`,
+			wantTriggers: Triggers{TagTriggers: []TagGitEventTriggerItem{{
+				Name:    map[string]any{"pattern": "tag"},
+				Enabled: pointers.NewBoolPtr(false)},
+			}},
+		},
+		{
+			name: "Throws error when filter value is not a string or an object with a 'regex' or 'pattern' key",
+			yamlContent: `
+tag:
+- name:
     glob: tag
   enabled: false`,
-			wantErr: "'triggers.tag[0]': 'name' value should be a string or a map with a 'regex' key and string value",
+			wantErr: "'triggers.tag[0]': 'name': unknown key(s): glob",
 		},
 	}
 	for _, tt := range tests {
@@ -241,21 +301,30 @@ push:
 			wantErr: "'triggers.push[0]': unknown key(s): push_branch",
 		},
 		{
-			name: "Push filter should be a string or a map with a 'regex' key and string value",
+			name: "Push filter should be a string or a map with a 'regex' or 'pattern' key",
 			yamlContent: `
-push: 
+push:
 - branch:
     include: main`,
-			wantErr: "'triggers.push[0]': 'branch' value should be a string or a map with a 'regex' key and string value",
+			wantErr: "'triggers.push[0]': 'branch': unknown key(s): include",
 		},
 		{
 			name: "Push filter should not contain unknown keys",
 			yamlContent: `
-push: 
+push:
 - commit_message:
     pattern: match*
     scope: 'all_commits'`,
 			wantErr: "'triggers.push[0]': 'commit_message': unknown key(s): scope",
+		},
+		{
+			name: "Push branch filter should not support last_commit",
+			yamlContent: `
+push:
+- branch:
+    pattern: main
+    last_commit: true`,
+			wantErr: "'triggers.push[0]': 'branch': unknown key(s): last_commit",
 		},
 		{
 			name: "Push filter should not specify both 'pattern' and 'regex'",
@@ -364,12 +433,21 @@ pull_request:
 			wantErr: "'triggers.pull_request[0]': unknown key(s): pull_request_target_branch",
 		},
 		{
-			name: "Pull request filter should be a string or a map with a 'regex' key and string value",
+			name: "Pull request filter should be a string or a map with a 'regex' or 'pattern' key",
 			yamlContent: `
-pull_request: 
+pull_request:
 - target_branch:
     include: main`,
-			wantErr: "'triggers.pull_request[0]': 'target_branch' value should be a string or a map with a 'regex' key and string value",
+			wantErr: "'triggers.pull_request[0]': 'target_branch': unknown key(s): include",
+		},
+		{
+			name: "Pull request filter should not support last_commit",
+			yamlContent: `
+pull_request:
+- target_branch:
+    pattern: main
+    last_commit: true`,
+			wantErr: "'triggers.pull_request[0]': 'target_branch': unknown key(s): last_commit",
 		},
 		{
 			name: "Duplicated pull request trigger items - string filters",
@@ -453,12 +531,21 @@ tag:
 			wantErr: "'triggers.tag[0]': unknown key(s): tag",
 		},
 		{
-			name: "Tag filter should be a string or a map with a 'regex' key and string value",
+			name: "Tag filter should be a string or a map with a 'regex' or 'pattern' key",
 			yamlContent: `
-tag: 
+tag:
 - name:
     include: main`,
-			wantErr: "'triggers.tag[0]': 'name' value should be a string or a map with a 'regex' key and string value",
+			wantErr: "'triggers.tag[0]': 'name': unknown key(s): include",
+		},
+		{
+			name: "Tag filter should not support last_commit",
+			yamlContent: `
+tag:
+- name:
+    pattern: v1.*
+    last_commit: true`,
+			wantErr: "'triggers.tag[0]': 'name': unknown key(s): last_commit",
 		},
 		{
 			name: "Duplicated tag trigger items - string filters",

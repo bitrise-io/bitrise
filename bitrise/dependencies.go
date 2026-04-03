@@ -15,7 +15,6 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/go-utils/versions"
 	"github.com/bitrise-io/goinp/goinp"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	ver "github.com/hashicorp/go-version"
@@ -172,14 +171,21 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	// version check
-	isVersionOk, err := versions.IsVersionGreaterOrEqual(versionOutput, minVersion)
+	installedVer, err := ver.NewVersion(strings.TrimSpace(versionOutput))
 	if err != nil {
-		log.Errorf("Failed to validate installed version")
+		log.Errorf("Failed to parse installed version (%s): %s", versionOutput, err)
 		return err
 	}
-	if !isVersionOk {
+
+	minVer, err := ver.NewVersion(minVersion)
+	if err != nil {
+		log.Errorf("Failed to parse minimum version (%s): %s", minVersion, err)
+		return err
+	}
+
+	if installedVer.LessThan(minVer) {
 		if !isInstall {
-			log.Warnf("Installed %s found, but not a supported version (%s)", toolname, versionOutput)
+			log.Warnf("Installed %s found, but not a supported version (%s < %s)", toolname, versionOutput, minVersion)
 			return errors.New("failed to install required version")
 		}
 		return doInstall()

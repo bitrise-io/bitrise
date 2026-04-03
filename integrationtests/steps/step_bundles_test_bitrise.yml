@@ -42,6 +42,36 @@ step_bundles:
             echo "bundle1_input1: $bundle1_input1"
             echo "bundle2_input1: $bundle2_input1"
 
+  parent_bundle:
+    inputs:
+    - input: ""
+    steps:
+    - bundle::child_bundle: { }
+
+  child_bundle:
+    inputs:
+    - input: "$input"
+    steps:
+    - script:
+        inputs:
+        - content: echo "$input"
+
+  parent_bundle_with_override:
+    inputs:
+    - input: ""
+    steps:
+    - bundle::child_bundle_with_empty_input:
+        inputs:
+        - input: "$input"
+
+  child_bundle_with_empty_input:
+    inputs:
+    - input: ""
+    steps:
+    - script:
+        inputs:
+        - content: echo "$input"
+
 workflows:
   test_step_bundle_inputs:
     steps:
@@ -58,3 +88,15 @@ workflows:
             echo "workflow step"
             echo "bundle1_input1: $bundle1_input1"
             echo "bundle2_input1: $bundle2_input1"
+
+  test_parent_child_input_propagation:
+    steps:
+    - bundle::parent_bundle:
+        inputs:
+        - input: "test_value"
+
+  test_parent_passes_input_to_child_on_embedding:
+    steps:
+    - bundle::parent_bundle_with_override:
+        inputs:
+        - input: "passed_value"

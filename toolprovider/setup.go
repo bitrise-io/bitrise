@@ -13,16 +13,27 @@ import (
 )
 
 // RunVersionFileSetup installs tools from version files.
-func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := makeToolRequests(versionFilePaths, silent)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: we might want to make these configurable via CLI flags later
 	dummyConfig := models.BitriseDataModel{}
-	provider := selectProvider(dummyConfig)
-	useFastInstall := selectFastInstall(dummyConfig)
+	var provider string
+	if providerOverride != nil {
+		provider = *providerOverride
+	} else {
+		provider = selectProvider(dummyConfig)
+	}
+
+	var useFastInstall bool
+	if fastInstallOverride != nil {
+		useFastInstall = *fastInstallOverride
+	} else {
+		useFastInstall = selectFastInstall(dummyConfig)
+	}
+
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
 }
 

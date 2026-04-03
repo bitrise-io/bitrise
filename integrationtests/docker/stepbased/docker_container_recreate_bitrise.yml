@@ -1,0 +1,57 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+containers:
+  test_container:
+    type: execution
+    image: frolvlad/alpine-bash:latest
+
+workflows:
+  # Container Recreation Logic
+  # This test verifies the recreate flag by using filesystem state:
+  # - Step 1: Creates a marker file in the container
+  # - Step 2: Reuses container (default), marker should exist
+  # - Step 3: Forces recreation (recreate: true), marker should NOT exist
+  test-recreate:
+    steps:
+    - script@1:
+        title: First execution - create marker file
+        execution_container: test_container
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            echo "Creating marker"
+            echo "marker" > /marker.txt
+
+    - script@1:
+        title: Reuse container - marker should exist
+        execution_container: test_container
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            if [ -f /marker.txt ]; then
+              echo "SUCCESS: Container reused - marker found"
+              cat /marker.txt
+            else
+              echo "ERROR: Container recreated - marker not found"
+              exit 1
+            fi
+
+    - script@1:
+        title: Force recreation - marker should NOT exist
+        execution_container:
+          test_container:
+            recreate: true
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -e
+            if [ ! -f /marker.txt ]; then
+              echo "SUCCESS: Container recreated - marker not found"
+            else
+              echo "ERROR: Container reused - marker found"
+              cat /marker.txt
+              exit 1
+            fi

@@ -50,3 +50,27 @@ bundle2_input1:
 `,
 	}, stepOutputs)
 }
+
+func TestParentChildInputPropagation(t *testing.T) {
+	configPth := "step_bundles_test_bitrise.yml"
+
+	cmd := command.New(testhelpers.BinPath(), "run", "--output-format", "json", "test_parent_child_input_propagation", "-c", configPth)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, out)
+	stepOutputs := testhelpers.CollectStepOutputs(out, t)
+	require.Equal(t, []string{
+		"test_value\n",
+	}, stepOutputs)
+}
+
+func TestParentPassesInputToChildOnEmbedding(t *testing.T) {
+	configPth := "step_bundles_test_bitrise.yml"
+
+	cmd := command.New(testhelpers.BinPath(), "run", "--output-format", "json", "test_parent_passes_input_to_child_on_embedding", "-c", configPth)
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, out)
+	stepOutputs := testhelpers.CollectStepOutputs(out, t)
+	require.Equal(t, []string{
+		"passed_value\n",
+	}, stepOutputs)
+}

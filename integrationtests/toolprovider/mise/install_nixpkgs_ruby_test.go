@@ -53,9 +53,9 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 			wantErr:            true,
 		},
 		{
-			name:               "Install some other tool with forced nixpkgs backend",
-			tool:               "node",
-			version:            "22.22.1",
+			name:               "Install non-core tool with forced nixpkgs backend",
+			tool:               "fake-unsupported-tool",
+			version:            "1.0.0",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			wantErr:            true,
 		},

@@ -1,0 +1,298 @@
+//go:build linux_only
+// +build linux_only
+
+package stepbased
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/go-utils/command"
+	glob "github.com/ryanuber/go-glob"
+	"github.com/stretchr/testify/require"
+)
+
+func Test_Docker(t *testing.T) {
+	testCases := map[string]struct {
+		configPath          string
+		inventoryPath       string
+		workflowName        string
+		requireErr          bool
+		requireLogs         []string
+		requiredLogPatterns []string
+	}{
+		// Docker Pull and Authentication
+		"docker pull succeeds with existing image": {
+			configPath:   "docker_pull_bitrise.yml",
+			workflowName: "docker-pull-success",
+			requireErr:   false,
+			requireLogs:  []string{"Step is running in container:"},
+		},
+		"docker pull fails with non-existing image": {
+			configPath:   "docker_pull_bitrise.yml",
+			workflowName: "docker-pull-fails-404",
+			requireErr:   true,
+			requireLogs: []string{
+				"Error during image pull",
+				"Failed to pull image, retrying",
+			},
+		},
+		"docker login fails when incorrect credentials are provided": {
+			configPath:   "docker_pull_bitrise.yml",
+			workflowName: "docker-login-fail",
+			requireErr:   true,
+			requireLogs: []string{
+				"docker credentials provided, but the authentication failed",
+			},
+		},
+		"docker login succeeds when correct credentials are provided": {
+			configPath:    "docker_pull_bitrise.yml",
+			inventoryPath: "docker_login_secrets.yml",
+			workflowName:  "docker-login-success",
+			requireErr:    false,
+			requireLogs: []string{
+				"Logging into docker registry:",
+				"--password [REDACTED]",
+				"Container (login-success) is running",
+				"Step is running in container:",
+				"Removing execution container: login-success",
+			},
+		},
+		"docker start execution and services containers with credentials": {
+			configPath:    "docker_multiple_containers_bitrise.yml",
+			workflowName:  "docker-login-multiple-containers",
+			inventoryPath: "docker_multiple_containers_secrets.yml",
+			requireErr:    false,
+			requireLogs: []string{
+				"Container (service_1_container) is healthy...",
+				"Container (service_2_container) is healthy...",
+				"Step is running in container: localhost:5001/healthy-image",
+			},
+		},
+
+		// Docker Create and Start Behavior
+		"docker create fails when already-used port is provided": {
+			configPath:   "docker_create_bitrise.yml",
+			workflowName: "docker-create-fails-invalid-port",
+			requireErr:   true,
+			requireLogs: []string{
+				"address already in use",
+				"failed to start containers:",
+			},
+		},
+		"docker create succeeds when valid port is provided": {
+			configPath:   "docker_create_bitrise.yml",
+			workflowName: "docker-create-succeeds-valid-port",
+			requireErr:   false,
+			requireLogs: []string{
+				"Step is running in container:",
+			},
+		},
+		"docker create succeeds if false negative health check result is present": {
+			configPath:   "docker_create_bitrise.yml",
+			workflowName: "docker-create-succeeds-with-false-unhealthy-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Step is running in container: frolvlad/alpine-bash:latest",
+			},
+			requiredLogPatterns: []string{
+				"*Container (unhealthy-container) is unhealthy...*",
+			},
+		},
+		"docker create fails when invalid option is provided": {
+			configPath:   "docker_create_bitrise.yml",
+			workflowName: "docker-create-fails-invalid-option",
+			requireErr:   true,
+			requireLogs: []string{
+				"unknown flag: --invalid-option",
+				"Could not start the specified docker image: frolvlad/alpine-bash:latest",
+			},
+		},
+
+		// Docker Execution Container Start
+		"docker start execution container": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-execution-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (alpine) is running",
+				"Step is running in container:",
+				"Running in container",
+				"Removing execution container: alpine",
+			},
+		},
+		"docker start execution container for step bundle": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-bundle-execution-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (alpine) is running",
+				"Step is running in container:",
+				"Reusing execution container: alpine",
+				"Step is running in container:",
+				"Removing execution container: alpine",
+			},
+		},
+		"docker start execution container fails with container throwing error": {
+			configPath:   "docker_start_fails_bitrise.yml",
+			workflowName: "docker-start-fails",
+			requireErr:   true,
+			requireLogs: []string{
+				"nonexistent-command",
+			},
+		},
+
+		// Docker Service Container Start
+		"docker start service containers": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-service-containers",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+				"Removing service container: redis",
+			},
+		},
+		"docker start service containers for step bundle": {
+			configPath:   "docker_basic_usage_bitrise.yml",
+			workflowName: "test-bundle-service-container",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (redis) is healthy",
+				"Redis service container is running and responsive",
+				"Reusing service container: redis",
+				"Redis service container is running and responsive",
+				"Removing service container: redis",
+			},
+		},
+		"docker start service containers fails, build succeeds, container error is logged": {
+			configPath:   "docker_service_bitrise.yml",
+			workflowName: "docker-service-start-fails",
+			requireErr:   false,
+			requireLogs: []string{
+				"nonexistent-command",
+				"start docker container (failing-service): exit status 1",
+				"Some services failed to start properly",
+			},
+		},
+		"docker start service containers succeeds after retries": {
+			configPath:   "docker_service_bitrise.yml",
+			workflowName: "docker-service-start-succeeds-after-retries",
+			requireErr:   false,
+			requireLogs: []string{
+				"Waiting for container (slow-booting-service) to be healthy",
+			},
+		},
+
+		// Container Lifecycle Management
+		"Execution container reuse across steps": {
+			configPath:   "docker_container_lifecycle_bitrise.yml",
+			workflowName: "test-lifecycle",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (container_a) is running",
+				"Step 1 in container_a",
+				"Keep running execution container: container_a",
+				"Step 2 on host",
+				"Reusing execution container: container_a",
+				"Step 3 in container_a",
+				"Removing execution container: container_a",
+				"Container (container_b) is running",
+				"Step 4 in container_b",
+				"Removing execution container: container_b",
+				"Step 5 on host",
+			},
+		},
+		"Recreate flag forces fresh container": {
+			configPath:   "docker_container_recreate_bitrise.yml",
+			workflowName: "test-recreate",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Creating marker",
+				"SUCCESS: Container reused - marker found",
+				"SUCCESS: Container recreated - marker not found",
+			},
+		},
+		"Containers are stopped when needed": {
+			configPath:   "docker_stop_containers_bitrise.yml",
+			workflowName: "docker-stops-containers",
+			requireErr:   false,
+		},
+
+		// Nested bundle container resolution
+		"nested bundle: outer container state is preserved while inner bundle runs in different container, services are appended": {
+			configPath:   "docker_nested_bundle_bitrise.yml",
+			workflowName: "test-nested-bundle-containers",
+			requireErr:   false,
+			requireLogs: []string{
+				"Using new containerisation mode",
+				"Container (outer_exec) is running",
+				"Container (outer_srvc) is running",
+				"Outer bundle step 1 running",
+				"Keep running execution container: outer_exec",
+				"Reusing service container: outer_srvc",
+				"Container (inner_exec) is running",
+				"Container (inner_srvc) is running",
+				"Inner bundle step running in inner_exec",
+				"Removing execution container: inner_exec",
+				"Removing service container: inner_srvc",
+				"Reusing execution container: outer_exec",
+				"Reusing service container: outer_srvc",
+				"SUCCESS: Outer container state preserved",
+				"Removing execution container: outer_exec",
+				"Removing service container: outer_srvc",
+			},
+		},
+	}
+
+	for testName, testCase := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			cmd := command.New(testhelpers.BinPath(), "run", testCase.workflowName, "--config", testCase.configPath)
+			if testCase.inventoryPath != "" {
+				cmd.GetCmd().Args = append(cmd.GetCmd().Args, "--inventory", testCase.inventoryPath)
+			} else {
+				cmd.GetCmd().Args = append(cmd.GetCmd().Args, "--inventory", "docker_debug_logging_secrets.yml") // Enable container debug logging
+			}
+
+			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+			if testCase.requireErr {
+				require.Error(t, err, "Expected command to fail but it succeeded. Output:\n%s", out)
+			} else {
+				require.NoError(t, err, "Expected command to succeed but it failed. Output:\n%s", out)
+			}
+			if len(testCase.requireLogs) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requireLogs, true)
+			}
+			if len(testCase.requiredLogPatterns) > 0 {
+				findLogPatternsInOrder(t, out, testCase.requiredLogPatterns, false)
+			}
+		})
+	}
+}
+
+func findLogPatternsInOrder(t *testing.T, out string, patterns []string, exactmatch bool) {
+	lines := strings.Split(out, "\n")
+	patternIdx := 0
+	for _, line := range lines {
+		if patternIdx >= len(patterns) {
+			break
+		}
+		if exactmatch {
+			if strings.Contains(line, patterns[patternIdx]) {
+				patternIdx++
+			}
+		} else {
+			if glob.Glob(patterns[patternIdx], line) {
+				patternIdx++
+			}
+		}
+	}
+	require.Equalf(t, len(patterns), patternIdx, "Missing logs: %s\nFull output: %s", strings.Join(patterns[patternIdx:], "\n"), out)
+}

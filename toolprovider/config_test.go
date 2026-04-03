@@ -380,6 +380,38 @@ func TestGetToolRequests(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "empty workflow ID returns only global tools",
+			config: models.BitriseDataModel{
+				Tools: models.ToolsModel{
+					"nodejs": "20.0.0",
+					"python": "3.11.0",
+				},
+				Workflows: map[string]models.WorkflowModel{
+					"test": {
+						Tools: models.ToolsModel{
+							"ruby": "3.2.0",
+						},
+					},
+				},
+			},
+			workflowID: "",
+			expected: []provider.ToolRequest{
+				{
+					ToolName:           "nodejs",
+					UnparsedVersion:    "20.0.0",
+					ResolutionStrategy: provider.ResolutionStrategyStrict,
+					PluginURL:          nil,
+				},
+				{
+					ToolName:           "python",
+					UnparsedVersion:    "3.11.0",
+					ResolutionStrategy: provider.ResolutionStrategyStrict,
+					PluginURL:          nil,
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

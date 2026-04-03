@@ -33,10 +33,10 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
-	"github.com/bitrise-io/go-utils/versions"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/toolkits"
+	ver "github.com/hashicorp/go-version"
 )
 
 func (r WorkflowRunner) runWorkflow(
@@ -73,7 +73,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 	}
 
 	runResultCollector := newBuildRunResultCollector(r.logger, r.tracker)
-	currentStepGroupID := ""
 
 	// Global variables for restricting Step Bundle's environment variables for the given Step Bundle
 	currentStepBundleUUID := ""
@@ -82,15 +81,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
-		if stepPlan.WithGroupUUID != currentStepGroupID {
-			if stepPlan.WithGroupUUID != "" {
-				if len(stepPlan.ContainerID) > 0 || len(stepPlan.ServiceIDs) > 0 {
-					r.startContainersForStepGroup(stepPlan.ContainerID, stepPlan.ServiceIDs, *environments, stepPlan.WithGroupUUID, plan.WorkflowTitle)
-				}
-			}
-
-			currentStepGroupID = stepPlan.WithGroupUUID
-		}
+		r.containerManager.UpdateWithStepStarted(stepPlan, *environments)
 
 		workflowEnvironments := append([]envmanModels.EnvironmentItemModel{}, *environments...)
 
@@ -123,8 +114,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			secrets,
 			buildRunResults,
 			plan.IsSteplibOfflineMode,
-			stepPlan.ContainerID,
-			stepPlan.WithGroupUUID,
 			stepStartTime,
 			stepStartedProperties,
 			stepPlan.StepBundleRunIfs,
@@ -136,21 +125,14 @@ func (r WorkflowRunner) activateAndRunSteps(
 		}
 
 		isLastStepInWorkflow := idx == len(plan.Steps)-1
-
-		// Shut down containers if the step is in a 'With group', and it's the last step in the group
-		if currentStepGroupID != "" {
-			doesStepGroupChange := idx < len(plan.Steps)-1 && currentStepGroupID != plan.Steps[idx+1].WithGroupUUID
-			if isLastStepInWorkflow || doesStepGroupChange {
-				r.stopContainersForStepGroup(currentStepGroupID, plan.WorkflowTitle)
-			}
-		}
-
 		isLastStep := isLastWorkflow && isLastStepInWorkflow
 
 		previousBuildRunResult := buildRunResults
 
 		runResultCollector.registerStepRunResults(&buildRunResults, stepPlan.UUID, stepStartTime, stepmanModels.StepModel{}, result.StepInfoPtr, idx,
 			result.StepRunStatus, result.StepRunExitCode, result.StepRunErr, isLastStep, result.PrintStepHeader, result.RedactedStepInputs, stepStartedProperties)
+
+		r.containerManager.UpdateWithStepFinished(idx, plan, stepPlan)
 
 		currentBuildRunResult := buildRunResults
 		if !previousBuildRunResult.IsBuildFailed() && currentBuildRunResult.IsBuildFailed() {
@@ -200,7 +182,6 @@ func (r WorkflowRunner) activateAndRunStep(
 	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
 	isStepLibOfflineMode bool,
-	containerID, groupID string,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
 	stepBundleRunIfs []string,
@@ -292,7 +273,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	// Run the step
 	r.tracker.SendStepStartedEvent(stepStartedProperties, prepareAnalyticsStepInfo(mergedStep, stepInfoPtr), activateDuration, redactedInputsWithType, redactedOriginalInputs)
 
-	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues, containerID, groupID)
+	exit, outEnvironments, stepRunErr := r.runStep(stepExecutionID, mergedStep, stepIDData, stepDir, activateResult.ExecutablePath, stepDeclaredEnvironments, stepSecretValues)
 
 	if stepTestDir != "" {
 		if err := addTestMetadata(stepTestDir, models.TestResultStepInfo{Number: stepIDx, Title: *mergedStep.Title, ID: stepIDData.IDorURI, Version: stepIDData.Version}); err != nil {
@@ -563,8 +544,6 @@ func (r WorkflowRunner) runStep(
 	stepExecutablePath string,
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []string,
-	containerID string,
-	groupID string,
 ) (int, []envmanModels.EnvironmentItemModel, error) {
 	log.Debugf("[BITRISE_CLI] - Try running step: %s (%s)", stepIDData.IDorURI, stepIDData.Version)
 
@@ -602,7 +581,7 @@ func (r WorkflowRunner) runStep(
 		bitriseSourceDir = configs.CurrentDir
 	}
 
-	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, stepExecutablePath, bitriseSourceDir, secrets, containerID, groupID); err != nil {
+	if exit, err := r.executeStep(stepUUID, step, stepIDData, stepDir, stepExecutablePath, bitriseSourceDir, secrets); err != nil {
 		stepOutputs, envErr := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if envErr != nil {
 			return 1, []envmanModels.EnvironmentItemModel{}, envErr
@@ -654,8 +633,6 @@ func (r WorkflowRunner) executeStep(
 	step stepmanModels.StepModel, sIDData stepid.CanonicalID,
 	stepAbsDirPath, stepExecutablePath, bitriseSourceDir string,
 	secrets []string,
-	containerID string,
-	groupID string,
 ) (int, error) {
 	var cmdArgs []string
 
@@ -705,8 +682,12 @@ func (r WorkflowRunner) executeStep(
 	var args []string
 	var envs []string
 
-	containerDef := r.ContainerDefinition(containerID)
+	containerDef, runningContainer := r.containerManager.GetExecutionContainerForStep(stepUUID)
 	if containerDef != nil {
+		if runningContainer == nil {
+			return 1, fmt.Errorf("docker container does not exist")
+		}
+
 		envs, err := envman.ReadAndEvaluateEnvs(configs.InputEnvstorePath, &docker.EnvironmentSource{
 			Logger: logger,
 		})
@@ -715,11 +696,6 @@ func (r WorkflowRunner) executeStep(
 		}
 
 		name = "docker"
-		runningContainer := r.dockerManager.GetContainerForStepGroup(groupID)
-		if runningContainer == nil {
-			return 1, fmt.Errorf("docker container does not exist")
-		}
-
 		args = runningContainer.ExecuteCommandArgs(envs)
 		args = append(args, cmdArgs...)
 
@@ -742,61 +718,6 @@ func (r WorkflowRunner) executeStep(
 	cmd := stepruncmd.New(name, args, bitriseSourceDir, envs, stepSecrets, timeout, noOutputTimeout, stdout, logV2.NewLogger())
 
 	return cmd.Run()
-}
-
-func (r WorkflowRunner) startContainersForStepGroup(containerID string, serviceIDs []string, environments []envmanModels.EnvironmentItemModel, groupID, workflowTitle string) {
-	if containerID == "" && len(serviceIDs) == 0 {
-		return
-	}
-
-	if err := tools.EnvmanInit(configs.InputEnvstorePath, true); err != nil {
-		log.Debugf("Couldn't initialize envman.")
-	}
-	if err := tools.EnvmanAddEnvs(configs.InputEnvstorePath, environments); err != nil {
-		log.Debugf("Couldn't add envs.")
-	}
-
-	envList, err := tools.EnvmanReadEnvList(configs.InputEnvstorePath)
-	if err != nil {
-		log.Debugf("Couldn't read envs from envman.")
-	}
-
-	if containerID != "" {
-		containerDef := r.ContainerDefinition(containerID)
-		if containerDef != nil {
-			log.Infof("ℹ️ Running workflow in docker container: %s", containerDef.Image)
-
-			_, err := r.dockerManager.StartContainerForStepGroup(*containerDef, groupID, envList)
-			if err != nil {
-				log.Errorf("Could not start the specified docker image for workflow: %s", workflowTitle)
-			}
-		}
-	}
-
-	if len(serviceIDs) > 0 {
-		servicesDefs := r.ServiceDefinitions(serviceIDs...)
-		_, err := r.dockerManager.StartServiceContainersForStepGroup(servicesDefs, groupID, envList)
-		if err != nil {
-			log.Errorf("❌ Some services failed to start properly!")
-		}
-	}
-}
-
-func (r WorkflowRunner) stopContainersForStepGroup(groupID, workflowTitle string) {
-	if container := r.dockerManager.GetContainerForStepGroup(groupID); container != nil {
-		// TODO: Feature idea, make this configurable, so that we can keep the container for debugging purposes.
-		if err := container.Destroy(); err != nil {
-			log.Errorf("Attempted to stop the docker container for workflow: %s: %s", workflowTitle, err)
-		}
-	}
-
-	if services := r.dockerManager.GetServiceContainersForStepGroup(groupID); services != nil {
-		for _, container := range services {
-			if err := container.Destroy(); err != nil {
-				log.Errorf("Attempted to stop the docker container for service: %s: %s", container.Name, err)
-			}
-		}
-	}
 }
 
 func isPRMode(prGlobalFlagPtr *bool, inventoryEnvironments []envmanModels.EnvironmentItemModel) (bool, error) {
@@ -1016,11 +937,17 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 		}
 	}
 
-	isConfigVersionOK, err := versions.IsVersionGreaterOrEqual(models.FormatVersion, bitriseConfig.FormatVersion)
+	supportedVersion, err := ver.NewVersion(models.FormatVersion)
 	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to compare bitrise CLI supported format version (%s) with the bitrise.yml format version (%s): %s", models.FormatVersion, bitriseConfig.FormatVersion, err)
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise CLI supported format version (%s): %s", models.FormatVersion, err)
 	}
-	if !isConfigVersionOK {
+
+	configVersion, err := ver.NewVersion(bitriseConfig.FormatVersion)
+	if err != nil {
+		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise.yml format version (%s): %s", bitriseConfig.FormatVersion, err)
+	}
+
+	if configVersion.GreaterThan(supportedVersion) {
 		return models.BitriseDataModel{}, warnings, fmt.Errorf("the bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
 	}
 

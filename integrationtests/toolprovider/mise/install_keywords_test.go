@@ -30,7 +30,6 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 		{"Install latest golang", "golang"},
 		{"Install latest python", "python"},
 		{"Install latest node", "node"},
-		{"Install latest tuist", "tuist"},
 	}
 
 	for _, tt := range tests {
@@ -66,7 +65,7 @@ func TestMiseInstallWithInstalledKeyword(t *testing.T) {
 		toolName         provider.ToolID
 		versionToInstall string
 	}{
-		{"Tuist installed keyword", "tuist", "4.38"},
+		{"golang installed keyword", "golang", "1.18"},
 	}
 
 	for _, tt := range tests {
@@ -108,10 +107,10 @@ func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
 	err = miseProvider.Bootstrap()
 	require.NoError(t, err)
 
-	// Install a specific tuist version
+	// Install a specific go version (not available on stacks)
 	specificRequest := provider.ToolRequest{
-		ToolName:           "tuist",
-		UnparsedVersion:    "4.38",
+		ToolName:           "golang",
+		UnparsedVersion:    "1.18",
 		ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 	}
 	specificResult, err := miseProvider.InstallTool(specificRequest)
@@ -120,7 +119,7 @@ func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
 
 	// Now install "latest" - should work without issues
 	latestRequest := provider.ToolRequest{
-		ToolName:           "tuist",
+		ToolName:           "golang",
 		UnparsedVersion:    "latest",
 		ResolutionStrategy: provider.ResolutionStrategyLatestReleased,
 	}
@@ -130,7 +129,7 @@ func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
 
 	// Verify that "installed" keyword still works
 	installedRequest := provider.ToolRequest{
-		ToolName:           "tuist",
+		ToolName:           "golang",
 		UnparsedVersion:    "installed",
 		ResolutionStrategy: provider.ResolutionStrategyLatestInstalled,
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/containermanager"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
@@ -114,7 +115,7 @@ func run(c *cli.Context) error {
 		<-signalInterruptChan
 		shouldWaitForCleanup = true
 		log.Info("Cancelling bitrise run...")
-		if err := runner.dockerManager.DestroyAllContainers(); err != nil {
+		if err := runner.containerManager.DestroyAllContainers(); err != nil {
 			log.Warnf("Failed to destroy all containers: %s", err)
 		}
 		cleanupSynchronCancelFunc()
@@ -167,33 +168,33 @@ func setupAgentConfig() (*configs.AgentConfig, error) {
 	return &config, nil
 }
 
-type DockerManager interface {
-	StartContainerForStepGroup(models.Container, string, map[string]string) (*docker.RunningContainer, error)
-	StartServiceContainersForStepGroup(services map[string]models.Container, workflowID string, envs map[string]string) ([]*docker.RunningContainer, error)
-	GetContainerForStepGroup(string) *docker.RunningContainer
-	GetServiceContainersForStepGroup(string) []*docker.RunningContainer
-	DestroyAllContainers() error
-}
-
 type WorkflowRunner struct {
 	logger  log.Logger
 	config  RunConfig
 	tracker analytics.Tracker
 
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
-	agentConfig   *configs.AgentConfig
-	dockerManager DockerManager
+	agentConfig      *configs.AgentConfig
+	containerManager *containermanager.Manager
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
 	_, stepSecretValues := tools.GetSecretKeysAndValues(config.Secrets)
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	loggerOpts := log.GetGlobalLoggerOpts()
+	if isContainerDebugLoggingEnabled(config.Secrets) {
+		loggerOpts.DebugLogEnabled = true
+	}
+	logger := log.NewLogger(loggerOpts)
+	dockerLogger := docker.NewLogger(logger, stepSecretValues)
+	dockerManager := docker.NewContainerManager(dockerLogger)
+	containerManager := containermanager.NewManager(config.Config.Containers, config.Config.Services, dockerManager, dockerLogger)
+
 	return WorkflowRunner{
-		logger:        logger,
-		config:        config,
-		tracker:       tracker,
-		dockerManager: docker.NewContainerManager(logger, stepSecretValues),
-		agentConfig:   agentConfig,
+		logger:           logger,
+		config:           config,
+		tracker:          tracker,
+		containerManager: containerManager,
+		agentConfig:      agentConfig,
 	}
 }
 
@@ -319,6 +320,8 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		return models.BuildRunResultsModel{}, fmt.Errorf("execution plan doesn't have any workflow to run")
 	}
 
+	r.containerManager.SetWorkflowRunPlan(plan)
+
 	buildIDProperties := coreanalytics.Properties{analytics.BuildExecutionID: uuid.Must(uuid.NewV4()).String()}
 
 	log.PrintBitriseStartedEvent(plan)
@@ -340,7 +343,7 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		environments = append(environments, workflowToRun.Environments...)
 
 		// Toolprovider entrypoint
-		toolEnvs, err := toolprovider.RunDeclarativeSetup(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID, false)
+		toolEnvs, err := toolprovider.RunDeclarativeSetup(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID, false, nil, nil)
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 		}
@@ -359,25 +362,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	}
 
 	return buildRunResults, nil
-}
-
-func (r WorkflowRunner) ContainerDefinition(id string) *models.Container {
-	container, ok := r.config.Config.Containers[id]
-	if ok {
-		return &container
-	}
-	return nil
-}
-
-func (r WorkflowRunner) ServiceDefinitions(ids ...string) map[string]models.Container {
-	services := map[string]models.Container{}
-	for _, id := range ids {
-		service, ok := r.config.Config.Services[id]
-		if ok {
-			services[id] = service
-		}
-	}
-	return services
 }
 
 func processArgs(c *cli.Context) (*RunConfig, error) {
@@ -574,4 +558,18 @@ func createWorkflowRunStatusMessage(exitCode int) string {
 		colorMessage = colorstring.Red(message)
 	}
 	return colorMessage
+}
+
+func isContainerDebugLoggingEnabled(Secrets []envmanModels.EnvironmentItemModel) bool {
+	for _, secret := range Secrets {
+		k, v, err := secret.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+
+		if k == "ENABLE_CONTAINER_DEBUG_LOGGING" && v == "true" {
+			return true
+		}
+	}
+	return false
 }

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/go-utils/sliceutil"
 	"gopkg.in/yaml.v2"
 )
 
@@ -169,7 +169,7 @@ func validateReference(reference ConfigReference, configContent []byte, config C
 			return err
 		}
 
-		if sliceutil.IsStringInSlice(include.Key(), keys) {
+		if slices.Contains(keys, include.Key()) {
 			return fmt.Errorf("circular reference detected: %s -> %s", strings.Join(keys, " -> "), include.Key())
 		}
 	}

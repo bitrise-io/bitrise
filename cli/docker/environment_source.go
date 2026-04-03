@@ -7,7 +7,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 )
 
-// implementing env.EnvironmentSource
+// EnvironmentSource implements env.EnvironmentSource
 type EnvironmentSource struct {
 	Logger log.Logger
 }

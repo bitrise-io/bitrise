@@ -21,7 +21,7 @@ type ToolConfigModel struct {
 	ExtraPlugins map[ToolID]string `json:"extra_plugins,omitempty" yaml:"extra_plugins,omitempty"`
 
 	// FastInstall enables the use of nixpkgs backend for faster tool installation.
-	// Default behavior if unset: true on edge stacks, false otherwise.
+	// Default behavior if unset: see toolprovider.selectFastInstall().
 	FastInstall *bool `json:"fast_install,omitempty" yaml:"fast_install,omitempty"`
 }
 

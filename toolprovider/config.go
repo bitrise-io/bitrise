@@ -2,24 +2,32 @@ package toolprovider
 
 import (
 	"fmt"
+	"runtime"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
 func getToolRequests(config models.BitriseDataModel, workflowID string) ([]provider.ToolRequest, error) {
 	globalTools := config.Tools
-	workflow, ok := config.Workflows[workflowID]
-	if !ok {
-		return nil, fmt.Errorf("workflow %s not found", workflowID)
+
+	var workflowTools models.ToolsModel
+	if workflowID != "" {
+		workflow, ok := config.Workflows[workflowID]
+		if !ok {
+			return nil, fmt.Errorf("workflow %s not found", workflowID)
+		}
+		workflowTools = workflow.Tools
 	}
-	workflowTools := workflow.Tools
 
 	mergedTools := globalTools
 	if mergedTools == nil {
 		mergedTools = workflowTools
 	}
+	if mergedTools == nil {
+		mergedTools = models.ToolsModel{}
+	}
+
 	for toolID, toolVersion := range workflowTools {
 		if toolVersion == "unset" {
 			delete(mergedTools, toolID)
@@ -65,8 +73,6 @@ func selectFastInstall(bitriseConfig models.BitriseDataModel) bool {
 	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.FastInstall != nil {
 		return *bitriseConfig.ToolConfig.FastInstall
 	}
-
-	// Default behavior: use fast install on edge stacks.
-	isEdge := configs.IsEdgeStack()
-	return isEdge
+	// Mixing Nix binaries with Linux dynamic linking doesn't work reliably, see https://github.com/bitrise-io/mise-nixpkgs-plugin/blob/main/README.md
+	return runtime.GOOS == "darwin"
 }

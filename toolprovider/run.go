@@ -3,7 +3,6 @@ package toolprovider
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/bitrise-io/colorstring"
@@ -18,7 +17,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool) ([]provider.EnvironmentActivation, error) {
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -28,8 +27,19 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		return nil, nil
 	}
 
-	provider := selectProvider(config)
-	useFastInstall := selectFastInstall(config)
+	var provider string
+	if providerOverride != nil {
+		provider = *providerOverride
+	} else {
+		provider = selectProvider(config)
+	}
+
+	var useFastInstall bool
+	if fastInstallOverride != nil {
+		useFastInstall = *fastInstallOverride
+	} else {
+		useFastInstall = selectFastInstall(config)
+	}
 
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
 }
@@ -42,14 +52,6 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 	}
 	var toolProvider provider.ToolProvider
 	var err error
-
-	hasRubyRequest := slices.ContainsFunc(toolRequests, func(tr provider.ToolRequest) bool {
-		return tr.ToolName == "ruby"
-	})
-	if useFastInstall && !silent && hasRubyRequest {
-		log.Printf("")
-		log.Warn("Using fast Ruby install because running on edge stack. This behavior is going to be the default on stable stacks soon. If you notice issues, switch to a stable stack temporarily and let us know at https://github.com/bitrise-io/bitrise/issues/new?title=Fast%20tool%20install%20issue:%20")
-	}
 
 	switch providerID {
 	case "asdf":
