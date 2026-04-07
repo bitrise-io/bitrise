@@ -8,19 +8,19 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
 
-// supportedEngines lists the engines fields that we support for tool installation.
-var supportedEngines = []string{"node", "npm", "yarn", "pnpm"}
+// supportedEngines lists the engines fields that we support for tool installation (prio ordered).
+var supportedEngines = []string{"node", "npm", "pnpm", "yarn"}
 
 // parsePackageJSON parses a package.json file to extract tool version requirements.
-// It reads the engines field (node, npm, yarn, pnpm) and the packageManager field.
-// When both engines.<pm> and packageManager specify the same tool, packageManager takes precedence.
+// It reads the engines and the packageManager field.
 func parsePackageJSON(path string) ([]ToolVersion, error) {
 	config, err := readJSONFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	tools := make(map[provider.ToolID]ToolVersion)
+	var result []ToolVersion
+	indices := make(map[provider.ToolID]int) // track index of each tool in result
 
 	// Parse engines field
 	if enginesRaw, ok := config["engines"]; ok {
@@ -41,15 +41,16 @@ func parsePackageJSON(path string) ([]ToolVersion, error) {
 			}
 
 			toolID := alias.GetCanonicalToolID(provider.ToolID(name))
-			tools[toolID] = ToolVersion{
+			indices[toolID] = len(result)
+			result = append(result, ToolVersion{
 				ToolName:     toolID,
 				Version:      str,
 				IsConstraint: true,
-			}
+			})
 		}
 	}
 
-	// Parse packageManager field: "name@version" or "name@version+hash"
+	// Parse packageManager field
 	if pmRaw, ok := config["packageManager"]; ok {
 		pmStr, ok := pmRaw.(string)
 		if ok && pmStr != "" {
@@ -60,34 +61,22 @@ func parsePackageJSON(path string) ([]ToolVersion, error) {
 
 			toolID := alias.GetCanonicalToolID(provider.ToolID(name))
 			// packageManager takes precedence over engines for the same tool
-			tools[toolID] = ToolVersion{
-				ToolName:     toolID,
-				Version:      ver,
-				IsConstraint: false, // exact version
+			if idx, ok := indices[toolID]; ok {
+				result[idx].Version = ver
+				result[idx].IsConstraint = false
+			} else {
+				indices[toolID] = len(result)
+				result = append(result, ToolVersion{
+					ToolName:     toolID,
+					Version:      ver,
+					IsConstraint: false,
+				})
 			}
 		}
 	}
 
-	if len(tools) == 0 {
+	if len(result) == 0 {
 		return nil, fmt.Errorf("%s: no tool version requirements found (no engines or packageManager field)", path)
-	}
-
-	// Return in a stable order: node first, then alphabetical
-	var result []ToolVersion
-	// Node first if present
-	if tv, ok := tools["nodejs"]; ok {
-		result = append(result, tv)
-		delete(tools, "nodejs")
-	}
-	for _, name := range []provider.ToolID{"npm", "pnpm", "yarn"} {
-		if tv, ok := tools[name]; ok {
-			result = append(result, tv)
-			delete(tools, name)
-		}
-	}
-	// Any remaining (shouldn't happen with current supportedEngines, but future-safe)
-	for _, tv := range tools {
-		result = append(result, tv)
 	}
 
 	return result, nil
@@ -95,7 +84,6 @@ func parsePackageJSON(path string) ([]ToolVersion, error) {
 
 // parsePackageManagerField parses a packageManager field value like "yarn@4.0.0" or "pnpm@8.0.0+sha256.abc".
 func parsePackageManagerField(value string) (name, ver string, err error) {
-	// Format: <name>@<version> or <name>@<version>+<hash>
 	atIdx := strings.Index(value, "@")
 	if atIdx < 1 {
 		return "", "", fmt.Errorf("invalid packageManager value %q: expected 'name@version' format", value)
@@ -113,7 +101,6 @@ func parsePackageManagerField(value string) (name, ver string, err error) {
 		return "", "", fmt.Errorf("invalid packageManager value %q: name and version must not be empty", value)
 	}
 
-	// Validate the package manager name
 	switch name {
 	case "npm", "yarn", "pnpm":
 		// valid

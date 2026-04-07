@@ -57,7 +57,6 @@ func ResolveVersion(
 	installedVersions []string,
 ) (VersionResolution, error) {
 	// Handle semver constraint (e.g., "^20.0.0" from package.json engines field).
-	// Resolve to a concrete version using the already-fetched released versions list.
 	if request.ConstraintRaw != "" {
 		resolved, err := versionresolver.ResolveConstraint(request.ConstraintRaw, releasedVersions)
 		if err != nil {

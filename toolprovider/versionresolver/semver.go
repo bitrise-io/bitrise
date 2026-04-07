@@ -2,7 +2,6 @@ package versionresolver
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -26,7 +25,7 @@ func ResolveConstraint(constraintRaw string, availableVersions []string) (string
 		raw string
 		ver *semver.Version
 	}
-	var candidates []candidate
+	var best *candidate
 
 	for _, raw := range availableVersions {
 		v, err := semver.NewVersion(raw)
@@ -38,18 +37,18 @@ func ResolveConstraint(constraintRaw string, availableVersions []string) (string
 			continue
 		}
 
-		if constraint.Check(v) {
-			candidates = append(candidates, candidate{raw: raw, ver: v})
+		if !constraint.Check(v) {
+			continue
+		}
+
+		if best == nil || v.GreaterThan(best.ver) {
+			best = &candidate{raw: raw, ver: v}
 		}
 	}
 
-	if len(candidates) == 0 {
+	if best == nil {
 		return "", fmt.Errorf("no version matching constraint %q", constraintRaw)
 	}
 
-	sort.Slice(candidates, func(i, j int) bool {
-		return candidates[i].ver.GreaterThan(candidates[j].ver)
-	})
-
-	return candidates[0].raw, nil
+	return best.raw, nil
 }

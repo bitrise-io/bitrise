@@ -131,7 +131,6 @@ func normalizeRequest(
 	normalizedRequest := request
 
 	// Handle semver constraint (e.g., "^20.0.0" from package.json engines field).
-	// Resolve to a concrete version before the normal flow.
 	if normalizedRequest.ConstraintRaw != "" {
 		versions, err := listRemoteVersions(execEnv, normalizedRequest.ToolName)
 		if err != nil {
