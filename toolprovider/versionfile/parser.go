@@ -17,6 +17,10 @@ import (
 type ToolVersion struct {
 	ToolName provider.ToolID
 	Version  string
+
+	// IsConstraint indicates that the version is a semver constraint (e.g., from package.json engines field)
+	// rather than a plain version string.
+	IsConstraint bool
 }
 
 func Parse(path string) ([]ToolVersion, error) {
@@ -28,6 +32,8 @@ func Parse(path string) ([]ToolVersion, error) {
 		return parseFVMRC(path)
 	case ".nvmrc":
 		return parseNVMRC(path)
+	case "package.json":
+		return parsePackageJSON(path)
 	case "fvm_config.json":
 		return parseFVMConfigJSON(path)
 	default:
@@ -56,6 +62,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".kubectl-version",
 		".fvmrc",
 		".fvm/fvm_config.json",
+		"package.json",
 	}
 
 	for _, filename := range commonVersionFiles {

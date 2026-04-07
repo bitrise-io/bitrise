@@ -4,6 +4,7 @@ go 1.25.7
 
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman/v2 v2.5.6
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
@@ -26,8 +27,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/gofrs/uuid/v5 v5.2.0 // indirect
-
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -47,6 +46,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/gofrs/uuid/v5 v5.2.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.6.0 // indirect

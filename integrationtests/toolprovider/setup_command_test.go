@@ -212,6 +212,63 @@ v18.16.0
 				assert.Contains(t, output, "3.29.0")
 			},
 		},
+		// package.json tests
+		{
+			name:         "setup from package.json with engines.node",
+			fileContent:  `{"engines": {"node": "^20.0.0"}}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.")
+			},
+		},
+		{
+			name:         "setup from package.json with engines.node exact version",
+			fileContent:  `{"engines": {"node": "20.0.0"}}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name:         "setup from package.json with packageManager",
+			fileContent:  `{"packageManager": "yarn@4.0.0"}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "yarn")
+				assert.Contains(t, output, "4.0.0")
+			},
+		},
+		{
+			name:         "setup from package.json with engines and packageManager",
+			fileContent:  `{"engines": {"node": ">=20"}, "packageManager": "pnpm@9.0.0"}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "pnpm")
+			},
+		},
+		{
+			name:         "setup from package.json with no tool fields fails",
+			fileContent:  `{"name": "my-app", "version": "1.0.0"}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "no tool version requirements found",
+		},
+		{
+			name:         "setup from package.json with invalid JSON fails",
+			fileContent:  `not json`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "parse",
+		},
 		// fvm_config.json tests
 		{
 			name:         "setup from fvm_config.json with exact version",

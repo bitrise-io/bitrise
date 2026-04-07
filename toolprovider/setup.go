@@ -89,6 +89,17 @@ func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRe
 	// Convert to tool requests.
 	toolRequests := make([]provider.ToolRequest, 0, len(allTools))
 	for _, tool := range allTools {
+		if tool.IsConstraint {
+			// Semver constraint from package.json engines field.
+			// The raw constraint string is passed to the provider,
+			// which resolves it to a concrete version before installation.
+			toolRequests = append(toolRequests, provider.ToolRequest{
+				ToolName:      tool.ToolName,
+				ConstraintRaw: tool.Version,
+			})
+			continue
+		}
+
 		v, strategy, err := ParseVersionString(tool.Version)
 		if err != nil {
 			return nil, fmt.Errorf("parse %s version %s: %w", tool.ToolName, tool.Version, err)

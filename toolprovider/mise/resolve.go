@@ -9,6 +9,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 )
 
 var errNoMatchingVersion = errors.New("no matching version found")
@@ -89,6 +90,23 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 	return false, nil
 }
 
+// listRemoteVersions fetches all available remote versions for a tool.
+func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]string, error) {
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", string(toolName))
+	if err != nil {
+		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
+	}
+
+	var versions []string
+	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			versions = append(versions, line)
+		}
+	}
+	return versions, nil
+}
+
 // versionExistsRemote checks if a version exists in the remote registry.
 // version can be fuzzy (e.g., "20") or concrete (e.g., "20.18.1")
 func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
@@ -111,6 +129,29 @@ func normalizeRequest(
 	silent bool,
 ) (provider.ToolRequest, error) {
 	normalizedRequest := request
+
+	// Handle semver constraint (e.g., "^20.0.0" from package.json engines field).
+	// Resolve to a concrete version before the normal flow.
+	if normalizedRequest.ConstraintRaw != "" {
+		versions, err := listRemoteVersions(execEnv, normalizedRequest.ToolName)
+		if err != nil {
+			return normalizedRequest, fmt.Errorf("list remote versions for %s: %w", normalizedRequest.ToolName, err)
+		}
+
+		resolved, err := versionresolver.ResolveConstraint(normalizedRequest.ConstraintRaw, versions)
+		if err != nil {
+			return normalizedRequest, err
+		}
+
+		if !silent {
+			log.Debugf("[TOOLPROVIDER] Resolved %s constraint %q to version %s", normalizedRequest.ToolName, normalizedRequest.ConstraintRaw, resolved)
+		}
+		normalizedRequest.UnparsedVersion = resolved
+		normalizedRequest.ConstraintRaw = ""
+		normalizedRequest.ResolutionStrategy = provider.ResolutionStrategyStrict
+		return normalizedRequest, nil
+	}
+
 	// Handle "installed" and "latest" special keywords
 	if request.UnparsedVersion == "installed" {
 		normalizedRequest.UnparsedVersion = ""

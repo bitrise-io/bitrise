@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 	"github.com/hashicorp/go-version"
 )
 
@@ -55,6 +56,26 @@ func ResolveVersion(
 	releasedVersions []string,
 	installedVersions []string,
 ) (VersionResolution, error) {
+	// Handle semver constraint (e.g., "^20.0.0" from package.json engines field).
+	// Resolve to a concrete version using the already-fetched released versions list.
+	if request.ConstraintRaw != "" {
+		resolved, err := versionresolver.ResolveConstraint(request.ConstraintRaw, releasedVersions)
+		if err != nil {
+			return VersionResolution{}, &ErrNoMatchingVersion{
+				AvailableVersions: releasedVersions,
+				RequestedVersion:  request.ConstraintRaw,
+			}
+		}
+
+		semverV, _ := version.NewVersion(resolved)
+		return VersionResolution{
+			VersionString: resolved,
+			IsSemVer:      semverV != nil,
+			SemVer:        semverV,
+			IsInstalled:   slices.Contains(installedVersions, resolved),
+		}, nil
+	}
+
 	if slices.Contains(specialCases, request.UnparsedVersion) {
 		// If the version is a special case, we assign the resolution strategy accordingly.
 		return resolveToAbsoluteLatestVersion(request, releasedVersions, installedVersions)
