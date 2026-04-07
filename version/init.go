@@ -6,7 +6,8 @@ import (
 )
 
 // VERSION is the main CLI version number.
-// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v2/version.VERSION=$(git describe --tags --exact-match)"
+// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v2/version.VERSION=..."
+// See goreleaser config file for details.
 // Falls back to "dev" when not set (local / go install builds).
 var VERSION = "dev"
 

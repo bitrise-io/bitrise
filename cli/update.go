@@ -147,7 +147,7 @@ func newCLIVersion() (string, error) {
 	}
 	current, err := ver.NewVersion(version.VERSION)
 	if err != nil {
-		// Dev builds (no ldflags) have VERSION="dev" which is not valid semver — skip the update check.
+		// Dev builds (no ldflags) have VERSION="dev" which is not valid semver -> skip the update check.
 		return "", nil
 	}
 	if latest.GreaterThan(current) {
