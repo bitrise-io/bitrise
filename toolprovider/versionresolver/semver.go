@@ -33,10 +33,6 @@ func ResolveConstraint(constraintRaw string, availableVersions []string) (string
 			continue
 		}
 
-		if v.Prerelease() != "" {
-			continue
-		}
-
 		if !constraint.Check(v) {
 			continue
 		}

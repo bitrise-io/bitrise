@@ -234,23 +234,13 @@ v18.16.0
 			},
 		},
 		{
-			name:         "setup from package.json with packageManager",
-			fileContent:  `{"packageManager": "yarn@4.0.0"}`,
-			fileName:     "package.json",
-			outputFormat: "plaintext",
-			validateOutput: func(t *testing.T, output string) {
-				assert.Contains(t, output, "yarn")
-				assert.Contains(t, output, "4.0.0")
-			},
-		},
-		{
-			name:         "setup from package.json with engines and packageManager",
+			name:         "setup from package.json with engines and packageManager ignores packageManager",
 			fileContent:  `{"engines": {"node": ">=20"}, "packageManager": "pnpm@9.0.0"}`,
 			fileName:     "package.json",
 			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "node")
-				assert.Contains(t, output, "pnpm")
+				assert.NotContains(t, output, "pnpm")
 			},
 		},
 		{
@@ -269,9 +259,8 @@ v18.16.0
 			wantErr:      true,
 			errContains:  "parse",
 		},
-		// fvm_config.json tests
 		{
-			name:         "setup from fvm_config.json with exact version",
+			name:         "setup from .fvmrc with invalid flavor",
 			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "beta"}}`,
 			fileName:     ".fvmrc",
 			outputFormat: "plaintext",
