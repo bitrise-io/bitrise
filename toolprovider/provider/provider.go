@@ -10,6 +10,8 @@ type ToolProvider interface {
 	InstallTool(tool ToolRequest) (ToolInstallResult, error)
 
 	ActivateEnv(result ToolInstallResult) (EnvironmentActivation, error)
+
+	ListReleasedVersions(toolName ToolID) ([]string, error)
 }
 
 type ToolID string
@@ -25,11 +27,6 @@ type ToolRequest struct {
 	// PluginURL is an optional user-defined install URL for the tool-plugin.
 	// Note: this is provider-dependent and may not be supported by all providers.
 	PluginURL *string
-
-	// ConstraintRaw is an optional npm semver constraint string (e.g., "^20.0.0", ">=18").
-	// When set, the provider resolves it to a concrete version before installation.
-	// This is used by package.json engines field parsing.
-	ConstraintRaw string
 }
 
 type ResolutionStrategy int
@@ -38,6 +35,8 @@ const (
 	ResolutionStrategyStrict ResolutionStrategy = iota
 	ResolutionStrategyLatestInstalled
 	ResolutionStrategyLatestReleased
+	// ResolutionStrategyConstraint means UnparsedVersion field contains an npm semver constraint.
+	ResolutionStrategyConstraint
 )
 
 type ToolInstallResult struct {

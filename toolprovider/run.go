@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 )
 
 func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
@@ -77,6 +78,34 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 	err = toolProvider.Bootstrap()
 	if err != nil {
 		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
+	}
+
+	for i, req := range toolRequests {
+		if req.ResolutionStrategy != provider.ResolutionStrategyConstraint {
+			continue
+		}
+
+		canonicalToolID := alias.GetCanonicalToolID(req.ToolName)
+		versions, err := toolProvider.ListReleasedVersions(canonicalToolID)
+		if err != nil {
+			return nil, fmt.Errorf("list versions for %s: %w", canonicalToolID, err)
+		}
+
+		resolved, err := versionresolver.ResolveConstraint(req.UnparsedVersion, versions)
+		if err != nil {
+			return nil, fmt.Errorf("resolve constraint %q for %s: %w", req.UnparsedVersion, canonicalToolID, err)
+		}
+
+		if !silent {
+			log.Debugf("[TOOLPROVIDER] Resolved %s constraint %q to version %s", canonicalToolID, req.UnparsedVersion, resolved)
+		}
+
+		toolRequests[i] = provider.ToolRequest{
+			ToolName:           req.ToolName,
+			UnparsedVersion:    resolved,
+			ResolutionStrategy: provider.ResolutionStrategyStrict,
+			PluginURL:          req.PluginURL,
+		}
 	}
 
 	if !silent {

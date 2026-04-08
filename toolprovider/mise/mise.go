@@ -237,6 +237,10 @@ func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (stri
 	return concreteVersion, nil
 }
 
+func (m *MiseToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+	return listRemoteVersions(m.ExecEnv, toolName)
+}
+
 func GetMiseVersion() string {
 	isEdge := configs.IsEdgeStack()
 	if isEdge {

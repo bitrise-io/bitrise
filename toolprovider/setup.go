@@ -90,10 +90,11 @@ func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRe
 	toolRequests := make([]provider.ToolRequest, 0, len(allTools))
 	for _, tool := range allTools {
 		if tool.IsConstraint {
-			// Semver constraint, providers should resolve to a concrete version before installation.
+			// Semver constraint, resolved to a concrete version before installation.
 			toolRequests = append(toolRequests, provider.ToolRequest{
-				ToolName:      tool.ToolName,
-				ConstraintRaw: tool.Version,
+				ToolName:           tool.ToolName,
+				UnparsedVersion:    tool.Version,
+				ResolutionStrategy: provider.ResolutionStrategyConstraint,
 			})
 			continue
 		}
