@@ -249,7 +249,7 @@ v18.16.0
 			fileName:     "package.json",
 			outputFormat: "plaintext",
 			wantErr:      true,
-			errContains:  "no tool version requirements found",
+			errContains:  "no engines field found",
 		},
 		{
 			name:         "setup from package.json with invalid JSON fails",
