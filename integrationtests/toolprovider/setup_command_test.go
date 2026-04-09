@@ -244,12 +244,10 @@ v18.16.0
 			},
 		},
 		{
-			name:         "setup from package.json with no tool fields fails",
+			name:         "setup from package.json with no tool fields is silently skipped",
 			fileContent:  `{"name": "my-app", "version": "1.0.0"}`,
 			fileName:     "package.json",
 			outputFormat: "plaintext",
-			wantErr:      true,
-			errContains:  "no engines field found",
 		},
 		{
 			name:         "setup from package.json with invalid JSON fails",
