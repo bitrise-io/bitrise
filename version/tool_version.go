@@ -46,19 +46,6 @@ func EnvmanVersion(binPath string) (version.Version, error) {
 	return *versionPtr, nil
 }
 
-// BitriseCliVersion ...
-func BitriseCliVersion() (version.Version, error) {
-	versionPtr, err := version.NewVersion(VERSION)
-	if err != nil {
-		return version.Version{}, err
-	}
-	if versionPtr == nil {
-		return version.Version{}, fmt.Errorf("parse version %s", VERSION)
-	}
-
-	return *versionPtr, nil
-}
-
 // ToolVersionMap ...
 func ToolVersionMap(binPath string) (map[string]version.Version, error) {
 	envmanVersion, err := EnvmanVersion(binPath)
@@ -71,13 +58,15 @@ func ToolVersionMap(binPath string) (map[string]version.Version, error) {
 		return map[string]version.Version{}, err
 	}
 
-	bitriseVersion, err := BitriseCliVersion()
+	bitriseVersionPtr, err := version.NewVersion(VERSION)
 	if err != nil {
-		return map[string]version.Version{}, err
+		// Dev builds (no ldflags) have VERSION="dev" which is not valid semver.
+		// Use a high sentinel so all plugin min-version requirements are satisfied.
+		bitriseVersionPtr = version.Must(version.NewVersion("99.99.99"))
 	}
 
 	return map[string]version.Version{
-		"bitrise": bitriseVersion,
+		"bitrise": *bitriseVersionPtr,
 		"envman":  envmanVersion,
 		"stepman": stepmanVersion,
 	}, nil

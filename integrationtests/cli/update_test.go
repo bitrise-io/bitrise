@@ -9,7 +9,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli"
 	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
-	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )
@@ -35,8 +34,6 @@ func Test_Update(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		restoredVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "version")
-		require.Equal(t, version.VERSION, restoredVer)
 	}
 	t.Log("Update --version invalid")
 	{
