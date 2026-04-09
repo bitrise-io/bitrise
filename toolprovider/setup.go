@@ -14,6 +14,7 @@ import (
 
 // RunVersionFileSetup installs tools from version files.
 func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
+	// Note: if versionFilePaths is empty, makeToolRequests will search for version files in the working directory.
 	toolRequests, err := makeToolRequests(versionFilePaths, silent)
 	if err != nil {
 		return nil, err

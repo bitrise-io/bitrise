@@ -555,7 +555,7 @@ func TestParsePackageJSON(t *testing.T) {
 				"packageManager": "yarn@4.0.0"
 			}`,
 			want:    nil,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "engines node with packageManager - only node extracted",
@@ -575,7 +575,7 @@ func TestParsePackageJSON(t *testing.T) {
 				"version": "1.0.0"
 			}`,
 			want:    nil,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "engines without node",
@@ -585,7 +585,7 @@ func TestParsePackageJSON(t *testing.T) {
 				}
 			}`,
 			want:    nil,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name:    "invalid JSON",

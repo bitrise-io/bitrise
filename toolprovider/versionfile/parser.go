@@ -259,7 +259,8 @@ func parsePackageJSON(path string) ([]ToolVersion, error) {
 
 	enginesRaw, ok := config["engines"]
 	if !ok {
-		return nil, fmt.Errorf("%s: no engines field found", path)
+		// No engines field is common in package.json, silently skip.
+		return nil, nil
 	}
 
 	engines, ok := enginesRaw.(map[string]any)
@@ -269,7 +270,8 @@ func parsePackageJSON(path string) ([]ToolVersion, error) {
 
 	nodeVersionRaw, ok := engines["node"]
 	if !ok {
-		return nil, fmt.Errorf("%s: no engines.node field found", path)
+		// engines exists but no node field, silently skip.
+		return nil, nil
 	}
 
 	nodeVersion, ok := nodeVersionRaw.(string)

@@ -299,20 +299,22 @@ func toolsSetup(c *cli.Context) error {
 		fmt.Println(output)
 	}
 
-	// Setting up from all the other version files.
-	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
-	if err != nil {
-		return err
-	}
+	// Setting up from all the other requested version files or auto-detecting from directory.
+	if len(versionFilePaths) > 0 || len(configFiles) == 0 {
+		tracker := analytics.NewDefaultTracker()
+		envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
+		if err != nil {
+			return err
+		}
 
-	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+		exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
 
-	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
-	if err != nil {
-		return fmt.Errorf("convert to output format: %w", err)
+		output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+		if err != nil {
+			return fmt.Errorf("convert to output format: %w", err)
+		}
+		fmt.Println(output)
 	}
-	fmt.Println(output)
 	return nil
 }
 

@@ -238,6 +238,10 @@ func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (stri
 }
 
 func (m *MiseToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+	err := m.InstallPlugin(provider.ToolRequest{ToolName: toolName})
+	if err != nil {
+		return nil, fmt.Errorf("install tool plugin %s: %w", toolName, err)
+	}
 	return listRemoteVersions(m.ExecEnv, toolName)
 }
 
