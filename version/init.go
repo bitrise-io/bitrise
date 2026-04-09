@@ -5,6 +5,20 @@ import (
 	"strings"
 )
 
+// VERSION is the main CLI version number.
+// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v2/version.VERSION=..."
+// See goreleaser config file for details.
+// Falls back to "dev" when not set (local / go install builds).
+var VERSION = "dev"
+
+// BuildNumber is the CI build number that creates the release.
+// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v2/version.BuildNumber=..."
+var BuildNumber = ""
+
+// Commit is the git commit hash used for building the release.
+// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v2/version.Commit=..."
+var Commit = ""
+
 // IsAlternativeInstallation tracks if the current cli was installed via `go install` or not.
 var IsAlternativeInstallation = false
 
