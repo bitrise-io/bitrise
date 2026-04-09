@@ -174,13 +174,14 @@ var toolsSetupSubcommand = cli.Command{
 	Name:      toolsSetupSubcommandName,
 	Usage:     "Install tools from version files or bitrise.yml",
 	UsageText: "bitrise tools setup [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
-	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json) or bitrise.yml.
+	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json, package.json) or bitrise.yml.
 
 EXAMPLES:
    bitrise tools setup --config .tool-versions
    bitrise tools setup --config .nvmrc
    bitrise tools setup --config .fvmrc
    bitrise tools setup --config .fvm/fvm_config.json
+   bitrise tools setup --config package.json
    bitrise tools setup --config bitrise.yml
    bitrise tools setup --provider mise --fast-install true
 
@@ -298,20 +299,22 @@ func toolsSetup(c *cli.Context) error {
 		fmt.Println(output)
 	}
 
-	// Setting up from all the other version files.
-	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
-	if err != nil {
-		return err
-	}
+	// Setting up from all the other requested version files or auto-detecting from directory.
+	if len(versionFilePaths) > 0 || len(configFiles) == 0 {
+		tracker := analytics.NewDefaultTracker()
+		envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
+		if err != nil {
+			return err
+		}
 
-	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
+		exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
 
-	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
-	if err != nil {
-		return fmt.Errorf("convert to output format: %w", err)
+		output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+		if err != nil {
+			return fmt.Errorf("convert to output format: %w", err)
+		}
+		fmt.Println(output)
 	}
-	fmt.Println(output)
 	return nil
 }
 

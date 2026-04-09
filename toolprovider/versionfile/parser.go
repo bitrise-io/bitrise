@@ -17,6 +17,10 @@ import (
 type ToolVersion struct {
 	ToolName provider.ToolID
 	Version  string
+
+	// IsConstraint indicates that the version is a semver constraint (e.g., from package.json engines field)
+	// rather than a plain version string.
+	IsConstraint bool
 }
 
 func Parse(path string) ([]ToolVersion, error) {
@@ -28,6 +32,8 @@ func Parse(path string) ([]ToolVersion, error) {
 		return parseFVMRC(path)
 	case ".nvmrc":
 		return parseNVMRC(path)
+	case "package.json":
+		return parsePackageJSON(path)
 	case "fvm_config.json":
 		return parseFVMConfigJSON(path)
 	default:
@@ -56,6 +62,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".kubectl-version",
 		".fvmrc",
 		".fvm/fvm_config.json",
+		"package.json",
 	}
 
 	for _, filename := range commonVersionFiles {
@@ -240,6 +247,47 @@ func parseFVMRC(path string) ([]ToolVersion, error) {
 	}
 
 	return tools, nil
+}
+
+// parsePackageJSON parses a package.json file to extract the Node.js version from the engines field.
+// Package manager versions (npm, yarn, pnpm) are intentionally ignored as corepack handles those.
+func parsePackageJSON(path string) ([]ToolVersion, error) {
+	config, err := readJSONFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	enginesRaw, ok := config["engines"]
+	if !ok {
+		// No engines field is common in package.json, silently skip.
+		return nil, nil
+	}
+
+	engines, ok := enginesRaw.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("%s: 'engines' is not an object", path)
+	}
+
+	nodeVersionRaw, ok := engines["node"]
+	if !ok {
+		// engines exists but no node field, silently skip.
+		return nil, nil
+	}
+
+	nodeVersion, ok := nodeVersionRaw.(string)
+	if !ok || nodeVersion == "" {
+		return nil, fmt.Errorf("%s: engines.node is empty or not a string", path)
+	}
+
+	toolID := alias.GetCanonicalToolID(provider.ToolID("node"))
+
+	return []ToolVersion{
+		{
+			ToolName:     toolID,
+			Version:      nodeVersion,
+			IsConstraint: true,
+		},
+	}, nil
 }
 
 // parseFVMConfigJSON parses a legacy .fvm/fvm_config.json file to extract the Flutter version.

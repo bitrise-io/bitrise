@@ -89,6 +89,23 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 	return false, nil
 }
 
+// listRemoteVersions fetches all available remote versions for a tool.
+func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]string, error) {
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", string(toolName))
+	if err != nil {
+		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
+	}
+
+	var versions []string
+	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			versions = append(versions, line)
+		}
+	}
+	return versions, nil
+}
+
 // versionExistsRemote checks if a version exists in the remote registry.
 // version can be fuzzy (e.g., "20") or concrete (e.g., "20.18.1")
 func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {

@@ -10,6 +10,8 @@ type ToolProvider interface {
 	InstallTool(tool ToolRequest) (ToolInstallResult, error)
 
 	ActivateEnv(result ToolInstallResult) (EnvironmentActivation, error)
+
+	ListReleasedVersions(toolName ToolID) ([]string, error)
 }
 
 type ToolID string
@@ -33,6 +35,8 @@ const (
 	ResolutionStrategyStrict ResolutionStrategy = iota
 	ResolutionStrategyLatestInstalled
 	ResolutionStrategyLatestReleased
+	// ResolutionStrategyConstraint means UnparsedVersion field contains an npm semver constraint.
+	ResolutionStrategyConstraint
 )
 
 type ToolInstallResult struct {
