@@ -590,7 +590,7 @@ func toolsLatest(c *cli.Context) error {
 		return err
 	}
 
-	useFastInstall := true
+	useFastInstall := toolprovider.DefaultFastInstall()
 	resultVersion, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
 	if err != nil {
 		return err
@@ -622,7 +622,7 @@ func toolsInstall(c *cli.Context) error {
 		return err
 	}
 
-	useFastInstall := true
+	useFastInstall := toolprovider.DefaultFastInstall()
 	tracker := analytics.NewDefaultTracker()
 	envs, err := toolprovider.InstallSingleTool(toolRequest, providerID, useFastInstall, tracker, silent)
 	if err != nil {
