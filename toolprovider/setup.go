@@ -28,11 +28,9 @@ func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, s
 		provider = selectProvider(dummyConfig)
 	}
 
-	var useFastInstall bool
+	useFastInstall := DefaultFastInstall()
 	if fastInstallOverride != nil {
 		useFastInstall = *fastInstallOverride
-	} else {
-		useFastInstall = selectFastInstall(dummyConfig)
 	}
 
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
