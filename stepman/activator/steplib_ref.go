@@ -6,7 +6,6 @@ import (
 
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/activator/steplib"
-	"github.com/bitrise-io/stepman/cli"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/stepman"
@@ -64,7 +63,7 @@ func prepareStepLibForActivation(
 	didStepLibUpdateInWorkflow bool,
 	isOfflineMode bool,
 ) (stepInfo models.StepInfoModel, didUpdate bool, err error) {
-	err = cli.Setup(id.SteplibSource, "", log)
+	err = stepman.SetupLibrary(id.SteplibSource, log)
 	if err != nil {
 		return models.StepInfoModel{}, false, fmt.Errorf("setup %s: %s", id.SteplibSource, err)
 	}
@@ -87,7 +86,7 @@ func prepareStepLibForActivation(
 		}
 	}
 
-	stepInfo, err = cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
+	stepInfo, err = stepman.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
 	if err != nil {
 		if !canUpdateStepLib(isOfflineMode, didStepLibUpdateInWorkflow) {
 			return stepInfo, didUpdate, err
@@ -101,7 +100,7 @@ func prepareStepLibForActivation(
 			didUpdate = true
 		}
 
-		stepInfo, err = cli.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
+		stepInfo, err = stepman.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
 		if err != nil {
 			return stepInfo, didUpdate, err
 		}
