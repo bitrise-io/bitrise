@@ -118,6 +118,14 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	}
 }
 
+func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+	err := a.InstallPlugin(provider.ToolRequest{ToolName: toolName})
+	if err != nil {
+		return nil, fmt.Errorf("install tool plugin %s: %w", toolName, err)
+	}
+	return a.listReleased(toolName)
+}
+
 // ResolveLatestVersion resolves a tool to its latest version without installing it.
 func (a *AsdfToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (string, error) {
 	err := a.InstallPlugin(tool)

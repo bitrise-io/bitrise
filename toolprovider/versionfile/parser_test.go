@@ -185,7 +185,7 @@ func TestFindVersionFiles(t *testing.T) {
 	files := []struct {
 		directory string
 		filename  string
-	}{{"", ".tool-versions"}, {"", ".ruby-version"}, {"", ".node-version"}, {"", ".fvmrc"}, {".fvm", "fvm_config.json"}}
+	}{{"", ".tool-versions"}, {"", ".ruby-version"}, {"", ".node-version"}, {"", ".fvmrc"}, {".fvm", "fvm_config.json"}, {"", ".nvmrc"}, {"", "package.json"}}
 	for _, f := range files {
 		fullDirectory := filepath.Join(tmpDir, f.directory)
 		if f.directory != "" {
@@ -194,7 +194,11 @@ func TestFindVersionFiles(t *testing.T) {
 		} else {
 			fullDirectory = tmpDir
 		}
-		err := os.WriteFile(filepath.Join(fullDirectory, f.filename), []byte("test"), 0644)
+		content := []byte("test")
+		if f.filename == "package.json" {
+			content = []byte(`{"engines":{"node":"20"}}`)
+		}
+		err := os.WriteFile(filepath.Join(fullDirectory, f.filename), content, 0644)
 		require.NoError(t, err)
 	}
 
@@ -204,7 +208,7 @@ func TestFindVersionFiles(t *testing.T) {
 
 	found, err := FindVersionFiles(tmpDir)
 	require.NoError(t, err)
-	assert.Len(t, found, 5)
+	assert.Len(t, found, len(files))
 
 	// Check that all expected files are found
 	foundMap := make(map[string]bool)
@@ -243,6 +247,12 @@ func TestParseVersionFile(t *testing.T) {
 			filePath: ".fvmrc",
 			content:  `{"flutter": "3.22.0"}`,
 			want:     []ToolVersion{{ToolName: "flutter", Version: "3.22.0"}},
+		},
+		{
+			name:     ".nvmrc format",
+			filePath: ".nvmrc",
+			content:  "v18.0.0",
+			want:     []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
 		},
 		{
 			name:     "fvm_config.json format",
@@ -347,6 +357,104 @@ func TestParseFVMRC(t *testing.T) {
 	}
 }
 
+func TestParseNVMRC(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    []ToolVersion
+		wantErr bool
+	}{
+		{
+			name:    "version without v prefix",
+			content: "18.0.0",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "version with v prefix",
+			content: "v18.0.0",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "version with newline",
+			content: "18.0.0\n",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "version with v prefix and newline",
+			content: "v20.10.0\n",
+			want:    []ToolVersion{{ToolName: "node", Version: "20.10.0"}},
+		},
+		{
+			name:    "version with whitespace",
+			content: "  v18.0.0  \n",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "with comment lines",
+			content: "# Node version\nv18.0.0\n",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "skips environment variable assignments",
+			content: "NODE_VERSION=18.0.0\nv20.0.0",
+			want:    []ToolVersion{{ToolName: "node", Version: "20.0.0"}},
+		},
+		{
+			name:    "first non-comment line wins",
+			content: "# Comment\n18.0.0\n20.0.0",
+			want:    []ToolVersion{{ToolName: "node", Version: "18.0.0"}},
+		},
+		{
+			name:    "empty file",
+			content: "",
+			wantErr: true,
+		},
+		{
+			name:    "only whitespace",
+			content: "  \n  \n",
+			wantErr: true,
+		},
+		{
+			name:    "only comments",
+			content: "# Comment only\n# Another comment",
+			wantErr: true,
+		},
+		{
+			name:    "major version only",
+			content: "18",
+			want:    []ToolVersion{{ToolName: "node", Version: "18"}},
+		},
+		{
+			name:    "lts alias",
+			content: "lts/*",
+			want:    []ToolVersion{{ToolName: "node", Version: "lts/*"}},
+		},
+		{
+			name:    "only v prefix without version",
+			content: "v",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, ".nvmrc")
+			err := os.WriteFile(path, []byte(tt.content), 0644)
+			require.NoError(t, err)
+
+			got, err := parseNVMRC(path)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestParseFVMConfigJSON(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -399,6 +507,112 @@ func TestParseFVMConfigJSON(t *testing.T) {
 			require.NoError(t, err)
 
 			got, err := parseFVMConfigJSON(path)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParsePackageJSON(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		want    []ToolVersion
+		wantErr bool
+	}{
+		{
+			name: "engines node only",
+			content: `{
+				"name": "my-app",
+				"engines": {
+					"node": "^20.0.0"
+				}
+			}`,
+			want:    []ToolVersion{{ToolName: "nodejs", Version: "^20.0.0", IsConstraint: true}},
+			wantErr: false,
+		},
+		{
+			name: "engines node with other engines ignored",
+			content: `{
+				"engines": {
+					"node": ">=18",
+					"npm": ">=9",
+					"yarn": "^4.0.0",
+					"pnpm": "~8.0.0"
+				}
+			}`,
+			want:    []ToolVersion{{ToolName: "nodejs", Version: ">=18", IsConstraint: true}},
+			wantErr: false,
+		},
+		{
+			name: "packageManager only - no node version",
+			content: `{
+				"packageManager": "yarn@4.0.0"
+			}`,
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "engines node with packageManager - only node extracted",
+			content: `{
+				"engines": {
+					"node": "^20.0.0"
+				},
+				"packageManager": "pnpm@9.0.0"
+			}`,
+			want:    []ToolVersion{{ToolName: "nodejs", Version: "^20.0.0", IsConstraint: true}},
+			wantErr: false,
+		},
+		{
+			name: "no engines field",
+			content: `{
+				"name": "my-app",
+				"version": "1.0.0"
+			}`,
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name: "engines without node",
+			content: `{
+				"engines": {
+					"npm": ">=9"
+				}
+			}`,
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			name:    "invalid JSON",
+			content: `not json`,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "engines not object",
+			content: `{
+				"engines": "not an object"
+			}`,
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Helper()
+			dir := t.TempDir()
+			path := filepath.Join(dir, "package.json")
+			err := os.WriteFile(path, []byte(tt.content), 0644)
+			require.NoError(t, err)
+
+			got, err := Parse(path)
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

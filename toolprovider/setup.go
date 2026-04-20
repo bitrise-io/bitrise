@@ -14,6 +14,7 @@ import (
 
 // RunVersionFileSetup installs tools from version files.
 func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
+	// Note: if versionFilePaths is empty, makeToolRequests will search for version files in the working directory.
 	toolRequests, err := makeToolRequests(versionFilePaths, silent)
 	if err != nil {
 		return nil, err
@@ -89,6 +90,16 @@ func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRe
 	// Convert to tool requests.
 	toolRequests := make([]provider.ToolRequest, 0, len(allTools))
 	for _, tool := range allTools {
+		if tool.IsConstraint {
+			// Semver constraint, resolved to a concrete version before installation.
+			toolRequests = append(toolRequests, provider.ToolRequest{
+				ToolName:           tool.ToolName,
+				UnparsedVersion:    tool.Version,
+				ResolutionStrategy: provider.ResolutionStrategyConstraint,
+			})
+			continue
+		}
+
 		v, strategy, err := ParseVersionString(tool.Version)
 		if err != nil {
 			return nil, fmt.Errorf("parse %s version %s: %w", tool.ToolName, tool.Version, err)

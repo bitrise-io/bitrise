@@ -12,24 +12,24 @@ import (
 
 func TestMakeToolRequests(t *testing.T) {
 	tests := []struct {
-		name          string
-		versionFiles  map[string]string // filename -> content
-		wantErr       bool
-		wantTools     []provider.ToolRequest
-		errContains   string
+		name         string
+		versionFiles map[string]string // filename -> content
+		wantErr      bool
+		wantTools    []provider.ToolRequest
+		errContains  string
 	}{
 		{
-			name:          "empty version file list with no files in cwd",
-			versionFiles:  map[string]string{},
-			wantErr:       false,
-			wantTools:     nil,
+			name:         "empty version file list with no files in cwd",
+			versionFiles: map[string]string{},
+			wantErr:      false,
+			wantTools:    nil,
 		},
 		{
 			name: "single .tool-versions file with one tool",
 			versionFiles: map[string]string{
 				".tool-versions": "nodejs 18.0.0",
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "nodejs",
@@ -45,7 +45,7 @@ func TestMakeToolRequests(t *testing.T) {
 nodejs 18.0.0
 python 3.11.0`,
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "ruby",
@@ -69,7 +69,7 @@ python 3.11.0`,
 			versionFiles: map[string]string{
 				".tool-versions": "nodejs 18:latest",
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "nodejs",
@@ -83,7 +83,7 @@ python 3.11.0`,
 			versionFiles: map[string]string{
 				".tool-versions": "python 3.11:installed",
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "python",
@@ -99,8 +99,8 @@ python 3.11.0`,
 				".node-version":   "16.0.0",
 				".python-version": "3.10.0",
 			},
-			wantErr:       false,
-			wantTools:     []provider.ToolRequest{
+			wantErr: false,
+			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "ruby",
 					UnparsedVersion:    "2.7.0",
@@ -127,7 +127,7 @@ ruby 3.2.0
 # Another comment
 nodejs 18.0.0`,
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "ruby",
@@ -146,7 +146,7 @@ nodejs 18.0.0`,
 			versionFiles: map[string]string{
 				".tool-versions": "ruby",
 			},
-			wantErr: true,
+			wantErr:     true,
 			errContains: "invalid format, expected '<tool> <version>'",
 		},
 		{
@@ -156,7 +156,7 @@ nodejs 18.0.0`,
 python 3.11:latest
 ruby 3.2:installed`,
 			},
-			wantErr:       false,
+			wantErr: false,
 			wantTools: []provider.ToolRequest{
 				{
 					ToolName:           "nodejs",

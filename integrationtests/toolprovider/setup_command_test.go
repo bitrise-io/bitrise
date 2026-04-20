@@ -44,14 +44,14 @@ func TestToolsSetupCommand(t *testing.T) {
 		{
 			name: "setup from .tool-versions with multiple tools",
 			fileContent: `nodejs 20.0.0
-python 3.11.0`,
+python 3.11.4`,
 			fileName:     ".tool-versions",
 			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "nodejs")
 				assert.Contains(t, output, "20.0.0")
 				assert.Contains(t, output, "python")
-				assert.Contains(t, output, "3.11.0")
+				assert.Contains(t, output, "3.11.4")
 			},
 		},
 		{
@@ -78,7 +78,7 @@ workflows:
   test:
     tools:
       nodejs: 20.0.0
-      python: 3.11.0
+      python: 3.11.4
     steps:
       - script:
           inputs:
@@ -90,7 +90,7 @@ workflows:
 				assert.Contains(t, output, "nodejs")
 				assert.Contains(t, output, "20.0.0")
 				assert.Contains(t, output, "python")
-				assert.Contains(t, output, "3.11.0")
+				assert.Contains(t, output, "3.11.4")
 				// Global tool should also be included
 				assert.Contains(t, output, "golang")
 				assert.Contains(t, output, "1.21.0")
@@ -130,6 +130,47 @@ workflows:
 				out, err := cmd.CombinedOutput()
 				assert.NoError(t, err, "Should be able to eval bash output without error: %s", string(out))
 			},
+		},
+		// .nvmrc tests
+		{
+			name:         "setup from .nvmrc with version",
+			fileContent:  "20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with v-prefixed version",
+			fileContent:  "v20.0.0",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name: "setup from .nvmrc with comments",
+			fileContent: `# Node.js version
+v18.16.0
+# Another comment`,
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "18.16.0")
+			},
+		},
+		{
+			name:         "setup from .nvmrc with empty file fails",
+			fileContent:  "",
+			fileName:     ".nvmrc",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "empty version file",
 		},
 		// .fvmrc tests
 		{
@@ -171,9 +212,53 @@ workflows:
 				assert.Contains(t, output, "3.29.0")
 			},
 		},
-		// fvm_config.json tests
+		// package.json tests
 		{
-			name:         "setup from fvm_config.json with exact version",
+			name:         "setup from package.json with engines.node",
+			fileContent:  `{"engines": {"node": "^20.0.0"}}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.")
+			},
+		},
+		{
+			name:         "setup from package.json with engines.node exact version",
+			fileContent:  `{"engines": {"node": "20.0.0"}}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.Contains(t, output, "20.0.0")
+			},
+		},
+		{
+			name:         "setup from package.json with engines and packageManager ignores packageManager",
+			fileContent:  `{"engines": {"node": ">=20"}, "packageManager": "pnpm@9.0.0"}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			validateOutput: func(t *testing.T, output string) {
+				assert.Contains(t, output, "node")
+				assert.NotContains(t, output, "pnpm")
+			},
+		},
+		{
+			name:         "setup from package.json with no tool fields is silently skipped",
+			fileContent:  `{"name": "my-app", "version": "1.0.0"}`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+		},
+		{
+			name:         "setup from package.json with invalid JSON fails",
+			fileContent:  `not json`,
+			fileName:     "package.json",
+			outputFormat: "plaintext",
+			wantErr:      true,
+			errContains:  "parse",
+		},
+		{
+			name:         "setup from .fvmrc with invalid flavor",
 			fileContent:  `{"flutter": "3.32.1", "flavors": {"staging": "beta"}}`,
 			fileName:     ".fvmrc",
 			outputFormat: "plaintext",
@@ -305,7 +390,7 @@ func TestToolsSetupCommand_GlobalToolsWithoutWorkflow(t *testing.T) {
 	content := `format_version: "17"
 tools:
   nodejs: 20.0.0
-  python: 3.11.0
+  python: 3.11.4
 workflows:
   test:
     steps:
@@ -329,7 +414,7 @@ workflows:
 	assert.Contains(t, out, "nodejs")
 	assert.Contains(t, out, "20.0.0")
 	assert.Contains(t, out, "python")
-	assert.Contains(t, out, "3.11.0")
+	assert.Contains(t, out, "3.11.4")
 }
 
 func TestToolsSetupCommandNoArg(t *testing.T) {

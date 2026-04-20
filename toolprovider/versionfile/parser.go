@@ -2,6 +2,7 @@ package versionfile
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,6 +17,10 @@ import (
 type ToolVersion struct {
 	ToolName provider.ToolID
 	Version  string
+
+	// IsConstraint indicates that the version is a semver constraint (e.g., from package.json engines field)
+	// rather than a plain version string.
+	IsConstraint bool
 }
 
 func Parse(path string) ([]ToolVersion, error) {
@@ -25,6 +30,10 @@ func Parse(path string) ([]ToolVersion, error) {
 		return parseToolVersionsFile(path)
 	case ".fvmrc":
 		return parseFVMRC(path)
+	case ".nvmrc":
+		return parseNVMRC(path)
+	case "package.json":
+		return parsePackageJSON(path)
 	case "fvm_config.json":
 		return parseFVMConfigJSON(path)
 	default:
@@ -45,6 +54,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".tool-versions",
 		".ruby-version",
 		".node-version",
+		".nvmrc",
 		".python-version",
 		".java-version",
 		".go-version",
@@ -52,6 +62,7 @@ func FindVersionFiles(dir string) ([]string, error) {
 		".kubectl-version",
 		".fvmrc",
 		".fvm/fvm_config.json",
+		"package.json",
 	}
 
 	for _, filename := range commonVersionFiles {
@@ -157,6 +168,36 @@ func extractStringValue(config map[string]any, path string, key string) (string,
 	return str, nil
 }
 
+// parseNVMRC parses an NVM .nvmrc file to extract the Node.js version.
+func parseNVMRC(path string) ([]ToolVersion, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+
+	content = bytes.TrimSpace(content)
+
+	if len(content) == 0 {
+		return nil, fmt.Errorf("%s: empty version file", path)
+	}
+
+	for line := range strings.SplitSeq(string(content), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.Contains(line, "=") {
+			continue
+		}
+		version := strings.TrimPrefix(line, "v")
+		if version == "" {
+			return nil, fmt.Errorf("%s: invalid version (empty after removing 'v' prefix)", path)
+		}
+		return []ToolVersion{
+			{ToolName: "node", Version: version},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("%s: no valid version found", path)
+}
+
 // parseFVMRC parses an FVM 3.x .fvmrc JSON file to extract the Flutter version(s).
 // Supports the main "flutter" key and optional "flavors" map.
 func parseFVMRC(path string) ([]ToolVersion, error) {
@@ -206,6 +247,47 @@ func parseFVMRC(path string) ([]ToolVersion, error) {
 	}
 
 	return tools, nil
+}
+
+// parsePackageJSON parses a package.json file to extract the Node.js version from the engines field.
+// Package manager versions (npm, yarn, pnpm) are intentionally ignored as corepack handles those.
+func parsePackageJSON(path string) ([]ToolVersion, error) {
+	config, err := readJSONFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	enginesRaw, ok := config["engines"]
+	if !ok {
+		// No engines field is common in package.json, silently skip.
+		return nil, nil
+	}
+
+	engines, ok := enginesRaw.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("%s: 'engines' is not an object", path)
+	}
+
+	nodeVersionRaw, ok := engines["node"]
+	if !ok {
+		// engines exists but no node field, silently skip.
+		return nil, nil
+	}
+
+	nodeVersion, ok := nodeVersionRaw.(string)
+	if !ok || nodeVersion == "" {
+		return nil, fmt.Errorf("%s: engines.node is empty or not a string", path)
+	}
+
+	toolID := alias.GetCanonicalToolID(provider.ToolID("node"))
+
+	return []ToolVersion{
+		{
+			ToolName:     toolID,
+			Version:      nodeVersion,
+			IsConstraint: true,
+		},
+	}, nil
 }
 
 // parseFVMConfigJSON parses a legacy .fvm/fvm_config.json file to extract the Flutter version.
