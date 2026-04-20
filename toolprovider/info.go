@@ -160,8 +160,9 @@ func listMiseTools(activeOnly bool, silent bool) ([]InstalledTool, error) {
 	// mise ls --json now returns a map with tool names as keys.
 	// e.g., {"go": [{"version": "1.21.0", ...}], "node": [{...}]}
 	var miseToolsMap map[string][]miseToolEntry
-	if err := json.Unmarshal([]byte(output), &miseToolsMap); err != nil {
-		return nil, fmt.Errorf("parse mise ls output: %w", err)
+	stripped := strings.TrimSpace(mise.StripMiseLogLines(output))
+	if err := json.Unmarshal([]byte(stripped), &miseToolsMap); err != nil {
+		return nil, fmt.Errorf("parse mise ls output: %w\n%s", err, output)
 	}
 
 	var tools []InstalledTool

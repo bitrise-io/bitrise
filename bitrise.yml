@@ -292,6 +292,7 @@ step_bundles:
             set -exo pipefail
 
             export BITRISE_ANALYTICS_DISABLED=true
+            export MISE_LOG_LEVEL=debug
 
             # Here we save the original test results and deploy directories and later on we recreate them,
             #  because during the tests these directories are removed.
