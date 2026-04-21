@@ -91,19 +91,12 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 
 // listRemoteVersions fetches all available remote versions for a tool.
 func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]string, error) {
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", string(toolName))
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", string(toolName))
 	if err != nil {
 		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
 	}
 
-	var versions []string
-	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			versions = append(versions, line)
-		}
-	}
-	return versions, nil
+	return parseRemoteVersionsJSON(strings.TrimSpace(string(output)))
 }
 
 // versionExistsRemote checks if a version exists in the remote registry.
@@ -114,12 +107,35 @@ func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, vers
 		versionString = fmt.Sprintf("%s@%s", toolName, version)
 	}
 
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", versionString)
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", versionString)
 	if err != nil {
 		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
 	}
 
-	return strings.TrimSpace(string(output)) != "", nil
+	versions, err := parseRemoteVersionsJSON(strings.TrimSpace(string(output)))
+	if err != nil {
+		return false, fmt.Errorf("parsing mise ls-remote %s output: %w", versionString, err)
+	}
+	return len(versions) > 0, nil
+}
+
+func parseRemoteVersionsJSON(raw string) ([]string, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	var entries []struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+		return nil, err
+	}
+	versions := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.Version != "" {
+			versions = append(versions, e.Version)
+		}
+	}
+	return versions, nil
 }
 
 func normalizeRequest(
