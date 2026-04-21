@@ -48,7 +48,7 @@ type MiseToolProvider struct {
 	Silent         bool
 }
 
-func NewToolProvider(installDir string, dataDir string, useFastInstall, silent bool) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, useFastInstall, silent bool, extraEnvs map[string]string) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
@@ -66,21 +66,25 @@ func NewToolProvider(installDir string, dataDir string, useFastInstall, silent b
 		return nil, fmt.Errorf("create data dir at %s: %w", dataDir, err)
 	}
 
+	// https://mise.jdx.dev/configuration.html#environment-variables
+	miseEnvs := map[string]string{
+		"MISE_DATA_DIR": dataDir,
+
+		// Isolate this mise instance's "global" config from system-wide config.
+		"MISE_CONFIG_DIR":         filepath.Join(dataDir),
+		"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
+		"MISE_GLOBAL_CONFIG_ROOT": dataDir,
+
+		// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
+		// https://mise.jdx.dev/lang/node.html#environment-variables
+		"MISE_NODE_COREPACK": "1",
+	}
+	for k, v := range extraEnvs {
+		miseEnvs[k] = v
+	}
+
 	return &MiseToolProvider{
-		ExecEnv: execenv.NewMiseExecEnv(installDir, map[string]string{
-			// https://mise.jdx.dev/configuration.html#environment-variables
-			"MISE_DATA_DIR": dataDir,
-
-			// Isolate this mise instance's "global" config from system-wide config.
-			"MISE_CONFIG_DIR":         filepath.Join(dataDir),
-			"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
-			"MISE_GLOBAL_CONFIG_ROOT": dataDir,
-
-			// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
-			// https://mise.jdx.dev/lang/node.html#environment-variables
-			"MISE_NODE_COREPACK": "1",
-		},
-		),
+		ExecEnv:        execenv.NewMiseExecEnv(installDir, miseEnvs),
 		UseFastInstall: useFastInstall,
 		Silent:         silent,
 	}, nil
