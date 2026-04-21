@@ -35,11 +35,12 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		provider = selectProvider(config)
 	}
 
-	var useFastInstall bool
+	useFastInstall := DefaultFastInstall()
+	if config.ToolConfig != nil && config.ToolConfig.FastInstall != nil {
+		useFastInstall = *config.ToolConfig.FastInstall
+	}
 	if fastInstallOverride != nil {
 		useFastInstall = *fastInstallOverride
-	} else {
-		useFastInstall = selectFastInstall(config)
 	}
 
 	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
@@ -160,7 +161,6 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 }
 
 // InstallSingleTool installs a single tool with the specified version using the given provider.
-// This is a convenience wrapper around installTools for installing just one tool.
 func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
 	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
 }
