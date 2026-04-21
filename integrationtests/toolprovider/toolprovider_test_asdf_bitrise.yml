@@ -13,4 +13,10 @@ workflows:
       - script@1:
           title: Test activated tool
           inputs:
-            - content: set -ex; node --version | grep -q "22"
+            - content: |-
+                set -ex
+                asdf current
+                asdf latest nodejs 22
+                asdf exec node --version
+                node --version
+                node --version | grep "22"
