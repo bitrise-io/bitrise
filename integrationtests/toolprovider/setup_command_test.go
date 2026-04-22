@@ -44,14 +44,14 @@ func TestToolsSetupCommand(t *testing.T) {
 		{
 			name: "setup from .tool-versions with multiple tools",
 			fileContent: `nodejs 20.0.0
-python 3.11.0`,
+python 3.11.4`,
 			fileName:     ".tool-versions",
 			outputFormat: "plaintext",
 			validateOutput: func(t *testing.T, output string) {
 				assert.Contains(t, output, "nodejs")
 				assert.Contains(t, output, "20.0.0")
 				assert.Contains(t, output, "python")
-				assert.Contains(t, output, "3.11.0")
+				assert.Contains(t, output, "3.11.4")
 			},
 		},
 		{
@@ -78,7 +78,7 @@ workflows:
   test:
     tools:
       nodejs: 20.0.0
-      python: 3.11.0
+      python: 3.11.4
     steps:
       - script:
           inputs:
@@ -90,7 +90,7 @@ workflows:
 				assert.Contains(t, output, "nodejs")
 				assert.Contains(t, output, "20.0.0")
 				assert.Contains(t, output, "python")
-				assert.Contains(t, output, "3.11.0")
+				assert.Contains(t, output, "3.11.4")
 				// Global tool should also be included
 				assert.Contains(t, output, "golang")
 				assert.Contains(t, output, "1.21.0")
@@ -390,7 +390,7 @@ func TestToolsSetupCommand_GlobalToolsWithoutWorkflow(t *testing.T) {
 	content := `format_version: "17"
 tools:
   nodejs: 20.0.0
-  python: 3.11.0
+  python: 3.11.4
 workflows:
   test:
     steps:
@@ -414,7 +414,7 @@ workflows:
 	assert.Contains(t, out, "nodejs")
 	assert.Contains(t, out, "20.0.0")
 	assert.Contains(t, out, "python")
-	assert.Contains(t, out, "3.11.0")
+	assert.Contains(t, out, "3.11.4")
 }
 
 func TestToolsSetupCommandNoArg(t *testing.T) {

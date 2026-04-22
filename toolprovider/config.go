@@ -68,11 +68,7 @@ func selectProvider(bitriseConfig models.BitriseDataModel) string {
 	return "mise"
 }
 
-func selectFastInstall(bitriseConfig models.BitriseDataModel) bool {
-	// If explicitly set in the config, use that value.
-	if bitriseConfig.ToolConfig != nil && bitriseConfig.ToolConfig.FastInstall != nil {
-		return *bitriseConfig.ToolConfig.FastInstall
-	}
+func DefaultFastInstall() bool {
 	// Mixing Nix binaries with Linux dynamic linking doesn't work reliably, see https://github.com/bitrise-io/mise-nixpkgs-plugin/blob/main/README.md
 	return runtime.GOOS == "darwin"
 }
