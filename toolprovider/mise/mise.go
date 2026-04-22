@@ -33,13 +33,13 @@ var misePreviewChecksums = map[string]string{
 	"macos-arm64": "9d6e2bfea3e00ffb566ad1a369914cb029c32a28eb4b699e8655cf3c3d4ef87e",
 }
 
-const miseStableVersion = "v2025.12.1"
+const miseStableVersion = "v2026.3.16"
 
 var miseStableChecksums = map[string]string{
-	"linux-x64":   "0e62b1a0a8b87329d0cf24fc6af5d1c3aae0819194bea2f43fcf3f556edc9c29",
-	"linux-arm64": "35573ccc8f13895884b8e7a3365736c2942ad531ce24fc420ba0a941dbb57ce5",
-	"macos-x64":   "68b250632b1f1f29f6116ca513d1641097dfdc2cf05520ee0ca23907962b3d6f",
-	"macos-arm64": "94659ac9b7b30d149464ef4a76498182b0c5cadeccef1811ab9e75ff3d1ad159",
+	"linux-x64":   "96417e479462d9a1836654461ec4b86eba8ff4f12260c09b93800fd50c25490c",
+	"linux-arm64": "6e0362723bddec3b25923a6c7c447c3f10eba4bf6e3db6973e175fa0a60ab974",
+	"macos-x64":   "a6f6f320b547dec3eff321e301fa05268dfc73a620d35ec3292603fbab1c4c29",
+	"macos-arm64": "9d6e2bfea3e00ffb566ad1a369914cb029c32a28eb4b699e8655cf3c3d4ef87e",
 }
 
 type MiseToolProvider struct {
@@ -48,7 +48,7 @@ type MiseToolProvider struct {
 	Silent         bool
 }
 
-func NewToolProvider(installDir string, dataDir string, useFastInstall, silent bool) (*MiseToolProvider, error) {
+func NewToolProvider(installDir string, dataDir string, useFastInstall, silent bool, extraEnvs map[string]string) (*MiseToolProvider, error) {
 	if installDir == "" {
 		return nil, errors.New("install directory must be provided")
 	}
@@ -66,21 +66,25 @@ func NewToolProvider(installDir string, dataDir string, useFastInstall, silent b
 		return nil, fmt.Errorf("create data dir at %s: %w", dataDir, err)
 	}
 
+	// https://mise.jdx.dev/configuration.html#environment-variables
+	miseEnvs := map[string]string{
+		"MISE_DATA_DIR": dataDir,
+
+		// Isolate this mise instance's "global" config from system-wide config.
+		"MISE_CONFIG_DIR":         filepath.Join(dataDir),
+		"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
+		"MISE_GLOBAL_CONFIG_ROOT": dataDir,
+
+		// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
+		// https://mise.jdx.dev/lang/node.html#environment-variables
+		"MISE_NODE_COREPACK": "1",
+	}
+	for k, v := range extraEnvs {
+		miseEnvs[k] = v
+	}
+
 	return &MiseToolProvider{
-		ExecEnv: execenv.NewMiseExecEnv(installDir, map[string]string{
-			// https://mise.jdx.dev/configuration.html#environment-variables
-			"MISE_DATA_DIR": dataDir,
-
-			// Isolate this mise instance's "global" config from system-wide config.
-			"MISE_CONFIG_DIR":         filepath.Join(dataDir),
-			"MISE_GLOBAL_CONFIG_FILE": filepath.Join(dataDir, "config.toml"),
-			"MISE_GLOBAL_CONFIG_ROOT": dataDir,
-
-			// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
-			// https://mise.jdx.dev/lang/node.html#environment-variables
-			"MISE_NODE_COREPACK": "1",
-		},
-		),
+		ExecEnv:        execenv.NewMiseExecEnv(installDir, miseEnvs),
 		UseFastInstall: useFastInstall,
 		Silent:         silent,
 	}, nil

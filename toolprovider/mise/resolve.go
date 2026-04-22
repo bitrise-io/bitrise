@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 )
+
+var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 
 var errNoMatchingVersion = errors.New("no matching version found")
 
@@ -26,6 +29,24 @@ func extractLastLine(output string) string {
 	return ""
 }
 
+// StripMiseLogLines removes log lines that mise writes to stderr (mixed into CombinedOutput when log level is debug/trace).
+// These lines start with a log level keyword and break JSON parsing.
+// TODO: It would be much more robust to not combine stdout and stderr in the first place, but that requires a bigger refactor
+// of `ExecEnv`.
+func StripMiseLogLines(output string) string {
+	var kept []string
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(ansiEscape.ReplaceAllString(line, ""))
+		if strings.HasPrefix(trimmed, "DEBUG ") || strings.HasPrefix(trimmed, "TRACE ") ||
+			strings.HasPrefix(trimmed, "INFO ") || strings.HasPrefix(trimmed, "WARN ") ||
+			strings.HasPrefix(trimmed, "ERROR ") {
+			continue
+		}
+		kept = append(kept, line)
+	}
+	return strings.Join(kept, "\n")
+}
+
 func resolveToLatestReleased(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (string, error) {
 	// Note: Even if version is an empty string, "sometool@" will not cause an error.
 	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "latest", "--quiet", fmt.Sprintf("%s@%s", toolName, version))
@@ -33,8 +54,9 @@ func resolveToLatestReleased(execEnv execenv.ExecEnv, toolName provider.ToolID, 
 		return "", fmt.Errorf("mise latest %s@%s: %w", toolName, version, err)
 	}
 
-	// Extract the last non-empty line, as mise may output plugin installation messages before the version
-	v := extractLastLine(string(output))
+	// Extract the last non-empty line, as mise may output plugin installation messages before the version.
+	// Strip debug/log lines first since they may appear after the version when MISE_LOG_LEVEL=debug.
+	v := extractLastLine(StripMiseLogLines(string(output)))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
@@ -55,8 +77,8 @@ func resolveToLatestInstalled(execEnv execenv.ExecEnv, toolName provider.ToolID,
 		return "", fmt.Errorf("mise latest --installed %s: %w", toolString, err)
 	}
 
-	// Extract the last non-empty line, as mise may output plugin installation messages before the version
-	v := extractLastLine(string(output))
+	// Strip debug/log lines first since they may appear after the version when MISE_LOG_LEVEL=debug.
+	v := extractLastLine(StripMiseLogLines(string(output)))
 	if v == "" {
 		return "", errNoMatchingVersion
 	}
@@ -73,7 +95,7 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 		return false, fmt.Errorf("mise ls --installed %s: %w", toolName, err)
 	}
 
-	trimmed := strings.TrimSpace(string(output))
+	trimmed := strings.TrimSpace(StripMiseLogLines(string(output)))
 	if trimmed != "" {
 		// Parse JSON array returned by mise and check if the provided version is installed (when version is not empty).
 		installedExists, err := parseInstalledVersionsJSON(trimmed, version)
@@ -91,17 +113,14 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 
 // listRemoteVersions fetches all available remote versions for a tool.
 func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]string, error) {
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", string(toolName))
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", string(toolName))
 	if err != nil {
 		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
 	}
 
-	var versions []string
-	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			versions = append(versions, line)
-		}
+	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
+	if err != nil {
+		return nil, fmt.Errorf("parsing mise ls-remote %s output: %w", toolName, err)
 	}
 	return versions, nil
 }
@@ -114,12 +133,35 @@ func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, vers
 		versionString = fmt.Sprintf("%s@%s", toolName, version)
 	}
 
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", versionString)
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", versionString)
 	if err != nil {
 		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
 	}
 
-	return strings.TrimSpace(string(output)) != "", nil
+	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
+	if err != nil {
+		return false, fmt.Errorf("parsing mise ls-remote %s output: %w", versionString, err)
+	}
+	return len(versions) > 0, nil
+}
+
+func parseRemoteVersionsJSON(raw string) ([]string, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	var entries []struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+		return nil, err
+	}
+	versions := make([]string, 0, len(entries))
+	for _, e := range entries {
+		if e.Version != "" {
+			versions = append(versions, e.Version)
+		}
+	}
+	return versions, nil
 }
 
 func normalizeRequest(

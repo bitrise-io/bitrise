@@ -343,7 +343,7 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		environments = append(environments, workflowToRun.Environments...)
 
 		// Toolprovider entrypoint
-		toolEnvs, err := toolprovider.RunDeclarativeSetup(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID, false, nil, nil)
+		toolEnvs, err := toolprovider.RunDeclarativeSetup(r.config.Config, r.tracker, r.config.Modes.CIMode, workflowRunPlan.WorkflowID, false, nil, nil, envsToMap(environments))
 		if err != nil {
 			return models.BuildRunResultsModel{}, fmt.Errorf("set up tools: %w", err)
 		}
@@ -572,4 +572,16 @@ func isContainerDebugLoggingEnabled(Secrets []envmanModels.EnvironmentItemModel)
 		}
 	}
 	return false
+}
+
+func envsToMap(envs []envmanModels.EnvironmentItemModel) map[string]string {
+	result := make(map[string]string, len(envs))
+	for _, env := range envs {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+		result[key] = value
+	}
+	return result
 }

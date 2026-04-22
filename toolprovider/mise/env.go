@@ -25,9 +25,9 @@ func (m *MiseToolProvider) envVarsForTool(installResult provider.ToolInstallResu
 	}
 
 	var env envOutput
-	err = json.Unmarshal([]byte(data), &env)
+	err = json.Unmarshal([]byte(strings.TrimSpace(StripMiseLogLines(data))), &env)
 	if err != nil {
-		return envOutput{}, fmt.Errorf("parse mise env output: %w\n%s", err, string(data))
+		return envOutput{}, fmt.Errorf("parse mise env output: %w\n%s", err, data)
 	}
 
 	return env, nil

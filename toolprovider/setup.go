@@ -33,7 +33,8 @@ func RunVersionFileSetup(versionFilePaths []string, tracker analytics.Tracker, s
 		useFastInstall = *fastInstallOverride
 	}
 
-	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
+	// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent, nil)
 }
 
 func makeToolRequests(versionFilePaths []string, silent bool) ([]provider.ToolRequest, error) {
