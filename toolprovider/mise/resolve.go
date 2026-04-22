@@ -118,7 +118,7 @@ func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]st
 		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
 	}
 
-	versions, err := parseRemoteVersionsJSON(strings.TrimSpace(string(output)))
+	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
 	if err != nil {
 		return nil, fmt.Errorf("parsing mise ls-remote %s output: %w", toolName, err)
 	}
@@ -138,7 +138,7 @@ func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, vers
 		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
 	}
 
-	versions, err := parseRemoteVersionsJSON(strings.TrimSpace(string(output)))
+	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
 	if err != nil {
 		return false, fmt.Errorf("parsing mise ls-remote %s output: %w", versionString, err)
 	}
