@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/stepman/activator"
 	"github.com/stretchr/testify/require"
-  "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/assert"
 )
 
 type trackingCall struct {
@@ -150,6 +150,7 @@ func TestInstallResolvedToolsReportsSuccessAfterActivation(t *testing.T) {
 		result:       result,
 		isSuccessful: true,
 	}, tracker.toolSetupCalls[0])
+}
 
 func TestFindGitHubTokenEnv(t *testing.T) {
 	tests := []struct {

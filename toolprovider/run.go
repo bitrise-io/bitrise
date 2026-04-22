@@ -33,6 +33,17 @@ var knownGitHubTokenEnvVars = []string{
 	"MISE_GITHUB_ENTERPRISE_TOKEN",
 }
 
+// findGitHubTokenEnv returns the first known GitHub token env var found in envs,
+// checked in priority order defined by knownGitHubTokenEnvVars.
+func findGitHubTokenEnv(envs map[string]string) (name, value string, found bool) {
+	for _, n := range knownGitHubTokenEnvVars {
+		if v, ok := envs[n]; ok {
+			return n, v, true
+		}
+	}
+	return "", "", false
+}
+
 func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool, envs map[string]string) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
@@ -244,15 +255,4 @@ func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFa
 	default:
 		return "", fmt.Errorf("unsupported tool provider: %s", providerID)
 	}
-}
-
-// findGitHubTokenEnv returns the first known GitHub token env var found in envs,
-// checked in priority order defined by knownGitHubTokenEnvVars.
-func findGitHubTokenEnv(envs map[string]string) (name, value string, found bool) {
-	for _, n := range knownGitHubTokenEnvVars {
-		if v, ok := envs[n]; ok {
-			return n, v, true
-		}
-	}
-	return "", "", false
 }
