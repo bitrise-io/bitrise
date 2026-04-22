@@ -27,15 +27,13 @@ type ExecEnv interface {
 
 type MiseExecEnv struct {
 	installDir string
-
-	extraEnvs map[string]string
+	ExtraEnvs  map[string]string
 }
 
-// extraEnvs: additional env vars that configure mise and are required for its operation.
 func NewMiseExecEnv(installDir string, extraEnvs map[string]string) MiseExecEnv {
 	return MiseExecEnv{
 		installDir: installDir,
-		extraEnvs:  extraEnvs,
+		ExtraEnvs:  extraEnvs,
 	}
 }
 
@@ -70,7 +68,7 @@ func (e MiseExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, additional
 	executable := filepath.Join(e.installDir, "bin", "mise")
 	cmd := exec.CommandContext(ctx, executable, args...)
 	cmd.Env = os.Environ()
-	for k, v := range e.extraEnvs {
+	for k, v := range e.ExtraEnvs {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
 	for k, v := range additionalEnvs {

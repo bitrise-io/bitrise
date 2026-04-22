@@ -285,7 +285,7 @@ func toolsSetup(c *cli.Context) error {
 		}
 
 		tracker := analytics.NewDefaultTracker()
-		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent, providerOverride, fastInstallOverride)
+		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent, providerOverride, fastInstallOverride, nil)
 		if err != nil {
 			return err
 		}

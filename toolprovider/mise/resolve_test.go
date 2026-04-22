@@ -87,9 +87,9 @@ func miseLsInstalledCmd(tool provider.ToolID) string {
 
 func miseLsRemoteCmd(tool provider.ToolID, version string) string {
 	if version != "" && version != "latest" && version != "installed" {
-		return fmt.Sprintf("ls-remote --quiet %s@%s", tool, version)
+		return fmt.Sprintf("ls-remote --quiet --json %s@%s", tool, version)
 	}
-	return fmt.Sprintf("ls-remote --quiet %s", tool)
+	return fmt.Sprintf("ls-remote --quiet --json %s", tool)
 }
 
 var installedVersionsJSON = `[
@@ -137,6 +137,39 @@ func TestParseInstalledVersionsJSON(t *testing.T) {
 		}
 		if got != tc.exists {
 			t.Fatalf("%s: expected exists=%v got %v", tc.name, tc.exists, got)
+		}
+	}
+}
+
+func TestParseRemoteVersionsJSON(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    string
+		expected []string
+		wantErr  bool
+	}{
+		{"empty string", "", nil, false},
+		{"empty array", "[]", nil, false},
+		{"single version", `[{"version":"3.3.0"}]`, []string{"3.3.0"}, false},
+		{"multiple versions", `[{"version":"3.3.0"},{"version":"3.3.1"},{"version":"3.3.2"}]`, []string{"3.3.0", "3.3.1", "3.3.2"}, false},
+		{"with created_at field", `[{"version":"2.62.0","created_at":"2024-11-14T15:40:35Z"}]`, []string{"2.62.0"}, false},
+		{"malformed JSON", `{"version":"3.3.0"}`, nil, true},
+	}
+	for _, tc := range cases {
+		got, err := parseRemoteVersionsJSON(tc.input)
+		if tc.wantErr && err == nil {
+			t.Fatalf("%s: expected error, got nil", tc.name)
+		}
+		if !tc.wantErr && err != nil {
+			t.Fatalf("%s: unexpected error: %v", tc.name, err)
+		}
+		if len(got) != len(tc.expected) {
+			t.Fatalf("%s: expected %v, got %v", tc.name, tc.expected, got)
+		}
+		for i := range got {
+			if got[i] != tc.expected[i] {
+				t.Fatalf("%s: expected %v, got %v", tc.name, tc.expected, got)
+			}
 		}
 	}
 }
@@ -385,7 +418,7 @@ func TestVersionExistsRemote(t *testing.T) {
 			toolName: "ruby",
 			version:  "3.3.0",
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse(miseLsRemoteCmd("ruby", "3.3.0"), "3.3.0\n3.3.1\n3.3.2")
+				m.setResponse(miseLsRemoteCmd("ruby", "3.3.0"), `[{"version":"3.3.0"},{"version":"3.3.1"},{"version":"3.3.2"}]`)
 			},
 			expectedExists: true,
 			wantErr:        false,
@@ -395,7 +428,7 @@ func TestVersionExistsRemote(t *testing.T) {
 			toolName: "ruby",
 			version:  "9.9.9",
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse(miseLsRemoteCmd("ruby", "9.9.9"), "")
+				m.setResponse(miseLsRemoteCmd("ruby", "9.9.9"), "[]")
 			},
 			expectedExists: false,
 			wantErr:        false,
@@ -405,7 +438,7 @@ func TestVersionExistsRemote(t *testing.T) {
 			toolName: "go",
 			version:  "latest",
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse(miseLsRemoteCmd("go", "latest"), "1.21.0\n1.22.0\n1.23.0")
+				m.setResponse(miseLsRemoteCmd("go", "latest"), `[{"version":"1.21.0"},{"version":"1.22.0"},{"version":"1.23.0"}]`)
 			},
 			expectedExists: true,
 			wantErr:        false,
@@ -415,7 +448,7 @@ func TestVersionExistsRemote(t *testing.T) {
 			toolName: "python",
 			version:  "",
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse(miseLsRemoteCmd("python", ""), "3.11.0\n3.12.0")
+				m.setResponse(miseLsRemoteCmd("python", ""), `[{"version":"3.11.0"},{"version":"3.12.0"}]`)
 			},
 			expectedExists: true,
 			wantErr:        false,

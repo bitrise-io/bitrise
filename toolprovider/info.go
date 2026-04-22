@@ -137,7 +137,8 @@ type miseToolEntry struct {
 
 func listMiseTools(activeOnly bool, silent bool) ([]InstalledTool, error) {
 	miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, silent)
+	// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, silent, nil)
 	if err != nil {
 		return nil, fmt.Errorf("create mise provider: %w", err)
 	}

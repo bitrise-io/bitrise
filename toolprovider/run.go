@@ -18,7 +18,27 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 )
 
-func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
+// knownGitHubTokenEnvVars lists the env var names that users possibly set as a valid GitHub API token.
+var knownGitHubTokenEnvVars = []string{
+	"GITHUB_TOKEN",
+	"GH_TOKEN",
+	"GITHUB_API_TOKEN",
+	"MISE_GITHUB_TOKEN",
+	"MISE_GITHUB_ENTERPRISE_TOKEN",
+}
+
+// findGitHubTokenEnv returns the first known GitHub token env var found in envs,
+// checked in priority order defined by knownGitHubTokenEnvVars.
+func findGitHubTokenEnv(envs map[string]string) (name, value string, found bool) {
+	for _, n := range knownGitHubTokenEnvVars {
+		if v, ok := envs[n]; ok {
+			return n, v, true
+		}
+	}
+	return "", "", false
+}
+
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool, envs map[string]string) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -43,10 +63,20 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		useFastInstall = *fastInstallOverride
 	}
 
-	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
+	var extraEnvs map[string]string
+	if tokenName, tokenValue, ok := findGitHubTokenEnv(envs); ok {
+		if !silent {
+			log.Printf("Using %s for GitHub API authentication during tool setup", tokenName)
+		}
+		// Mise recognizes [a variety of env vars](// See https://mise.jdx.dev/dev-tools/github-tokens.html), but let's use
+		// a generic one because this layer is provider-agnostic.
+		extraEnvs = map[string]string{"GITHUB_TOKEN": tokenValue}
+	}
+
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent, extraEnvs)
 }
 
-func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool, extraEnvs map[string]string) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
 
 	if !silent {
@@ -68,7 +98,7 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 		}
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
+		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent, extraEnvs)
 		if err != nil {
 			return nil, fmt.Errorf("create mise tool provider: %w", err)
 		}
@@ -162,7 +192,8 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 
 // InstallSingleTool installs a single tool with the specified version using the given provider.
 func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
-	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
+	// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent, nil)
 }
 
 // GetLatestVersion queries the latest version of a tool without installing it (installed or released).
@@ -184,7 +215,8 @@ func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFa
 		return asdfProvider.ResolveLatestVersion(toolRequest)
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
+		// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent, nil)
 		if err != nil {
 			return "", fmt.Errorf("create mise tool provider: %w", err)
 		}

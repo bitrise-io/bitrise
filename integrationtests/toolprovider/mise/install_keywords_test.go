@@ -16,7 +16,7 @@ import (
 func TestMiseInstallWithLatestKeyword(t *testing.T) {
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -52,7 +52,7 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 func TestMiseInstallWithInstalledKeyword(t *testing.T) {
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -98,7 +98,7 @@ func TestMiseInstallWithInstalledKeyword(t *testing.T) {
 func TestMiseInstallWithLatestAfterInstalled(t *testing.T) {
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
