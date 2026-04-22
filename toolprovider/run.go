@@ -18,6 +18,12 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 )
 
+type toolSetupResult struct {
+	request   provider.ToolRequest
+	result    provider.ToolInstallResult
+	startTime time.Time
+}
+
 func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
@@ -112,7 +118,18 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 		printToolRequests(toolRequests)
 	}
 
-	var toolInstalls []provider.ToolInstallResult
+	return installResolvedTools(toolRequests, providerID, toolProvider, tracker, silent, startTime)
+}
+
+func installResolvedTools(
+	toolRequests []provider.ToolRequest,
+	providerID string,
+	toolProvider provider.ToolProvider,
+	tracker analytics.Tracker,
+	silent bool,
+	startTime time.Time,
+) ([]provider.EnvironmentActivation, error) {
+	var toolSetups []toolSetupResult
 	for _, toolRequest := range toolRequests {
 		toolStartTime := time.Now()
 		canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
@@ -124,30 +141,38 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
+			tracker.SendToolSetupEvent(providerID, toolRequest, result, false, time.Since(toolStartTime))
+
 			var toolErr provider.ToolInstallError
 			if errors.As(err, &toolErr) {
 				printInstallError(toolErr)
 				return nil, fmt.Errorf("see error details above")
 			}
 
-			tracker.SendToolSetupEvent(providerID, toolRequest, result, false, time.Since(toolStartTime))
 			return nil, fmt.Errorf("install %s %s: %w", toolRequest.ToolName, toolRequest.UnparsedVersion, err)
 		}
-		toolInstalls = append(toolInstalls, result)
+
+		toolSetups = append(toolSetups, toolSetupResult{
+			request:   toolRequest,
+			result:    result,
+			startTime: toolStartTime,
+		})
+
 		duration := time.Since(toolStartTime)
 		if !silent {
 			printInstallResult(toolRequest, result, duration)
 		}
-		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
 	var activations []provider.EnvironmentActivation
-	for _, install := range toolInstalls {
-		activation, err := toolProvider.ActivateEnv(install)
+	for _, setup := range toolSetups {
+		activation, err := toolProvider.ActivateEnv(setup.result)
 		if err != nil {
-			return nil, fmt.Errorf("activate %s: %w", install.ToolName, err)
+			tracker.SendToolSetupEvent(providerID, setup.request, setup.result, false, time.Since(setup.startTime))
+			return nil, fmt.Errorf("activate %s: %w", setup.result.ToolName, err)
 		}
 		activations = append(activations, activation)
+		tracker.SendToolSetupEvent(providerID, setup.request, setup.result, true, time.Since(setup.startTime))
 	}
 
 	if !silent {
