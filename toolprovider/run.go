@@ -88,33 +88,9 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 	if !silent {
 		log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
 	}
-	var toolProvider provider.ToolProvider
-	var err error
-
-	switch providerID {
-	case "asdf":
-		toolProvider = &asdf.AsdfToolProvider{
-			ExecEnv: execenv.ExecEnv{
-				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
-				EnvVars:            map[string]string{},
-				ShellInit:          "",
-				ClearInheritedEnvs: false,
-			},
-			Silent: silent,
-		}
-	case "mise":
-		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent, extraEnvs)
-		if err != nil {
-			return nil, fmt.Errorf("create mise tool provider: %w", err)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported tool provider: %s", providerID)
-	}
-
-	err = toolProvider.Bootstrap()
+	toolProvider, err := CreateProvider(providerID, useFastInstall, silent, extraEnvs)
 	if err != nil {
-		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
+		return nil, err
 	}
 
 	for i, req := range toolRequests {

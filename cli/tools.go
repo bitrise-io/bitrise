@@ -13,9 +13,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
-	execenv "github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/colorstring"
@@ -733,33 +730,13 @@ func toolsVersions(c *cli.Context) error {
 	if providerID == "" {
 		providerID = "mise"
 	}
-	if providerID != "asdf" && providerID != "mise" {
-		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
-	}
 
 	format := c.String(toolsOutputFormatKey)
 	silent := format == outputFormatJSON
 
-	var tp provider.ToolProvider
-	switch providerID {
-	case "asdf":
-		tp = &asdf.AsdfToolProvider{
-			ExecEnv: execenv.ExecEnv{
-				EnvVars: map[string]string{},
-			},
-			Silent: silent,
-		}
-	case "mise":
-		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, silent, nil)
-		if err != nil {
-			return fmt.Errorf("create mise tool provider: %w", err)
-		}
-		tp = miseProvider
-	}
-
-	if err := tp.Bootstrap(); err != nil {
-		return fmt.Errorf("bootstrap %s: %w", providerID, err)
+	tp, err := toolprovider.CreateProvider(providerID, false, silent, nil)
+	if err != nil {
+		return err
 	}
 
 	versions, err := toolprovider.ListToolVersions(toolName, tp)
