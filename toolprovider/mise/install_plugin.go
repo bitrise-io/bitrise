@@ -14,8 +14,13 @@ type PluginSource struct {
 	GitCloneURL string
 }
 
+// CoreTools returns the list of mise core tool names (including aliases like "go" and "node").
 // Ref: https://mise.jdx.dev/core-tools.html
 // Note: we might need to sync this list from time to time
+func CoreTools() []string {
+	return append([]string(nil), miseCoreTools...)
+}
+
 var miseCoreTools = []string{
 	"bun",
 	"deno",
