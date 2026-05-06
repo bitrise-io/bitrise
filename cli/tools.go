@@ -7,12 +7,16 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
+	execenv "github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
+	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/colorstring"
@@ -24,10 +28,12 @@ const (
 	outputFormatJSON      = "json"
 	outputFormatBash      = "bash"
 
-	toolsSetupSubcommandName   = "setup"
-	toolsInstallSubcommandName = "install"
-	toolsLatestSubcommandName  = "latest"
-	toolsInfoCommandName       = "info"
+	toolsSetupSubcommandName      = "setup"
+	toolsInstallSubcommandName    = "install"
+	toolsLatestSubcommandName     = "latest"
+	toolsInfoCommandName          = "info"
+	toolsVersionsSubcommandName   = "versions"
+	toolsListToolsSubcommandName  = "list-tools"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -204,6 +210,58 @@ EXAMPLES:
 	},
 }
 
+var toolsListToolsSubcommand = cli.Command{
+	Name:  toolsListToolsSubcommandName,
+	Usage: "List supported tool names",
+	UsageText: `bitrise tools versions list-tools [--format FORMAT]
+
+EXAMPLES:
+   bitrise tools versions list-tools
+   bitrise tools versions list-tools --format json`,
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsListTools(c); err != nil {
+			log.Errorf("Failed to list tools: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		flToolsOutputFormat,
+	},
+}
+
+var toolsVersionsSubcommand = cli.Command{
+	Name:  toolsVersionsSubcommandName,
+	Usage: "List available versions for supported tools",
+	UsageText: `bitrise tools versions --tool TOOL [--format FORMAT]
+
+EXAMPLES:
+   bitrise tools versions --tool nodejs
+   bitrise tools versions --tool nodejs --format json
+   bitrise tools versions list-tools
+   bitrise tools versions list-tools --format json`,
+	Action: func(c *cli.Context) error {
+		logCommandParameters(c)
+		if err := toolsVersions(c); err != nil {
+			log.Errorf("Failed to list versions: %s", err)
+			os.Exit(1)
+		}
+		return nil
+	},
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "tool, t",
+			Usage: "Tool name to list versions for (e.g. nodejs, golang, ruby)",
+		},
+		flToolsProvider,
+		flToolsOutputFormat,
+	},
+	Subcommands: []cli.Command{
+		toolsListToolsSubcommand,
+	},
+}
+
 var toolsCommand = cli.Command{
 	Name:  "tools",
 	Usage: "Manage available tools from inside the workflow.",
@@ -212,6 +270,7 @@ var toolsCommand = cli.Command{
 		toolsSetupSubcommand,
 		toolsInstallSubcommand,
 		toolsLatestSubcommand,
+		toolsVersionsSubcommand,
 	},
 }
 
@@ -636,6 +695,96 @@ func toolsInstall(c *cli.Context) error {
 		return fmt.Errorf("convert to output format: %w", err)
 	}
 	fmt.Println(output)
+
+	return nil
+}
+
+func toolsListTools(c *cli.Context) error {
+	format := c.String(toolsOutputFormatKey)
+
+	tools := toolprovider.SupportedTools()
+
+	switch format {
+	case outputFormatJSON:
+		data, err := json.MarshalIndent(map[string]any{
+			"tools": tools,
+		}, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal JSON: %w", err)
+		}
+		fmt.Println(string(data))
+	case outputFormatPlaintext:
+		for _, t := range tools {
+			fmt.Println(t)
+		}
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
+
+	return nil
+}
+
+func toolsVersions(c *cli.Context) error {
+	toolName := c.String("tool")
+	if toolName == "" {
+		return fmt.Errorf("--tool flag is required. Run 'bitrise tools versions list-tools' to see supported tools")
+	}
+
+	providerID := c.String(toolsProviderKey)
+	if providerID == "" {
+		providerID = "mise"
+	}
+	if providerID != "asdf" && providerID != "mise" {
+		return fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+	}
+
+	format := c.String(toolsOutputFormatKey)
+	silent := format == outputFormatJSON
+
+	var tp provider.ToolProvider
+	switch providerID {
+	case "asdf":
+		tp = &asdf.AsdfToolProvider{
+			ExecEnv: execenv.ExecEnv{
+				EnvVars: map[string]string{},
+			},
+			Silent: silent,
+		}
+	case "mise":
+		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, silent, nil)
+		if err != nil {
+			return fmt.Errorf("create mise tool provider: %w", err)
+		}
+		tp = miseProvider
+	}
+
+	if err := tp.Bootstrap(); err != nil {
+		return fmt.Errorf("bootstrap %s: %w", providerID, err)
+	}
+
+	versions, err := toolprovider.ListToolVersions(toolName, tp)
+	if err != nil {
+		return err
+	}
+
+	switch format {
+	case outputFormatJSON:
+		data, err := json.MarshalIndent(map[string]any{
+			"generated_at": time.Now().UTC().Format(time.RFC3339),
+			"versions":     versions,
+		}, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal JSON: %w", err)
+		}
+		fmt.Println(string(data))
+	case outputFormatPlaintext:
+		for _, v := range versions {
+			fmt.Println(v)
+		}
+	default:
+		return fmt.Errorf("invalid --format: %s", format)
+	}
 
 	return nil
 }
