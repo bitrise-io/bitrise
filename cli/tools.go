@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
@@ -771,8 +770,7 @@ func toolsVersions(c *cli.Context) error {
 	switch format {
 	case outputFormatJSON:
 		data, err := json.MarshalIndent(map[string]any{
-			"generated_at": time.Now().UTC().Format(time.RFC3339),
-			"versions":     versions,
+			"versions": versions,
 		}, "", "  ")
 		if err != nil {
 			return fmt.Errorf("marshal JSON: %w", err)
