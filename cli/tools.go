@@ -65,6 +65,12 @@ var (
 		Value: outputFormatPlaintext,
 	}
 
+	flToolsVersionsOutputFormat = cli.StringFlag{
+		Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
+		Usage: `Output format. Options: plaintext, json`,
+		Value: outputFormatPlaintext,
+	}
+
 	flToolsActive = cli.BoolFlag{
 		Name:  toolsActiveKey + ", " + toolsActiveShortKey,
 		Usage: `Show only currently active tools in the shell context (based on config files in current directory)`,
@@ -223,7 +229,7 @@ EXAMPLES:
 		return nil
 	},
 	Flags: []cli.Flag{
-		flToolsOutputFormat,
+		flToolsVersionsOutputFormat,
 	},
 }
 
@@ -251,7 +257,7 @@ EXAMPLES:
 			Usage: "Tool name to list versions for (e.g. nodejs, golang, ruby)",
 		},
 		flToolsProvider,
-		flToolsOutputFormat,
+		flToolsVersionsOutputFormat,
 	},
 	Subcommands: []cli.Command{
 		toolsListToolsSubcommand,
