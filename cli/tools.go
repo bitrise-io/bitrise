@@ -24,12 +24,12 @@ const (
 	outputFormatJSON      = "json"
 	outputFormatBash      = "bash"
 
-	toolsSetupSubcommandName      = "setup"
-	toolsInstallSubcommandName    = "install"
-	toolsLatestSubcommandName     = "latest"
-	toolsInfoCommandName          = "info"
-	toolsVersionsSubcommandName   = "versions"
-	toolsListToolsSubcommandName  = "list-tools"
+	toolsSetupSubcommandName    = "setup"
+	toolsInstallSubcommandName  = "install"
+	toolsLatestSubcommandName   = "latest"
+	toolsInfoCommandName        = "info"
+	toolsVersionsSubcommandName = "versions"
+	toolsCatalogSubcommandName  = "catalog"
 
 	toolsConfigKey      = "config"
 	toolsConfigShortKey = "c"
@@ -212,14 +212,14 @@ EXAMPLES:
 	},
 }
 
-var toolsListToolsSubcommand = cli.Command{
-	Name:  toolsListToolsSubcommandName,
-	Usage: "List supported tool names",
-	UsageText: `bitrise tools versions list-tools [--format FORMAT]
+var toolsCatalogSubcommand = cli.Command{
+	Name:  toolsCatalogSubcommandName,
+	Usage: "List officially supported tools",
+	UsageText: `bitrise tools catalog [--format FORMAT]
 
 EXAMPLES:
-   bitrise tools versions list-tools
-   bitrise tools versions list-tools --format json`,
+   bitrise tools catalog
+   bitrise tools catalog --format json`,
 	Action: func(c *cli.Context) error {
 		logCommandParameters(c)
 		if err := toolsListTools(c); err != nil {
@@ -235,14 +235,16 @@ EXAMPLES:
 
 var toolsVersionsSubcommand = cli.Command{
 	Name:  toolsVersionsSubcommandName,
-	Usage: "List available versions for supported tools",
-	UsageText: `bitrise tools versions --tool TOOL [--format FORMAT]
+	Usage: "List available versions for a supported tool",
+	UsageText: `bitrise tools versions TOOL [VERSION_PREFIX] [--format FORMAT]
+
+TOOL: tool name (e.g. nodejs, golang, ruby)
+VERSION_PREFIX: optional version prefix to filter by (e.g. 22, 3.12)
 
 EXAMPLES:
-   bitrise tools versions --tool nodejs
-   bitrise tools versions --tool nodejs --format json
-   bitrise tools versions list-tools
-   bitrise tools versions list-tools --format json`,
+   bitrise tools versions nodejs
+   bitrise tools versions nodejs 22
+   bitrise tools versions nodejs --format json`,
 	Action: func(c *cli.Context) error {
 		logCommandParameters(c)
 		if err := toolsVersions(c); err != nil {
@@ -253,14 +255,10 @@ EXAMPLES:
 	},
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "tool, t",
-			Usage: "Tool name to list versions for (e.g. nodejs, golang, ruby)",
+			Name:  toolsProviderKey + ", " + toolsProviderShortKey,
+			Usage: `Tool provider to use (asdf/mise) (default: "mise")`,
 		},
-		flToolsProvider,
 		flToolsVersionsOutputFormat,
-	},
-	Subcommands: []cli.Command{
-		toolsListToolsSubcommand,
 	},
 }
 
@@ -273,6 +271,7 @@ var toolsCommand = cli.Command{
 		toolsInstallSubcommand,
 		toolsLatestSubcommand,
 		toolsVersionsSubcommand,
+		toolsCatalogSubcommand,
 	},
 }
 
@@ -727,10 +726,11 @@ func toolsListTools(c *cli.Context) error {
 }
 
 func toolsVersions(c *cli.Context) error {
-	toolName := c.String("tool")
+	toolName := c.Args().First()
 	if toolName == "" {
-		return fmt.Errorf("--tool flag is required. Run 'bitrise tools versions list-tools' to see supported tools")
+		return fmt.Errorf("tool name is required. Usage: bitrise tools versions TOOL [VERSION_PREFIX]. Run 'bitrise tools catalog' to see supported tools")
 	}
+	versionPrefix := c.Args().Get(1)
 
 	providerID := c.String(toolsProviderKey)
 	if providerID == "" {
@@ -745,7 +745,7 @@ func toolsVersions(c *cli.Context) error {
 		return err
 	}
 
-	versions, err := toolprovider.ListToolVersions(toolName, tp)
+	versions, err := toolprovider.ListToolVersions(toolName, versionPrefix, tp)
 	if err != nil {
 		return err
 	}

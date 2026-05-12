@@ -37,7 +37,7 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("nodejs", fp)
+		versions, err := ListToolVersions("nodejs", "", fp)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"3.0.0", "2.0.0", "1.0.0"}, versions)
 	})
@@ -47,7 +47,7 @@ func TestListToolVersions(t *testing.T) {
 			err: fmt.Errorf("connection failed"),
 		}
 
-		_, err := ListToolVersions("nodejs", fp)
+		_, err := ListToolVersions("nodejs", "", fp)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "connection failed")
 	})
@@ -59,7 +59,7 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("nodejs", fp)
+		versions, err := ListToolVersions("nodejs", "", fp)
 		require.NoError(t, err)
 		assert.Empty(t, versions)
 	})
@@ -71,7 +71,7 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("go", fp)
+		versions, err := ListToolVersions("go", "", fp)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"1.22.0", "1.21.0"}, versions)
 	})
@@ -83,7 +83,7 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("node", fp)
+		versions, err := ListToolVersions("node", "", fp)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"20.0.0", "18.0.0"}, versions)
 	})
@@ -91,7 +91,7 @@ func TestListToolVersions(t *testing.T) {
 	t.Run("rejects unsupported tool", func(t *testing.T) {
 		fp := fakeVersionProvider{}
 
-		_, err := ListToolVersions("nonexistent", fp)
+		_, err := ListToolVersions("nonexistent", "", fp)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not a supported tool")
 	})
@@ -103,7 +103,7 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("nodejs", fp)
+		versions, err := ListToolVersions("nodejs", "", fp)
 		require.NoError(t, err)
 		assert.Equal(t, []string{"2.0.0", "2.0.0-rc.1", "1.0.0", "1.0.0-beta.1"}, versions)
 	})
@@ -115,8 +115,56 @@ func TestListToolVersions(t *testing.T) {
 			},
 		}
 
-		versions, err := ListToolVersions("nodejs", fp)
+		versions, err := ListToolVersions("nodejs", "", fp)
 		require.NoError(t, err)
-		assert.Equal(t, []string{"2.0.0", "1.0.0", "nightly", "3.15.0a8", "latest"}, versions)
+		assert.Equal(t, []string{"3.15.0a8", "2.0.0", "1.0.0", "nightly", "latest"}, versions)
+	})
+
+	t.Run("filters by version prefix", func(t *testing.T) {
+		fp := fakeVersionProvider{
+			versions: map[provider.ToolID][]string{
+				"nodejs": {"18.0.0", "18.1.0", "20.0.0", "20.1.0", "22.0.0"},
+			},
+		}
+
+		versions, err := ListToolVersions("nodejs", "20", fp)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"20.1.0", "20.0.0"}, versions)
+	})
+
+	t.Run("version prefix matches at boundary only", func(t *testing.T) {
+		fp := fakeVersionProvider{
+			versions: map[provider.ToolID][]string{
+				"nodejs": {"18.0.0", "18.1.0", "18.1.2", "18.10.0", "20.0.0"},
+			},
+		}
+
+		versions, err := ListToolVersions("nodejs", "18.1", fp)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"18.1.2", "18.1.0"}, versions)
+	})
+
+	t.Run("version prefix with trailing dot", func(t *testing.T) {
+		fp := fakeVersionProvider{
+			versions: map[provider.ToolID][]string{
+				"nodejs": {"18.0.0", "18.1.0", "20.0.0", "20.1.0", "22.0.0"},
+			},
+		}
+
+		versions, err := ListToolVersions("nodejs", "20.", fp)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"20.1.0", "20.0.0"}, versions)
+	})
+
+	t.Run("version prefix matches nothing", func(t *testing.T) {
+		fp := fakeVersionProvider{
+			versions: map[provider.ToolID][]string{
+				"nodejs": {"18.0.0", "20.0.0"},
+			},
+		}
+
+		versions, err := ListToolVersions("nodejs", "22", fp)
+		require.NoError(t, err)
+		assert.Empty(t, versions)
 	})
 }

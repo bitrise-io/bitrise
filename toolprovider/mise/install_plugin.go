@@ -19,7 +19,7 @@ type PluginSource struct {
 // Note: we might need to sync this list from time to time.
 // When adding a tool, be sure to also include it in toolprovider/supported_tools.go
 func CoreTools() []string {
-	return append([]string(nil), miseCoreTools...)
+	return slices.Clone(miseCoreTools)
 }
 
 var miseCoreTools = []string{
