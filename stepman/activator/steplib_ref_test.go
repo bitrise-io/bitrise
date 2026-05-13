@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_activateStepLibStep(t *testing.T) {
@@ -99,7 +101,7 @@ func Test_activateStepLibStep(t *testing.T) {
 				t.Errorf("failed to create dir for step.yml: %s", err)
 			}
 
-			got, _, err := prepareStepLibForActivation(TestLogger{t}, tt.stepIDData, false, false)
+			got, _, err := prepareStepLibForActivation(TestLogger[*testing.T]{t}, tt.stepIDData, false, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("activateStepLibStep() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -111,19 +113,105 @@ func Test_activateStepLibStep(t *testing.T) {
 	}
 }
 
-type TestLogger struct {
-	t *testing.T
+type genericLogger interface {
+	Logf(format string, v ...any)
 }
 
-func (t TestLogger) Debugf(format string, v ...interface{}) {
-	t.t.Logf(format, v...)
+type TestLogger[t genericLogger] struct {
+	l genericLogger
 }
-func (t TestLogger) Errorf(format string, v ...interface{}) {
-	t.t.Logf(format, v...)
+
+func (t TestLogger[l]) Debugf(format string, v ...any) {
+	t.l.Logf(format, v...)
 }
-func (t TestLogger) Warnf(format string, v ...interface{}) {
-	t.t.Logf(format, v...)
+func (t TestLogger[l]) Errorf(format string, v ...any) {
+	t.l.Logf(format, v...)
 }
-func (t TestLogger) Infof(format string, v ...interface{}) {
-	t.t.Logf(format, v...)
+func (t TestLogger[l]) Warnf(format string, v ...any) {
+	t.l.Logf(format, v...)
+}
+func (t TestLogger[l]) Infof(format string, v ...any) {
+	t.l.Logf(format, v...)
+}
+
+func BenchmarkActivateSteplibRefStep(b *testing.B) {
+	logger := TestLogger[*testing.B]{b}
+	tests := []struct {
+		name                       string
+		id                         stepid.CanonicalID
+		isOfflineMode              bool
+		didStepLibUpdateInWorkflow bool
+		shouldCleanSteplib         bool
+		wantErr                    bool
+	}{
+		{
+			name: "No steplib update, major versiom",
+			id: stepid.CanonicalID{
+				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+				IDorURI:       "xcode-archive",
+				Version:       "1",
+			},
+			didStepLibUpdateInWorkflow: true,
+			wantErr:                    false,
+		},
+		{
+			name: "Steplib update, major versiom",
+			id: stepid.CanonicalID{
+				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+				IDorURI:       "xcode-archive",
+				Version:       "1",
+			},
+			didStepLibUpdateInWorkflow: false,
+			wantErr:                    false,
+		},
+		{
+			name: "Clean steplib every time",
+			id: stepid.CanonicalID{
+				SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+				IDorURI:       "xcode-archive",
+				Version:       "1",
+			},
+			didStepLibUpdateInWorkflow: false,
+			shouldCleanSteplib:         true,
+			wantErr:                    false,
+		},
+	}
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			for b.Loop() {
+				if tt.shouldCleanSteplib {
+					err := os.RemoveAll("~/.stepman")
+					require.NoError(b, err)
+				}
+				tmpDir, err := pathutil.NormalizedOSTempDirPath("activateStepLibStep")
+				if err != nil {
+					b.Errorf("failed to create tmp dir: %s", err)
+				}
+				stepYMLCopyPth := filepath.Join(tmpDir, "step-yml", "step.yml")
+
+				if err := os.MkdirAll(filepath.Dir(stepYMLCopyPth), 0777); err != nil {
+					b.Errorf("failed to create dir for step.yml: %s", err)
+				}
+
+				stepInfoPtr := new(models.StepInfoModel)
+				got, gotErr := ActivateSteplibRefStep(logger, tt.id, stepYMLCopyPth, tmpDir, tt.didStepLibUpdateInWorkflow, tt.isOfflineMode, stepInfoPtr)
+				if gotErr != nil {
+					if !tt.wantErr {
+						b.Errorf("ActivateSteplibRefStep() failed: %v", gotErr)
+					}
+					return
+				}
+				if tt.wantErr {
+					b.Fatal("ActivateSteplibRefStep() succeeded unexpectedly")
+				}
+
+				want := ActivatedStep{
+					StepYMLPath:      tmpDir + "/current_step.yml",
+					ActivationType:   ActivationTypeSteplibSource,
+					DidStepLibUpdate: !tt.didStepLibUpdateInWorkflow,
+				}
+				require.Equal(b, want, got)
+			}
+		})
+	}
 }
