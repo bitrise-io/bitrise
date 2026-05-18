@@ -193,7 +193,9 @@ func installGoTar(logger stepman.Logger, goTarGzPath string) error {
 	return nil
 }
 
-func (toolkit GoToolkit) Install() error {
+func (toolkit GoToolkit) Install() (InstallResult, error) {
+	start := time.Now()
+
 	versionStr := minGoVersionForToolkit
 	osStr := runtime.GOOS
 	archStr := runtime.GOARCH
@@ -205,35 +207,33 @@ func (toolkit GoToolkit) Install() error {
 
 	goTmpDirPath := goToolkitTmpDirPath()
 	if err := pathutil.EnsureDirExist(goTmpDirPath); err != nil {
-		return fmt.Errorf("create Toolkits TMP directory: %s", err)
+		return InstallResult{InstallDuration: time.Since(start)}, fmt.Errorf("create Toolkits TMP directory: %s", err)
 	}
 
 	localFileName := "go." + extentionStr
 	goArchiveDownloadPath := filepath.Join(goTmpDirPath, localFileName)
 
-	var downloadErr error
-
 	toolkit.logger.Infof("=> Downloading ...")
-	downloadErr = retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
+	downloadErr := retry.Times(2).Wait(5 * time.Second).Try(func(attempt uint) error {
 		if attempt > 0 {
 			toolkit.logger.Warnf("==> Download failed, retrying ...")
 		}
 		return downloadFile(downloadURL, goArchiveDownloadPath)
 	})
 	if downloadErr != nil {
-		return fmt.Errorf("download Go toolkit: %s", downloadErr)
+		return InstallResult{InstallDuration: time.Since(start)}, fmt.Errorf("download Go toolkit: %s", downloadErr)
 	}
 
 	toolkit.logger.Infof("=> Installing ...")
 	if err := installGoTar(toolkit.logger, goArchiveDownloadPath); err != nil {
-		return fmt.Errorf("install Go toolkit: %s", err)
+		return InstallResult{InstallDuration: time.Since(start)}, fmt.Errorf("install Go toolkit: %s", err)
 	}
 	if err := os.Remove(goArchiveDownloadPath); err != nil {
-		return fmt.Errorf("remove the downloaded Go archive at %s: %s", goArchiveDownloadPath, err)
+		return InstallResult{InstallDuration: time.Since(start)}, fmt.Errorf("remove the downloaded Go archive at %s: %s", goArchiveDownloadPath, err)
 	}
 	toolkit.logger.Infof("=> Installing DONE")
 
-	return nil
+	return InstallResult{InstallDuration: time.Since(start)}, nil
 }
 
 func goBuildStep(logger stepman.Logger, cmdRunner commandRunner, goConfig GoConfigurationModel, packageName, stepAbsDirPath, outputBinPath string) error {
@@ -283,7 +283,8 @@ func stepBinaryCacheFullPath(sIDData stepid.CanonicalID) string {
 }
 
 // PrepareForStepRun ...
-func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error {
+func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) (PrepareForStepRunResult, error) {
+	start := time.Now()
 	fullStepBinPath := stepBinaryCacheFullPath(sIDData)
 
 	// try to use cached binary, if possible
@@ -291,28 +292,31 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 		if exists, err := pathutil.IsPathExists(fullStepBinPath); err != nil {
 			toolkit.logger.Warnf("Failed to check cached binary for step, error: %s", err)
 		} else if exists {
-			return nil
+			return PrepareForStepRunResult{CacheHit: true, PrepareDuration: time.Since(start)}, nil
 		}
 	}
 
 	// it's not cached, so compile it
 	if step.Toolkit == nil {
-		return errors.New("no toolkit information specified in step")
+		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, errors.New("no toolkit information specified in step")
 	}
 	if step.Toolkit.Go == nil {
-		return errors.New("no toolkit.go information specified in step")
+		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, errors.New("no toolkit.go information specified in step")
 	}
 
 	isInstallRequired, _, goConfig, err := selectGoConfiguration(toolkit.logger)
 	if err != nil {
-		return fmt.Errorf("select an appropriate Go installation for compiling the Step: %s", err)
+		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s", err)
 	}
 	if isInstallRequired {
-		return fmt.Errorf("select an appropriate Go installation for compiling the Step: %s",
+		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s",
 			"found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
 	}
 
-	return goBuildStep(toolkit.logger, newDefaultRunner(toolkit.logger), goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath)
+	if err := goBuildStep(toolkit.logger, newDefaultRunner(toolkit.logger), goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath); err != nil {
+		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, err
+	}
+	return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, nil
 }
 
 // === Toolkit: Step Run ===

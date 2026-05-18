@@ -642,9 +642,11 @@ func (r WorkflowRunner) executeStep(
 		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 		toolkitName := toolkitForStep.ToolkitName()
 
-		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+		prepareResult, prepareErr := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath)
+		r.tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, prepareResult, prepareErr)
+		if prepareErr != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
-				toolkitName, err)
+				toolkitName, prepareErr)
 		}
 
 		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
