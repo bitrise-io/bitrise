@@ -431,7 +431,7 @@ func (t tracker) SendToolkitPrepareEvent(stepExecutionID string, toolkitName str
 		"is_successful":     true,
 		"build_slug":        buildSlug,
 		"cli_version":       version.VERSION,
-		"ci_mode":           isCI,
+		"is_ci":             isCI,
 	}
 	if err != nil {
 		props["is_successful"] = false

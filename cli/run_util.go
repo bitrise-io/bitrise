@@ -643,7 +643,11 @@ func (r WorkflowRunner) executeStep(
 		toolkitName := toolkitForStep.ToolkitName()
 
 		prepareResult, prepareErr := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath)
-		r.tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, prepareResult, prepareErr)
+		// Skip the event for no-op toolkits (e.g. bash, swift with no precompiled binary)
+		// where duration is always 0 and cache_hit is always false, which would be misleading.
+		if prepareErr != nil || prepareResult.PrepareDuration > 0 {
+			r.tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, prepareResult, prepareErr)
+		}
 		if prepareErr != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
 				toolkitName, prepareErr)
