@@ -2,8 +2,10 @@ package cli
 
 import (
 	"encoding/base64"
+	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/configs"
@@ -12,6 +14,9 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -367,6 +372,92 @@ envs:
 	opts, err := env.GetOptions()
 	require.NoError(t, err)
 	require.Equal(t, true, *opts.IsExpand)
+}
+
+type toolkitPrepareCall struct {
+	stepExecutionID string
+	toolkitName     string
+	stepID          string
+	stepVersion     string
+	result          toolkits.PrepareForStepRunResult
+	err             error
+}
+
+type toolkitCapturingTracker struct {
+	noOpTracker
+	calls []toolkitPrepareCall
+}
+
+func (c *toolkitCapturingTracker) SendToolkitPrepareEvent(stepExecutionID, toolkitName, stepID, stepVersion string, result toolkits.PrepareForStepRunResult, err error) {
+	c.calls = append(c.calls, toolkitPrepareCall{
+		stepExecutionID: stepExecutionID,
+		toolkitName:     toolkitName,
+		stepID:          stepID,
+		stepVersion:     stepVersion,
+		result:          result,
+		err:             err,
+	})
+}
+
+
+func TestTrackToolkitPrepare(t *testing.T) {
+	tests := []struct {
+		name         string
+		result       toolkits.PrepareForStepRunResult
+		err          error
+		expectsEvent bool
+	}{
+		{
+			name:         "bash no-op: zero duration, no error → no event",
+			result:       toolkits.PrepareForStepRunResult{PrepareDuration: 0, CacheHit: false},
+			err:          nil,
+			expectsEvent: false,
+		},
+		{
+			name:         "go compile: nonzero duration → event fired",
+			result:       toolkits.PrepareForStepRunResult{PrepareDuration: 500 * time.Millisecond, CacheHit: false},
+			err:          nil,
+			expectsEvent: true,
+		},
+		{
+			name:         "go cache hit: nonzero duration → event fired",
+			result:       toolkits.PrepareForStepRunResult{PrepareDuration: 2 * time.Millisecond, CacheHit: true},
+			err:          nil,
+			expectsEvent: true,
+		},
+		{
+			name:         "prepare error with zero duration → event still fired",
+			result:       toolkits.PrepareForStepRunResult{PrepareDuration: 0, CacheHit: false},
+			err:          errors.New("compile failed"),
+			expectsEvent: true,
+		},
+		{
+			name:         "prepare error with nonzero duration → event still fired",
+			result:       toolkits.PrepareForStepRunResult{PrepareDuration: 200 * time.Millisecond, CacheHit: false},
+			err:          errors.New("compile failed"),
+			expectsEvent: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracker := &toolkitCapturingTracker{}
+			sIDData := stepid.CanonicalID{IDorURI: "my-step", Version: "1.0.0"}
+			trackToolkitPrepare(tracker, "exec-uuid", "go", sIDData, tt.result, tt.err)
+
+			if tt.expectsEvent {
+				assert.Len(t, tracker.calls, 1)
+				assert.Equal(t, "exec-uuid", tracker.calls[0].stepExecutionID)
+				assert.Equal(t, "go", tracker.calls[0].toolkitName)
+				assert.Equal(t, "my-step", tracker.calls[0].stepID)
+				assert.Equal(t, "1.0.0", tracker.calls[0].stepVersion)
+				assert.Equal(t, tt.result, tracker.calls[0].result)
+				assert.Equal(t, tt.err, tracker.calls[0].err)
+			} else {
+				assert.Empty(t, tracker.calls)
+			}
+		})
+	}
 }
 
 func TestAddTestMetadata(t *testing.T) {

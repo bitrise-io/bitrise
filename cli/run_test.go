@@ -21,6 +21,7 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/stepman/activator"
+	"github.com/bitrise-io/stepman/toolkits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -2109,6 +2110,8 @@ func (n noOpTracker) SendCommandInfo(string, string, []string)                  
 func (n noOpTracker) SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration) {
 }
 func (n noOpTracker) SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
+}
+func (n noOpTracker) SendToolkitPrepareEvent(stepExecutionID string, toolkitName string, stepID string, stepVersion string, result toolkits.PrepareForStepRunResult, err error) {
 }
 func (n noOpTracker) Wait()            {}
 func (n noOpTracker) IsTracking() bool { return false }
