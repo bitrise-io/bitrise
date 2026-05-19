@@ -41,16 +41,16 @@ func (toolkit BashToolkit) Bootstrap() error {
 	return nil
 }
 
-func (toolkit BashToolkit) Install() error {
-	return nil
+func (toolkit BashToolkit) Install() (InstallResult, error) {
+	return InstallResult{}, nil
 }
 
 func (toolkit BashToolkit) ToolkitName() string {
 	return "bash"
 }
 
-func (toolkit BashToolkit) PrepareForStepRun(_ models.StepModel, _ stepid.CanonicalID, _ string) error {
-	return nil
+func (toolkit BashToolkit) PrepareForStepRun(_ models.StepModel, _ stepid.CanonicalID, _ string) (PrepareForStepRunResult, error) {
+	return PrepareForStepRunResult{}, nil
 }
 
 func (toolkit BashToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {

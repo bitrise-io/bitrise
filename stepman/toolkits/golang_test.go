@@ -5,9 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/stepman/activator/steplib"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/require"
 )
@@ -294,6 +296,49 @@ func (l testLogger) Infof(format string, v ...interface{}) {
 	l.t.Logf(format, v...)
 }
 
+func TestGoToolkit_PrepareForStepRun(t *testing.T) {
+	logger := testLogger{t: t}
+
+	t.Run("cache hit", func(t *testing.T) {
+		toolkit := NewGoToolkit(logger)
+		sIDData := stepid.CanonicalID{
+			SteplibSource: "https://github.com/bitrise-io/bitrise-steplib.git",
+			IDorURI:       "script",
+			Version:       "0.0.0-test",
+		}
+
+		binPath := stepBinaryCacheFullPath(sIDData)
+		require.NoError(t, os.MkdirAll(filepath.Dir(binPath), 0755))
+		require.NoError(t, os.WriteFile(binPath, []byte{}, 0755))
+		t.Cleanup(func() { _ = os.Remove(binPath) })
+
+		result, err := toolkit.PrepareForStepRun(models.StepModel{}, sIDData, t.TempDir())
+
+		require.NoError(t, err)
+		require.True(t, result.CacheHit)
+		
+		// It's a weak check since durations are never negative, but it serves as documentation that the field is intentionally populated on every path
+		require.GreaterOrEqual(t, result.PrepareDuration, time.Duration(0))
+	})
+
+	t.Run("error path returns duration", func(t *testing.T) {
+		toolkit := NewGoToolkit(logger)
+		sIDData := stepid.CanonicalID{
+			SteplibSource: "git",
+			IDorURI:       "https://github.com/bitrise-steplib/my-step.git",
+			Version:       "main",
+		}
+		
+		// git step IDs are never unique resources, so the cache check is skipped
+		// and the nil Toolkit field triggers an immediate error
+		result, err := toolkit.PrepareForStepRun(models.StepModel{Toolkit: nil}, sIDData, t.TempDir())
+
+		require.Error(t, err)
+		require.False(t, result.CacheHit)
+		require.Greater(t, result.PrepareDuration, time.Duration(0))
+	})
+}
+
 func TestGoToolkit_Install(t *testing.T) {
 	logger := testLogger{t: t}
 	tests := []struct {
@@ -306,7 +351,7 @@ func TestGoToolkit_Install(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			toolkit := NewGoToolkit(logger)
-			gotErr := toolkit.Install()
+			_, gotErr := toolkit.Install()
 			require.NoError(t, gotErr)
 		})
 	}

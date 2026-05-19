@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
@@ -17,8 +18,8 @@ func (toolkit SwiftToolkit) Bootstrap() error {
 	return nil
 }
 
-func (toolkit SwiftToolkit) Install() error {
-	return nil
+func (toolkit SwiftToolkit) Install() (InstallResult, error) {
+	return InstallResult{}, nil
 }
 
 func (toolkit SwiftToolkit) ToolkitName() string {
@@ -37,25 +38,26 @@ func (toolkit SwiftToolkit) IsToolAvailableInPATH() bool {
 	return len(binPath) > 0
 }
 
-func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.CanonicalID, stepAbsDirPath string) error {
+func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.CanonicalID, stepAbsDirPath string) (PrepareForStepRunResult, error) {
 	binaryLocation := step.Toolkit.Swift.BinaryLocation
 	if binaryLocation == "" {
-		return nil
+		return PrepareForStepRunResult{}, nil
 	}
 
 	executablePath := filepath.Join(stepAbsDirPath, step.Toolkit.Swift.ExecutableName)
-	
+
+	start := time.Now()
 	err := downloadFile(binaryLocation, executablePath)
 	if err != nil {
-		return fmt.Errorf("download precompiled step binary: %s", err)
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, fmt.Errorf("download precompiled step binary: %s", err)
 	}
 
 	err = os.Chmod(executablePath, 0755)
 	if err != nil {
-		return err
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, err
 	}
 
-	return nil
+	return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, nil
 }
 
 func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {
