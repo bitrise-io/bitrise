@@ -298,23 +298,23 @@ func (toolkit GoToolkit) PrepareForStepRun(step models.StepModel, sIDData stepid
 
 	// it's not cached, so compile it
 	if step.Toolkit == nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, errors.New("no toolkit information specified in step")
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, errors.New("no toolkit information specified in step")
 	}
 	if step.Toolkit.Go == nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, errors.New("no toolkit.go information specified in step")
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, errors.New("no toolkit.go information specified in step")
 	}
 
 	isInstallRequired, _, goConfig, err := selectGoConfiguration(toolkit.logger)
 	if err != nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s", err)
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s", err)
 	}
 	if isInstallRequired {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s",
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, fmt.Errorf("select an appropriate Go installation for compiling the Step: %s",
 			"found Go version is older than required. Please run 'bitrise setup' to check and install the required version")
 	}
 
 	if err := goBuildStep(toolkit.logger, newDefaultRunner(toolkit.logger), goConfig, step.Toolkit.Go.PackageName, stepAbsDirPath, fullStepBinPath); err != nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, err
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, err
 	}
 	return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, nil
 }

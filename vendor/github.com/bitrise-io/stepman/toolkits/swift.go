@@ -49,15 +49,15 @@ func (toolkit SwiftToolkit) PrepareForStepRun(step models.StepModel, _ stepid.Ca
 	start := time.Now()
 	err := downloadFile(binaryLocation, executablePath)
 	if err != nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, fmt.Errorf("download precompiled step binary: %s", err)
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, fmt.Errorf("download precompiled step binary: %s", err)
 	}
 
 	err = os.Chmod(executablePath, 0755)
 	if err != nil {
-		return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, err
+		return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, err
 	}
 
-	return PrepareForStepRunResult{PrepareDuration: time.Since(start)}, nil
+	return PrepareForStepRunResult{CacheHit: false, PrepareDuration: time.Since(start)}, nil
 }
 
 func (toolkit SwiftToolkit) StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error) {

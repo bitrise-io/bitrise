@@ -643,11 +643,7 @@ func (r WorkflowRunner) executeStep(
 		toolkitName := toolkitForStep.ToolkitName()
 
 		prepareResult, prepareErr := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath)
-		// Skip the event for no-op toolkits (e.g. bash, swift with no precompiled binary)
-		// where duration is always 0 and cache_hit is always false, which would be misleading.
-		if prepareErr != nil || prepareResult.PrepareDuration > 0 {
-			r.tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, prepareResult, prepareErr)
-		}
+		trackToolkitPrepare(r.tracker, stepUUID, toolkitName, sIDData, prepareResult, prepareErr)
 		if prepareErr != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
 				toolkitName, prepareErr)
@@ -1152,6 +1148,15 @@ func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultSte
 		}
 	}
 	return nil
+}
+
+// trackToolkitPrepare sends a toolkit prepare telemetry event, but skips no-op toolkits
+// (e.g. bash, swift without a precompiled binary) where duration is always 0 and cache_hit
+// is always false, which would produce misleading data.
+func trackToolkitPrepare(tracker analytics.Tracker, stepUUID, toolkitName string, sIDData stepid.CanonicalID, result toolkits.PrepareForStepRunResult, err error) {
+	if err != nil || result.PrepareDuration > 0 {
+		tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, result, err)
+	}
 }
 
 func secretEnvKeysEnvironment(keys []string) envmanModels.EnvironmentItemModel {
