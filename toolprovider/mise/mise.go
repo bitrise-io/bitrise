@@ -78,6 +78,10 @@ func NewToolProvider(installDir string, dataDir string, useFastInstall, silent b
 		// Enable corepack by default for Node.js installations. This mirrors the preinstalled Node versions on Bitrise stacks.
 		// https://mise.jdx.dev/lang/node.html#environment-variables
 		"MISE_NODE_COREPACK": "1",
+
+		// Older Python versions predate attestation support in astral-sh/python-build-standalone,
+		// so verification fails for any such version (e.g. 3.11.4).
+		"MISE_PYTHON_GITHUB_ATTESTATIONS": "false",
 	}
 	for k, v := range extraEnvs {
 		miseEnvs[k] = v
