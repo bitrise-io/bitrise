@@ -237,5 +237,6 @@ func before(c *cli.Context) error {
 
 func failf(format string, args ...interface{}) {
 	log.Errorf(format, args...)
+	globalTracker.Wait()
 	os.Exit(1)
 }
