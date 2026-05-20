@@ -24,13 +24,13 @@ import (
 // 3. Verify checksums
 // 4. Update version string and checksums below
 // 5. IMPORTANT, DO NOT FORGET: Mirror artifacts to GCS bucket (see bootstrap.go) in case github.com goes down
-const misePreviewVersion = "v2026.3.16"
+const misePreviewVersion = "v2026.5.12"
 
 var misePreviewChecksums = map[string]string{
-	"linux-x64":   "96417e479462d9a1836654461ec4b86eba8ff4f12260c09b93800fd50c25490c",
-	"linux-arm64": "6e0362723bddec3b25923a6c7c447c3f10eba4bf6e3db6973e175fa0a60ab974",
-	"macos-x64":   "a6f6f320b547dec3eff321e301fa05268dfc73a620d35ec3292603fbab1c4c29",
-	"macos-arm64": "9d6e2bfea3e00ffb566ad1a369914cb029c32a28eb4b699e8655cf3c3d4ef87e",
+	"linux-x64":   "bd0930c0b619f51ddb60e32e5cce18a5533567b2f1ba9fc4875b9f39a2bb3ed8",
+	"linux-arm64": "67c2bd96da9c6da030db4174b2dd0f8e6636c25519b23a15f0b734556e6e5ee0",
+	"macos-x64":   "dcab53de40bbd42c10607d64081e9df328c4885db30b41c4421f27e18b8f7efa",
+	"macos-arm64": "5b883c868a0748dd0c595d30fd000ec5138dfabdeef2c30222866ebf34af1ae3",
 }
 
 const miseStableVersion = "v2026.3.16"
