@@ -10,4 +10,5 @@ _FAKE_HOME/
 .DS_Store
 .idea/
 dist/
-.claude/
+.claude/*
+!.claude/mise-version-bump/
