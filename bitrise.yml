@@ -51,7 +51,7 @@ workflows:
               bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "output/$item.json"
             done < <(bitrise tools catalog)
 
-            gsutil rsync -r -d ./output gs://bitrise-cli-tool-catalog_staging
+            gsutil rsync -r -d ./output gs://bitrise-cli-tool-catalog
   release:
     triggers:
       tag:
