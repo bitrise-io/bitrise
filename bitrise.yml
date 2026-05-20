@@ -25,6 +25,33 @@ pipelines:
       test_binary_build_linux: {}
 
 workflows:
+  publish_tool_catalog:
+    meta:
+      bitrise.io:
+        stack: ubuntu-noble-24.04-bitrise-2025-android
+        machine_type_id: standard
+    steps:
+    - bundle::setup_repo: {}
+    - authenticate-with-gcp@0:
+        inputs:
+        - client_config: "$GCP_CLIENT_CONFIG"
+        - audience: https://iam.googleapis.com/projects/739834771422/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
+        - verbose: true
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            mkdir -p output
+            timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > output/catalog.json
+
+            while IFS= read -r item; do
+              bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "output/$item.json"
+            done < <(bitrise tools catalog)
+
+            gsutil rsync -r -d ./output gs://bitrise-cli-tool-catalog_staging
   release:
     triggers:
       tag:
