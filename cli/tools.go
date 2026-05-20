@@ -345,6 +345,7 @@ func toolsSetup(c *cli.Context) error {
 		}
 
 		tracker := analytics.NewDefaultTracker()
+		defer tracker.Wait()
 		envs, err := toolprovider.RunDeclarativeSetup(config, tracker, false, workflowID, silent, providerOverride, fastInstallOverride, nil)
 		if err != nil {
 			return err
@@ -362,6 +363,7 @@ func toolsSetup(c *cli.Context) error {
 	// Setting up from all the other requested version files or auto-detecting from directory.
 	if len(versionFilePaths) > 0 || len(configFiles) == 0 {
 		tracker := analytics.NewDefaultTracker()
+		defer tracker.Wait()
 		envs, err := toolprovider.RunVersionFileSetup(versionFilePaths, tracker, silent, providerOverride, fastInstallOverride)
 		if err != nil {
 			return err
