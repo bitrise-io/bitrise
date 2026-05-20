@@ -642,9 +642,11 @@ func (r WorkflowRunner) executeStep(
 		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 		toolkitName := toolkitForStep.ToolkitName()
 
-		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+		prepareResult, prepareErr := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath)
+		trackToolkitPrepare(r.tracker, stepUUID, toolkitName, sIDData, prepareResult, prepareErr)
+		if prepareErr != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
-				toolkitName, err)
+				toolkitName, prepareErr)
 		}
 
 		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
@@ -1146,6 +1148,15 @@ func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultSte
 		}
 	}
 	return nil
+}
+
+// trackToolkitPrepare sends a toolkit prepare telemetry event, but skips no-op toolkits
+// (e.g. bash, swift without a precompiled binary) where duration is always 0 and cache_hit
+// is always false, which would produce misleading data.
+func trackToolkitPrepare(tracker analytics.Tracker, stepUUID, toolkitName string, sIDData stepid.CanonicalID, result toolkits.PrepareForStepRunResult, err error) {
+	if err != nil || result.PrepareDuration > 0 {
+		tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, result, err)
+	}
 }
 
 func secretEnvKeysEnvironment(keys []string) envmanModels.EnvironmentItemModel {
