@@ -49,16 +49,16 @@ func RunSetupIfNeeded(logger log.Logger) error {
 	versionMatch, setupVersion := configs.CheckIsSetupWasDoneForVersion(version.VERSION)
 	if setupVersion == "" {
 		log.Infof("No setup was done yet, running setup now...")
-		return RunSetup(logger, version.VERSION, SetupModeMinimal, false)
+		return RunSetup(logger, version.VERSION, SetupModeMinimal, false, false)
 	}
 	if !versionMatch {
 		log.Infof("Setup was last performed for version %s, current version is %s. Re-running setup now...", setupVersion, version.VERSION)
-		return RunSetup(logger, version.VERSION, SetupModeMinimal, false)
+		return RunSetup(logger, version.VERSION, SetupModeMinimal, false, false)
 	}
 	return nil
 }
 
-func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doCleanSetup bool) error {
+func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doCleanSetup bool, noUpdate bool) error {
 	log.Infof("Setup Bitrise tools...")
 	log.Printf("Clean before setup: %v", doCleanSetup)
 	log.Printf("Setup mode: %s", setupMode)
@@ -78,7 +78,7 @@ func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doClean
 		}
 	}
 
-	if err := doSetupBitriseCoreTools(); err != nil {
+	if err := doSetupBitriseCoreTools(noUpdate); err != nil {
 		return fmt.Errorf("failed to do common/platform independent setup, error: %s", err)
 	}
 
@@ -93,7 +93,7 @@ func RunSetup(logger log.Logger, appVersion string, setupMode SetupMode, doClean
 	}
 
 	if setupMode != SetupModeMinimal {
-		if err := doSetupPlugins(); err != nil {
+		if err := doSetupPlugins(noUpdate); err != nil {
 			return fmt.Errorf("failed to do Plugins setup, error: %s", err)
 		}
 	}
@@ -148,12 +148,12 @@ func doSetupToolkits(logger log.Logger) error {
 	return nil
 }
 
-func doSetupPlugins() error {
+func doSetupPlugins(noUpdate bool) error {
 	log.Print()
 	log.Infof("Checking Bitrise Plugins...")
 
 	for pluginName, pluginDependency := range PluginDependencyMap {
-		if err := CheckIsPluginInstalled(pluginName, pluginDependency); err != nil {
+		if err := CheckIsPluginInstalled(pluginName, pluginDependency, noUpdate); err != nil {
 			return fmt.Errorf("plugin (%s) failed to install: %s", pluginName, err)
 		}
 	}
@@ -161,15 +161,15 @@ func doSetupPlugins() error {
 	return nil
 }
 
-func doSetupBitriseCoreTools() error {
+func doSetupBitriseCoreTools(noUpdate bool) error {
 	log.Print()
 	log.Infof("Checking Bitrise Core tools...")
 
-	if err := CheckIsEnvmanInstalled(minEnvmanVersion); err != nil {
+	if err := CheckIsEnvmanInstalled(minEnvmanVersion, noUpdate); err != nil {
 		return fmt.Errorf("failed to install envman: %s", err)
 	}
 
-	if err := CheckIsStepmanInstalled(minStepmanVersion); err != nil {
+	if err := CheckIsStepmanInstalled(minStepmanVersion, noUpdate); err != nil {
 		return fmt.Errorf("failed to install stepman: %s", err)
 	}
 
