@@ -32,6 +32,7 @@ workflows:
         machine_type_id: standard
     steps:
     - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
     - authenticate-with-gcp@0:
         inputs:
         - client_config: "$GCP_CLIENT_CONFIG"
