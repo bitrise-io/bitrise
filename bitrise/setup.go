@@ -3,6 +3,7 @@ package bitrise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/bitrise-io/bitrise/v2/configs"
@@ -46,6 +47,8 @@ var PluginDependencyMap = map[string]PluginDependency{
 }
 
 func RunSetupIfNeeded(logger log.Logger) error {
+	noUpdate := os.Getenv(configs.SetupNoUpdateEnvKey) == "true"
+
 	versionMatch, setupVersion := configs.CheckIsSetupWasDoneForVersion(version.VERSION)
 	if setupVersion == "" {
 		log.Infof("No setup was done yet, running setup now...")
@@ -53,7 +56,7 @@ func RunSetupIfNeeded(logger log.Logger) error {
 	}
 	if !versionMatch {
 		log.Infof("Setup was last performed for version %s, current version is %s. Re-running setup now...", setupVersion, version.VERSION)
-		return RunSetup(logger, version.VERSION, SetupModeMinimal, false, false)
+		return RunSetup(logger, version.VERSION, SetupModeMinimal, false, noUpdate)
 	}
 	return nil
 }

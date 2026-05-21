@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/urfave/cli"
 )
@@ -39,7 +40,7 @@ var setupCommand = cli.Command{
 func setup(c *cli.Context) error {
 	clean := c.Bool("clean")
 	minimal := c.Bool("minimal")
-	noUpdate := c.Bool("no-update")
+	noUpdate := c.Bool("no-update") || os.Getenv(configs.SetupNoUpdateEnvKey) == "true"
 
 	setupMode := bitrise.SetupModeDefault
 	if minimal {
