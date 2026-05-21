@@ -34,31 +34,9 @@ workflows:
         machine_type_id: standard
     steps:
     - bundle::setup_repo: {}
-    - script@1:
-        title: Debug Go environment
-        is_always_run: true
+    - bundle::install_dependencies:
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -x
-            echo "=== PATH ==="
-            echo "$PATH"
-            echo "=== which go ==="
-            which go || echo "go not found in PATH"
-            echo "=== go version ==="
-            go version 2>&1 || echo "go version failed with exit code $?"
-            echo "=== Toolkit Go ==="
-            ls -la /root/.bitrise/toolkits/go/inst/go/bin/go 2>&1 || echo "toolkit go not found"
-            /root/.bitrise/toolkits/go/inst/go/bin/go version 2>&1 || echo "toolkit go version failed with exit code $?"
-            echo "=== mise/asdf status ==="
-            mise ls golang 2>&1 || true
-            asdf list golang 2>&1 || true
-            echo "=== .tool-versions ==="
-            cat .tool-versions 2>&1 || echo "no .tool-versions"
-            echo "=== file on go binary ==="
-            file "$(which go 2>/dev/null)" 2>&1 || echo "cannot file go binary"
-            echo "=== GOROOT ==="
-            echo "$GOROOT"
+        - IGNORE_CUSTOM_GOLANG: "true"
     - authenticate-with-gcp@0:
         inputs:
         - client_config: "$GCP_CLIENT_CONFIG"
