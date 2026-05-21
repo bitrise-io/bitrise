@@ -26,8 +26,6 @@ pipelines:
 
 workflows:
   publish_tool_catalog:
-    tools:
-      golang: 1.23:installed
     meta:
       bitrise.io:
         stack: ubuntu-noble-24.04-bitrise-2025-android
