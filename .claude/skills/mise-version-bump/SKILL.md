@@ -91,13 +91,13 @@ Capture matching lines verbatim, attributed to their release tag and URL.
 
 ## Step 5: Download artifacts
 
-Create a temp dir and use `gh api` to fetch one artifact per platform key (using the artifact naming pattern from the repo facts step) plus the checksums file.
+Create a temp dir and use `gh api` to fetch one artifact per platform key (using the artifact naming pattern from the repo facts step) plus the checksums file (default name: `SHASUMS256.txt`).
 
 Verify the temp dir contains exactly one artifact per platform + the checksums file. If anything is missing, delete the temp dir and stop.
 
 ## Step 6: Verify checksums (hard fail on mismatch)
 
-Compute checksum for each artifact, infer algorithm from filename or content. Compare against the checksums file.
+Compute SHA-256 checksum for each artifact. Compare against the checksums file.
 
 **On any mismatch:** print the mismatching platforms with expected vs actual checksums, delete the temp dir, and STOP: do not edit files or touch GCS.
 
