@@ -1,12 +1,9 @@
 ---
 name: mise-version-bump
 description: >
-  Automates bumping the pinned Mise tool version in the bitrise-io/bitrise repo
-  (toolprovider/mise/mise.go). Handles release discovery, changelog review,
-  artifact download, sha256 verification, GCS mirror upload, file edits, and
-  optional PR creation. Use when the user wants to "update Mise", "bump Mise",
-  "upgrade mise version", "match stable with preview", or otherwise change the
-  values of misePreviewVersion / miseStableVersion / their checksum maps.
+  Bumps the pinned Mise version in toolprovider/mise/mise.go. Use when the user
+  wants to update, bump, or upgrade Mise, or change misePreviewVersion /
+  miseStableVersion / their checksum maps.
 ---
 
 # Mise version bump
@@ -15,36 +12,31 @@ Automates bumping `misePreviewVersion` / `miseStableVersion` and their checksum 
 
 ## Repo facts
 
-- **Edit target:** `toolprovider/mise/mise.go`: `misePreviewVersion`, `misePreviewChecksums`, `miseStableVersion`, `miseStableChecksums`.
-- **Platforms:** `linux-x64`, `linux-arm64`, `macos-x64`, `macos-arm64`.
-- **Source repo:** `jdx/mise`. Valid releases: `vYYYY.M.D` (CalVer only with optional `: <description>`).
-- **Artifact pattern:** `mise-v<VERSION>-<PLATFORM>.tar.gz` (e.g. tag `v2026.5.10` → `mise-v2026.5.10-linux-x64.tar.gz`).
-- **GCS mirror:** `gs://mise-release-mirror/v<VERSION>/<ARTIFACT>`.
-- **Commit/PR title:** `Update Mise version`. **Branch:** `bump/mise-<NEW_TAG>` (or `bump/mise-stable-<TAG>` for match-stable).
+Before starting, read `toolprovider/mise/mise.go` and `toolprovider/mise/bootstrap.go` to discover:
+- The version constant names and checksum map names (preview and stable).
+- The set of platform keys used in the checksum maps.
+- The artifact naming pattern, GCS bucket name, and GCS path structure.
 
-> If `toolprovider/mise/bootstrap.go` no longer contains `mise-release-mirror` or the four platform strings, warn and stop - these facts are stale.
+Use these values throughout — do not assume them from memory.
+
+- **Source repo:** `jdx/mise`. Valid releases: `vYYYY.M.D` (CalVer only with optional `: <description>`).
+- **Commit/PR title:** `Update Mise version`. **Branch:** `bump/mise-<NEW_TAG>` (or `bump/mise-stable-<TAG>` for match-stable).
 
 ## Step 0: Preflight (run in parallel)
 
 - Confirm `go.mod` contains `module github.com/bitrise-io/bitrise/v2`. If not, ask the user to `cd` to the repo root and stop.
-- `git status --porcelain` must be empty. If dirty, ask: continue or abort (recommend abort).
-- Verify on PATH: `gh`, `gcloud`, `shasum`, `git`. List all missing and stop if any.
+- Working tree must be clean. If dirty, ask: continue or abort (recommend abort).
+- Verify `gh`, `gcloud`, `shasum`, and `git` are on PATH. List all missing and stop if any.
+- Verify an active gcloud account exists. If not, instruct the user to run `gcloud auth login` and stop.
+- Verify access to the GCS bucket discovered from `bootstrap.go`. If access fails, surface the error and stop — do not proceed to download or upload.
 
 ## Step 1: Read current state
 
-Grep `toolprovider/mise/mise.go` for `misePreviewVersion` and `miseStableVersion`. Print:
-
-```
-Current preview: vYYYY.M.D  |  Current stable: vYYYY.M.D
-```
+Read `toolprovider/mise/mise.go` and extract the current preview and stable version strings. Print both.
 
 ## Step 2: Discover latest release
 
-```
-gh api repos/jdx/mise/releases/latest --jq '.tag_name'
-```
-
-Validate the tag matches `^v\d{4}\.\d+\.\d+$`. Print it. Stop on failure.
+Fetch the latest release tag from `jdx/mise`. Validate it is a CalVer tag (e.g. `v2025.1.0`). Print it. Stop on failure.
 
 ## Step 3: Decide track(s) to bump
 
@@ -75,137 +67,66 @@ Record `targetVersion` and `tracks` (`{preview}`, `{stable}`, `{preview,stable}`
 
 Range: `(fromTag, toTag]` where `fromTag` = older of the tracks being moved, `toTag` = `targetVersion`.
 
-For each CalVer release in range: `gh release view <tag> --repo jdx/mise --json tagName,name,publishedAt,body,url`
+For each CalVer release in range, fetch its details from `jdx/mise`.
 
 Scan `body` (case-insensitive) for keywords related to declarative tool setup:
 
 ```
-install   plugin     registry  ls-remote  use        settings
-lockfile  asdf       env       shim       cache      mirror
-tarball   tools      latest    core       idiomatic  mise.toml
-direnv    backend    tool-versions        breaking   deprecat   remove
-python    ruby       node      go         java       flutter
-swift     kotlin     rust      dotnet     erlang     elixir
-bun       deno       zig
+registry  lockfile  asdf       env        shim       mirror
+tarball   tools     core       idiomatic  mise.toml  direnv
+backend   tool-versions        breaking   deprecat   remove
 ```
+
+Also scan for mise core tools and popular mobile dev tools.
 
 Capture matching lines verbatim, attributed to their release tag and URL.
 
 **Risk level** (always print with one-line justification):
 - **low** - baseline.
 - **medium** - ≥3 releases in range, OR any match outside breaking/deprecat/remove keywords.
-- **high** - "breaking change" mentioned, OR a CLI subcommand we invoke is removed/renamed. Check with: `grep -rE 'mise (install|ls-remote|use|plugin|set|cache|exec|where|which|current|latest)' toolprovider/mise/`.
+- **high** - "breaking change" mentioned, OR a CLI subcommand we invoke is removed/renamed. Check `toolprovider/mise/` for all mise subcommands invoked and verify none are removed or renamed.
 - **extreme** - asdf compatibility removed, registry format changed, or tarball layout changed.
 
-**Related issues** (best effort): for matched lines that look like bugs, do one `gh search issues "in:title <keyword>" --repo bitrise-io/bitrise --limit 3`. Surface hits as `Possibly related: bitrise-io/bitrise#<num> - <title>`. Silent on no match.
+**Related issues** (best effort): for matched lines that look like bugs, search for related issues in `bitrise-io/bitrise`. Surface hits as `Possibly related: bitrise-io/bitrise#<num> - <title>`. Silent on no match.
 
 ## Step 5: Download artifacts
 
-```bash
-tmp=$(mktemp -d -t mise-bump-XXXX)
-gh release download <targetVersion> --repo jdx/mise --dir "$tmp" \
-  --pattern 'mise-v*-linux-x64.tar.gz' \
-  --pattern 'mise-v*-linux-arm64.tar.gz' \
-  --pattern 'mise-v*-macos-x64.tar.gz' \
-  --pattern 'mise-v*-macos-arm64.tar.gz' \
-  --pattern 'SHASUMS256.txt'
-```
+Create a temp dir and use `gh api` to fetch one artifact per platform key (using the artifact naming pattern from the repo facts step) plus the checksums file.
 
-Verify `$tmp` contains exactly 4 `.tar.gz` files + `SHASUMS256.txt`. If anything is missing, `rm -rf "$tmp"` and stop.
+Verify the temp dir contains exactly one artifact per platform + the checksums file. If anything is missing, delete the temp dir and stop.
 
 ## Step 6: Verify checksums (hard fail on mismatch)
 
-Compute `shasum -a 256` for each artifact. Compare against `SHASUMS256.txt` (fallback: `gh release view --json assets`).
+Compute checksum for each artifact, infer algorithm from filename or content. Compare against the checksums file.
 
-**On any mismatch:** print a `| platform | expected | actual | match |` table, `rm -rf "$tmp"`, and STOP: do not edit files or touch GCS.
+**On any mismatch:** print the mismatching platforms with expected vs actual checksums, delete the temp dir, and STOP: do not edit files or touch GCS.
 
 **On full match:** save checksums as `computedChecksums[platform]` and continue.
 
 ## Step 7: GCS mirror
 
-For each of the 4 artifacts:
-1. Check: `gcloud storage objects describe gs://mise-release-mirror/v<VERSION>/<ARTIFACT> --format='value(name)' 2>/dev/null`
+Using the GCS bucket and path structure from the repo facts step, for each artifact:
+1. Check if the object already exists in GCS.
 2. If absent → upload. If present → log "already mirrored", skip.
 
-Then verify: `gcloud storage ls gs://mise-release-mirror/v<VERSION>/` must list all 4. If any missing → `rm -rf "$tmp"` and STOP, do not edit files.
+Then list the version prefix to confirm all platform artifacts are present. If any are missing → delete the temp dir and STOP, do not edit files.
 
-After successful verification, `rm -rf "$tmp"`.
+After successful verification, delete the temp dir.
 
 ## Step 8: Edit `toolprovider/mise/mise.go`
 
 **For `{stable-match-preview}`: this is where execution resumes after skipping steps 4–7.**
 
-Update the relevant block(s) using the Edit tool with enough context to disambiguate preview vs stable (include the `misePreviewVersion =` or `miseStableVersion =` const line). For `{stable-match-preview}`, copy current preview values into the stable block.
-
-Preserve `gofmt` column alignment. After editing, re-read to verify the new version + 4 hashes appear exactly once each. On any issue: `git checkout -- toolprovider/mise/mise.go` and stop.
+Update the relevant version constant(s) and checksum map(s) using the Edit tool, including enough surrounding context to unambiguously target the preview or stable block. For `{stable-match-preview}`, copy current preview values into the stable block.
 
 ## Step 9: PR
 
-Build the PR body below. Write "unchanged" for tracks that were not bumped; write "No changes detected." for empty changelog sections.
-
-```markdown
-## Summary
-
-Updates pinned Mise version(s):
-- Preview: <oldPreview> → <newPreview>
-- Stable:  <oldStable>  → <newStable>
-
-Risk: **<level>** - <one-line justification>
-
-## Changes affecting our work (declarative tool setup)
-
-- [vYYYY.M.D](<url>)
-  - <verbatim changelog line>
-
-## Releases in range
-
-- [vYYYY.M.D](<url>) - <release name>
-
-## Full diff
-
-[Compare <oldMin>…<newMax>](https://github.com/jdx/mise/compare/<oldMin>...<newMax>)
-
-## Verification
-
-- [x] SHA256 verified against `SHASUMS256.txt`. All 4 platforms match.
-- [x] Artifacts present at `gs://mise-release-mirror/v<VERSION>/`.
-```
-
 Ask: "Create the PR now?"
 
-**Yes:** branch (`bump/mise-<targetVersion>` or `bump/mise-stable-<currentPreview>`; append `-2` if exists), `git add`, `git commit -m "Update Mise version"`, `git push -u origin`, `gh pr create`. Print PR URL.
+**Yes:** commit, push, and open a PR. Print the PR URL.
 
-**No:** save body to `/tmp/mise-bump-<VERSION>-pr-description.md`. Leave edits in working tree. Print file path.
+**No:** leave edits in working tree.
 
 ## Step 10: Final report
 
-Print as markdown. Same sections in the same order for every update type. Empty sections get "nothing to report", never skipped.
-
-### Mise <track-label> update: <oldA> → <newA>[ + stable <oldB> → <newB>]
-
-Type: `<preview / stable / preview + stable / match-stable-with-preview>`
-Risk: **<level>** - <one-line justification>
-
-**Changes affecting our work** (declarative tool setup)
-- vYYYY.M.D - <summary> ([link](<url>))
-
-**Releases in range**
-- [vYYYY.M.D](<url>)
-
-**Compare**
-[<oldMin>…<newMax>](https://github.com/jdx/mise/compare/<oldMin>...<newMax>)
-
-**Checksums applied**
-
-| platform | sha256 |
-|---|---|
-| linux-x64 | `<hash>` |
-| linux-arm64 | `<hash>` |
-| macos-x64 | `<hash>` |
-| macos-arm64 | `<hash>` |
-
-*(For match-stable: "Stable now matches preview values — no new checksums.")*
-
-**Next**
-
-PR: <URL> OR Suggested PR description saved to `/tmp/mise-bump-<VERSION>-pr-description.md`
+Print a brief markdown summary covering: what changed (tracks and versions), risk level with justification, relevant changelog highlights, and PR URL or status.
