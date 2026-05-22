@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/urfave/cli"
 )
@@ -29,12 +30,17 @@ var setupCommand = cli.Command{
 			Name:  "minimal",
 			Usage: "Only installs the required tools for running in CI mode.",
 		},
+		cli.BoolFlag{
+			Name:  "no-update",
+			Usage: "Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated.",
+		},
 	},
 }
 
 func setup(c *cli.Context) error {
 	clean := c.Bool("clean")
 	minimal := c.Bool("minimal")
+	noUpdate := c.Bool("no-update") || os.Getenv(configs.SetupNoUpdateEnvKey) == "true"
 
 	setupMode := bitrise.SetupModeDefault
 	if minimal {
@@ -42,7 +48,7 @@ func setup(c *cli.Context) error {
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	if err := bitrise.RunSetup(logger, c.App.Version, setupMode, clean); err != nil {
+	if err := bitrise.RunSetup(logger, c.App.Version, setupMode, clean, noUpdate); err != nil {
 		return err
 	}
 
