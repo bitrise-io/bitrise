@@ -62,6 +62,11 @@ const (
 	//  a error message (including what other Step versions are available).
 	// - Analytics will be disabled.
 	IsSteplibOfflineModeEnvKey = "BITRISE_OFFLINE_MODE"
+	// SetupNoUpdateEnvKey when set to "true", skips updating core tools (stepman/envman) and plugins
+	// during setup if they are already installed, even if their version is below the minimum required.
+	// Tools that are missing entirely are still installed. Intended for CI environments where GitHub
+	// fetches during setup are prone to rate-limiting.
+	SetupNoUpdateEnvKey = "BITRISE_SETUP_NO_UPDATE"
 
 	// --- Debug Options
 
