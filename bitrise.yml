@@ -91,7 +91,7 @@ workflows:
             #!/usr/bin/env bash
             set -ex
 
-            gsutil rsync -r -d "$CATALOG_OUTPUT_DIR" gs://bitrise-cli-tool-catalog
+            gsutil rsync -r -d -c "$CATALOG_OUTPUT_DIR" gs://bitrise-cli-tool-catalog
     - slack@4:
         is_always_run: true
         run_if: .IsBuildFailed
