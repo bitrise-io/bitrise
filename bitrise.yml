@@ -64,8 +64,6 @@ workflows:
 
             validation_failed=false
 
-            tree output
-
             for file in "$CATALOG_OUTPUT_DIR"/*; do
               filename=$(basename "$file")
               if [[ "$filename" != *.json ]]; then
