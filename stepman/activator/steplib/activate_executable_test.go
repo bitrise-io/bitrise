@@ -2,6 +2,9 @@ package steplib
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/bitrise-io/stepman/models"
@@ -60,80 +63,147 @@ func TestValidateHash(t *testing.T) {
 	}
 }
 
-func TestDownloadURL(t *testing.T) {
+func TestBuildDownloadURLs(t *testing.T) {
 	tests := []struct {
-		name        string
-		env         map[string]string
-		executable  models.Executable
-		expectedURL string
+		name         string
+		bases        []string
+		executable   models.Executable
+		expectedURLs []string
+		expectedErr  error
 	}{
 		{
-			name: "With custom base URL",
-			env: map[string]string{
-				precompiledStepsPrimaryStorageEnv: "https://custom.example.com/storage",
-			},
+			name:  "Default list: GCS first, gateway second",
+			bases: precompiledStepsDefaultStorageURLs,
 			executable: models.Executable{
 				StorageURI: "steps/step1.tar.gz",
 			},
-			expectedURL: "https://custom.example.com/storage/steps/step1.tar.gz",
+			expectedURLs: []string{
+				"https://storage.googleapis.com/bitrise-steplib-storage/steps/step1.tar.gz",
+				"https://storage-gateway.services.bitrise.io/steps/step1.tar.gz",
+			},
 		},
 		{
-			name: "With custom base URL with trailing slash",
-			env: map[string]string{
-				precompiledStepsPrimaryStorageEnv: "https://custom.example.com/storage/",
-			},
-			executable: models.Executable{
-				StorageURI: "steps/step1.tar.gz",
-			},
-			expectedURL: "https://custom.example.com/storage/steps/step1.tar.gz",
-		},
-		{
-			name: "With default base URL",
-			env:  map[string]string{},
+			name:  "Multiple bases",
+			bases: []string{"https://a.example.com", "https://b.example.com"},
 			executable: models.Executable{
 				StorageURI: "steps/step2.tar.gz",
 			},
-			expectedURL: "https://storage.googleapis.com/bitrise-steplib-storage/steps/step2.tar.gz",
+			expectedURLs: []string{
+				"https://a.example.com/steps/step2.tar.gz",
+				"https://b.example.com/steps/step2.tar.gz",
+			},
 		},
 		{
-			name: "With leading slash in storage URI",
-			env: map[string]string{
-				precompiledStepsPrimaryStorageEnv: "https://custom.example.com/storage",
-			},
+			name:  "URL normalization: trailing slashes and leading StorageURI slash",
+			bases: []string{"https://a.example.com/// ", " https://b.example.com///"},
 			executable: models.Executable{
 				StorageURI: "/steps/step3.tar.gz",
 			},
-			expectedURL: "https://custom.example.com/storage/steps/step3.tar.gz",
+			expectedURLs: []string{
+				"https://a.example.com/steps/step3.tar.gz",
+				"https://b.example.com/steps/step3.tar.gz",
+			},
 		},
 		{
-			name: "With multiple slashes in base URL",
-			env: map[string]string{
-				precompiledStepsPrimaryStorageEnv: "https://custom.example.com/storage///",
-			},
+			name:  "Input parsing: spaces and empty entries",
+			bases: []string{"", " https://a.example.com ", "", " https://b.example.com ", ""},
 			executable: models.Executable{
 				StorageURI: "steps/step4.tar.gz",
 			},
-			expectedURL: "https://custom.example.com/storage/steps/step4.tar.gz",
+			expectedURLs: []string{
+				"https://a.example.com/steps/step4.tar.gz",
+				"https://b.example.com/steps/step4.tar.gz",
+			},
 		},
 		{
-			name: "Empty storage URI",
-			env: map[string]string{
-				precompiledStepsPrimaryStorageEnv: "https://custom.example.com/storage",
-			},
+			name:  "http URL is rejected",
+			bases: []string{"http://a.example.com"},
 			executable: models.Executable{
-				StorageURI: "",
+				StorageURI: "steps/step5.tar.gz",
 			},
-			expectedURL: "https://custom.example.com/storage/",
+			expectedErr: fmt.Errorf("http URL is unsupported, please use https: http://a.example.com/steps/step5.tar.gz"),
+		},
+		{
+			name:  "All-empty list yields a configuration error",
+			bases: []string{"", "", ""},
+			executable: models.Executable{
+				StorageURI: "steps/step6.tar.gz",
+			},
+			expectedErr: fmt.Errorf("no storage URLs configured"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if val, exists := tt.env[precompiledStepsPrimaryStorageEnv]; exists {
-				t.Setenv(precompiledStepsPrimaryStorageEnv, val)
+			got, err := buildDownloadURLs(tt.bases, tt.executable)
+			if tt.expectedErr != nil {
+				require.EqualError(t, err, tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedURLs, got)
 			}
-			url := downloadURL(tt.executable)
-			require.Equal(t, tt.expectedURL, url)
 		})
 	}
+}
+
+
+func TestDownloadFromURLs(t *testing.T) {
+	t.Run("primary succeeds, secondary is not called", func(t *testing.T) {
+		secondaryHits := 0
+		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("from primary"))
+		}))
+		defer primary.Close()
+		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			secondaryHits++
+		}))
+		defer secondary.Close()
+
+		body, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		require.NoError(t, err)
+		defer func() { _ = body.Close() }()
+
+		b, err := io.ReadAll(body)
+		require.NoError(t, err)
+		require.Equal(t, "from primary", string(b))
+		require.Equal(t, 0, secondaryHits)
+	})
+
+	t.Run("primary 404 falls back to secondary", func(t *testing.T) {
+		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer primary.Close()
+		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("from secondary"))
+		}))
+		defer secondary.Close()
+
+		body, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		require.NoError(t, err)
+		defer func() { _ = body.Close() }()
+
+		b, err := io.ReadAll(body)
+		require.NoError(t, err)
+		require.Equal(t, "from secondary", string(b))
+	})
+
+	t.Run("all URLs fail and the error lists each one", func(t *testing.T) {
+		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer primary.Close()
+		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusForbidden)
+		}))
+		defer secondary.Close()
+
+		_, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to download executable")
+		require.Contains(t, err.Error(), primary.URL)
+		require.Contains(t, err.Error(), "status 404")
+		require.Contains(t, err.Error(), secondary.URL)
+		require.Contains(t, err.Error(), "status 403")
+	})
 }
