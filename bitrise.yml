@@ -35,11 +35,6 @@ workflows:
     - bundle::install_dependencies:
         inputs:
         - IGNORE_CUSTOM_GOLANG: "true" 
-    - authenticate-with-gcp@0:
-        inputs:
-        - client_config: "$GCP_CLIENT_CONFIG"
-        - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
-        - verbose: true
     - script@1:
         inputs:
         - content: |-
@@ -62,6 +57,8 @@ workflows:
 
             validation_failed=false
 
+            tree output
+
             for file in output/*; do
               filename=$(basename "$file")
               if [[ "$filename" != *.json ]]; then
@@ -82,20 +79,6 @@ workflows:
             fi
 
             echo "All files are valid JSON"
-    - script@1:
-        title: Upload to GCS
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            gsutil rsync -r -d ./output gs://bitrise-cli-tool-catalog
-    - slack@4:
-        is_always_run: true
-        run_if: .IsBuildFailed
-        inputs:
-        - workspace_slack_integration_id: $SLACK_WORKSPACE_CONNECTION_ID
-        - pretext_on_error: "*publish_tool_catalog failed*\n<$BITRISE_BUILD_URL|View Build>"
   release:
     triggers:
       tag:
