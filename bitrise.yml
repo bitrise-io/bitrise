@@ -26,6 +26,8 @@ pipelines:
 
 workflows:
   publish_tool_catalog:
+    envs:
+    - CATALOG_OUTPUT_DIR: /tmp/catalog
     meta:
       bitrise.io:
         stack: ubuntu-noble-24.04-bitrise-2025-android
@@ -34,19 +36,19 @@ workflows:
     - bundle::setup_repo: {}
     - bundle::install_dependencies:
         inputs:
-        - IGNORE_CUSTOM_GOLANG: "true" 
+        - IGNORE_CUSTOM_GOLANG: "true"
     - script@1:
         inputs:
         - content: |-
             #!/usr/bin/env bash
             set -ex
 
-            mkdir -p output
+            mkdir -p "$CATALOG_OUTPUT_DIR"
             timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > output/catalog.json
+            bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/catalog.json"
 
             while IFS= read -r item; do
-              bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "output/$item.json"
+              bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/$item.json"
             done < <(bitrise tools catalog)
     - script@1:
         title: Validate JSON files
@@ -57,9 +59,9 @@ workflows:
 
             validation_failed=false
 
-            tree output
+            tree "$CATALOG_OUTPUT_DIR"
 
-            for file in output/*; do
+            for file in "$CATALOG_OUTPUT_DIR"/*; do
               filename=$(basename "$file")
               if [[ "$filename" != *.json ]]; then
                 echo "ERROR: File '$filename' does not have .json extension"
