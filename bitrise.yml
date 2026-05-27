@@ -25,6 +25,79 @@ pipelines:
       test_binary_build_linux: {}
 
 workflows:
+  publish_tool_catalog:
+    envs:
+    - CATALOG_OUTPUT_DIR: /tmp/catalog
+    meta:
+      bitrise.io:
+        stack: ubuntu-noble-24.04-bitrise-2025-android
+        machine_type_id: standard
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
+        inputs:
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - authenticate-with-gcp@0:
+        inputs:
+        - client_config: "$GCP_CLIENT_CONFIG"
+        - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
+        - verbose: true
+    - script@1:
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            mkdir -p "$CATALOG_OUTPUT_DIR"
+            timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/catalog.json"
+
+            while IFS= read -r item; do
+              bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/$item.json"
+            done < <(bitrise tools catalog)
+    - script@1:
+        title: Validate JSON files
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -e
+
+            validation_failed=false
+
+            for file in "$CATALOG_OUTPUT_DIR"/*; do
+              filename=$(basename "$file")
+              if [[ "$filename" != *.json ]]; then
+                echo "ERROR: File '$filename' does not have .json extension"
+                validation_failed=true
+                continue
+              fi
+
+              if ! jq empty "$file" 2>/dev/null; then
+                echo "ERROR: File '$filename' is not valid JSON"
+                validation_failed=true
+              fi
+            done
+
+            if [[ "$validation_failed" == "true" ]]; then
+              echo "JSON validation failed"
+              exit 1
+            fi
+
+            echo "All files are valid JSON"
+    - script@1:
+        title: Upload to GCS
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+
+            gsutil rsync -r -d "$CATALOG_OUTPUT_DIR" gs://bitrise-cli-tool-catalog
+    - slack@4:
+        is_always_run: true
+        run_if: .IsBuildFailed
+        inputs:
+        - workspace_slack_integration_id: $SLACK_WORKSPACE_CONNECTION_ID
+        - pretext_on_error: "*publish_tool_catalog failed*\n<$BITRISE_BUILD_URL|View Build>"
   release:
     triggers:
       tag:
