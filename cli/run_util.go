@@ -212,6 +212,25 @@ func (r WorkflowRunner) activateAndRunStep(
 		}
 	}
 
+	// Evaluate run_if before activation when it's explicitly set in bitrise.yml.
+	// If not set, the step.yml default may apply and can only be checked post-activation.
+	if step.RunIf != nil && *step.RunIf != "" {
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		if err != nil {
+			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+		}
+
+		isRun, err := bitrise.EvaluateTemplateToBool(*step.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+		if err != nil {
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+		}
+		if !isRun {
+			stepInfoPtr.Step.RunIf = pointers.NewStringPtr(*step.RunIf)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, true, map[string]string{}, nil)
+		}
+	}
+
 	//
 	// Activate step
 	activateStartTime := time.Now()
@@ -229,7 +248,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	// Run step
 	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
 
-	// Evaluate run conditions
+	// Evaluate run_if from step.yml default (only reached when bitrise.yml didn't set run_if).
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {

@@ -232,6 +232,57 @@ step_bundles:
 	require.Equal(t, 2, len(buildRunResults.SkippedSteps)) // run_if_test_2.script; run_if_test_2.run_if_test_3.script
 }
 
+// TestStepRunIfBeforeActivation verifies that a run_if expression set in bitrise.yml is
+// evaluated before step activation. It uses a path:: step pointing to a nonexistent directory:
+// - when run_if is false, the step is skipped (SkippedWithRunIf) before activation is attempted
+// - when run_if is true, activation IS attempted and fails (PreparationFailed), proving the
+//   step was not skipped and that the pre-activation check correctly passes through
+func TestStepRunIfBeforeActivation(t *testing.T) {
+	tests := []struct {
+		name       string
+		runIf      string
+		wantSkip   bool
+		wantFailed bool
+	}{
+		{
+			name:       "false literal skips before activation",
+			runIf:      "false",
+			wantSkip:   true,
+			wantFailed: false,
+		},
+		{
+			name:       "true literal proceeds to activation",
+			runIf:      "true",
+			wantSkip:   false,
+			wantFailed: true, // nonexistent path → PreparationFailed
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configStr := fmt.Sprintf(`
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+workflows:
+  test:
+    steps:
+    - path::/nonexistent/step/path:
+        run_if: "%s"
+`, tt.runIf)
+			config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+			require.NoError(t, err)
+			require.Empty(t, warnings)
+			require.NoError(t, configs.InitPaths())
+
+			runConfig := RunConfig{Config: config, Workflow: "test"}
+			runner := NewWorkflowRunner(runConfig, nil, noOpTracker{})
+			buildRunResults, _ := runner.runWorkflows()
+			require.Equal(t, tt.wantSkip, len(buildRunResults.SkippedSteps) > 0)
+			require.Equal(t, tt.wantFailed, len(buildRunResults.FailedSteps) > 0)
+		})
+	}
+}
+
 func TestStepOutputsInTemplate(t *testing.T) {
 	inventoryStr := `
 envs:
