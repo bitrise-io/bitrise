@@ -10,4 +10,4 @@ _FAKE_HOME/
 .DS_Store
 .idea/
 dist/
-.claude/
+.claude/settings.local.json
