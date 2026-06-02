@@ -82,10 +82,12 @@ func headCommitSHA(dir string) (string, error) {
 	return repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
 }
 
-// GenerateFromSteplibClone reads a bitrise-steplib clone from inputFS and writes the V2 inventory
-// tree to outputDir. It is destructive in the sense that it writes files; it
-// does NOT delete existing files outside the paths it owns.
-func GenerateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log stepman.Logger) (Stats, error) {
+// GenerateFromSteplibClone reads a bitrise-steplib clone from inputFS and writes
+// the V2 inventory tree to outputDir. The tree is staged in a sibling temp
+// directory and published with a single rename on success, so a failure
+// mid-generation never leaves a half-written inventory at outputDir; any
+// existing tree at outputDir is replaced wholesale.
+func GenerateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log stepman.Logger) (_ Stats, err error) {
 	start := time.Now()
 	opts = withDefaults(opts)
 
@@ -99,7 +101,25 @@ func GenerateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 		return Stats{}, err
 	}
 
-	w := &writer{outputDir: outputDir, fw: realFileWriter{}, fileCount: 0, byteCount: 0}
+	// Stage in a sibling of outputDir (same filesystem, so the publish rename
+	// is atomic and never cross-device).
+	parent := filepath.Dir(outputDir)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return Stats{}, fmt.Errorf("create output parent %s: %w", parent, err)
+	}
+	staging, err := os.MkdirTemp(parent, ".steplib-gen-staging-*")
+	if err != nil {
+		return Stats{}, fmt.Errorf("create staging dir: %w", err)
+	}
+	defer func() {
+		// On success staging has been renamed away, so RemoveAll is a no-op;
+		// on failure it removes the partial tree.
+		if rmErr := os.RemoveAll(staging); rmErr != nil {
+			err = errors.Join(err, fmt.Errorf("clean staging dir %s: %w", staging, rmErr))
+		}
+	}()
+
+	w := &writer{outputDir: staging, fw: realFileWriter{}, fileCount: 0, byteCount: 0}
 
 	for _, s := range steps {
 		if err := writeStepFiles(w, inputFS, s); err != nil {
@@ -120,6 +140,14 @@ func GenerateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 	}
 	if err := w.writeJSON("meta.json", meta); err != nil {
 		return Stats{}, fmt.Errorf("write meta.json: %w", err)
+	}
+
+	// Publish: swap the freshly staged tree in for any existing one.
+	if err := os.RemoveAll(outputDir); err != nil {
+		return Stats{}, fmt.Errorf("clear output dir %s: %w", outputDir, err)
+	}
+	if err := os.Rename(staging, outputDir); err != nil {
+		return Stats{}, fmt.Errorf("publish inventory to %s: %w", outputDir, err)
 	}
 
 	versionCount := 0
