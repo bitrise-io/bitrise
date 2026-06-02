@@ -91,6 +91,7 @@ github.com/bitrise-io/stepman/preload
 github.com/bitrise-io/stepman/stepid
 github.com/bitrise-io/stepman/steplibrary
 github.com/bitrise-io/stepman/steplibrary/spec
+github.com/bitrise-io/stepman/steplibrary/specgen
 github.com/bitrise-io/stepman/stepman
 github.com/bitrise-io/stepman/toolkits
 github.com/bitrise-io/stepman/version

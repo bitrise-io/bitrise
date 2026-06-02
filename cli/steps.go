@@ -85,5 +85,45 @@ var stepsCommand = cli.Command{
 				},
 			},
 		},
+		{
+			Name:      "generate-steplib",
+			Usage:     "Generate the V2 step library inventory tree from a steplib source.",
+			UsageText: "bitrise steps generate-steplib --output DIR [--steplib-url URL] [--commit-sha SHA]",
+			Action: func(c *cli.Context) error {
+				logCommandParameters(c)
+
+				if err := generateSteplib(c); err != nil {
+					log.Errorf("Generate steplib failed: %s", err)
+					os.Exit(1)
+				}
+				return nil
+			},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name: "steplib-url",
+					Usage: "URL of the steplib to generate the V2 inventory from. " +
+						"Optional — defaults to the official Bitrise steplib. " +
+						"Typically a git repo URL (the default branch is cloned); " +
+						"a file:// URI is treated as a local directory instead.",
+					Value:    bitriseStepLibURL,
+					Required: false,
+				},
+				cli.StringFlag{
+					Name:  "output, o",
+					Usage: "Output directory for the generated V2 inventory tree (required)",
+					Required: true,
+				},
+				cli.StringFlag{
+					Name:  "commit-sha",
+					Usage: "Override the commit SHA recorded in meta.json (auto-detected by underlying otherwise; mostly useful for testing).",
+					Required: false,
+				},
+				cli.StringFlag{
+					Name:  "timestamp",
+					Usage: "RFC3339 timestamp to record as generated_at (for reproducible output). Defaults to current UTC time.",
+					Required: false,
+				},
+			},
+		},
 	},
 }
