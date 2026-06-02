@@ -12,25 +12,17 @@ import (
 func generateSteplib(c *cli.Context) error {
 	steplibURL := c.String("steplib-url")
 	outputDir := c.String("output")
-	commitSHA := c.String("commit-sha")
-	timestamp := c.String("timestamp")
 
-	opts := specgen.Options{
-		SteplibCommitSHA: commitSHA,
-	}
-	if timestamp != "" {
-		t, err := time.Parse(time.RFC3339, timestamp)
-		if err != nil {
-			return fmt.Errorf("invalid --timestamp (expected RFC3339): %s", err)
-		}
-		opts.GeneratedAt = t
+	opts, err := buildSpecgenOpts(c.String("commit-sha"), c.String("timestamp"))
+	if err != nil {
+		return err
 	}
 
 	log.Infof("Generating V2 step library inventory")
 	log.Infof("Steplib: %s", steplibURL)
 	log.Infof("Output:  %s", outputDir)
-	if commitSHA != "" {
-		log.Infof("Commit override: %s", commitSHA)
+	if opts.SteplibCommitSHA != "" {
+		log.Infof("Commit override: %s", opts.SteplibCommitSHA)
 	}
 	if !opts.GeneratedAt.IsZero() {
 		log.Infof("Time:    %s", opts.GeneratedAt.Format(time.RFC3339))
@@ -46,4 +38,16 @@ func generateSteplib(c *cli.Context) error {
 		stats.StepCount, stats.VersionCount,
 		stats.FilesWritten, stats.BytesWritten, stats.Duration)
 	return nil
+}
+
+func buildSpecgenOpts(commitSHA, timestamp string) (specgen.Options, error) {
+	opts := specgen.Options{SteplibCommitSHA: commitSHA}
+	if timestamp != "" {
+		t, err := time.Parse(time.RFC3339, timestamp)
+		if err != nil {
+			return specgen.Options{}, fmt.Errorf("invalid --timestamp (expected RFC3339): %s", err)
+		}
+		opts.GeneratedAt = t
+	}
+	return opts, nil
 }
