@@ -35,7 +35,7 @@ func (s *Steplib) Activate(ctx context.Context, stepID, version string, outputPa
 
 	if err == nil && execPath == "" {
 		var srcDir string
-		srcDir, err = s.fetchSourceDirFn(ctx, resolved)
+		srcDir, err = s.source.stepSourceDir(ctx, resolved)
 		if err == nil {
 			if cerr := s.fileManager.CopyDir(srcDir, outputPaths.CodePath, &fileutil.CopyOptions{Overwrite: true}); cerr != nil {
 				err = fmt.Errorf("copy step source %s to %s: %w", srcDir, outputPaths.CodePath, cerr)

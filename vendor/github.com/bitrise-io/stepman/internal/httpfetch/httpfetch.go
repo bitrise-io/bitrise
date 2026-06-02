@@ -36,32 +36,36 @@ type Client interface {
 	DownloadWithHash(ctx context.Context, destPath, url, expectedHash string) error
 }
 
-// Logger is the minimal logging interface required by Client.
-// Both stepman.Logger and go-utils/v2/log.Logger satisfy it.
+// Logger is the minimal logging interface required by Client: the retry
+// adapter only emits debug lines. Both stepman.Logger and
+// go-utils/v2/log.Logger satisfy it, so callers can pass the logger they
+// already hold without widening it to the full go-utils contract.
 type Logger interface {
 	Debugf(format string, v ...any)
-	Warnf(format string, v ...any)
 }
 
 // retryhttpLogger adapts Logger to the retryablehttp.Logger interface (Printf only).
 type retryhttpLogger struct{ l Logger }
 
-func (r *retryhttpLogger) Printf(f string, v ...interface{}) { r.l.Debugf(f, v...) }
+func (r *retryhttpLogger) Printf(f string, v ...any) { r.l.Debugf(f, v...) }
 
 type client struct {
 	httpClient *http.Client
 }
 
-// NewClient returns a Client backed by httpClient. When httpClient is nil
-// a retryablehttp-backed client is used, so production callers get
-// transient-failure retries by default.
-func NewClient(httpClient *http.Client, logger Logger) Client {
-	if httpClient == nil {
-		rc := retryablehttp.NewClient()
-		rc.Logger = &retryhttpLogger{l: logger}
-		rc.ErrorHandler = retryablehttp.PassthroughErrorHandler
-		httpClient = rc.StandardClient()
-	}
+// NewClient returns a Client backed by a retryablehttp client, so callers get
+// transient-failure retries by default. Use NewWithClient to supply a specific
+// *http.Client (e.g. a test server's client).
+func NewClient(logger Logger) Client {
+	rc := retryablehttp.NewClient()
+	rc.Logger = &retryhttpLogger{l: logger}
+	rc.ErrorHandler = retryablehttp.PassthroughErrorHandler
+	return &client{httpClient: rc.StandardClient()}
+}
+
+// NewWithClient returns a Client backed by the given httpClient, which must be
+// non-nil. Prefer NewClient unless you need a specific transport.
+func NewWithClient(httpClient *http.Client) Client {
 	return &client{httpClient: httpClient}
 }
 

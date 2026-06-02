@@ -62,8 +62,16 @@ func (s *Steplib) getStepVersionInfo(ctx context.Context, stepID, version string
 			resolvedVersion = latestVersions.Latest
 		case models.Fixed:
 			resolvedVersion = versionConstraint.Version.String()
-			// ToDo: check version exists, otherwise error:
-			// "%s steplib does not contain %s step %s version"
+			// Verify the pinned version actually exists, mirroring the other
+			// branches; otherwise a typo'd pin surfaces later as an opaque
+			// "decode step.json" 404 instead of a clear "no such version".
+			var allVersions []string
+			allVersions, err = s.api.GetAllStepVersions(ctx, stepID)
+			if err != nil {
+				err = fmt.Errorf("fetching all versions of `%s`: %w", stepID, err)
+			} else if !slices.Contains(allVersions, resolvedVersion) {
+				err = fmt.Errorf("%s steplib does not contain %s step %s version", s.steplibURI, stepID, resolvedVersion)
+			}
 		case models.MajorLocked:
 			majorKey := strconv.FormatUint(versionConstraint.Version.Major, 10)
 			v, ok := latestVersions.LatestByMajor[majorKey]

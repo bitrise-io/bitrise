@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -14,20 +13,17 @@ import (
 )
 
 // HTTPAPI fetches the V2 inventory layout (step_ids.json, latest.json,
-// versions.json, step-info.json, step.json, src.zip) over HTTP from a base URL.
-// JSON endpoints are returned as decoded structs; path-returning endpoints
-// download the payload to CacheDir and return the local path.
+// versions.json, step-info.json, step.json) over HTTP from a base URL.
+// JSON endpoints are decoded in memory and returned as structs.
 type HTTPAPI struct {
-	BaseURL  string
-	Fetcher  httpfetch.Client
-	CacheDir string
+	BaseURL string
+	Fetcher httpfetch.Client
 }
 
-func NewHTTPAPI(baseURL, cacheDir string, client *http.Client, logger httpfetch.Logger) *HTTPAPI {
+func NewHTTPAPI(baseURL string, fetcher httpfetch.Client) *HTTPAPI {
 	return &HTTPAPI{
-		BaseURL:  strings.TrimRight(baseURL, "/"),
-		Fetcher:  httpfetch.NewClient(client, logger),
-		CacheDir: cacheDir,
+		BaseURL: strings.TrimRight(baseURL, "/"),
+		Fetcher: fetcher,
 	}
 }
 
