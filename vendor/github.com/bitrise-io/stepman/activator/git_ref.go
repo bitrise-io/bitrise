@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
+	"github.com/bitrise-io/stepman/activator/result"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/stepman"
 )
@@ -18,10 +19,10 @@ func ActivateGitRefStep(
 	id stepid.CanonicalID,
 	activatedStepDir string,
 	workDir string,
-) (ActivatedStep, error) {
+) (result.ActivatedStep, error) {
 	repo, err := git.New(activatedStepDir)
 	if err != nil {
-		return ActivatedStep{}, err
+		return result.ActivatedStep{}, err
 	}
 
 	var cloneCmd *command.Model
@@ -39,20 +40,21 @@ even if the repository is open source!`)
 		}
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			return ActivatedStep{}, fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
+			return result.ActivatedStep{}, fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
 		}
-		return ActivatedStep{}, err
+		return result.ActivatedStep{}, err
 	}
 
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	if err := command.CopyFile(filepath.Join(activatedStepDir, "step.yml"), stepYMLPath); err != nil {
-		return ActivatedStep{}, err
+		return result.ActivatedStep{}, err
 	}
 
-	return ActivatedStep{
-		StepYMLPath:     stepYMLPath,
+	//nolint:exhaustruct // StepInfo isn't populated by git-ref activation
+	return result.ActivatedStep{
+		StepYMLPath:      stepYMLPath,
 		DidStepLibUpdate: false,
-		ActivationType: ActivationTypeGitRef,
-		ExecutablePath: "",
+		ActivationType:   result.ActivationTypeGitRef,
+		ExecutablePath:   "",
 	}, nil
 }

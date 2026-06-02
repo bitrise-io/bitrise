@@ -9,9 +9,9 @@ require (
 	github.com/bitrise-io/envman/v2 v2.5.6
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.34
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.20.0
+	github.com/bitrise-io/stepman v0.20.1-0.20260602112136-c5a35bd860a1
 	github.com/go-git/go-git/v5 v5.13.0
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-retryablehttp v0.7.8

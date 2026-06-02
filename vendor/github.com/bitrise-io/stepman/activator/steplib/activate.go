@@ -15,8 +15,17 @@ import (
 )
 
 const precompiledStepsEnv = "BITRISE_EXPERIMENT_PRECOMPILED_STEPS"
-const precompiledStepsDefaultStorage = "https://storage.googleapis.com/bitrise-steplib-storage"
-const precompiledStepsPrimaryStorageEnv = "BITRISE_PRECOMPILED_STEPS_PRIMARY_STORAGE"
+
+// PrecompiledStepsStorageURLsEnv overrides the ordered list of storage base URLs at runtime
+// (comma-separated). Shared with steplibrary.
+const PrecompiledStepsStorageURLsEnv = "BITRISE_PRECOMPILED_STEPS_STORAGE_URLS"
+
+// PrecompiledStepsDefaultStorageURLs is the ordered list of storage base URLs used when
+// PrecompiledStepsStorageURLsEnv is unset. Shared with steplibrary.
+var PrecompiledStepsDefaultStorageURLs = []string{
+	"https://storage.googleapis.com/bitrise-steplib-storage",
+	"https://storage-gateway.services.bitrise.io",
+}
 
 func ActivateStep(stepLibURI, id, version, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool) (string, error) {
 	stepCollection, err := stepman.ReadStepSpec(stepLibURI)
