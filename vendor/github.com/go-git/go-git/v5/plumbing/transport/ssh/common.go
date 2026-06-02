@@ -126,25 +126,17 @@ func (c *command) connect() error {
 	}
 	hostWithPort := c.getHostWithPort()
 	if config.HostKeyCallback == nil {
-		db, err := newKnownHostsDb()
+		db, err := NewKnownHostsDb()
 		if err != nil {
 			return err
 		}
-
 		config.HostKeyCallback = db.HostKeyCallback()
 		config.HostKeyAlgorithms = db.HostKeyAlgorithms(hostWithPort)
-	} else if len(config.HostKeyAlgorithms) == 0 {
-		// Set the HostKeyAlgorithms based on HostKeyCallback.
-		// For background see https://github.com/go-git/go-git/issues/411 as well as
-		// https://github.com/golang/go/issues/29286 for root cause.
-		db, err := newKnownHostsDb()
-		if err != nil {
-			return err
-		}
-
-		// Note that the knownhost database is used, as it provides additional functionality
-		// to handle ssh cert-authorities.
-		config.HostKeyAlgorithms = db.HostKeyAlgorithms(hostWithPort)
+	} else {
+		// If the user gave a custom HostKeyCallback, we do not try to detect host key algorithms
+		// based on knownhosts functionality, as the user may be requesting a FixedKey or using a
+		// different key approval strategy. In that case, the user is responsible for populating
+		// HostKeyAlgorithms appropriately
 	}
 
 	overrideConfig(c.config, config)
@@ -260,7 +252,39 @@ func (c *command) setAuthFromEndpoint() error {
 }
 
 func endpointToCommand(cmd string, ep *transport.Endpoint) string {
-	return fmt.Sprintf("%s '%s'", cmd, ep.Path)
+	var b strings.Builder
+	b.WriteString(cmd)
+	b.WriteByte(' ')
+	writeShellQuote(&b, ep.Path)
+	return b.String()
+}
+
+// writeShellQuote writes s to b, wrapped in single quotes with
+// embedded single quotes and exclamation marks escaped using the
+// POSIX close-escape-reopen idiom:
+//
+//	' becomes '\''
+//	! becomes '\!'
+//
+// It is a direct port of canonical Git's sq_quote_buf (quote.c).
+// The bang escape keeps the result safe when re-evaluated under
+// csh-derived shells that perform history expansion. The output is
+// safe to pass as a single argument through any POSIX shell and
+// round-trips through git-shell's sq_dequote_to_argv.
+func writeShellQuote(b *strings.Builder, s string) {
+	b.Grow(len(s) + 2)
+	b.WriteByte('\'')
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '\'' || c == '!' {
+			b.WriteString(`'\`)
+			b.WriteByte(c)
+			b.WriteByte('\'')
+			continue
+		}
+		b.WriteByte(c)
+	}
+	b.WriteByte('\'')
 }
 
 func overrideConfig(overrides *ssh.ClientConfig, c *ssh.ClientConfig) {
