@@ -54,8 +54,8 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_6", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
 						{UUID: "uuid_1", StepID: "step1", Step: stepmanModels.StepModel{}},
-						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{"{{.IsCI}}"}},
-						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{"{{.IsCI}}"}},
+						{UUID: "uuid_3", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_2", RunIf: "{{.IsCI}}"}}},
+						{UUID: "uuid_4", StepID: "bundle1-step2", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_2", RunIf: "{{.IsCI}}"}}},
 						{UUID: "uuid_5", StepID: "step2", Step: stepmanModels.StepModel{}},
 					}},
 				},
@@ -104,9 +104,9 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_7", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
-						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`}},
-						{UUID: "uuid_4", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`, `{{enveq "RUN_IF_2" "true"}}`}},
-						{UUID: "uuid_6", StepID: "bundle3-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_5", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`, `{{enveq "RUN_IF_2" "true"}}`, `{{enveq "RUN_IF_3" "true"}}`}},
+						{UUID: "uuid_2", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_1", RunIf: `{{enveq "RUN_IF_1" "true"}}`}}},
+						{UUID: "uuid_4", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_3", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_1", RunIf: `{{enveq "RUN_IF_1" "true"}}`}, {BundleUUID: "uuid_3", RunIf: `{{enveq "RUN_IF_2" "true"}}`}}},
+						{UUID: "uuid_6", StepID: "bundle3-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_5", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_1", RunIf: `{{enveq "RUN_IF_1" "true"}}`}, {BundleUUID: "uuid_3", RunIf: `{{enveq "RUN_IF_2" "true"}}`}, {BundleUUID: "uuid_5", RunIf: `{{enveq "RUN_IF_3" "true"}}`}}},
 					}},
 				},
 			},
@@ -145,7 +145,7 @@ func TestNewWorkflowRunPlan_StepBundleRunIf(t *testing.T) {
 				},
 				ExecutionPlan: []WorkflowExecutionPlan{
 					{UUID: "uuid_5", WorkflowID: "workflow1", WorkflowTitle: "workflow1", Steps: []StepExecutionPlan{
-						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []string{`{{enveq "RUN_IF_1" "true"}}`}},
+						{UUID: "uuid_3", StepID: "bundle2-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_2", StepBundleRunIfs: []StepBundleRunIf{{BundleUUID: "uuid_2", RunIf: `{{enveq "RUN_IF_1" "true"}}`}}},
 						{UUID: "uuid_4", StepID: "bundle1-step1", Step: stepmanModels.StepModel{}, StepBundleUUID: "uuid_1"},
 					}},
 				},

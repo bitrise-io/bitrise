@@ -14,6 +14,14 @@ workflows:
     - bundle::run_if_test_1:
     - bundle::run_if_test_3:
 
+  # encapsulation verifies that a Bundle's run_if is decided once on entry: the first Step flips the
+  # variable the run_if reads, but the second Step must still run. See BIVS-3383.
+  encapsulation:
+    envs:
+    - FLAG: "true"
+    steps:
+    - bundle::flip_flag:
+
 step_bundles:
   run_if_test_1:
     run_if: '{{enveq "RUN_IF_1" "true"}}'
@@ -40,3 +48,15 @@ step_bundles:
         title: run_if_test_3 script
         inputs:
         - content: echo "run_if_test_3.script"
+
+  flip_flag:
+    run_if: '{{enveq "FLAG" "true"}}'
+    steps:
+    - script@1:
+        title: flip flag
+        inputs:
+        - content: envman add --key FLAG --value false
+    - script@1:
+        title: encapsulation.second
+        inputs:
+        - content: echo "encapsulation.second"
