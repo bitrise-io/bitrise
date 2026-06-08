@@ -122,8 +122,8 @@ func buildDownloadURLs(bases []string, executable models.Executable) ([]string, 
 }
 
 func downloadExecutable(executable models.Executable) (io.ReadCloser, error) {
-	bases := PrecompiledStepsDefaultStorageURLs
-	if override := os.Getenv(PrecompiledStepsStorageURLsEnv); override != "" {
+	bases := precompiledStepsDefaultStorageURLs
+	if override := os.Getenv(precompiledStepsStorageURLsEnv); override != "" {
 		bases = strings.Split(override, ",")
 	}
 

@@ -1,19 +1,29 @@
 package activator
 
-import "github.com/bitrise-io/stepman/activator/result"
+type ActivatedStep struct {
+	StepYMLPath string
 
-// Backwards-compatible aliases for the activation result types. The canonical
-// definitions live in activator/result; this file lets downstream consumers
-// (notably the bitrise CLI) keep importing `activator.ActivationType` and
-// `activator.ActivatedStep` without churn.
-type (
-	ActivatedStep  = result.ActivatedStep
-	ActivationType = result.ActivationType
-)
+	ActivationType ActivationType
+
+	// ExecutablePath is a local path to the main entrypoint of the step, ready for execution.
+	// This can be an empty string if:
+	// - step was activated from a git reference (we checked out the source dir directly)
+	// - step was activated from a local path (we copied the source dir directly)
+	// - step was activated from a steplib reference, but step.yml has no entry for pre-compiled binaries (we fallback to source checkout)
+	// - step was activated from a stpelib reference, but step.yml has no pre-compiled binary for the current OS+arch combo (we fallback to source checkout)
+	ExecutablePath string
+
+	// DidStepLibUpdate indicates that the local steplib cache was updated while resolving the exact step version.
+	// TODO: this is a leaky abstraction and we shouldn't signal this here, but it requires a bigger refactor.
+	// (stepman should keep track of this info in a file probably)
+	DidStepLibUpdate bool
+}
+
+type ActivationType string
 
 const (
-	ActivationTypeSteplibExecutable = result.ActivationTypeSteplibExecutable
-	ActivationTypeSteplibSource     = result.ActivationTypeSteplibSource
-	ActivationTypePathRef           = result.ActivationTypePathRef
-	ActivationTypeGitRef            = result.ActivationTypeGitRef
+	ActivationTypeSteplibExecutable ActivationType = "steplib_executable"
+	ActivationTypeSteplibSource     ActivationType = "steplib_source"
+	ActivationTypePathRef           ActivationType = "path"
+	ActivationTypeGitRef            ActivationType = "git"
 )

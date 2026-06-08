@@ -115,7 +115,7 @@ var stepsCommand = cli.Command{
 				},
 				cli.StringFlag{
 					Name:  "commit-sha",
-					Usage: "Override the commit SHA recorded in meta.json (auto-detected by underlying otherwise; mostly useful for testing).",
+					Usage: "Override the commit SHA recorded in meta.json (auto-detected from the steplib clone's HEAD otherwise; mostly useful for testing).",
 					Required: false,
 				},
 				cli.StringFlag{

@@ -21,12 +21,21 @@ func (fm fileManager) CopyFile(src, dst string, opts *CopyOptions) error {
 	srcDir := filepath.Dir(src)
 	fsys := fm.osProxy.DirFS(srcDir)
 
-	return fm.copyFileFS(fsys, filepath.Base(src), dst, opts)
+	return fm.CopyFileFS(fsys, filepath.Base(src), dst, opts)
 }
 
-// copyFileFS is the excerpt from fs.CopyFS that copies a single file from fs.FS to dst path.
-// The [CopyOptions] parameter is used to modify default behavior as required or keep the default when nil is provided.
-func (fm fileManager) copyFileFS(fsys fs.FS, src, dst string, opts *CopyOptions) error {
+// CopyFileFS copies a single file located at src within the source file system fsys to dst.
+// It is the excerpt from fs.CopyFS that copies a single file from an fs.FS to a dst path.
+// Pass [CopyOptions] to modify default behavior as required, nil otherwise.
+//
+// By default, if the target file exists, this call will fail with an error.
+// Use [CopyOptions.Overwrite] to replace an existing destination file instead.
+//
+// Note: ownership and access/modification time preservation rely on the source FS
+// exposing a *syscall.Stat_t via fs.FileInfo.Sys() (as os-backed file systems such as
+// os.DirFS do). When copying from in-memory file systems (e.g. embed.FS or fstest.MapFS)
+// that information is unavailable, so ownership and times are simply not preserved.
+func (fm fileManager) CopyFileFS(fsys fs.FS, src, dst string, opts *CopyOptions) error {
 	r, err := fsys.Open(src)
 	if err != nil {
 		return err
@@ -132,7 +141,7 @@ func (fm fileManager) CopyDir(src, dst string, opts *CopyOptions) error {
 
 		// "normal" file
 		case 0:
-			return fm.copyFileFS(fsys, path, newPath, opts)
+			return fm.CopyFileFS(fsys, path, newPath, opts)
 
 		default:
 			return &os.PathError{Op: "CopyFS", Path: path, Err: os.ErrInvalid}
@@ -152,7 +161,10 @@ func (fm fileManager) copyOwner(srcInfo os.FileInfo, dstPath string) error {
 	}
 	stat, ok := srcInfo.Sys().(*syscall.Stat_t)
 	if !ok {
-		return fmt.Errorf("missing Stat_t for symlink %s", dstPath)
+		// Source file systems that are not backed by the OS (e.g. embed.FS or
+		// fstest.MapFS) do not expose a *syscall.Stat_t, so there is no ownership
+		// information to copy. Skip ownership preservation in that case.
+		return nil
 	}
 	// os.Lchown affects the link itself when given the link path
 	if err := fm.lchown(dstPath, int(stat.Uid), int(stat.Gid)); err != nil {
