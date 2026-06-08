@@ -15,7 +15,7 @@ workflows:
     - bundle::run_if_test_3:
 
   # encapsulation verifies that a Bundle's run_if is decided once on entry: the first Step flips the
-  # variable the run_if reads, but the second Step must still run. See BIVS-3383.
+  # variable the run_if reads, but the second Step must still run.
   encapsulation:
     envs:
     - FLAG: "true"

@@ -235,7 +235,7 @@ step_bundles:
 // TestStepBundleRunIfEncapsulation verifies that a Step Bundle's run_if is evaluated once, when the
 // Bundle is entered, and is not re-evaluated for the Bundle's later Steps. The Bundle's first Step
 // sets FLAG=false (the variable the run_if reads), but because the run_if decision was already made
-// at Bundle entry (FLAG=true), the second Step must still run. See BIVS-3383.
+// at Bundle entry (FLAG=true), the second Step must still run.
 func TestStepBundleRunIfEncapsulation(t *testing.T) {
 	configStr := `
 format_version: 1.3.0
@@ -280,9 +280,9 @@ step_bundles:
 
 // TestStepRunIfBeforeActivation verifies that a run_if expression set in bitrise.yml is
 // evaluated before step activation. It uses a path:: step pointing to a nonexistent directory:
-// - when run_if is false, the step is skipped (SkippedWithRunIf) before activation is attempted
-// - when run_if is true, activation IS attempted and fails (PreparationFailed), proving the
-//   step was not skipped and that the pre-activation check correctly passes through
+//   - when run_if is false, the step is skipped (SkippedWithRunIf) before activation is attempted
+//   - when run_if is true, activation IS attempted and fails (PreparationFailed), proving the
+//     step was not skipped and that the pre-activation check correctly passes through
 func TestStepRunIfBeforeActivation(t *testing.T) {
 	tests := []struct {
 		name       string
