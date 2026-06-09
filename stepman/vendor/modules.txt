@@ -18,6 +18,9 @@ github.com/bitrise-io/go-utils/pointers
 github.com/bitrise-io/go-utils/retry
 github.com/bitrise-io/go-utils/stringutil
 github.com/bitrise-io/go-utils/urlutil
+# github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.35
+## explicit; go 1.21
+github.com/bitrise-io/go-utils/v2/fileutil
 # github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 ## explicit; go 1.18
 github.com/bitrise-io/goinp/goinp

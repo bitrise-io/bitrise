@@ -6,6 +6,7 @@ require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman/v2 v2.5.2
 	github.com/bitrise-io/go-utils v1.0.13
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.35
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/go-retryablehttp v0.7.7

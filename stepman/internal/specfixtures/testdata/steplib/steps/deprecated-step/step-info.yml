@@ -1,0 +1,6 @@
+maintainer: bitrise
+removal_date: "2025-04-11"
+deprecate_notes: |
+  The branch-based caching steps are deprecated and being replaced by key-based caching.
+
+  Check out our migration guide: [Migrating from branch-based caching to key-based caching](https://devcenter.bitrise.io/en/dependencies-and-caching/branch-based-caching/migrating-from-branch-based-caching-to-key-based-caching.html).

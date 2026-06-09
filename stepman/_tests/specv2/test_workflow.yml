@@ -1,0 +1,19 @@
+format_version: "13"
+default_step_lib_source: http://localhost:8888
+project_type: other
+
+workflows:
+  test-git-clone:
+    title: Activate git-clone via steplib v2
+    description: |-
+      Single-step workflow used by bitrise_specv2.yml to drive the steplib v2
+      activation path end-to-end. The bitrise CLI resolves git-clone against
+      the local HTTP server running on port 8888 (serving /tmp/v2-out), so
+      this exercises HTTPAPI + precompiled-binary download + SHA256 verify.
+    steps:
+    - git-clone@8.5.0:
+        run_if: "true"
+        inputs:
+        - repository_url: https://github.com/bitrise-io/stepman
+        - branch: master
+        - clone_into_dir: $BITRISE_SOURCE_DIR/_tmp/specv2-clone

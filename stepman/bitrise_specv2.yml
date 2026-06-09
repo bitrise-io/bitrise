@@ -1,0 +1,112 @@
+format_version: "11"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+# End-to-end test for the steplib v2 activation path, driven by the real
+# bitrise CLI built against this stepman checkout.
+#
+# The orchestrator below:
+#   1. Clones github.com/bitrise-io/bitrise, rewires its go.mod with a
+#      `replace github.com/bitrise-io/stepman => <this repo>` directive,
+#      and builds the CLI to a temp path.
+#   2. Generates the V2 inventory from $STEPLIB_URI into $V2_OUTPUT_DIR via the
+#      freshly built CLI's `bitrise steps generate-steplib` command.
+#   3. Hosts the generated tree on a local HTTP server.
+#   4. Runs `_tests/specv2/test_workflow.yml` through the CLI with
+#      BITRISE_EXPERIMENT_STEPLIB_V2=true so step activation goes through the
+#      v2 HTTPAPI + precompiled-binary download path.
+#
+# Invoke with:
+#   bitrise run --config bitrise_specv2.yml test-specv2
+
+app:
+  envs:
+  - STEPMAN_DIR: $BITRISE_SOURCE_DIR
+  - STEPLIB_URI: https://github.com/bitrise-io/bitrise-steplib.git
+  - V2_OUTPUT_DIR: /tmp/v2-out
+  - SPECV2_PORT: "8888"
+  - BITRISE_SRC: /tmp/bitrise-src
+  - BITRISE_BIN: /tmp/bitrise-specv2-bin
+
+workflows:
+  test-specv2:
+    title: End-to-end steplib v2 test via real bitrise CLI
+    steps:
+    - script:
+        title: Clone bitrise + replace stepman + build CLI
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            if [ ! -d "$BITRISE_SRC/.git" ]; then
+                git clone --depth=1 https://github.com/bitrise-io/bitrise.git "$BITRISE_SRC"
+            else
+                git -C "$BITRISE_SRC" fetch --depth=1 origin master
+                git -C "$BITRISE_SRC" reset --hard origin/master
+            fi
+            cd "$BITRISE_SRC"
+            # Drop any earlier replace + retarget at this stepman checkout.
+            go mod edit -dropreplace=github.com/bitrise-io/stepman || true
+            go mod edit -replace=github.com/bitrise-io/stepman="$STEPMAN_DIR"
+            # bitrise upstream uses vendoring; resync the vendor tree after edits.
+            go mod tidy
+            go mod vendor
+            go build -o "$BITRISE_BIN" .
+            "$BITRISE_BIN" --version
+    - script:
+        title: Generate V2 inventory into $V2_OUTPUT_DIR
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            rm -rf "$V2_OUTPUT_DIR"
+            # generate-steplib sets up (clones) $STEPLIB_URI into stepman's local
+            # cache and generates the V2 tree from it (calls indexgen.Generate).
+            # The subcommand lands in STEP-2428, which merges right after this PR.
+            "$BITRISE_BIN" steps generate-steplib \
+                --steplib "$STEPLIB_URI" \
+                --output "$V2_OUTPUT_DIR"
+    - script:
+        title: Start local HTTP server on $V2_OUTPUT_DIR
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            python3 -m http.server "$SPECV2_PORT" --directory "$V2_OUTPUT_DIR" \
+                > /tmp/specv2-server.log 2>&1 &
+            echo $! > /tmp/specv2-server.pid
+            for i in $(seq 1 20); do
+                if curl -fsS "http://localhost:$SPECV2_PORT/v2/index/step_ids.json" > /dev/null; then
+                    echo "Server up on http://localhost:$SPECV2_PORT"
+                    exit 0
+                fi
+                sleep 0.2
+            done
+            echo "Server failed to start; log:" >&2
+            cat /tmp/specv2-server.log >&2
+            exit 1
+    - script:
+        title: Run test workflow with steplib v2 enabled
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            cd "$STEPMAN_DIR"
+            export BITRISE_EXPERIMENT_STEPLIB_V2=true
+            "$BITRISE_BIN" run \
+                --config "$STEPMAN_DIR/_tests/specv2/test_workflow.yml" \
+                test-git-clone
+    - script:
+        title: Stop local HTTP server
+        is_always_run: true
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            if [ -f /tmp/specv2-server.pid ]; then
+                kill "$(cat /tmp/specv2-server.pid)" 2>/dev/null || true
+                rm -f /tmp/specv2-server.pid
+            fi
+            if [ -f /tmp/specv2-server.log ]; then
+                echo "--- HTTP server log (last 30 lines) ---"
+                tail -30 /tmp/specv2-server.log || true
+            fi
