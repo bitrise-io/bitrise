@@ -25,9 +25,12 @@ func TestStepBundleRunIf(t *testing.T) {
 	})
 }
 
-// TestStepBundleRunIfEncapsulation verifies that a Step Bundle's run_if is evaluated once, on Bundle
-// entry, and not re-evaluated for later Steps. The Bundle's first Step flips FLAG (the variable the
-// run_if reads), but the second Step must still run because the decision was made at entry.
+// TestStepBundleRunIfEncapsulation verifies that each Step Bundle's run_if is evaluated once, on
+// Bundle entry, and not re-evaluated for the Bundle's later Steps, at both nesting levels. The outer
+// Bundle contains an inner Bundle followed by an echo Step. The inner Bundle's first Step flips FLAG
+// (the variable both run_ifs read) to false; despite that, the inner Bundle's echo Step and the outer
+// Bundle's echo Step must both still run, because both run_if decisions were made on entry while FLAG
+// was still true. With the per-Step re-evaluation bug both echo Steps would be skipped.
 func TestStepBundleRunIfEncapsulation(t *testing.T) {
 	configPth := "step_bundle_run_if_test_bitrise.yml"
 
@@ -36,6 +39,7 @@ func TestStepBundleRunIfEncapsulation(t *testing.T) {
 	require.NoError(t, err, out)
 	stepOutputs := testhelpers.CollectStepOutputs(out, t)
 	require.Equal(t, stepOutputs, []string{
-		"encapsulation.second\n",
+		"flip_flag_inner\n",
+		"flip_flag_outer\n",
 	})
 }
