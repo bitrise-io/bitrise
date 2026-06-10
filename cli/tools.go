@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v2/tools"
 	"github.com/bitrise-io/colorstring"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -48,83 +48,34 @@ const (
 	toolsFastInstallKey = "fast-install"
 )
 
-var (
-	flToolsProvider = cli.StringFlag{
-		Name:  toolsProviderKey + ", " + toolsProviderShortKey,
-		Usage: `Tool provider to use (asdf/mise). If not specified, uses the default.`,
-	}
+var toolsCmd = &cobra.Command{
+	Use:   "tools",
+	Short: "Manage available tools from inside the workflow.",
+}
 
-	flToolsFastInstall = cli.StringFlag{
-		Name:  toolsFastInstallKey,
-		Usage: `Override fast install setting (true/false). Fast install uses Lix (Nix) for faster installation. If not specified, uses the default for the used stack.`,
-	}
+var toolsInfoCmd = &cobra.Command{
+	Use:   toolsInfoCommandName,
+	Short: "Show information about installed or active tools.",
+	Long: `Show information about installed or active tools.
 
-	flToolsOutputFormat = cli.StringFlag{
-		Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
-		Usage: `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`,
-		Value: outputFormatPlaintext,
-	}
-
-	flToolsVersionsOutputFormat = cli.StringFlag{
-		Name:  toolsOutputFormatKey + ", " + toolsOutputFormatShortKey,
-		Usage: `Output format. Options: plaintext, json`,
-		Value: outputFormatPlaintext,
-	}
-
-	flToolsActive = cli.BoolFlag{
-		Name:  toolsActiveKey + ", " + toolsActiveShortKey,
-		Usage: `Show only currently active tools in the shell context (based on config files in current directory)`,
-	}
-
-	flToolsConfig = cli.StringSliceFlag{
-		Name: toolsConfigKey + ", " + toolsConfigShortKey,
-		Usage: `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
-	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
-	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
-	- .nvmrc (NVM): Node.js version
-	- .fvmrc (FVM 3.x): Flutter version from JSON {"flutter": "<version>"}
-	- .fvm/fvm_config.json (legacy FVM): Flutter version from {"flutterSdkVersion": "<version>"}
-	- bitrise.yml: tools defined in the "tools" section`,
-		TakesFile: true,
-	}
-
-	flToolsWorkflow = cli.StringFlag{
-		Name:  toolsWorkflowKey + ", w",
-		Usage: "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)",
-	}
-)
-
-var toolsInfoSubcommand = cli.Command{
-	Name:      toolsInfoCommandName,
-	Usage:     "Show information about installed or active tools.",
-	UsageText: "bitrise tools info [--active] [--format FORMAT]",
-	Description: `Show installed tool versions. Use --active to show only tools currently active in the shell context.
+By default shows all installed versions. Use --active to show only tools active in the current shell context.
 
 EXAMPLES:
    bitrise tools info
    bitrise tools info --active
    bitrise tools info --active --format json`,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-		if err := toolsInfo(c); err != nil {
-			log.Errorf("Failed to get tool info: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		flToolsActive,
-		flToolsOutputFormat,
-	},
+	RunE: runToolsInfo,
 }
 
-var (
-	toolInstallSubcommandUsageText = "bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]"
-	toolsInstallSubcommand         = cli.Command{
-		Name:      toolsInstallSubcommandName,
-		Usage:     "Install a specific tool version",
-		UsageText: toolInstallSubcommandUsageText,
-		Description: `Install a specific version of a tool using the configured tool provider.
+var toolsInfoOpts struct {
+	active bool
+	format string
+}
+
+var toolsInstallCmd = &cobra.Command{
+	Use:   toolsInstallSubcommandName + " <TOOL> <VERSION>[:SUFFIX]",
+	Short: "Install a specific tool version",
+	Long: `Install a specific version of a tool using the configured tool provider.
 
 TOOL: tool name (e.g., nodejs, ruby, python, go, etc.)
 VERSION: specific version (20.10.0), prefix (22), latest, or installed.
@@ -133,28 +84,18 @@ EXAMPLES:
    bitrise tools install nodejs 20.10.0
    bitrise tools install nodejs 22:latest
    eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell`,
-		Action: func(c *cli.Context) error {
-			logCommandParameters(c)
-			if err := toolsInstall(c); err != nil {
-				log.Errorf("Tool install failed: %s", err)
-				os.Exit(1)
-			}
-			return nil
-		},
-		Flags: []cli.Flag{
-			flToolsProvider,
-			flToolsOutputFormat,
-		},
-	}
-)
+	RunE: runToolsInstall,
+}
 
-var (
-	toolsLatestSubcommandUsageText = "bitrise tools latest [--provider PROVIDER] [--format FORMAT] <TOOL> [VERSION[:SUFFIX]]"
-	toolsLatestSubcommand          = cli.Command{
-		Name:      toolsLatestSubcommandName,
-		Usage:     "Query the latest version of a tool",
-		UsageText: toolsLatestSubcommandUsageText,
-		Description: `Query the latest version of a tool, optionally matching a version prefix.
+var toolsInstallOpts struct {
+	provider string
+	format   string
+}
+
+var toolsLatestCmd = &cobra.Command{
+	Use:   toolsLatestSubcommandName + " <TOOL> [VERSION[:SUFFIX]]",
+	Short: "Query the latest version of a tool",
+	Long: `Query the latest version of a tool, optionally matching a version prefix.
 
 By default, queries latest available release. Use :installed suffix for latest installed version.
 
@@ -163,26 +104,18 @@ EXAMPLES:
    bitrise tools latest nodejs 20
    bitrise tools latest python 3.12:installed
    bitrise tools latest ruby installed`,
-		Action: func(c *cli.Context) error {
-			logCommandParameters(c)
-			if err := toolsLatest(c); err != nil {
-				log.Errorf("Tool latest failed: %s", err)
-				os.Exit(1)
-			}
-			return nil
-		},
-		Flags: []cli.Flag{
-			flToolsOutputFormat,
-			flToolsProvider,
-		},
-	}
-)
+	RunE: runToolsLatest,
+}
 
-var toolsSetupSubcommand = cli.Command{
-	Name:      toolsSetupSubcommandName,
-	Usage:     "Install tools from version files or bitrise.yml",
-	UsageText: "bitrise tools setup [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
-	Description: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json, package.json) or bitrise.yml.
+var toolsLatestOpts struct {
+	provider string
+	format   string
+}
+
+var toolsSetupCmd = &cobra.Command{
+	Use:   toolsSetupSubcommandName,
+	Short: "Install tools from version files or bitrise.yml",
+	Long: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json, package.json) or bitrise.yml.
 
 EXAMPLES:
    bitrise tools setup --config .tool-versions
@@ -195,48 +128,36 @@ EXAMPLES:
 
    Setup and activate in current shell session:
    eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-		if err := toolsSetup(c); err != nil {
-			log.Errorf("Tool setup failed: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		flToolsProvider,
-		flToolsFastInstall,
-		flToolsConfig,
-		flToolsOutputFormat,
-		flToolsWorkflow,
-	},
+	RunE: runToolsSetup,
 }
 
-var toolsCatalogSubcommand = cli.Command{
-	Name:  toolsCatalogSubcommandName,
-	Usage: "List officially supported tools",
-	UsageText: `bitrise tools catalog [--format FORMAT]
+var toolsSetupOpts struct {
+	provider    string
+	fastInstall string
+	config      []string
+	format      string
+	workflow    string
+}
+
+var toolsCatalogCmd = &cobra.Command{
+	Use:   toolsCatalogSubcommandName,
+	Short: "List officially supported tools",
+	Long: `bitrise tools catalog [--format FORMAT]
 
 EXAMPLES:
    bitrise tools catalog
    bitrise tools catalog --format json`,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-		if err := toolsListTools(c); err != nil {
-			log.Errorf("Failed to list tools: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		flToolsVersionsOutputFormat,
-	},
+	RunE: runToolsCatalog,
 }
 
-var toolsVersionsSubcommand = cli.Command{
-	Name:  toolsVersionsSubcommandName,
-	Usage: "List available versions for a supported tool",
-	UsageText: `bitrise tools versions TOOL [VERSION_PREFIX] [--format FORMAT]
+var toolsCatalogOpts struct {
+	format string
+}
+
+var toolsVersionsCmd = &cobra.Command{
+	Use:   toolsVersionsSubcommandName,
+	Short: "List available versions for a supported tool",
+	Long: `bitrise tools versions TOOL [VERSION_PREFIX] [--format FORMAT]
 
 TOOL: tool name (e.g. nodejs, golang, ruby)
 VERSION_PREFIX: optional version prefix to filter by (e.g. 22, 3.12)
@@ -245,42 +166,99 @@ EXAMPLES:
    bitrise tools versions nodejs
    bitrise tools versions nodejs 22
    bitrise tools versions nodejs --format json`,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-		if err := toolsVersions(c); err != nil {
-			log.Errorf("Failed to list versions: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  toolsProviderKey + ", " + toolsProviderShortKey,
-			Usage: `Tool provider to use (asdf/mise) (default: "mise")`,
-		},
-		flToolsVersionsOutputFormat,
-	},
+	RunE: runToolsVersions,
 }
 
-var toolsCommand = cli.Command{
-	Name:  "tools",
-	Usage: "Manage available tools from inside the workflow.",
-	Subcommands: []cli.Command{
-		toolsInfoSubcommand,
-		toolsSetupSubcommand,
-		toolsInstallSubcommand,
-		toolsLatestSubcommand,
-		toolsVersionsSubcommand,
-		toolsCatalogSubcommand,
-	},
+var toolsVersionsOpts struct {
+	provider string
+	format   string
 }
 
-func toolsSetup(c *cli.Context) error {
-	configFiles := c.StringSlice(toolsConfigKey)
-	workflowID := c.String(toolsWorkflowKey)
-	format := c.String(toolsOutputFormatKey)
-	providerFlag := c.String(toolsProviderKey)
-	fastInstallFlag := c.String(toolsFastInstallKey)
+func init() {
+	toolsCmd.AddCommand(toolsInfoCmd, toolsInstallCmd, toolsLatestCmd, toolsSetupCmd, toolsCatalogCmd, toolsVersionsCmd)
+
+	toolsInfoCmd.Flags().BoolVarP(&toolsInfoOpts.active, toolsActiveKey, toolsActiveShortKey, false, "Show only currently active tools in the shell context (based on config files in current directory)")
+	toolsInfoCmd.Flags().StringVarP(&toolsInfoOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format of the env vars that activate installed tools. Options: plaintext, json, bash")
+
+	toolsInstallCmd.Flags().StringVarP(&toolsInstallOpts.provider, toolsProviderKey, toolsProviderShortKey, "", "Tool provider to use (asdf/mise). If not specified, uses the default.")
+	toolsInstallCmd.Flags().StringVarP(&toolsInstallOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format of the env vars that activate installed tools. Options: plaintext, json, bash")
+
+	toolsLatestCmd.Flags().StringVarP(&toolsLatestOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format of the env vars that activate installed tools. Options: plaintext, json, bash")
+	toolsLatestCmd.Flags().StringVarP(&toolsLatestOpts.provider, toolsProviderKey, toolsProviderShortKey, "", "Tool provider to use (asdf/mise). If not specified, uses the default.")
+
+	toolsSetupCmd.Flags().StringVarP(&toolsSetupOpts.provider, toolsProviderKey, toolsProviderShortKey, "", "Tool provider to use (asdf/mise). If not specified, uses the default.")
+	toolsSetupCmd.Flags().StringVar(&toolsSetupOpts.fastInstall, toolsFastInstallKey, "", "Override fast install setting (true/false). Fast install uses Lix (Nix) for faster installation. If not specified, uses the default for the used stack.")
+	toolsSetupCmd.Flags().StringSliceVarP(&toolsSetupOpts.config, toolsConfigKey, toolsConfigShortKey, nil, `Config or version file paths to install tools from. Can be specified multiple times. If not provided, detects files in the working directory. Supported file names and formats:
+	- .tool-versions (asdf/mise style): multiple tools, one "<tool> <version>" per line
+	- .<tool>-version (e.g. .node-version, .ruby-version): single tool, version string only
+	- .nvmrc (NVM): Node.js version
+	- .fvmrc (FVM 3.x): Flutter version from JSON {"flutter": "<version>"}
+	- .fvm/fvm_config.json (legacy FVM): Flutter version from {"flutterSdkVersion": "<version>"}
+	- bitrise.yml: tools defined in the "tools" section`)
+	toolsSetupCmd.Flags().StringVarP(&toolsSetupOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format of the env vars that activate installed tools. Options: plaintext, json, bash")
+	toolsSetupCmd.Flags().StringVarP(&toolsSetupOpts.workflow, toolsWorkflowKey, "w", "", "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)")
+
+	toolsCatalogCmd.Flags().StringVarP(&toolsCatalogOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format. Options: plaintext, json")
+
+	toolsVersionsCmd.Flags().StringVarP(&toolsVersionsOpts.provider, toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise) (default: "mise")`)
+	toolsVersionsCmd.Flags().StringVarP(&toolsVersionsOpts.format, toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, "Output format. Options: plaintext, json")
+}
+
+func runToolsInfo(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsInfo(toolsInfoOpts.format, toolsInfoOpts.active); err != nil {
+		log.Errorf("Failed to get tool info: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func runToolsInstall(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsInstall(args, toolsInstallOpts.provider, toolsInstallOpts.format); err != nil {
+		log.Errorf("Tool install failed: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func runToolsLatest(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsLatest(args, toolsLatestOpts.provider, toolsLatestOpts.format); err != nil {
+		log.Errorf("Tool latest failed: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func runToolsSetup(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsSetup(toolsSetupOpts.config, toolsSetupOpts.workflow, toolsSetupOpts.format, toolsSetupOpts.provider, toolsSetupOpts.fastInstall); err != nil {
+		log.Errorf("Tool setup failed: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func runToolsCatalog(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsListTools(toolsCatalogOpts.format); err != nil {
+		log.Errorf("Failed to list tools: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func runToolsVersions(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := toolsVersions(args, toolsVersionsOpts.provider, toolsVersionsOpts.format); err != nil {
+		log.Errorf("Failed to list versions: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func toolsSetup(configFiles []string, workflowID, format, providerFlag, fastInstallFlag string) error {
 	silent := false
 
 	switch format {
@@ -470,9 +448,7 @@ func exposeEnvsWithEnvman(activations []provider.EnvironmentActivation, silent b
 	return true
 }
 
-func toolsInfo(c *cli.Context) error {
-	format := c.String("format")
-	activeOnly := c.Bool("active")
+func toolsInfo(format string, activeOnly bool) error {
 	silent := false
 
 	switch format {
@@ -572,10 +548,9 @@ func printToolsInfo(tools []toolprovider.InstalledTool, activeOnly bool) {
 }
 
 // parseToolCommand parses the common tool command parameters for install and latest subcommands.
-func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequest, providerID, format, toolName string, silent bool, err error) {
-	args := c.Args()
-	providerID = c.String(toolsProviderKey)
-	format = c.String(toolsOutputFormatKey)
+func parseToolCommand(args []string, providerID, format string, isInstall bool) (request provider.ToolRequest, resolvedProviderID, resolvedFormat, toolName string, silent bool, err error) {
+	resolvedProviderID = providerID
+	resolvedFormat = format
 	silent = false
 	request = provider.ToolRequest{}
 
@@ -603,7 +578,7 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 		versionString = args[1]
 	}
 
-	switch format {
+	switch resolvedFormat {
 	case outputFormatJSON:
 		silent = true
 	case outputFormatPlaintext:
@@ -617,7 +592,7 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 		// If not install, fallthrough to error.
 		fallthrough
 	default:
-		err = fmt.Errorf("invalid --format: %s", format)
+		err = fmt.Errorf("invalid --format: %s", resolvedFormat)
 		return
 	}
 
@@ -634,32 +609,32 @@ func parseToolCommand(c *cli.Context, isInstall bool) (request provider.ToolRequ
 		PluginURL:          nil,
 	}
 
-	if providerID == "" {
-		providerID = "mise"
+	if resolvedProviderID == "" {
+		resolvedProviderID = "mise"
 	}
 
-	if providerID != "asdf" && providerID != "mise" {
-		err = fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", providerID)
+	if resolvedProviderID != "asdf" && resolvedProviderID != "mise" {
+		err = fmt.Errorf("invalid provider: %s (must be 'asdf' or 'mise')", resolvedProviderID)
 		return
 	}
 
 	return
 }
 
-func toolsLatest(c *cli.Context) error {
-	toolRequest, providerID, format, toolName, silent, err := parseToolCommand(c, false)
+func toolsLatest(args []string, providerID, format string) error {
+	toolRequest, resolvedProviderID, resolvedFormat, toolName, silent, err := parseToolCommand(args, providerID, format, false)
 	if err != nil {
 		return err
 	}
 
 	useFastInstall := toolprovider.DefaultFastInstall()
-	resultVersion, err := toolprovider.GetLatestVersion(toolRequest, providerID, useFastInstall, silent)
+	resultVersion, err := toolprovider.GetLatestVersion(toolRequest, resolvedProviderID, useFastInstall, silent)
 	if err != nil {
 		return err
 	}
 
 	// Output the version in the requested format.
-	switch format {
+	switch resolvedFormat {
 	case outputFormatJSON:
 		data := map[string]string{
 			"tool":    toolName,
@@ -678,22 +653,22 @@ func toolsLatest(c *cli.Context) error {
 	return nil
 }
 
-func toolsInstall(c *cli.Context) error {
-	toolRequest, providerID, format, _, silent, err := parseToolCommand(c, true)
+func toolsInstall(args []string, providerID, format string) error {
+	toolRequest, resolvedProviderID, resolvedFormat, _, silent, err := parseToolCommand(args, providerID, format, true)
 	if err != nil {
 		return err
 	}
 
 	useFastInstall := toolprovider.DefaultFastInstall()
 	tracker := analytics.NewDefaultTracker()
-	envs, err := toolprovider.InstallSingleTool(toolRequest, providerID, useFastInstall, tracker, silent)
+	envs, err := toolprovider.InstallSingleTool(toolRequest, resolvedProviderID, useFastInstall, tracker, silent)
 	if err != nil {
 		return err
 	}
 
 	exposedWithEnvman := exposeEnvsWithEnvman(envs, silent)
 
-	output, err := convertToOutputFormat(envs, format, exposedWithEnvman)
+	output, err := convertToOutputFormat(envs, resolvedFormat, exposedWithEnvman)
 	if err != nil {
 		return fmt.Errorf("convert to output format: %w", err)
 	}
@@ -702,9 +677,7 @@ func toolsInstall(c *cli.Context) error {
 	return nil
 }
 
-func toolsListTools(c *cli.Context) error {
-	format := c.String(toolsOutputFormatKey)
-
+func toolsListTools(format string) error {
 	tools := toolprovider.SupportedTools()
 
 	switch format {
@@ -727,19 +700,23 @@ func toolsListTools(c *cli.Context) error {
 	return nil
 }
 
-func toolsVersions(c *cli.Context) error {
-	toolName := c.Args().First()
+func toolsVersions(args []string, providerID, format string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("tool name is required. Usage: bitrise tools versions TOOL [VERSION_PREFIX]. Run 'bitrise tools catalog' to see supported tools")
+	}
+	toolName := args[0]
 	if toolName == "" {
 		return fmt.Errorf("tool name is required. Usage: bitrise tools versions TOOL [VERSION_PREFIX]. Run 'bitrise tools catalog' to see supported tools")
 	}
-	versionPrefix := c.Args().Get(1)
+	versionPrefix := ""
+	if len(args) >= 2 {
+		versionPrefix = args[1]
+	}
 
-	providerID := c.String(toolsProviderKey)
 	if providerID == "" {
 		providerID = "mise"
 	}
 
-	format := c.String(toolsOutputFormatKey)
 	silent := format == outputFormatJSON
 
 	tp, err := toolprovider.CreateProvider(providerID, false, silent, nil)

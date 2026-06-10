@@ -11,37 +11,29 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var workflowListCommand = cli.Command{
-	Name:  "workflows",
-	Usage: "List of available workflows in config.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+var workflowsCmd = &cobra.Command{
+	Use:   "workflows",
+	Short: "List of available workflows in config.",
+	RunE:  runWorkflowList,
+}
 
-		if err := workflowList(c); err != nil {
-			log.Errorf("List of available workflows in config failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		flConfig,
-		flConfigBase64,
-		cli.StringFlag{
-			Name:  "format",
-			Usage: "Output format. Accepted: raw, json.",
-		},
-		cli.BoolFlag{
-			Name:  "minimal",
-			Usage: "Print summary of workflows only.",
-		},
-		cli.BoolFlag{
-			Name:  "id-only",
-			Usage: "Print workflow ids only.",
-		},
-	},
+var workflowsOpts struct {
+	config       string
+	configBase64 string
+	format       string
+	minimal      bool
+	idOnly       bool
+}
+
+func init() {
+	workflowsCmd.Flags().StringVarP(&workflowsOpts.config, ConfigKey, "c", "", "Path where the workflow config file is located.")
+	workflowsCmd.Flags().StringVar(&workflowsOpts.configBase64, ConfigBase64Key, "", "base64 encoded config data.")
+	workflowsCmd.Flags().StringVar(&workflowsOpts.format, "format", "", "Output format. Accepted: raw, json.")
+	workflowsCmd.Flags().BoolVar(&workflowsOpts.minimal, "minimal", false, "Print summary of workflows only.")
+	workflowsCmd.Flags().BoolVar(&workflowsOpts.idOnly, "id-only", false, "Print workflow ids only.")
 }
 
 // WorkflowListOutputModel ...
@@ -172,22 +164,29 @@ func (output WorkflowListOutputModel) JSON() string {
 	return string(data) + "\n"
 }
 
-func workflowList(c *cli.Context) error {
-	// Expand cli.Context
-	bitriseConfigBase64Data := c.String("config-base64")
-	bitriseConfigPath := c.String("config")
-	deprecatedBitriseConfigPath := c.String("path")
+func runWorkflowList(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	if err := workflowList(cmd, args); err != nil {
+		log.Errorf("List of available workflows in config failed, error: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
 
-	format := c.String("format")
-	minimal := c.Bool("minimal")
-	idOnly := c.Bool("id-only")
+func workflowList(cmd *cobra.Command, _ []string) error {
+	bitriseConfigBase64Data := workflowsOpts.configBase64
+	bitriseConfigPath := workflowsOpts.config
+
+	format := workflowsOpts.format
+	minimal := workflowsOpts.minimal
+	idOnly := workflowsOpts.idOnly
 
 	// Input validation
 	if format == "" {
 		format = output.FormatRaw
 	}
 	if format != output.FormatRaw && format != output.FormatJSON {
-		showSubcommandHelp(c)
+		_ = cmd.Help()
 		return fmt.Errorf("invalid format: %s", format)
 	}
 
@@ -203,10 +202,6 @@ func workflowList(c *cli.Context) error {
 	}
 
 	warnings := []string{}
-	if bitriseConfigPath == "" && deprecatedBitriseConfigPath != "" {
-		warnings = append(warnings, "'path' key is deprecated, use 'config' instead!")
-		bitriseConfigPath = deprecatedBitriseConfigPath
-	}
 
 	// Config validation
 	bitriseConfig, warns, err := CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)

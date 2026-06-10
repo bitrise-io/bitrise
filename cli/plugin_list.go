@@ -7,38 +7,41 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginListCommand = cli.Command{
-	Name:  "list",
-	Usage: "List installed bitrise plugins.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-
-		if err := pluginList(c); err != nil {
-			log.Errorf("Plugin list failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  output.FormatKey,
-			Usage: "Output format. Accepted: raw, json.",
-		},
-	},
-	ArgsUsage: "",
+var pluginListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List installed bitrise plugins.",
+	RunE:  runPluginList,
 }
 
-func pluginList(c *cli.Context) error {
+var pluginListOpts struct {
+	format string
+}
+
+func init() {
+	pluginListCmd.Flags().StringVar(&pluginListOpts.format, output.FormatKey, "", "Output format. Accepted: raw, json.")
+}
+
+func runPluginList(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+
+	if err := pluginList(cmd, args); err != nil {
+		log.Errorf("Plugin list failed, error: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func pluginList(cmd *cobra.Command, _ []string) error {
 	// Input validation
-	format := c.String(output.FormatKey)
+	format := pluginListOpts.format
 	if format == "" {
 		format = output.FormatRaw
 	}
 	if format != output.FormatRaw && format != output.FormatJSON {
-		showSubcommandHelp(c)
+		_ = cmd.Help()
 		return fmt.Errorf("invalid format: %s", format)
 	}
 

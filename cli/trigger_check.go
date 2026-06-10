@@ -11,8 +11,46 @@ import (
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
+
+var triggerCheckOpts struct {
+	pattern           string
+	pushBranch        string
+	prSourceBranch    string
+	prTargetBranch    string
+	prReadyState      string
+	tag               string
+	configBase64      string
+	config            string
+	inventoryBase64   string
+	inventory         string
+	jsonParams        string
+	jsonParamsBase64  string
+	format            string
+}
+
+var triggerCheckCmd = &cobra.Command{
+	Use:   "trigger-check",
+	Short: "Prints out which workflow will triggered by specified pattern.",
+	RunE:  triggerCheck,
+}
+
+func init() {
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.pattern, PatternKey, "", "trigger pattern.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.pushBranch, PushBranchKey, "", "Git push branch name.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.prSourceBranch, PRSourceBranchKey, "", "Git pull request source branch name.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.prTargetBranch, PRTargetBranchKey, "", "Git pull request target branch name.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.prReadyState, PRReadyStateKey, "", "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.tag, TagKey, "", "Git tag name.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.configBase64, ConfigBase64Key, "", "base64 encoded config data.")
+	triggerCheckCmd.Flags().StringVarP(&triggerCheckOpts.config, ConfigKey, "c", "", "Path where the workflow config file is located.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.inventoryBase64, InventoryBase64Key, "", "base64 encoded inventory data.")
+	triggerCheckCmd.Flags().StringVarP(&triggerCheckOpts.inventory, InventoryKey, "i", "", "Path of the inventory file.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.jsonParams, JSONParamsKey, "", "Specify command flags with json string-string hash.")
+	triggerCheckCmd.Flags().StringVar(&triggerCheckOpts.jsonParamsBase64, JSONParamsBase64Key, "", "Specify command flags with base64 encoded json string-string hash.")
+	triggerCheckCmd.Flags().StringVarP(&triggerCheckOpts.format, OuputFormatKey, "f", "", "Output format. Accepted: raw, json.")
+}
 
 // --------------------
 // Utility
@@ -73,39 +111,39 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 // CLI command
 // --------------------
 
-func triggerCheck(c *cli.Context) error {
-	logCommandParameters(c)
+func triggerCheck(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
 	warnings := []string{}
 
 	//
-	// Expand cli.Context
+	// Expand flags
 	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	if cmd.Root().PersistentFlags().Changed(PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(prMode)
 	}
 
-	triggerPattern := c.String(PatternKey)
-	if triggerPattern == "" && len(c.Args()) > 0 {
-		triggerPattern = c.Args()[0]
+	triggerPattern := triggerCheckOpts.pattern
+	if triggerPattern == "" && len(args) > 0 {
+		triggerPattern = args[0]
 	}
 
-	pushBranch := c.String(PushBranchKey)
-	prSourceBranch := c.String(PRSourceBranchKey)
-	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
-	tag := c.String(TagKey)
+	pushBranch := triggerCheckOpts.pushBranch
+	prSourceBranch := triggerCheckOpts.prSourceBranch
+	prTargetBranch := triggerCheckOpts.prTargetBranch
+	prReadyState := models.PullRequestReadyState(triggerCheckOpts.prReadyState)
+	tag := triggerCheckOpts.tag
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigBase64Data := triggerCheckOpts.configBase64
+	bitriseConfigPath := triggerCheckOpts.config
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	inventoryBase64Data := triggerCheckOpts.inventoryBase64
+	inventoryPath := triggerCheckOpts.inventory
 
-	jsonParams := c.String(JSONParamsKey)
-	jsonParamsBase64 := c.String(JSONParamsBase64Key)
+	jsonParams := triggerCheckOpts.jsonParams
+	jsonParamsBase64 := triggerCheckOpts.jsonParamsBase64
 
-	format := c.String(OuputFormatKey)
+	format := triggerCheckOpts.format
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,

@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/version"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 // VersionOutputModel ...
@@ -21,12 +21,28 @@ type VersionOutputModel struct {
 	Commit        string `json:"commit"`
 }
 
-func printVersionCmd(c *cli.Context) error {
-	logCommandParameters(c)
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Prints the version",
+	RunE:  printVersionCmd,
+}
 
-	fullVersion := c.Bool("full")
+var versionOpts struct {
+	full   bool
+	format string
+}
 
-	if err := output.ConfigureOutputFormat(c); err != nil {
+func init() {
+	versionCmd.Flags().BoolVar(&versionOpts.full, "full", false, "Prints the build number as well.")
+	versionCmd.Flags().StringVarP(&versionOpts.format, OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+}
+
+func printVersionCmd(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+
+	fullVersion := versionOpts.full
+
+	if err := output.ConfigureOutputFormat(versionOpts.format); err != nil {
 		failf("Failed to configure output format, error: %s", err)
 	}
 

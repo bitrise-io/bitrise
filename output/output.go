@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -25,18 +24,14 @@ const (
 var Format = FormatRaw
 
 // ConfigureOutputFormat ...
-func ConfigureOutputFormat(c *cli.Context) error {
-	outFmt := c.String(FormatKey)
-	switch outFmt {
+func ConfigureOutputFormat(format string) error {
+	switch format {
 	case FormatRaw, FormatJSON, FormatYML:
-		// valid
-		Format = outFmt
+		Format = format
 	case "":
-		// default
 		Format = FormatRaw
 	default:
-		// invalid
-		return fmt.Errorf("invalid output format: %s", outFmt)
+		return fmt.Errorf("invalid output format: %s", format)
 	}
 	return nil
 }

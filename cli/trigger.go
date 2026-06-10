@@ -10,35 +10,49 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var triggerCommand = cli.Command{
-	Name:    "trigger",
+var triggerOpts struct {
+	pattern          string
+	config           string
+	inventory        string
+	secretFiltering  bool
+	pushBranch       string
+	prSourceBranch   string
+	prTargetBranch   string
+	prReadyState     string
+	tag              string
+	jsonParams       string
+	jsonParamsBase64 string
+	configBase64     string
+	inventoryBase64  string
+}
+
+var triggerCmd = &cobra.Command{
+	Use:     "trigger",
 	Aliases: []string{"t"},
-	Usage:   "Triggers a specified Workflow.",
-	Action:  trigger,
-	Flags: []cli.Flag{
-		// cli params
-		cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
-		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
-		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
+	Short:   "Triggers a specified Workflow.",
+	RunE:    trigger,
+}
 
-		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
-		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
-		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-		cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
-		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
+func init() {
+	triggerCmd.Flags().StringVar(&triggerOpts.pattern, PatternKey, "", "trigger pattern.")
+	triggerCmd.Flags().StringVarP(&triggerOpts.config, ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
+	triggerCmd.Flags().StringVarP(&triggerOpts.inventory, InventoryKey, inventoryShortKey, "", "Path of the inventory file.")
+	triggerCmd.Flags().BoolVar(&triggerOpts.secretFiltering, secretFilteringFlag, false, "Hide secret values from the log.")
 
-		// cli params used in CI mode
-		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
-		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
+	triggerCmd.Flags().StringVar(&triggerOpts.pushBranch, PushBranchKey, "", "Git push branch name.")
+	triggerCmd.Flags().StringVar(&triggerOpts.prSourceBranch, PRSourceBranchKey, "", "Git pull request source branch name.")
+	triggerCmd.Flags().StringVar(&triggerOpts.prTargetBranch, PRTargetBranchKey, "", "Git pull request target branch name.")
+	triggerCmd.Flags().StringVar(&triggerOpts.prReadyState, PRReadyStateKey, "", "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review")
+	triggerCmd.Flags().StringVar(&triggerOpts.tag, TagKey, "", "Git tag name.")
 
-		// should deprecate
-		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
-	},
+	triggerCmd.Flags().StringVar(&triggerOpts.jsonParams, JSONParamsKey, "", "Specify command flags with json string-string hash.")
+	triggerCmd.Flags().StringVar(&triggerOpts.jsonParamsBase64, JSONParamsBase64Key, "", "Specify command flags with base64 encoded json string-string hash.")
+
+	triggerCmd.Flags().StringVar(&triggerOpts.configBase64, ConfigBase64Key, "", "base64 encoded config data.")
+	triggerCmd.Flags().StringVar(&triggerOpts.inventoryBase64, InventoryBase64Key, "", "base64 encoded inventory data.")
 }
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
@@ -65,23 +79,23 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	}
 }
 
-func trigger(c *cli.Context) error {
-	logCommandParameters(c)
+func trigger(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
-	// Expand cli.Context
+	// Expand flags
 	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	if cmd.Root().PersistentFlags().Changed(PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(prMode)
 	}
 
 	var ciGlobalFlagPtr *bool
-	if c.GlobalIsSet(CIKey) {
-		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
+	if cmd.Root().PersistentFlags().Changed(CIKey) {
+		ciGlobalFlagPtr = pointers.NewBoolPtr(ciMode)
 	}
 
 	var secretFiltering *bool
-	if c.IsSet(secretFilteringFlag) {
-		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
+	if cmd.Flags().Changed(secretFilteringFlag) {
+		secretFiltering = pointers.NewBoolPtr(triggerOpts.secretFiltering)
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
 		secretFiltering = pointers.NewBoolPtr(true)
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
@@ -95,25 +109,25 @@ func trigger(c *cli.Context) error {
 		secretEnvsFiltering = pointers.NewBoolPtr(false)
 	}
 
-	triggerPattern := c.String(PatternKey)
-	if triggerPattern == "" && len(c.Args()) > 0 {
-		triggerPattern = c.Args()[0]
+	triggerPattern := triggerOpts.pattern
+	if triggerPattern == "" && len(args) > 0 {
+		triggerPattern = args[0]
 	}
 
-	pushBranch := c.String(PushBranchKey)
-	prSourceBranch := c.String(PRSourceBranchKey)
-	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
-	tag := c.String(TagKey)
+	pushBranch := triggerOpts.pushBranch
+	prSourceBranch := triggerOpts.prSourceBranch
+	prTargetBranch := triggerOpts.prTargetBranch
+	prReadyState := models.PullRequestReadyState(triggerOpts.prReadyState)
+	tag := triggerOpts.tag
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigBase64Data := triggerOpts.configBase64
+	bitriseConfigPath := triggerOpts.config
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	inventoryBase64Data := triggerOpts.inventoryBase64
+	inventoryPath := triggerOpts.inventory
 
-	jsonParams := c.String(JSONParamsKey)
-	jsonParamsBase64 := c.String(JSONParamsBase64Key)
+	jsonParams := triggerOpts.jsonParams
+	jsonParamsBase64 := triggerOpts.jsonParamsBase64
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,

@@ -7,35 +7,35 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginDeleteCommand = cli.Command{
-	Name:  "delete",
-	Usage: "Delete bitrise plugin.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-
-		if err := pluginDelete(c); err != nil {
-			log.Errorf("Plugin delete failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	ArgsUsage: "<plugin_name>",
+var pluginDeleteCmd = &cobra.Command{
+	Use:   "delete <plugin_name>",
+	Short: "Delete bitrise plugin.",
+	RunE:  runPluginDelete,
 }
 
-func pluginDelete(c *cli.Context) error {
+func runPluginDelete(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+
+	if err := pluginDelete(cmd, args); err != nil {
+		log.Errorf("Plugin delete failed, error: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func pluginDelete(cmd *cobra.Command, args []string) error {
 	// Input validation
-	args := c.Args()
 	if len(args) == 0 {
-		showSubcommandHelp(c)
+		_ = cmd.Help()
 		return errors.New("plugin_name not defined")
 	}
 
 	name := args[0]
 	if name == "" {
-		showSubcommandHelp(c)
+		_ = cmd.Help()
 		return errors.New("plugin_name not defined")
 	}
 	// ---

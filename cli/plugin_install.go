@@ -6,47 +6,48 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginInstallCommand = cli.Command{
-	Name:  "install",
-	Usage: "Install bitrise plugin.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-
-		if err := pluginInstall(c); err != nil {
-			log.Errorf("Plugin install failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "version",
-			Usage: "Plugin version tag.",
-		},
-		cli.StringFlag{
-			Name:  "source",
-			Usage: "Deprecated!!! Specify as arg instead - Plugin source url (can be local path or remote url).",
-		},
-	},
-	ArgsUsage: "<plugin_source_remote_or_local_url>",
+var pluginInstallCmd = &cobra.Command{
+	Use:   "install <plugin_source_remote_or_local_url>",
+	Short: "Install bitrise plugin.",
+	RunE:  runPluginInstall,
 }
 
-func pluginInstall(c *cli.Context) error {
+var pluginInstallOpts struct {
+	version string
+	source  string
+}
+
+func init() {
+	pluginInstallCmd.Flags().StringVar(&pluginInstallOpts.version, "version", "", "Plugin version tag.")
+	pluginInstallCmd.Flags().StringVar(&pluginInstallOpts.source, "source", "", "Deprecated!!! Specify as arg instead.")
+}
+
+func runPluginInstall(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+
+	if err := pluginInstall(cmd, args); err != nil {
+		log.Errorf("Plugin install failed, error: %s", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+func pluginInstall(cmd *cobra.Command, args []string) error {
 	// Input validation
 	pluginSource := ""
-	if args := c.Args(); len(args) > 0 {
+	if len(args) > 0 {
 		pluginSource = args[0]
 	} else {
-		pluginSource = c.String("source")
+		pluginSource = pluginInstallOpts.source
 	}
 
-	pluginVersionTag := c.String("version")
+	pluginVersionTag := pluginInstallOpts.version
 
 	if pluginSource == "" {
-		showSubcommandHelp(c)
+		_ = cmd.Help()
 		return fmt.Errorf("plugin source not defined")
 	}
 	// ---

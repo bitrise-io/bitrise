@@ -7,50 +7,52 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/version"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var initCmd = cli.Command{
-	Name:    "init",
+var initCmd = &cobra.Command{
+	Use:     "init",
 	Aliases: []string{"i"},
-	Usage:   "Init bitrise config.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-
-		logger := log.NewLogger(log.GetGlobalLoggerOpts())
-		if err := initConfig(c); err != nil {
-
-			// If the plugin is not installed yet run the bitrise setup first and try it again
-			perr, ok := err.(plugins.NotInstalledError)
-			if ok {
-				logger.Warn(perr)
-				logger.Print("Running setup to install the default plugins")
-				logger.Print()
-
-				if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false, false); err != nil {
-					return fmt.Errorf("setup failed, error: %s", err)
-				}
-
-				if err := initConfig(c); err != nil {
-					failf(err.Error())
-				}
-			} else {
-				failf(err.Error())
-			}
-		}
-		return nil
-	},
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "minimal",
-			Usage: "creates empty bitrise config and secrets",
-		},
-	},
+	Short:   "Init bitrise config.",
+	RunE:    runInit,
 }
 
-func initConfig(c *cli.Context) error {
-	minimal := c.Bool("minimal")
+var initOpts struct {
+	minimal bool
+}
 
+func init() {
+	initCmd.Flags().BoolVar(&initOpts.minimal, "minimal", false, "creates empty bitrise config and secrets")
+}
+
+func runInit(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+
+	logger := log.NewLogger(log.GetGlobalLoggerOpts())
+	if err := initConfig(initOpts.minimal); err != nil {
+
+		// If the plugin is not installed yet run the bitrise setup first and try it again
+		perr, ok := err.(plugins.NotInstalledError)
+		if ok {
+			logger.Warn(perr)
+			logger.Print("Running setup to install the default plugins")
+			logger.Print()
+
+			if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false, false); err != nil {
+				return fmt.Errorf("setup failed, error: %s", err)
+			}
+
+			if err := initConfig(initOpts.minimal); err != nil {
+				failf(err.Error())
+			}
+		} else {
+			failf(err.Error())
+		}
+	}
+	return nil
+}
+
+func initConfig(minimal bool) error {
 	pluginName := "init"
 	plugin, found, err := plugins.LoadPlugin(pluginName)
 	if err != nil {

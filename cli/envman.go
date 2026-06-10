@@ -4,25 +4,18 @@ import (
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var envmanCommand = cli.Command{
-	Name:            "envman",
-	Usage:           "Runs an envman command.",
-	SkipFlagParsing: true,
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
-
-		if err := runCommandWith("envman", c); err != nil {
-			failf("Command failed, error: %s", err)
-		}
-		return nil
-	},
+var envmanCmd = &cobra.Command{
+	Use:                "envman",
+	Short:              "Runs an envman command.",
+	DisableFlagParsing: true,
+	RunE:               runEnvman,
 }
 
-func runCommandWith(toolName string, c *cli.Context) error {
-	args := c.Args()
-	cmd := command.NewWithStandardOuts(toolName, args...).SetStdin(os.Stdin)
-	return cmd.Run()
+func runEnvman(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
+	cmd2 := command.NewWithStandardOuts("envman", args...).SetStdin(os.Stdin)
+	return cmd2.Run()
 }

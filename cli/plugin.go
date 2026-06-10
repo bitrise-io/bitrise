@@ -1,24 +1,15 @@
 package cli
 
 import (
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginCommand = cli.Command{
-	Name:  "plugin",
-	Usage: "Plugin handling.",
-	Subcommands: []cli.Command{
-		pluginInstallCommand,
-		pluginUpdateCommand,
-		pluginDeleteCommand,
-		pluginInfoCommand,
-		pluginListCommand,
-	},
+var pluginCmd = &cobra.Command{
+	Use:   "plugin",
+	Short: "Plugin handling.",
 }
 
-func showSubcommandHelp(c *cli.Context) {
-	if err := cli.ShowSubcommandHelp(c); err != nil {
-		log.Warnf("Failed to show help, error: %s", err)
-	}
+func init() {
+	pluginCmd.AddCommand(pluginInstallCmd, pluginUpdateCmd, pluginDeleteCmd, pluginInfoCmd, pluginListCmd)
 }
+

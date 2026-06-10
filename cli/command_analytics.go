@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var globalTracker analytics.Tracker
@@ -17,40 +18,36 @@ func logPluginCommandParameters(name string, _ []string) {
 	sendCommandInfo(fmt.Sprintf(":%s", name), "", []string{})
 }
 
-func logCommandParameters(c *cli.Context) {
-	if c == nil {
+func logCommandParameters(cmd *cobra.Command) {
+	if cmd == nil {
 		return
 	}
 
 	commandName := "unknown"
 	subcommandName := ""
-	
-	if names := strings.Split(c.Command.FullName(), " "); 0 < len(names) {
-		commandName = names[0]
-		if 1 < len(names) {
-			subcommandName = names[1]
+
+	parts := strings.Split(cmd.CommandPath(), " ")
+	if len(parts) > 1 {
+		commandName = parts[1]
+		if len(parts) > 2 {
+			subcommandName = parts[2]
 		}
 	}
 
-	flags := collectFlags(c)
-
+	flags := collectFlags(cmd)
 	sendCommandInfo(commandName, subcommandName, flags)
 }
 
-func collectFlags(c *cli.Context) []string {
+func collectFlags(cmd *cobra.Command) []string {
 	var flags []string
 
-	for _, flag := range c.GlobalFlagNames() {
-		if isSet := c.GlobalIsSet(flag); isSet {
-			flags = append(flags, flag)
-		}
-	}
+	cmd.Root().PersistentFlags().Visit(func(f *pflag.Flag) {
+		flags = append(flags, f.Name)
+	})
 
-	for _, flag := range c.FlagNames() {
-		if isSet := c.IsSet(flag); isSet {
-			flags = append(flags, flag)
-		}
-	}
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		flags = append(flags, f.Name)
+	})
 
 	return flags
 }

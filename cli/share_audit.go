@@ -2,11 +2,17 @@ package cli
 
 import (
 	"github.com/bitrise-io/bitrise/v2/tools"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-func shareAudit(c *cli.Context) error {
-	logCommandParameters(c)
+var shareAuditCmd = &cobra.Command{
+	Use:   "audit",
+	Short: "Validates the step collection.",
+	RunE:  runShareAudit,
+}
+
+func runShareAudit(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
 	if err := tools.StepmanShareAudit(); err != nil {
 		failf("Bitrise share audit failed, error: %s", err)

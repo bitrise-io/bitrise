@@ -10,32 +10,33 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var mergeConfigCommand = cli.Command{
-	Name:      "merge",
-	Usage:     "Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.",
-	ArgsUsage: "args[0]: By default, the command looks for a bitrise.yml in the current directory, custom path can be specified as an argument.",
-	Action:    mergeConfig,
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "output, o",
-			Usage: "Output directory for the merged config file (bitrise.yml) and related config file tree (config_tree.json).",
-		},
-	},
+var mergeCmd = &cobra.Command{
+	Use:   "merge [bitrise.yml path]",
+	Short: "Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.",
+	RunE:  mergeConfig,
 }
 
-func mergeConfig(c *cli.Context) error {
-	logCommandParameters(c)
+var mergeOpts struct {
+	output string
+}
+
+func init() {
+	mergeCmd.Flags().StringVarP(&mergeOpts.output, "output", "o", "", "Output directory for the merged config file (bitrise.yml) and related config file tree (config_tree.json).")
+}
+
+func mergeConfig(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
 	var configPth string
-	if c.Args().Present() {
-		configPth = c.Args().First()
+	if len(args) > 0 {
+		configPth = args[0]
 	} else {
 		configPth = "bitrise.yml"
 	}
-	outputDir := c.String("output")
+	outputDir := mergeOpts.output
 
 	merger, err := createDefaultMerger()
 	if err != nil {

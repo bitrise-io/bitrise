@@ -9,8 +9,30 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
+
+var validateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Validates a specified bitrise config.",
+	RunE:  validate,
+}
+
+var validateOpts struct {
+	config          string
+	configBase64    string
+	inventory       string
+	inventoryBase64 string
+	format          string
+}
+
+func init() {
+	validateCmd.Flags().StringVarP(&validateOpts.config, ConfigKey, "c", "", "Path where the workflow config file is located.")
+	validateCmd.Flags().StringVar(&validateOpts.configBase64, ConfigBase64Key, "", "base64 encoded config data.")
+	validateCmd.Flags().StringVarP(&validateOpts.inventory, InventoryKey, "i", "", "Path of the inventory file.")
+	validateCmd.Flags().StringVar(&validateOpts.inventoryBase64, InventoryBase64Key, "", "base64 encoded inventory data.")
+	validateCmd.Flags().StringVar(&validateOpts.format, OuputFormatKey, "", "Output format. Accepted: json, yml.")
+}
 
 // ValidationItemModel ...
 type ValidationItemModel struct {
@@ -218,17 +240,16 @@ func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inven
 	return &validation, warnings, nil
 }
 
-func validate(c *cli.Context) error {
-	logCommandParameters(c)
+func validate(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
-	// Expand cli.Context
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigBase64Data := validateOpts.configBase64
+	bitriseConfigPath := validateOpts.config
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	inventoryBase64Data := validateOpts.inventoryBase64
+	inventoryPath := validateOpts.inventory
 
-	format := c.String(OuputFormatKey)
+	format := validateOpts.format
 	if format == "" {
 		format = output.FormatRaw
 	}

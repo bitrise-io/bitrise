@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -15,15 +14,19 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/version"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-// Run ...
+// Run is the entry point for the Bitrise CLI.
 func Run() {
-	// In the case of `--output-format=json` flag is set for the run command, all the logs are expected in JSON format.
+	// Normalize single-dash long flags (e.g. -ci, -debug) that urfave/cli v1 accepted
+	// but pflag requires as double-dash. Also maps -v → --version.
+	cliArgs := normalizeLegacyArgs(os.Args[1:])
+
+	// In the case of --output-format=json flag is set for the run command, all the logs are expected in JSON format.
 	// Because logs might be printed before processing the run command args,
 	// we need to manually parse the logger configuration.
-	isRunCommand, logFormat, isDebugMode := loggerParameters(os.Args[1:])
+	isRunCommand, logFormat, isDebugMode := loggerParameters(cliArgs)
 
 	if !isDebugMode {
 		isDebugMode = os.Getenv(configs.DebugModeEnvKey) == "true"
@@ -43,82 +46,117 @@ func Run() {
 		TimeProvider:    time.Now,
 	}
 	log.InitGlobalLogger(opts)
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if isDebugMode {
-		// set for other tools, as an ENV
 		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
 			failf("Failed to set DEBUG env, error: %s", err)
-
 		}
-
 		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
 			failf("Failed to set LOGLEVEL env, error: %s", err)
-
 		}
-
 		configs.IsDebugMode = true
 	}
 
-	// This is needed for the getPluginsList func in the cli.AppHelpTemplate
-	// and cli.AppHelpTemplate is evaluated before executing app.Before.
+	// This is needed for the getPluginsList func used in the help function,
+	// which is evaluated before executing the PersistentPreRunE.
 	if err := plugins.InitPaths(); err != nil {
 		failf("Failed to initialize plugin path, error: %s", err)
 	}
 
-	cli.VersionPrinter = func(c *cli.Context) { log.Print(c.App.Version) }
-	cli.AppHelpTemplate = fmt.Sprintf(helpTemplate, getPluginsList())
+	rootCmd := &cobra.Command{
+		Use:               path.Base(os.Args[0]),
+		Short:             "Bitrise Automations Workflow Runner",
+		Version:           version.VERSION,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
+		PersistentPreRunE: before,
+	}
 
-	app := cli.NewApp()
-	app.Name = path.Base(os.Args[0])
-	app.Usage = "Bitrise Automations Workflow Runner"
-	app.Version = version.VERSION
+	rootCmd.PersistentFlags().BoolVar(&debugMode, DebugModeKey, false, "If true it enables DEBUG mode.")
+	rootCmd.PersistentFlags().BoolVar(&ciMode, CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
+	rootCmd.PersistentFlags().BoolVar(&prMode, PRKey, false, "If true bitrise runs in pull request mode.")
 
-	app.Author = ""
-	app.Email = ""
+	// Capture cobra's default help before overriding, so subcommands can use it.
+	defaultHelp := rootCmd.HelpFunc()
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if cmd != cmd.Root() {
+			defaultHelp(cmd, args)
+			return
+		}
+		fmt.Printf("NAME: %s - %s\n\n", cmd.Root().Name(), cmd.Root().Short)
+		fmt.Printf("USAGE: %s [OPTIONS] COMMAND/PLUGIN [arg...]\n\n", cmd.Root().Name())
+		fmt.Printf("VERSION: %s\n\n", cmd.Root().Version)
+		fmt.Printf("GLOBAL OPTIONS:\n")
+		cmd.Root().PersistentFlags().PrintDefaults()
+		fmt.Printf("\nCOMMANDS:\n")
+		for _, c := range cmd.Root().Commands() {
+			if !c.Hidden {
+				fmt.Printf("  %-15s %s\n", c.Name(), c.Short)
+			}
+		}
+		fmt.Printf("\n%s\n", getPluginsList())
+		fmt.Printf("COMMAND HELP: %s COMMAND --help/-h\n", cmd.Root().Name())
+	})
 
-	app.Before = before
-
-	app.Flags = flags
-	app.Commands = commands
+	registerCommands(rootCmd)
+	rootCmd.SetArgs(cliArgs)
 
 	globalTracker = analytics.NewDefaultTracker()
 	defer func() {
 		globalTracker.Wait()
 	}()
 
-	app.Action = func(c *cli.Context) error {
-		pluginName, pluginArgs, isPlugin := plugins.ParseArgs(c.Args())
-		if isPlugin {
-			logPluginCommandParameters(pluginName, pluginArgs)
+	if err := rootCmd.Execute(); err != nil {
+		// cobra returns an error for unknown commands; try plugin routing
+		if strings.Contains(err.Error(), "unknown command") {
+			pluginName, pluginArgs, isPlugin := plugins.ParseArgs(cliArgs)
+			if isPlugin {
+				logPluginCommandParameters(pluginName, pluginArgs)
 
-			plugin, found, err := plugins.LoadPlugin(pluginName)
-			if err != nil {
-				return fmt.Errorf("failed to get plugin (%s), error: %s", pluginName, err)
-			}
-			if !found {
-				return fmt.Errorf("plugin (%s) not installed", pluginName)
-			}
+				// cobra errored before routing so PersistentPreRunE never fired and
+				// no flags were parsed. Apply global flags from cliArgs via pflag.Set()
+				// so that before() can correctly use Changed() to distinguish explicit
+				// flag values from defaults (important for e.g. --ci=false overriding
+				// a CI_MODE=true env var).
+				for _, arg := range cliArgs {
+					for _, key := range []string{DebugModeKey, CIKey, PRKey} {
+						if arg == "--"+key {
+							_ = rootCmd.PersistentFlags().Set(key, "true")
+						} else if val, ok := strings.CutPrefix(arg, "--"+key+"="); ok {
+							_ = rootCmd.PersistentFlags().Set(key, val)
+						}
+					}
+				}
 
-			if err := bitrise.RunSetupIfNeeded(logger); err != nil {
-				failf("Setup failed, error: %s", err)
-			}
+				if err := before(rootCmd, nil); err != nil {
+					failf("Setup failed, error: %s", err)
+				}
 
-			if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-				return fmt.Errorf("failed to run plugin (%s), error: %s", pluginName, err)
+				logger := log.NewLogger(log.GetGlobalLoggerOpts())
+				plugin, found, pluginErr := plugins.LoadPlugin(pluginName)
+				if pluginErr != nil {
+					failf("failed to get plugin (%s), error: %s", pluginName, pluginErr)
+				}
+				if !found {
+					failf("plugin (%s) not installed", pluginName)
+				}
+
+				if err := bitrise.RunSetupIfNeeded(logger); err != nil {
+					failf("Setup failed, error: %s", err)
+				}
+
+				if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
+					failf("failed to run plugin (%s), error: %s", pluginName, err)
+				}
+			} else {
+				if helpErr := rootCmd.Help(); helpErr != nil {
+					failf("failed to show help: %s", helpErr)
+				}
+				failf(err.Error())
 			}
 		} else {
-			if err := cli.ShowAppHelp(c); err != nil {
-				return fmt.Errorf("failed to show help, error: %s", err)
-			}
-			return errors.New("")
+			failf(err.Error())
 		}
-
-		return nil
-	}
-
-	if err := app.Run(os.Args); err != nil {
-		failf(err.Error())
 	}
 }
 
@@ -186,18 +224,20 @@ func isFlag(name, arg string) bool {
 		strings.HasPrefix(arg, "--"+name+"=") || strings.HasPrefix(arg, "-"+name+"=")
 }
 
-func before(c *cli.Context) error {
-	/*
-		return err will print app's help also,
-		use log.Fatal to avoid print help.
-	*/
+func before(cmd *cobra.Command, args []string) error {
+	flags := cmd.Root().PersistentFlags()
 
-	initHelpAndVersionFlags()
+	// Apply env-var fallback only when the flag was NOT explicitly set on the
+	// command line. Using Changed() rather than checking the current bool value
+	// ensures that --ci=false explicitly overrides CI_MODE=true env var.
+	if !flags.Changed(DebugModeKey) && os.Getenv(configs.DebugModeEnvKey) == "true" {
+		debugMode = true
+	}
+	if !flags.Changed(CIKey) && os.Getenv(configs.CIModeEnvKey) == "true" {
+		ciMode = true
+	}
 
-	// CI Mode check
-	if c.Bool(CIKey) {
-		// if CI mode indicated make sure we set the related env
-		//  so all other tools we use will also get it
+	if ciMode {
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
 			failf("Failed to set CI env, error: %s", err)
 		}
@@ -208,10 +248,7 @@ func before(c *cli.Context) error {
 		failf("Failed to initialize required paths, error: %s", err)
 	}
 
-	// Pull Request Mode check
-	if c.Bool(PRKey) {
-		// if PR mode indicated make sure we set the related env
-		//  so all other tools we use will also get it
+	if prMode {
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
 			failf("Failed to set PR env, error: %s", err)
 		}
@@ -223,20 +260,41 @@ func before(c *cli.Context) error {
 		configs.IsPullRequestMode = true
 	}
 
-	IsPR := os.Getenv(configs.PRModeEnvKey)
-	if IsPR == "true" {
+	isPR := os.Getenv(configs.PRModeEnvKey)
+	if isPR == "true" {
 		configs.IsPullRequestMode = true
 	}
 
-	// want to access this key in setup command too
 	isOfflineMode := isSteplibOfflineMode()
 	registerSteplibOfflineMode(isOfflineMode)
 
 	return nil
 }
 
-func failf(format string, args ...interface{}) {
+func failf(format string, args ...any) {
 	log.Errorf(format, args...)
 	globalTracker.Wait()
 	os.Exit(1)
+}
+
+// normalizeLegacyArgs converts single-dash long flags that urfave/cli v1 accepted
+// but pflag/cobra requires in double-dash form. Also maps -v → --version.
+func normalizeLegacyArgs(args []string) []string {
+	replacements := map[string]string{
+		"-" + DebugModeKey: "--" + DebugModeKey,
+		"-" + CIKey:        "--" + CIKey,
+		"-" + PRKey:        "--" + PRKey,
+		"-v":               "--version",
+	}
+	out := make([]string, len(args))
+	copy(out, args)
+	for i, arg := range out {
+		for old, new := range replacements {
+			if arg == old || strings.HasPrefix(arg, old+"=") {
+				out[i] = new + strings.TrimPrefix(arg, old)
+				break
+			}
+		}
+	}
+	return out
 }
