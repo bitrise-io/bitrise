@@ -99,6 +99,25 @@ func TestTriggerMapItemModel_MatchWithParams_CodePushParams(t *testing.T) {
 	}
 }
 
+func TestTriggerMapItemModel_MatchWithParams_RegexCondition(t *testing.T) {
+	// A regex condition is stored as a map, not a string. MatchWithParams must
+	// not panic on it (regression: stringFromTriggerCondition used an unchecked
+	// type assertion to string). The condition's regex string is extracted and
+	// matched, so glob matching against the pattern is used here.
+	item := TriggerMapItemModel{
+		PushBranch: map[string]interface{}{"regex": "feature-*"},
+		WorkflowID: "primary",
+	}
+
+	match, err := item.MatchWithParams("feature-login", "", "", PullRequestReadyStateReadyForReview, "")
+	require.NoError(t, err)
+	require.Equal(t, true, match)
+
+	noMatch, err := item.MatchWithParams("main", "", "", PullRequestReadyStateReadyForReview, "")
+	require.NoError(t, err)
+	require.Equal(t, false, noMatch)
+}
+
 func TestTriggerMapItemModel_MatchWithParams_PRParams(t *testing.T) {
 	tests := []struct {
 		name           string
