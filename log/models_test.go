@@ -23,10 +23,9 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				ID:          "Id",
 				Version:     "Version",
 				Collection:  "Collection",
-				Toolkit:     "Toolkit",
 				StartTime:   "StartTime",
 			},
-			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"Version\",\"collection\":\"Collection\",\"toolkit\":\"Toolkit\",\"start_time\":\"StartTime\"}",
+			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"Version\",\"collection\":\"Collection\",\"start_time\":\"StartTime\"}",
 		},
 		{
 			name: "Empty fields are kept",
@@ -37,10 +36,9 @@ func TestStepStartedEventSerialisesToTheExpectedJsonMessage(t *testing.T) {
 				ID:          "Id",
 				Version:     "",
 				Collection:  "Collection",
-				Toolkit:     "",
 				StartTime:   "StartTime",
 			},
-			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"\",\"collection\":\"Collection\",\"toolkit\":\"\",\"start_time\":\"StartTime\"}",
+			expectedOutput: "{\"uuid\":\"ExecutionId\",\"idx\":0,\"title\":\"Title\",\"id\":\"Id\",\"version\":\"\",\"collection\":\"Collection\",\"start_time\":\"StartTime\"}",
 		},
 	}
 
