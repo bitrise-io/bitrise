@@ -122,14 +122,14 @@ func TestEnvmanAddEnvs(t *testing.T) {
 			name:        "add too large env",
 			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
 			envsList:    []models.EnvironmentItemModel{{"key": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024+1)}},
-			wantErr: `env var (key) value is too large (256.0009765625 KB), max allowed size: 256 KB.
+			wantErr: `env var (key) value is too large (500.0009765625 KB), max allowed size: 500 KB.
 To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
 		},
 		{
 			name:        "add env to a too large env list",
 			envstorePth: filepath.Join(os.TempDir(), "envstore.yml"),
 			envsList:    []models.EnvironmentItemModel{{"key_1": strings.Repeat("a", defaultConfig.EnvBytesLimitInKB*1024)}, {"key_2": "a"}},
-			wantErr: `env var list is too large (256.0009765625 KB), max allowed size: 256 KB.
+			wantErr: `env var list is too large (500.0009765625 KB), max allowed size: 500 KB.
 To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large`,
 		},
 	}
