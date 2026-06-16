@@ -55,6 +55,9 @@ workflows:
             export INTEGRATION_TEST_BINARY_PATH="$current_stepman"
             go test -v ./_tests/integration/...
 
+            # Generator round-trip against a real steplib (build-tag gated, needs network).
+            go test -tags integration -v ./steplibrary/indexgen/...
+
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:

@@ -13,31 +13,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// minimalStepYAML returns the smallest step.yml body that passes Validate:
+// a title plus a non-empty source block (git + a 40-char commit). Used by
+// tests that build synthetic input filesystems and don't care about the
+// step's content beyond "this version exists and is well-formed". Without a
+// source block the generator's validate-before-publish step would reject the
+// staged tree (missing source.git/source.commit).
+func minimalStepYAML(title string) []byte {
+	return []byte(
+		"title: " + title + "\n" +
+			"source:\n" +
+			"  git: https://example.com/repo.git\n" +
+			"  commit: '0000000000000000000000000000000000000000'\n",
+	)
+}
+
 func TestCollect_step_info_and_asset_copy(t *testing.T) {
-	out := runGenerateFromSteplibClone(t)
+	root := runGenerateFromSteplibClone(t)
 
 	var info steplibindex.StepInfo
-	readJSON(t, filepath.Join(out, "steps/hello-step/step-info.json"), &info)
+	readJSON(t, filepath.Join(root, mustFS(steplibindex.StepInfoPath("hello-step"))), &info)
 
 	assert.Equal(t, "bitrise", info.Maintainer, "Maintainer")
 	assert.Nil(t, info.Deprecation, "Deprecation")
 	assert.Equal(t, []string{"assets/icon.svg"}, info.AssetURLs, "AssetURLs")
 
 	// Asset file copied.
-	_, gotErr := os.Stat(filepath.Join(out, "steps/hello-step/assets/icon.svg"))
-	assert.NoError(t, gotErr, "asset file copied")
+	assert.FileExists(t, filepath.Join(root, mustFS(steplibindex.StepAssetPath("hello-step", "icon.svg"))), "asset file copied")
 }
 
 func TestCollect_asset_permissions_preserved(t *testing.T) {
 	// Embedded fixtures can't carry real file permissions, so drive the
-	// generator from an in-memory FS where the asset's mode is set explicitly
-	// (and distinct from the writer's 0644 default), then assert the copy
-	// preserves it.
+	// generator from an in-memory FS where the asset's mode is set explicitly to
+	// a value distinct from common defaults (and from the 0600 the writer uses
+	// for files it authors), then assert the copy preserves it.
 	const mode = os.FileMode(0o640)
 	inputFS := fstest.MapFS{
 		"steplib.yml":                     {Data: []byte("format_version: '0.9.0'\nsteplib_source: 'https://example.com'\n")},
 		"steps/perm-step/step-info.yml":   {Data: []byte("maintainer: test\n")},
-		"steps/perm-step/1.0.0/step.yml":  {Data: []byte("title: Perm Step\n")},
+		"steps/perm-step/1.0.0/step.yml":  {Data: minimalStepYAML("Perm Step")},
 		"steps/perm-step/assets/icon.svg": {Data: []byte("<svg/>"), Mode: mode},
 	}
 
@@ -45,16 +59,16 @@ func TestCollect_asset_permissions_preserved(t *testing.T) {
 	_, gotErr := generateFromSteplibClone(inputFS, out, Options{GeneratedAt: fixedTime}, testLogger{t})
 	require.NoError(t, gotErr, "generateFromSteplibClone")
 
-	dstInfo, err := os.Stat(filepath.Join(out, steplibindex.VersionDir(), "steps/perm-step/assets/icon.svg"))
+	dstInfo, err := os.Stat(filepath.Join(out, mustFS(steplibindex.StepAssetPath("perm-step", "icon.svg"))))
 	require.NoError(t, err, "stat copied asset")
 	assert.Equal(t, mode, dstInfo.Mode().Perm(), "copied asset preserves source file mode")
 }
 
 func TestCollect_deprecated_step(t *testing.T) {
-	out := runGenerateFromSteplibClone(t)
+	root := runGenerateFromSteplibClone(t)
 
 	var info steplibindex.StepInfo
-	readJSON(t, filepath.Join(out, "steps/deprecated-step/step-info.json"), &info)
+	readJSON(t, filepath.Join(root, mustFS(steplibindex.StepInfoPath("deprecated-step"))), &info)
 
 	assert.Equal(t, "bitrise", info.Maintainer, "Maintainer")
 	require.NotNil(t, info.Deprecation, "Deprecation")
@@ -78,9 +92,10 @@ func TestCollect_missing_step_info_is_error(t *testing.T) {
 
 func TestCollect_invalid_version_dir_skipped(t *testing.T) {
 	inputFS := fstest.MapFS{
-		"steplib.yml":                            {Data: []byte("format_version: '0.9.0'\n")},
-		"steps/my-step/step-info.yml":            {Data: []byte("maintainer: test\n")},
-		"steps/my-step/1.0.0/step.yml":           {Data: []byte("title: My Step\n")},
+		"steplib.yml":                  {Data: []byte("format_version: '0.9.0'\n")},
+		"steps/my-step/step-info.yml":  {Data: []byte("maintainer: test\n")},
+		"steps/my-step/1.0.0/step.yml": {Data: minimalStepYAML("My Step")},
+		// Non-semver version dirs are skipped, so their content is never read.
 		"steps/my-step/not-a-semver/step.yml":    {Data: []byte("title: Should be skipped\n")},
 		"steps/my-step/also-not-semver/step.yml": {Data: []byte("title: Also skipped\n")},
 	}
@@ -91,17 +106,15 @@ func TestCollect_invalid_version_dir_skipped(t *testing.T) {
 	assert.Equal(t, 1, stats.StepCount, "StepCount")
 	assert.Equal(t, 1, stats.VersionCount, "VersionCount")
 
-	_, statErr := os.Stat(filepath.Join(out, steplibindex.VersionDir(), "steps/my-step/1.0.0/step.json"))
-	assert.NoError(t, statErr, "valid version written")
-	_, statErr = os.Stat(filepath.Join(out, steplibindex.VersionDir(), "steps/my-step/not-a-semver/step.json"))
-	assert.True(t, os.IsNotExist(statErr), "non-semver version dir skipped")
+	assert.FileExists(t, filepath.Join(out, mustFS(steplibindex.StepJSONPath("my-step", "1.0.0"))), "valid version written")
+	assert.NoFileExists(t, filepath.Join(out, mustFS(steplibindex.StepJSONPath("my-step", "not-a-semver"))), "non-semver version dir skipped")
 }
 
 func TestCollect_multi_platform_executables(t *testing.T) {
-	out := runGenerateFromSteplibClone(t)
+	root := runGenerateFromSteplibClone(t)
 
 	var step models.StepModel
-	readJSON(t, filepath.Join(out, "steps/multi-platform-step/3.2.1/step.json"), &step)
+	readJSON(t, filepath.Join(root, mustFS(steplibindex.StepJSONPath("multi-platform-step", "3.2.1"))), &step)
 
 	require.NotNil(t, step.Executables, "Executables")
 	require.Len(t, *step.Executables, 4, "Executables len")
@@ -127,18 +140,15 @@ func TestCollect_multi_platform_executables(t *testing.T) {
 }
 
 func TestCollect_bash_step_has_no_executables(t *testing.T) {
-	out := runGenerateFromSteplibClone(t)
+	root := runGenerateFromSteplibClone(t)
 
 	var step models.StepModel
-	readJSON(t, filepath.Join(out, "steps/bash-step/1.0.0/step.json"), &step)
+	readJSON(t, filepath.Join(root, mustFS(steplibindex.StepJSONPath("bash-step", "1.0.0"))), &step)
 
 	// The Script step ships no precompiled binary, so activation builds from
 	// source (Executables nil). It also declares no toolkit, and the generator
-	// preserves that verbatim — like V1's parse pipeline (Normalize +
-	// FillMissingDefaults), it never synthesizes a default toolkit. The bash +
-	// step.sh default is applied at run time (toolkits.ToolkitForStep defaults to
-	// BashToolkit, which uses step.sh when no entry file is set), not baked into
-	// step.json.
+	// preserves that verbatim — it never synthesizes a default. The bash +
+	// step.sh default is applied at run time, not baked into step.json.
 	assert.Nil(t, step.Executables, "Executables")
 	assert.Nil(t, step.Toolkit, "Toolkit")
 	require.NotNil(t, step.Title, "Title")

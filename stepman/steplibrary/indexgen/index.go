@@ -3,27 +3,38 @@ package indexgen
 import (
 	"fmt"
 	"io/fs"
-	"path/filepath"
 	"strconv"
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 )
 
-// writeStepFiles emits the per-step source files under steps/<id>/.
+// writeStepFiles emits the per-step source files under steps/<id>/. Output paths
+// come from steplibindex; the asset src is a source-steplib (input) path.
 func writeStepFiles(w *writer, inputFS fs.FS, s parsedStep) error {
-	if err := w.writeJSON(filepath.Join("steps", s.id, "step-info.json"), s.info); err != nil {
+	infoPath, err := steplibindex.StepInfoPath(s.id)
+	if err != nil {
+		return err
+	}
+	if err := w.writeJSON(infoPath.FS(), s.info); err != nil {
 		return err
 	}
 	for _, f := range s.assetFiles {
 		src := "steps/" + s.id + "/assets/" + f
-		dst := filepath.Join("steps", s.id, "assets", f)
-		if err := w.copyFileFromFS(inputFS, src, dst); err != nil {
+		dst, err := steplibindex.StepAssetPath(s.id, f)
+		if err != nil {
+			return err
+		}
+		if err := w.copyFileFromFS(inputFS, src, dst.FS()); err != nil {
 			return fmt.Errorf("copy asset %s: %w", src, err)
 		}
 	}
 	for _, v := range s.versions {
-		if err := w.writeJSON(filepath.Join("steps", s.id, v.version, "step.json"), v.model); err != nil {
+		stepJSONPath, err := steplibindex.StepJSONPath(s.id, v.version)
+		if err != nil {
+			return err
+		}
+		if err := w.writeJSON(stepJSONPath.FS(), v.model); err != nil {
 			return err
 		}
 	}
@@ -36,15 +47,23 @@ func writeIndexFiles(w *writer, steps []parsedStep) error {
 	for i, s := range steps {
 		ids[i] = s.id
 	}
-	if err := w.writeJSON("index/step_ids.json", steplibindex.StepIDs{StepIDs: ids}); err != nil {
+	if err := w.writeJSON(steplibindex.StepIDsPath().FS(), steplibindex.StepIDs{StepIDs: ids}); err != nil {
 		return err
 	}
 
 	for _, s := range steps {
-		if err := w.writeJSON(filepath.Join("index", "steps", s.id, "latest.json"), buildLatestPointer(s)); err != nil {
+		latestPath, err := steplibindex.LatestPointerPath(s.id)
+		if err != nil {
 			return err
 		}
-		if err := w.writeJSON(filepath.Join("index", "steps", s.id, "versions.json"), buildVersionsJSON(s)); err != nil {
+		if err := w.writeJSON(latestPath.FS(), buildLatestPointer(s)); err != nil {
+			return err
+		}
+		versionsPath, err := steplibindex.VersionsPath(s.id)
+		if err != nil {
+			return err
+		}
+		if err := w.writeJSON(versionsPath.FS(), buildVersionsJSON(s)); err != nil {
 			return err
 		}
 	}

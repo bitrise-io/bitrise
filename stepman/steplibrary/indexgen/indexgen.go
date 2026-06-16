@@ -1,6 +1,13 @@
 // Package indexgen generates the V2 step library inventory tree from a
 // bitrise-steplib source. The wire-format types it emits live in
 // steplibrary/steplibindex.
+//
+// Generation stages the whole tree in a sibling temp directory, runs Validate
+// against the staged tree, and only then atomically publishes it with a single
+// rename. Validation is unconditional: an invalid
+// staged tree is never published, so any existing inventory at the output dir
+// is left untouched on a validation failure, and a successful Generate
+// guarantees the published inventory passes Validate.
 package indexgen
 
 import (
@@ -13,6 +20,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/v2/fileutil"
+	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 	"github.com/bitrise-io/stepman/stepman"
 )
@@ -113,15 +121,9 @@ func generateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 		return Stats{}, err
 	}
 
-	// Stage in a sibling of outputDir (same filesystem, so the publish rename
-	// is atomic and never cross-device).
-	parent := filepath.Dir(outputDir)
-	if err := os.MkdirAll(parent, 0o700); err != nil {
-		return Stats{}, fmt.Errorf("create output parent %s: %w", parent, err)
-	}
-	staging, err := os.MkdirTemp(parent, ".indexgen-staging-*")
+	staging, err := createStagingDir(outputDir)
 	if err != nil {
-		return Stats{}, fmt.Errorf("create staging dir: %w", err)
+		return Stats{}, err
 	}
 	defer func() {
 		// On success staging has been renamed away, so RemoveAll is a no-op;
@@ -131,20 +133,57 @@ func generateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 		}
 	}()
 
-	// Root the tree under the format-version dir (e.g. v2/) inside staging, so
-	// the published outputDir contains <version>/{meta.json,index,steps}.
-	w := &writer{outputDir: filepath.Join(staging, steplibindex.VersionDir()), fw: realFileWriter{}, fm: fileutil.NewFileManager(), fileCount: 0, byteCount: 0}
+	// The writer is rooted at the inventory root (staging); every path it gets
+	// comes from steplibindex, which roots files under the format-version dir
+	// (e.g. v2/), so the published outputDir contains <version>/{meta,index,steps}.
+	w := newWriter(staging, fileutil.NewFileManager())
+	if err := writeInventory(w, inputFS, steps, steplibYML, opts); err != nil {
+		return Stats{}, err
+	}
 
+	// Validate the fully-staged tree before publishing: an invalid tree is never
+	// published, so any existing inventory at outputDir is left untouched. staging
+	// is the dir CONTAINING the version dir (v2/), the root Validate expects.
+	if violations := Validate(os.DirFS(staging)); len(violations) > 0 {
+		errs := make([]error, len(violations))
+		for i, v := range violations {
+			errs[i] = v
+		}
+		return Stats{}, fmt.Errorf("staged inventory failed validation (%d violations):\n%w", len(violations), errors.Join(errs...))
+	}
+
+	if err := publish(staging, outputDir); err != nil {
+		return Stats{}, err
+	}
+
+	return buildStats(steps, w, start), nil
+}
+
+// createStagingDir makes a fresh staging directory as a sibling of outputDir
+// (same filesystem, so publish's rename is atomic and never cross-device).
+func createStagingDir(outputDir string) (string, error) {
+	parent := filepath.Dir(outputDir)
+	if err := os.MkdirAll(parent, 0o700); err != nil {
+		return "", fmt.Errorf("create output parent %s: %w", parent, err)
+	}
+	staging, err := os.MkdirTemp(parent, ".indexgen-staging-*")
+	if err != nil {
+		return "", fmt.Errorf("create staging dir: %w", err)
+	}
+	return staging, nil
+}
+
+// writeInventory emits the full V2 tree through w: per-step source files, the
+// derived index files, and meta.json.
+func writeInventory(w *writer, inputFS fs.FS, steps []parsedStep, steplibYML models.StepCollectionModel, opts Options) error {
 	for _, s := range steps {
 		if err := writeStepFiles(w, inputFS, s); err != nil {
-			return Stats{}, fmt.Errorf("write step %s: %w", s.id, err)
+			return fmt.Errorf("write step %s: %w", s.id, err)
 		}
 	}
-
 	if err := writeIndexFiles(w, steps); err != nil {
-		return Stats{}, fmt.Errorf("write index files: %w", err)
+		return fmt.Errorf("write index files: %w", err)
 	}
-
 	meta := steplibindex.Meta{
 		FormatVersion:     steplibindex.FormatVersion,
 		UpdatedAt:         opts.GeneratedAt,
@@ -152,18 +191,28 @@ func generateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 		SteplibSource:     steplibYML.SteplibSource,
 		DownloadLocations: steplibYML.DownloadLocations,
 	}
-	if err := w.writeJSON("meta.json", meta); err != nil {
-		return Stats{}, fmt.Errorf("write meta.json: %w", err)
+	if err := w.writeJSON(steplibindex.MetaPath().FS(), meta); err != nil {
+		return fmt.Errorf("write meta.json: %w", err)
 	}
+	return nil
+}
 
-	// Publish: swap the freshly staged tree in for any existing one.
+// publish atomically swaps the staged tree in for any existing one at outputDir.
+func publish(stagingDir, outputDir string) error {
+	if _, err := os.Stat(stagingDir); err != nil {
+		return fmt.Errorf("staging dir (%s): %w", stagingDir, err)
+	}
 	if err := os.RemoveAll(outputDir); err != nil {
-		return Stats{}, fmt.Errorf("clear output dir %s: %w", outputDir, err)
+		return fmt.Errorf("clear output dir %s: %w", outputDir, err)
 	}
-	if err := os.Rename(staging, outputDir); err != nil {
-		return Stats{}, fmt.Errorf("publish inventory to %s: %w", outputDir, err)
+	if err := os.Rename(stagingDir, outputDir); err != nil {
+		return fmt.Errorf("publish inventory to %s: %w", outputDir, err)
 	}
+	return nil
+}
 
+// buildStats summarizes a completed generation.
+func buildStats(steps []parsedStep, w *writer, start time.Time) Stats {
 	versionCount := 0
 	for _, s := range steps {
 		versionCount += len(s.versions)
@@ -174,5 +223,5 @@ func generateFromSteplibClone(inputFS fs.FS, outputDir string, opts Options, log
 		FilesWritten: w.fileCount,
 		BytesWritten: w.byteCount,
 		Duration:     time.Since(start),
-	}, nil
+	}
 }
