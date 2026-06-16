@@ -27,7 +27,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				ID:          "xcode-test",
 				Version:     "4.1.2",
 				Collection:  "Steplib",
-				Toolkit:     "Go",
 				StartTime:   "2022-10-19T10:28:33Z ",
 			},
 			expectedOutput: []string{
@@ -37,7 +36,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				"| id: xcode-test                                                               |",
 				"| version: 4.1.2                                                               |",
 				"| collection: Steplib                                                          |",
-				"| toolkit: Go                                                                  |",
 				"| time: 2022-10-19T10:28:33Z                                                   |",
 				"+------------------------------------------------------------------------------+",
 				"|                                                                              |",
@@ -52,7 +50,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				ID:          "this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step",
 				Version:     "1.1.2",
 				Collection:  "Steplib",
-				Toolkit:     "Go",
 				StartTime:   "Now",
 			},
 			expectedOutput: []string{
@@ -62,7 +59,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				"| id: this-is-the-step-this-is-the-step-this-is-the-step-this-is-the-step-t... |",
 				"| version: 1.1.2                                                               |",
 				"| collection: Steplib                                                          |",
-				"| toolkit: Go                                                                  |",
 				"| time: Now                                                                    |",
 				"+------------------------------------------------------------------------------+",
 				"|                                                                              |",
@@ -77,7 +73,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				ID:          "https://github.com/org/repo",
 				Version:     "",
 				Collection:  "Git",
-				Toolkit:     "",
 				StartTime:   "42",
 			},
 			expectedOutput: []string{
@@ -87,7 +82,6 @@ func TestStepHeaderPrinting(t *testing.T) {
 				"| id: https://github.com/org/repo                                              |",
 				"| version:                                                                     |",
 				"| collection: Git                                                              |",
-				"| toolkit:                                                                     |",
 				"| time: 42                                                                     |",
 				"+------------------------------------------------------------------------------+",
 				"|                                                                              |",
