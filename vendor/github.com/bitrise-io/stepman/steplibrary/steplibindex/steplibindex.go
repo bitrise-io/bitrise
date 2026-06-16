@@ -2,9 +2,10 @@
 // format. It is shared between the generator (steplibrary/indexgen) and the
 // read path (steplibrary).
 //
-// The V2 layout splits the inventory into two URL prefixes:
+// The V2 layout splits the inventory into two URL prefixes (both nested under
+// the format-version dir, e.g. v2/):
 //   - steps/  — source of truth, self-contained per step, immutable per version
-//   - spec/   — derived index files, regeneratable from steps/, short-TTL
+//   - index/  — derived index files, regeneratable from steps/, short-TTL
 //
 // All files are JSON. Per-version step manifests (steps/<id>/<v>/step.json)
 // use models.StepModel directly; the types below describe the new
@@ -60,12 +61,12 @@ type Deprecation struct {
 	Notes       string `json:"notes"`
 }
 
-// StepIDs is spec/step_ids.json: sorted list of all step IDs in the steplib.
+// StepIDs is index/step_ids.json: sorted list of all step IDs in the steplib.
 type StepIDs struct {
 	StepIDs []string `json:"step_ids"`
 }
 
-// LatestPointer is spec/steps/<id>/latest.json: per-step latest pointers.
+// LatestPointer is index/steps/<id>/latest.json: per-step latest pointers.
 // Answers Latest and MajorLocked constraints in a single small fetch.
 type LatestPointer struct {
 	StepID        string            `json:"step_id"`
@@ -73,7 +74,7 @@ type LatestPointer struct {
 	LatestByMajor map[string]string `json:"latest_by_major"`
 }
 
-// Versions is spec/steps/<id>/versions.json: the per-step list of version
+// Versions is index/steps/<id>/versions.json: the per-step list of version
 // strings, newest-first (so versions[0] is the latest). Per-version detail
 // (commit, published_at, ...) lives in each steps/<id>/<version>/step.json; the
 // latest pointer lives in latest.json.

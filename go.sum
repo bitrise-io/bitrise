@@ -28,8 +28,8 @@ github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.35 h1:oo8FBVwXGmFH6ED2jXh7kSzwX8Y
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.35/go.mod h1:5Z/vkUZ2BIY7IAVlMGns3ypRjd+J872YBSCJaLWVo/U=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN9g1FQ8W7nXxQAG7iwq1Cw+mUk5S9A=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef/go.mod h1:27ldH2bkCdYN5CEJ6x92EK+gkd5EcDBkA7dMrSKQFYU=
-github.com/bitrise-io/stepman v0.20.1-0.20260608135921-3ed0d79c7945 h1:288Cj5L9G+2yM6T+v1b6ZLyixI5Tg5CVvCgv0pkzzpM=
-github.com/bitrise-io/stepman v0.20.1-0.20260608135921-3ed0d79c7945/go.mod h1:/SdpT6yeD5UKkPz2Kqk9votwLJ1+dQt7aTb8Z5ZoPw0=
+github.com/bitrise-io/stepman v0.21.0 h1:43BS3eZxKEqhx67oOvOvvjI8JHitBcpzB6j9UlwUeTQ=
+github.com/bitrise-io/stepman v0.21.0/go.mod h1:/SdpT6yeD5UKkPz2Kqk9votwLJ1+dQt7aTb8Z5ZoPw0=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=

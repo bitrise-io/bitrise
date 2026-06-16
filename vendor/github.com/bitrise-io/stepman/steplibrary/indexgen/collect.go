@@ -16,9 +16,9 @@ import (
 // phase, used by the write phase to emit per-step and index files.
 type parsedStep struct {
 	id         string
-	info       steplibindex.StepInfo   // step-info.yml + assets/ listing
-	assetFiles []string        // relative paths under assets/, sorted
-	versions   []parsedVersion // sorted ascending by semver; last is latest
+	info       steplibindex.StepInfo // step-info.yml + assets/ listing
+	assetFiles []string              // relative paths under assets/, sorted
+	versions   []parsedVersion       // sorted ascending by semver; last is latest
 }
 
 // parsedVersion is a single step version with its semver parsed once at collect
