@@ -228,7 +228,7 @@ func checkIfAptPackageInstalled(packageName string) bool {
 }
 
 // InstallWithBrewIfNeeded ...
-func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) error {
+func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool, extraEnvs map[string]string) error {
 	isDepInstalled := false
 	// First do a "which", to see if the binary is available.
 	// Can be available from another source, not just from brew,
@@ -273,6 +273,9 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 		}
 
 		cmd := command.New("brew", "install", brewDep.Name)
+		if len(extraEnvs) > 0 {
+			cmd.AppendEnvs(mapToEnvSlice(extraEnvs)...)
+		}
 		log.Infof("Installing package: %s...", cmd.PrintableCommandArgs())
 		if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 			var exitErr *exec.ExitError
@@ -289,7 +292,7 @@ func InstallWithBrewIfNeeded(brewDep stepmanModels.BrewDepModel, isCIMode bool) 
 }
 
 // InstallWithAptGetIfNeeded ...
-func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode bool) error {
+func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode bool, extraEnvs map[string]string) error {
 	isDepInstalled := false
 	// First do a "which", to see if the binary is available.
 	// Can be available from another source, not just from brew,
@@ -335,6 +338,9 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 
 		if !isAptGetUpdated {
 			cmd := command.New("sudo", "apt-get", "update")
+			if len(extraEnvs) > 0 {
+				cmd.AppendEnvs(mapToEnvSlice(extraEnvs)...)
+			}
 			log.Infof("Updating package information: %s...", cmd.PrintableCommandArgs())
 			if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 				var exitErr *exec.ExitError
@@ -347,6 +353,9 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 		}
 
 		cmd := command.New("sudo", "apt-get", "-y", "install", aptGetDep.Name)
+		if len(extraEnvs) > 0 {
+			cmd.AppendEnvs(mapToEnvSlice(extraEnvs)...)
+		}
 		log.Infof("Installing package: %s...", cmd.PrintableCommandArgs())
 		if out, err := cmd.RunAndReturnTrimmedCombinedOutput(); err != nil {
 			var exitErr *exec.ExitError
@@ -360,4 +369,12 @@ func InstallWithAptGetIfNeeded(aptGetDep stepmanModels.AptGetDepModel, isCIMode 
 	}
 
 	return nil
+}
+
+func mapToEnvSlice(envs map[string]string) []string {
+	result := make([]string, 0, len(envs))
+	for k, v := range envs {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
+	}
+	return result
 }
