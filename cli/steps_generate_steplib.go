@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func generateSteplib(c *cli.Context) error {
+func generateSteplib(c *cli.Context, logger log.Logger) error {
 	steplibURL := c.String("steplib-url")
 	outputDir := c.String("output")
 
@@ -18,23 +18,22 @@ func generateSteplib(c *cli.Context) error {
 		return err
 	}
 
-	log.Infof("Generating V2 step library inventory")
-	log.Infof("Steplib: %s", steplibURL)
-	log.Infof("Output:  %s", outputDir)
+	logger.Infof("Generating V2 step library inventory")
+	logger.Infof("Steplib: %s", steplibURL)
+	logger.Infof("Output:  %s", outputDir)
 	if opts.SteplibCommitSHA != "" {
-		log.Infof("Commit override: %s", opts.SteplibCommitSHA)
+		logger.Infof("Commit override: %s", opts.SteplibCommitSHA)
 	}
 	if !opts.GeneratedAt.IsZero() {
-		log.Infof("Time:    %s", opts.GeneratedAt.Format(time.RFC3339))
+		logger.Infof("Time:    %s", opts.GeneratedAt.Format(time.RFC3339))
 	}
 
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	stats, err := indexgen.Generate(steplibURL, outputDir, opts, logger)
 	if err != nil {
 		return err
 	}
 
-	log.Donef("Generated %d steps (%d versions) — %d files, %d bytes in %s",
+	logger.Donef("Generated %d steps (%d versions) — %d files, %d bytes in %s",
 		stats.StepCount, stats.VersionCount,
 		stats.FilesWritten, stats.BytesWritten, stats.Duration)
 	return nil

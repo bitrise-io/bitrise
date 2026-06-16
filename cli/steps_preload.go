@@ -7,24 +7,23 @@ import (
 	"github.com/urfave/cli"
 )
 
-func listCachedSteps(c *cli.Context) error {
+func listCachedSteps(c *cli.Context, logger log.Logger) error {
 	steplibURL := c.String("steplib-url")
 	maintaner := c.String("maintainer")
 
-	log.Infof("Listing cached steps...")
-	log.Infof("Steplib: %s", steplibURL)
+	logger.Infof("Listing cached steps...")
+	logger.Infof("Steplib: %s", steplibURL)
 	if maintaner != "" {
-		log.Infof("Filtering Steps by maintaner: %s", maintaner)
+		logger.Infof("Filtering Steps by maintaner: %s", maintaner)
 	}
 
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	if err := stepman.ListCachedSteps(steplibURL, maintaner, logger); err != nil {
 		return err
 	}
 	return nil
 }
 
-func preloadSteps(c *cli.Context) error {
+func preloadSteps(c *cli.Context, logger log.Logger) error {
 	steplibURL := c.String("steplib-url")
 	maintaner := c.String("maintainer")
 
@@ -46,20 +45,19 @@ func preloadSteps(c *cli.Context) error {
 		opts.PatchesSinceMonths = patchesSince
 	}
 
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	log.Info("Preloading...")
-	log.Info("Steplib: %s", steplibURL)
+	logger.Infof("Preloading...")
+	logger.Infof("Steplib: %s", steplibURL)
 	if maintaner != "" {
-		log.Infof("Filtering Steps by maintaner: %s", maintaner)
+		logger.Infof("Filtering Steps by maintaner: %s", maintaner)
 	}
-	log.Printf("Options: %#v\n", opts)
+	logger.Printf("Options: %#v\n", opts)
 
 	if err := preload.CacheSteps(logger, bitriseStepLibURL, bitriseMaintainer, opts); err != nil {
 		return err
 	}
 
-	log.Print()
-	log.Donef("Preloading completed.")
+	logger.Print()
+	logger.Donef("Preloading completed.")
 
 	return nil
 }

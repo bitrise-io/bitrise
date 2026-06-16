@@ -23,8 +23,8 @@ var stepsCommand = cli.Command{
 			Usage: "List all the cached steps",
 			Action: func(c *cli.Context) error {
 				logCommandParameters(c)
-
-				return listCachedSteps(c)
+				var logger = log.NewLogger(log.GetGlobalLoggerOpts())
+				return listCachedSteps(c, logger)
 			},
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -46,8 +46,9 @@ var stepsCommand = cli.Command{
 			Action: func(c *cli.Context) error {
 				logCommandParameters(c)
 
-				if err := preloadSteps(c); err != nil {
-					log.Errorf("Preload failed: %s", err)
+				var logger = log.NewLogger(log.GetGlobalLoggerOpts())
+				if err := preloadSteps(c, logger); err != nil {
+					logger.Errorf("Preload failed: %s", err)
 					os.Exit(1)
 				}
 				return nil
@@ -92,8 +93,9 @@ var stepsCommand = cli.Command{
 			Action: func(c *cli.Context) error {
 				logCommandParameters(c)
 
-				if err := generateSteplib(c); err != nil {
-					log.Errorf("Generate steplib failed: %s", err)
+				var logger = log.NewLogger(log.GetGlobalLoggerOpts())
+				if err := generateSteplib(c, logger); err != nil {
+					logger.Errorf("Generate steplib failed: %s", err)
 					os.Exit(1)
 				}
 				return nil
