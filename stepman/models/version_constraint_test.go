@@ -6,6 +6,8 @@ import (
 
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseRequiredVersion(t *testing.T) {
@@ -123,6 +125,52 @@ func Test_parseRequiredVersion(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseRequiredVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHighestForMajorMinor(t *testing.T) {
+	sv := func(major, minor, patch uint64) Semver {
+		return Semver{Major: major, Minor: minor, Patch: patch}
+	}
+
+	cases := map[string]struct {
+		versions []Semver
+		target   Semver
+		want     Semver
+		wantOK   bool
+	}{
+		"picks highest patch in the minor": {
+			versions: []Semver{sv(1, 1, 0), sv(1, 1, 5), sv(1, 2, 0)},
+			target:   sv(1, 1, 0),
+			want:     sv(1, 1, 5),
+			wantOK:   true,
+		},
+		"ignores other majors and minors": {
+			versions: []Semver{sv(1, 1, 9), sv(2, 1, 0), sv(1, 2, 9)},
+			target:   sv(1, 1, 0),
+			want:     sv(1, 1, 9),
+			wantOK:   true,
+		},
+		"no match returns ok=false": {
+			versions: []Semver{sv(1, 0, 0), sv(2, 0, 0)},
+			target:   sv(1, 5, 0),
+			wantOK:   false,
+		},
+		"empty input returns ok=false": {
+			versions: nil,
+			target:   sv(1, 0, 0),
+			wantOK:   false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, ok := HighestForMajorMinor(tc.versions, tc.target)
+			require.Equal(t, tc.wantOK, ok, "ok")
+			if tc.wantOK {
+				assert.Equal(t, tc.want, got, "best version")
 			}
 		})
 	}
