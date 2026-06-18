@@ -18,8 +18,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 h1:vSHYT6kCL/iOT9BVuUPm0tVcbW57r5zldLWg0aB7qbQ=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192/go.mod h1:CIHVcxZUvsG99XUJV6JlR7okNsMMGY81jMvPC20W+O0=
-github.com/bitrise-io/envman/v2 v2.5.6 h1:B3mAGc454EenkTGd1o/QDbw1WxRLJZfw9L47D2auUIE=
-github.com/bitrise-io/envman/v2 v2.5.6/go.mod h1:JJjnW87+zJj0Ft4QxuouiIJ40Ir8ZYQ8T3wVnAcpvW0=
+github.com/bitrise-io/envman/v2 v2.6.2 h1:51N8ujA4ies4m/4k2sm8DwF1TIbRz6h7CkpKz0UNMXc=
+github.com/bitrise-io/envman/v2 v2.6.2/go.mod h1:JJjnW87+zJj0Ft4QxuouiIJ40Ir8ZYQ8T3wVnAcpvW0=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 h1:EXclFI+XfxxcsRZlly3WsYJwph/6BwJdhF7JZ9bde2M=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44/go.mod h1:i72XgHIZPEZtPPQLWy2cP86MaImo37nlQRhX1HCKi7Q=
 github.com/bitrise-io/go-utils v1.0.15 h1:KRQjNiPrkxBRM6G5fQy05v0p0r8wycWfKVb+Ko+Vtg0=
@@ -28,8 +28,8 @@ github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33 h1:2Skyp4yg8aNKLr5GB5amM9UK9n1
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33/go.mod h1:3XUplo0dOWc3DqT2XA2SeHToDSg7+j1y1HTHibT2H68=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef h1:R5FOa8RHjqZwMN9g1FQ8W7nXxQAG7iwq1Cw+mUk5S9A=
 github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef/go.mod h1:27ldH2bkCdYN5CEJ6x92EK+gkd5EcDBkA7dMrSKQFYU=
-github.com/bitrise-io/stepman v0.19.0 h1:WI3SR2FmTRyi6X6TzLAMSDI4IP3gj5AtTUQnGkQlOe4=
-github.com/bitrise-io/stepman v0.19.0/go.mod h1:mLf8IHAulZM8AFhwR8TNB+/vH0w/UZq8UTnGKBEcCQM=
+github.com/bitrise-io/stepman v0.20.0 h1:QSlvb9dkWsP7iu3RACewcBujYhdrUvc/fmUgP2HFzvM=
+github.com/bitrise-io/stepman v0.20.0/go.mod h1:mLf8IHAulZM8AFhwR8TNB+/vH0w/UZq8UTnGKBEcCQM=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=

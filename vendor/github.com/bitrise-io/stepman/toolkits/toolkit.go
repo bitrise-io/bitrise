@@ -6,11 +6,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/stepman"
 )
+
+type InstallResult struct {
+	InstallDuration time.Duration
+}
+
+type PrepareForStepRunResult struct {
+	PrepareDuration time.Duration
+
+	// CacheHit should indicate if PrepareDuration was shorter because of a cache hit or similar optimizations.
+	CacheHit        bool
+}
 
 type ToolkitCheckResult struct {
 	Path    string
@@ -28,7 +40,7 @@ type Toolkit interface {
 	Check() (bool, ToolkitCheckResult, error)
 
 	// Install the toolkit
-	Install() error
+	Install() (InstallResult, error)
 
 	// Check whether the toolkit's tool (e.g. Go, Ruby, Bash, ...) is available
 	// and "usable"" without any bootstrapping.
@@ -57,7 +69,7 @@ type Toolkit interface {
 	// the toolkit should/can be "enforced" here (e.g. during the compilation),
 	// BUT ONLY for this function! E.g. don't call `os.Setenv` or something similar
 	// which would affect other functions, just pass the required envs to the compilation command!
-	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) error
+	PrepareForStepRun(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) (PrepareForStepRunResult, error)
 
 	// StepRunCommandArguments ...
 	StepRunCommandArguments(step models.StepModel, sIDData stepid.CanonicalID, stepAbsDirPath string) ([]string, error)

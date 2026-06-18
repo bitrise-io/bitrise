@@ -34,7 +34,7 @@ func removeEmptyNewLines(text string) string {
 }
 
 // CheckIsPluginInstalled ...
-func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
+func CheckIsPluginInstalled(name string, dependency PluginDependency, noUpdate bool) error {
 	_, found, err := plugins.LoadPlugin(name)
 	if err != nil {
 		return err
@@ -65,9 +65,13 @@ func CheckIsPluginInstalled(name string, dependency PluginDependency) error {
 			}
 
 			if installedVersion.LessThan(minVersion) {
-				log.Warnf("Default plugin (%s) version (%s) is lower than required (%s), updating...", name, installedVersion.String(), minVersion.String())
-				installOrUpdate = true
-				currentVersion = dependency.MinVersion
+				if noUpdate {
+					log.Warnf("Default plugin (%s) version (%s) is lower than required (%s), skipping update (--no-update)", name, installedVersion.String(), minVersion.String())
+				} else {
+					log.Warnf("Default plugin (%s) version (%s) is lower than required (%s), updating...", name, installedVersion.String(), minVersion.String())
+					installOrUpdate = true
+					currentVersion = dependency.MinVersion
+				}
 			}
 		}
 	}
@@ -131,7 +135,7 @@ func CheckIsHomebrewInstalled() error {
 	return nil
 }
 
-func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) error {
+func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool, noUpdate bool) error {
 	doInstall := func() error {
 		officialGithub := "https://github.com/bitrise-io/" + toolname
 		log.Warnf("No supported %s version found", toolname)
@@ -153,7 +157,7 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 		}
 
 		// check again
-		return checkIsBitriseToolInstalled(toolname, minVersion, false)
+		return checkIsBitriseToolInstalled(toolname, minVersion, false, false)
 	}
 
 	// check whether installed
@@ -184,6 +188,11 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 	}
 
 	if installedVer.LessThan(minVer) {
+		if noUpdate {
+			log.Warnf("Installed %s found but outdated (%s < %s), skipping update (--no-update)", toolname, versionOutput, minVersion)
+			log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolname, versionOutput, progInstallPth)
+			return nil
+		}
 		if !isInstall {
 			log.Warnf("Installed %s found, but not a supported version (%s < %s)", toolname, versionOutput, minVersion)
 			return errors.New("failed to install required version")
@@ -196,15 +205,13 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool) er
 }
 
 // CheckIsEnvmanInstalled ...
-func CheckIsEnvmanInstalled(minEnvmanVersion string) error {
-	minVersion := minEnvmanVersion
-	return checkIsBitriseToolInstalled(tools.EnvmanToolName, minVersion, true)
+func CheckIsEnvmanInstalled(minEnvmanVersion string, noUpdate bool) error {
+	return checkIsBitriseToolInstalled(tools.EnvmanToolName, minEnvmanVersion, true, noUpdate)
 }
 
 // CheckIsStepmanInstalled ...
-func CheckIsStepmanInstalled(minStepmanVersion string) error {
-	minVersion := minStepmanVersion
-	return checkIsBitriseToolInstalled(tools.StepmanToolName, minVersion, true)
+func CheckIsStepmanInstalled(minStepmanVersion string, noUpdate bool) error {
+	return checkIsBitriseToolInstalled(tools.StepmanToolName, minStepmanVersion, true, noUpdate)
 }
 
 func checkIfBrewPackageInstalled(packageName string) bool {

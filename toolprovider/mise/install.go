@@ -100,6 +100,10 @@ func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concrete
 	}
 
 	output, err := m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
+	if !m.Silent && os.Getenv("MISE_LOG_LEVEL") != "" {
+		// Log the output of successful installs as well, useful for debugging and tests.
+		log.Printf("[TOOLPROVIDER] mise install output for %s:\n%s", versionString, output)
+	}
 	if err != nil {
 		return provider.ToolInstallError{
 			ToolName:         toolName,

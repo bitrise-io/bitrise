@@ -80,7 +80,7 @@ func (r buildRunResultCollector) registerStepRunResults(
 	}
 
 	if printStepHeader {
-		logStepStarted(r.logger, stepInfoPtr, step, stepIdxPtr, stepExecutionId, stepStartTime)
+		logStepStarted(stepInfoPtr, stepIdxPtr, stepExecutionId, stepStartTime)
 	}
 
 	errStr := ""

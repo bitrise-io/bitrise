@@ -18,7 +18,33 @@ import (
 	"github.com/bitrise-io/bitrise/v2/toolprovider/versionresolver"
 )
 
-func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool) ([]provider.EnvironmentActivation, error) {
+type toolSetupResult struct {
+	request   provider.ToolRequest
+	result    provider.ToolInstallResult
+	startTime time.Time
+}
+
+// knownGitHubTokenEnvVars lists the env var names that users possibly set as a valid GitHub API token.
+var knownGitHubTokenEnvVars = []string{
+	"GITHUB_TOKEN",
+	"GH_TOKEN",
+	"GITHUB_API_TOKEN",
+	"MISE_GITHUB_TOKEN",
+	"MISE_GITHUB_ENTERPRISE_TOKEN",
+}
+
+// findGitHubTokenEnv returns the first known GitHub token env var found in envs,
+// checked in priority order defined by knownGitHubTokenEnvVars.
+func findGitHubTokenEnv(envs map[string]string) (name, value string, found bool) {
+	for _, n := range knownGitHubTokenEnvVars {
+		if v, ok := envs[n]; ok {
+			return n, v, true
+		}
+	}
+	return "", "", false
+}
+
+func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Tracker, isCI bool, workflowID string, silent bool, providerOverride *string, fastInstallOverride *bool, envs map[string]string) ([]provider.EnvironmentActivation, error) {
 	toolRequests, err := getToolRequests(config, workflowID)
 	if err != nil {
 		return nil, fmt.Errorf("tools: %w", err)
@@ -35,49 +61,36 @@ func RunDeclarativeSetup(config models.BitriseDataModel, tracker analytics.Track
 		provider = selectProvider(config)
 	}
 
-	var useFastInstall bool
+	useFastInstall := DefaultFastInstall()
+	if config.ToolConfig != nil && config.ToolConfig.FastInstall != nil {
+		useFastInstall = *config.ToolConfig.FastInstall
+	}
 	if fastInstallOverride != nil {
 		useFastInstall = *fastInstallOverride
-	} else {
-		useFastInstall = selectFastInstall(config)
 	}
 
-	return installTools(toolRequests, provider, useFastInstall, tracker, silent)
+	var extraEnvs map[string]string
+	if tokenName, tokenValue, ok := findGitHubTokenEnv(envs); ok {
+		if !silent {
+			log.Printf("Using %s for GitHub API authentication during tool setup", tokenName)
+		}
+		// Mise recognizes [a variety of env vars](// See https://mise.jdx.dev/dev-tools/github-tokens.html), but let's use
+		// a generic one because this layer is provider-agnostic.
+		extraEnvs = map[string]string{"GITHUB_TOKEN": tokenValue}
+	}
+
+	return installTools(toolRequests, provider, useFastInstall, tracker, silent, extraEnvs)
 }
 
-func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
+func installTools(toolRequests []provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool, extraEnvs map[string]string) ([]provider.EnvironmentActivation, error) {
 	startTime := time.Now()
 
 	if !silent {
 		log.Debugf("[TOOLPROVIDER] Install tools using provider: %s, fast install: %v", providerID, useFastInstall)
 	}
-	var toolProvider provider.ToolProvider
-	var err error
-
-	switch providerID {
-	case "asdf":
-		toolProvider = &asdf.AsdfToolProvider{
-			ExecEnv: execenv.ExecEnv{
-				// At this time, the asdf tool provider relies on the system-wide asdf install and config provided by the stack.
-				EnvVars:            map[string]string{},
-				ShellInit:          "",
-				ClearInheritedEnvs: false,
-			},
-			Silent: silent,
-		}
-	case "mise":
-		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		toolProvider, err = mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
-		if err != nil {
-			return nil, fmt.Errorf("create mise tool provider: %w", err)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported tool provider: %s", providerID)
-	}
-
-	err = toolProvider.Bootstrap()
+	toolProvider, err := CreateProvider(providerID, useFastInstall, silent, extraEnvs)
 	if err != nil {
-		return nil, fmt.Errorf("bootstrap %s: %w", providerID, err)
+		return nil, err
 	}
 
 	for i, req := range toolRequests {
@@ -112,7 +125,18 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 		printToolRequests(toolRequests)
 	}
 
-	var toolInstalls []provider.ToolInstallResult
+	return installResolvedTools(toolRequests, providerID, toolProvider, tracker, silent, startTime)
+}
+
+func installResolvedTools(
+	toolRequests []provider.ToolRequest,
+	providerID string,
+	toolProvider provider.ToolProvider,
+	tracker analytics.Tracker,
+	silent bool,
+	startTime time.Time,
+) ([]provider.EnvironmentActivation, error) {
+	var toolSetups []toolSetupResult
 	for _, toolRequest := range toolRequests {
 		toolStartTime := time.Now()
 		canonicalToolID := alias.GetCanonicalToolID(toolRequest.ToolName)
@@ -124,30 +148,38 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 
 		result, err := toolProvider.InstallTool(toolRequest)
 		if err != nil {
+			tracker.SendToolSetupEvent(providerID, toolRequest, result, false, time.Since(toolStartTime))
+
 			var toolErr provider.ToolInstallError
 			if errors.As(err, &toolErr) {
 				printInstallError(toolErr)
 				return nil, fmt.Errorf("see error details above")
 			}
 
-			tracker.SendToolSetupEvent(providerID, toolRequest, result, false, time.Since(toolStartTime))
 			return nil, fmt.Errorf("install %s %s: %w", toolRequest.ToolName, toolRequest.UnparsedVersion, err)
 		}
-		toolInstalls = append(toolInstalls, result)
+
+		toolSetups = append(toolSetups, toolSetupResult{
+			request:   toolRequest,
+			result:    result,
+			startTime: toolStartTime,
+		})
+
 		duration := time.Since(toolStartTime)
 		if !silent {
 			printInstallResult(toolRequest, result, duration)
 		}
-		tracker.SendToolSetupEvent(providerID, toolRequest, result, true, duration)
 	}
 
 	var activations []provider.EnvironmentActivation
-	for _, install := range toolInstalls {
-		activation, err := toolProvider.ActivateEnv(install)
+	for _, setup := range toolSetups {
+		activation, err := toolProvider.ActivateEnv(setup.result)
 		if err != nil {
-			return nil, fmt.Errorf("activate %s: %w", install.ToolName, err)
+			tracker.SendToolSetupEvent(providerID, setup.request, setup.result, false, time.Since(setup.startTime))
+			return nil, fmt.Errorf("activate %s: %w", setup.result.ToolName, err)
 		}
 		activations = append(activations, activation)
+		tracker.SendToolSetupEvent(providerID, setup.request, setup.result, true, time.Since(setup.startTime))
 	}
 
 	if !silent {
@@ -160,9 +192,9 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 }
 
 // InstallSingleTool installs a single tool with the specified version using the given provider.
-// This is a convenience wrapper around installTools for installing just one tool.
 func InstallSingleTool(toolRequest provider.ToolRequest, providerID string, useFastInstall bool, tracker analytics.Tracker, silent bool) ([]provider.EnvironmentActivation, error) {
-	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent)
+	// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+	return installTools([]provider.ToolRequest{toolRequest}, providerID, useFastInstall, tracker, silent, nil)
 }
 
 // GetLatestVersion queries the latest version of a tool without installing it (installed or released).
@@ -184,7 +216,8 @@ func GetLatestVersion(toolRequest provider.ToolRequest, providerID string, useFa
 		return asdfProvider.ResolveLatestVersion(toolRequest)
 	case "mise":
 		miseInstallDir, miseDataDir := mise.Dirs(mise.GetMiseVersion())
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent)
+		// extraEnvs=nil: this runs as a CLI subcommand from a user's shell, so secrets are already in the process env.
+		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, useFastInstall, silent, nil)
 		if err != nil {
 			return "", fmt.Errorf("create mise tool provider: %w", err)
 		}

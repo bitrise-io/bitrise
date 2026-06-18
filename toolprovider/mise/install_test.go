@@ -134,7 +134,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
-				m.setResponse("ls-remote --quiet nixpkgs:ruby@3.3.9", "3.3.9")
+				m.setResponse("ls-remote --quiet --json nixpkgs:ruby@3.3.9", `[{"version":"3.3.9"}]`)
 			},
 			want: true,
 		},
@@ -148,7 +148,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
-				m.setResponse("ls-remote --quiet nixpkgs:ruby@3.3", "3.3.8\n3.3.9")
+				m.setResponse("ls-remote --quiet --json nixpkgs:ruby@3.3", `[{"version":"3.3.8"},{"version":"3.3.9"}]`)
 			},
 			want: true,
 		},
@@ -162,7 +162,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
-				m.setResponse("ls-remote --quiet nixpkgs:ruby@0.0.1", "")
+				m.setResponse("ls-remote --quiet --json nixpkgs:ruby@0.0.1", "[]")
 			},
 			want: false,
 		},
@@ -187,7 +187,7 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
-				m.setError("ls-remote --quiet nixpkgs:ruby@3.3.9", fmt.Errorf("fake error"))
+				m.setError("ls-remote --quiet --json nixpkgs:ruby@3.3.9", fmt.Errorf("fake error"))
 			},
 			want: false,
 		},

@@ -212,6 +212,25 @@ func (r WorkflowRunner) activateAndRunStep(
 		}
 	}
 
+	// Evaluate run_if before activation when it's explicitly set in bitrise.yml.
+	// If not set, the step.yml default may apply and can only be checked post-activation.
+	if step.RunIf != nil && *step.RunIf != "" {
+		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
+		if err != nil {
+			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+		}
+
+		isRun, err := bitrise.EvaluateTemplateToBool(*step.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+		if err != nil {
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+		}
+		if !isRun {
+			stepInfoPtr.Step.RunIf = pointers.NewStringPtr(*step.RunIf)
+			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, true, map[string]string{}, nil)
+		}
+	}
+
 	//
 	// Activate step
 	activateStartTime := time.Now()
@@ -227,9 +246,9 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Run step
-	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
+	logStepStarted(stepInfoPtr, stepIDx, stepExecutionID, stepStartTime)
 
-	// Evaluate run conditions
+	// Evaluate run_if from step.yml default (only reached when bitrise.yml didn't set run_if).
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
 		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
 		if err != nil {
@@ -463,7 +482,8 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 		analytics.StepExecutionIDEnvKey: stepExecutionID,
 	})
 
-	// add an extra env for the next step run to be able to access the step's source location
+	// add an extra env to allow the next step to access the current step's working directory
+	// (for source-built steps this is the source directory, for binary steps it may not contain source code)
 	additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
 		"BITRISE_STEP_SOURCE_DIR": stepDir,
 	})
@@ -642,9 +662,11 @@ func (r WorkflowRunner) executeStep(
 		toolkitForStep := toolkits.ToolkitForStep(step, r.logger)
 		toolkitName := toolkitForStep.ToolkitName()
 
-		if err := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath); err != nil {
+		prepareResult, prepareErr := toolkitForStep.PrepareForStepRun(step, sIDData, stepAbsDirPath)
+		trackToolkitPrepare(r.tracker, stepUUID, toolkitName, sIDData, prepareResult, prepareErr)
+		if prepareErr != nil {
 			return 1, fmt.Errorf("failed to prepare the step for execution through the required toolkit (%s), error: %s",
-				toolkitName, err)
+				toolkitName, prepareErr)
 		}
 
 		cmdFromToolkit, err := toolkitForStep.StepRunCommandArguments(step, sIDData, stepAbsDirPath)
@@ -1096,7 +1118,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(stepInfo stepmanModels.StepInfoModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
@@ -1109,7 +1131,6 @@ func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, ste
 		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
-		Toolkit:     toolkits.ToolkitForStep(step, logger).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)
@@ -1146,6 +1167,15 @@ func addTestMetadata(testDirPath string, testResultStepInfo models.TestResultSte
 		}
 	}
 	return nil
+}
+
+// trackToolkitPrepare sends a toolkit prepare telemetry event, but skips no-op toolkits
+// (e.g. bash, swift without a precompiled binary) where duration is always 0 and cache_hit
+// is always false, which would produce misleading data.
+func trackToolkitPrepare(tracker analytics.Tracker, stepUUID, toolkitName string, sIDData stepid.CanonicalID, result toolkits.PrepareForStepRunResult, err error) {
+	if err != nil || result.PrepareDuration > 0 {
+		tracker.SendToolkitPrepareEvent(stepUUID, toolkitName, sIDData.IDorURI, sIDData.Version, result, err)
+	}
 }
 
 func secretEnvKeysEnvironment(keys []string) envmanModels.EnvironmentItemModel {

@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	utilslog "github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/stepman/activator"
+	"github.com/bitrise-io/stepman/toolkits"
 )
 
 const (
@@ -33,6 +34,7 @@ const (
 	cliCommandEventName            = "cli_command"
 	toolSetupEventName             = "cli_tool_setup"
 	stepActivationEventName        = "cli_step_activation"
+	toolkitPrepareEventName        = "cli_toolkit_prepare"
 
 	workflowNameProperty          = "workflow_name"
 	workflowTitleProperty         = "workflow_title"
@@ -116,6 +118,7 @@ type Tracker interface {
 	SendCommandInfo(command, subcommand string, flags []string)
 	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
 	SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
+	SendToolkitPrepareEvent(stepExecutionID string, toolkitName string, stepID string, stepVersion string, result toolkits.PrepareForStepRunResult, err error)
 	IsTracking() bool
 	Wait()
 }
@@ -394,12 +397,12 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 
 	props := analytics.Properties{
-		"is_successful": isSuccessful,
-		"step_ref":      ref,
-		"duration_ms":   duration.Milliseconds(),
-		"cli_version":   version.VERSION,
-		"is_ci":         isCI,
-		"build_slug":    buildSlug,
+		"is_successful":   isSuccessful,
+		"step_ref":        ref,
+		"duration_ms":     duration.Milliseconds(),
+		"cli_version":     version.VERSION,
+		"is_ci":           isCI,
+		"build_slug":      buildSlug,
 		"activation_type": activationType,
 	}
 
@@ -408,4 +411,32 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 	}
 
 	t.tracker.Enqueue(stepActivationEventName, props)
+}
+
+func (t tracker) SendToolkitPrepareEvent(stepExecutionID string, toolkitName string, stepID string, stepVersion string, result toolkits.PrepareForStepRunResult, err error) {
+	if !t.stateChecker.Enabled() {
+		return
+	}
+
+	buildSlug := t.envRepository.Get(buildSlugEnvKey)
+	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
+
+	props := analytics.Properties{
+		"step_execution_id": stepExecutionID,
+		"toolkit_name":      toolkitName,
+		"step_id":           stepID,
+		"step_version":      stepVersion,
+		"duration_ms":       result.PrepareDuration.Milliseconds(),
+		"cache_hit":         result.CacheHit,
+		"is_successful":     true,
+		"build_slug":        buildSlug,
+		"cli_version":       version.VERSION,
+		"is_ci":             isCI,
+	}
+	if err != nil {
+		props["is_successful"] = false
+		props.AppendIfNotEmpty("error_message", err.Error())
+	}
+
+	t.tracker.Enqueue(toolkitPrepareEventName, props)
 }
