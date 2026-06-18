@@ -1,0 +1,21 @@
+format_version: "13"
+
+# Real production steplib, so activation goes through the V1 route (the only
+# steplib activation route the bitrise CLI wires today). create-zip publishes a
+# prebuilt Go binary for every platform, so with the precompiled-steps
+# experiment enabled, activation must download and run that executable instead
+# of building the step from source.
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  # Single step on purpose: any "fallback to step source activation" line in the
+  # output is then attributable to create-zip, letting the test assert the
+  # precompiled binary was used. Source/destination come from the environment so
+  # the test owns the temp paths.
+  steplib-executable-v1-test:
+    steps:
+    - create-zip@1.0.0:
+        title: Precompiled Go step (create-zip) via V1 route
+        inputs:
+        - source_path: $ZIP_SOURCE_PATH
+        - destination: $ZIP_DEST_PATH
