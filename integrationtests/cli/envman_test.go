@@ -14,17 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ensureEnvmanInstalled(t *testing.T) {
-	cmd := command.New(testhelpers.BinPath(), "setup")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	require.NoError(t, err, out)
-}
-
-func runBitriseEnvman(dir string, args ...string) (string, error) {
-	cmd := command.New(testhelpers.BinPath(), append([]string{"envman"}, args...)...)
-	return cmd.SetDir(dir).RunAndReturnTrimmedCombinedOutput()
-}
-
 func Test_Envman(t *testing.T) {
 	ensureEnvmanInstalled(t)
 
@@ -124,4 +113,15 @@ func Test_Envman(t *testing.T) {
 		require.EqualError(t, err, "exit status 1", out)
 		assert.Contains(t, out, "oops")
 	})
+}
+
+func ensureEnvmanInstalled(t *testing.T) {
+	cmd := command.New(testhelpers.BinPath(), "setup")
+	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	require.NoError(t, err, out)
+}
+
+func runBitriseEnvman(dir string, args ...string) (string, error) {
+	cmd := command.New(testhelpers.BinPath(), append([]string{"envman"}, args...)...)
+	return cmd.SetDir(dir).RunAndReturnTrimmedCombinedOutput()
 }
