@@ -28,7 +28,7 @@ import (
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/stepman/toolkits"
 	"github.com/gofrs/uuid"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -51,31 +51,29 @@ type RunConfig struct {
 	Secrets  []envmanModels.EnvironmentItemModel
 }
 
-var runCommand = cli.Command{
-	Name:    "run",
+var runCommand = &cobra.Command{
+	Use:     "run",
 	Aliases: []string{"r"},
-	Usage:   "Runs a specified Workflow.",
-	Action:  run,
-	Flags: []cli.Flag{
-		// cli params
-		cli.StringFlag{Name: WorkflowKey, Usage: "workflow id to run."},
-		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
-		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log."},
-
-		// cli params used in CI mode
-		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
-		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-		cli.StringFlag{Name: OutputFormatKey, Usage: "Log format. Available values: json, console"},
-
-		// should deprecate
-		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
-	},
+	Short:   "Runs a specified Workflow.",
+	RunE:    run,
 }
 
-func run(c *cli.Context) error {
-	logCommandParameters(c)
+func init() {
+	flags := runCommand.Flags()
+	flags.String(WorkflowKey, "", "workflow id to run.")
+	flags.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
+	flags.StringP(InventoryKey, inventoryShortKey, "", "Path of the inventory file.")
+	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
+
+	addJSONParamsFlags(flags)
+	flags.String(OutputFormatKey, "", "Log format. Available values: json, console")
+
+	flags.String(ConfigBase64Key, "", "base64 encoded config data.")
+	flags.String(InventoryBase64Key, "", "base64 encoded inventory data.")
+}
+
+func run(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
 	signalInterruptChan := make(chan os.Signal, 1)
 	signal.Notify(signalInterruptChan, syscall.SIGINT, syscall.SIGTERM)
@@ -84,7 +82,7 @@ func run(c *cli.Context) error {
 	cleanupSynchronCtx, cleanupSynchronCancelFunc := context.WithCancel(context.Background())
 	defer cleanupSynchronCancelFunc()
 
-	config, err := processArgs(c)
+	config, err := processArgs(cmd, args)
 	if err != nil {
 		if err == errWorkflowNotSpecified {
 			if config != nil {
@@ -364,25 +362,23 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	return buildRunResults, nil
 }
 
-func processArgs(c *cli.Context) (*RunConfig, error) {
-	workflowToRunID := c.String(WorkflowKey)
-	if workflowToRunID == "" && len(c.Args()) > 0 {
-		workflowToRunID = c.Args()[0]
+func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
+	workflowToRunID, _ := cmd.Flags().GetString(WorkflowKey)
+	if workflowToRunID == "" && len(args) > 0 {
+		workflowToRunID = args[0]
 	}
 
 	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	if globalFlagChanged(cmd, PRKey) {
+		prGlobalFlagPtr = pointers.NewBoolPtr(globalBoolFlag(cmd, PRKey))
 	}
 
-	var ciGlobalFlagPtr *bool
-	if c.GlobalIsSet(CIKey) {
-		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
-	}
+	ciGlobalFlagPtr := ciModeFlagOverride(cmd)
 
 	var secretFiltering *bool
-	if c.IsSet(secretFilteringFlag) {
-		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
+	if cmd.Flags().Changed(secretFilteringFlag) {
+		secretFilteringVal, _ := cmd.Flags().GetBool(secretFilteringFlag)
+		secretFiltering = pointers.NewBoolPtr(secretFilteringVal)
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
 		secretFiltering = pointers.NewBoolPtr(true)
 	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
@@ -396,14 +392,14 @@ func processArgs(c *cli.Context) (*RunConfig, error) {
 		secretEnvsFiltering = pointers.NewBoolPtr(false)
 	}
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
+	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	inventoryBase64Data, _ := cmd.Flags().GetString(InventoryBase64Key)
+	inventoryPath, _ := cmd.Flags().GetString(InventoryKey)
 
-	jsonParams := c.String(JSONParamsKey)
-	jsonParamsBase64 := c.String(JSONParamsBase64Key)
+	jsonParams, _ := cmd.Flags().GetString(JSONParamsKey)
+	jsonParamsBase64, _ := cmd.Flags().GetString(JSONParamsBase64Key)
 
 	runParams, err := parseRunParams(
 		workflowToRunID,

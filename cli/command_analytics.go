@@ -2,13 +2,24 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
+// envVarAnnotation records the environment variable a flag is bound to, so that
+// analytics reports the flag as set when its value comes from the environment.
+const envVarAnnotation = "bitrise_env_var"
+
 var globalTracker analytics.Tracker
+
+// markEnvVar binds a flag to an environment variable for analytics reporting.
+func markEnvVar(fs *pflag.FlagSet, name, envKey string) {
+	_ = fs.SetAnnotation(name, envVarAnnotation, []string{envKey})
+}
 
 func logPluginCommandParameters(name string, _ []string) {
 	// Plugin command parameters are routed into the function but are not processed yet because it is complex to correctly
@@ -17,42 +28,54 @@ func logPluginCommandParameters(name string, _ []string) {
 	sendCommandInfo(fmt.Sprintf(":%s", name), "", []string{})
 }
 
-func logCommandParameters(c *cli.Context) {
-	if c == nil {
+func logCommandParameters(cmd *cobra.Command) {
+	if cmd == nil {
 		return
 	}
 
 	commandName := "unknown"
 	subcommandName := ""
-	
-	if names := strings.Split(c.Command.FullName(), " "); 0 < len(names) {
-		commandName = names[0]
-		if 1 < len(names) {
-			subcommandName = names[1]
+
+	// CommandPath is e.g. "bitrise tools install"; drop the leading program name.
+	if names := strings.Fields(cmd.CommandPath()); len(names) > 1 {
+		commandName = names[1]
+		if len(names) > 2 {
+			subcommandName = names[2]
 		}
 	}
 
-	flags := collectFlags(c)
-
-	sendCommandInfo(commandName, subcommandName, flags)
+	sendCommandInfo(commandName, subcommandName, collectFlags(cmd))
 }
 
-func collectFlags(c *cli.Context) []string {
+func collectFlags(cmd *cobra.Command) []string {
 	var flags []string
 
-	for _, flag := range c.GlobalFlagNames() {
-		if isSet := c.GlobalIsSet(flag); isSet {
-			flags = append(flags, flag)
+	persistent := cmd.Root().PersistentFlags()
+	for _, name := range []string{DebugModeKey, CIKey, PRKey} {
+		if f := persistent.Lookup(name); f != nil && flagIsSet(f) {
+			flags = append(flags, name)
 		}
 	}
 
-	for _, flag := range c.FlagNames() {
-		if isSet := c.IsSet(flag); isSet {
-			flags = append(flags, flag)
+	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if flagIsSet(f) {
+			flags = append(flags, f.Name)
 		}
-	}
+	})
 
 	return flags
+}
+
+func flagIsSet(f *pflag.Flag) bool {
+	if f.Changed {
+		return true
+	}
+	for _, envKey := range f.Annotations[envVarAnnotation] {
+		if _, present := os.LookupEnv(envKey); present {
+			return true
+		}
+	}
+	return false
 }
 
 func sendCommandInfo(command, subcommand string, flags []string) {

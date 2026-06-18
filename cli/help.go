@@ -1,35 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
-	"fmt"
-
 	"github.com/bitrise-io/bitrise/v2/plugins"
-)
-
-const (
-	helpTemplate = `
-NAME: {{.Name}} - {{.Usage}}
-
-USAGE: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND/PLUGIN [arg...]
-
-VERSION: {{.Version}}{{if or .Author .Email}}
-
-AUTHOR:{{if .Author}}
-  {{.Author}}{{if .Email}} - <{{.Email}}>{{end}}{{else}}
-  {{.Email}}{{end}}{{end}}
-{{if .Flags}}
-GLOBAL OPTIONS:
-  {{range .Flags}}{{.}}
-  {{end}}{{end}}
-COMMANDS:
-  {{range .Commands}}{{.Name}}{{with .ShortName}}, {{.}}{{end}}{{ "\t" }}{{.Usage}}
-  {{end}}
-%s
-COMMAND HELP: {{.Name}} COMMAND --help/-h
-
-`
 )
 
 func getPluginsList() string {
