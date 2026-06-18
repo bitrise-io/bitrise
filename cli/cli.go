@@ -288,32 +288,44 @@ func validateGlobalBoolEnvs() {
 	}
 }
 
+// commandTokenIndex returns the index of the first argument that is not a global
+// flag — the command/plugin/positional token. Global flags before this boundary
+// configure bitrise; everything from it onward belongs to the command (and, for
+// plugins and envman, is forwarded verbatim), so it must not be scanned for or
+// stripped of global flags.
+func commandTokenIndex(args []string) int {
+	for i, a := range args {
+		if !isGlobalFlagArg(a) {
+			return i
+		}
+	}
+	return len(args)
+}
+
 // detectPlugin decides plugin dispatch: it only happens when the first
 // non-global-flag token is not a known command, so e.g. `bitrise run a:b` stays
 // a run invocation rather than being treated as a plugin.
 func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool) {
-	cmdArgs := stripGlobalFlags(rawArgs)
-	if len(cmdArgs) == 0 {
+	i := commandTokenIndex(rawArgs)
+	if i == len(rawArgs) {
 		return "", nil, false
 	}
-	if isKnownCommand(root, cmdArgs[0]) {
+	if isKnownCommand(root, rawArgs[i]) {
 		return "", nil, false
 	}
-	return plugins.ParseArgs(cmdArgs)
+	// Pass the args from the command token onward (not globals-stripped) so that
+	// flags following the plugin name — including ones that share a global flag's
+	// name, e.g. the plugin's own --debug — are forwarded to the plugin verbatim.
+	return plugins.ParseArgs(rawArgs[i:])
 }
 
 // envmanPassthrough reports whether the invocation targets the envman command
 // (the first non-global-flag token is "envman") and, if so, returns the args
 // that follow it, to be forwarded verbatim.
 func envmanPassthrough(rawArgs []string) ([]string, bool) {
-	for i, a := range rawArgs {
-		if isGlobalFlagArg(a) {
-			continue
-		}
-		if a == envmanCommand.Name() {
-			return rawArgs[i+1:], true
-		}
-		return nil, false
+	i := commandTokenIndex(rawArgs)
+	if i < len(rawArgs) && rawArgs[i] == envmanCommand.Name() {
+		return rawArgs[i+1:], true
 	}
 	return nil, false
 }
@@ -358,9 +370,12 @@ func runPlugin(root *cobra.Command, rawArgs []string, pluginName string, pluginA
 	}
 }
 
+// applyGlobalFlagsFromArgs sets the global flags on the plugin/envman dispatch
+// paths, where cobra does not parse them. Only the leading args (before the
+// command token) are bitrise globals; anything after belongs to the passthrough.
 func applyGlobalFlagsFromArgs(root *cobra.Command, args []string) {
-	for _, name := range []string{DebugModeKey, CIKey, PRKey} {
-		for _, a := range args {
+	for _, a := range args[:commandTokenIndex(args)] {
+		for _, name := range []string{DebugModeKey, CIKey, PRKey} {
 			switch {
 			case a == "--"+name || a == "-"+name:
 				_ = root.PersistentFlags().Set(name, "true")
@@ -371,17 +386,6 @@ func applyGlobalFlagsFromArgs(root *cobra.Command, args []string) {
 			}
 		}
 	}
-}
-
-func stripGlobalFlags(args []string) []string {
-	out := []string{}
-	for _, a := range args {
-		if isGlobalFlagArg(a) {
-			continue
-		}
-		out = append(out, a)
-	}
-	return out
 }
 
 func isGlobalFlagArg(a string) bool {
