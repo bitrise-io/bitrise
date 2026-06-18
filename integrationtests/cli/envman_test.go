@@ -18,7 +18,6 @@ func Test_Envman(t *testing.T) {
 	ensureEnvmanInstalled(t)
 
 	t.Run("lifecycle: init, add, print, json, clear", func(t *testing.T) {
-		t.Parallel()
 		dir := t.TempDir()
 
 		out, err := runBitriseEnvman(dir, "init", "--clear")
@@ -46,7 +45,6 @@ func Test_Envman(t *testing.T) {
 	})
 
 	t.Run("run injects stored env into the child process", func(t *testing.T) {
-		t.Parallel()
 		dir := t.TempDir()
 
 		out, err := runBitriseEnvman(dir, "init", "--clear")
@@ -61,7 +59,6 @@ func Test_Envman(t *testing.T) {
 	})
 
 	t.Run("add reads the value from piped stdin", func(t *testing.T) {
-		t.Parallel()
 		dir := t.TempDir()
 
 		out, err := runBitriseEnvman(dir, "init", "--clear")
@@ -79,7 +76,6 @@ func Test_Envman(t *testing.T) {
 	})
 
 	t.Run("flags are passed through to envman (SkipFlagParsing)", func(t *testing.T) {
-		t.Parallel()
 		dir := t.TempDir()
 
 		out, err := runBitriseEnvman(dir, "--help")
@@ -102,7 +98,6 @@ func Test_Envman(t *testing.T) {
 	})
 
 	t.Run("non-zero envman exit collapses to exit status 1", func(t *testing.T) {
-		t.Parallel()
 		dir := t.TempDir()
 
 		out, err := runBitriseEnvman(dir, "init", "--clear")
