@@ -11,9 +11,8 @@ import (
 	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 )
 
-// HTTPAPI fetches the V2 inventory layout (step_ids.json, latest.json,
-// versions.json, step-info.json, step.json) over HTTP from a base URL.
-// JSON endpoints are decoded in memory and returned as structs.
+// HTTPAPI fetches the V2 inventory (step_ids/latest/versions/step-info/step.json)
+// over HTTP from a base URL.
 type HTTPAPI struct {
 	BaseURL string
 	Fetcher httpfetch.Client
@@ -70,8 +69,6 @@ func (h *HTTPAPI) GetStepGroupInfo(ctx context.Context, id string) (steplibindex
 	return out, nil
 }
 
-// GetStepModel fetches the V2 step manifest (`steps/<id>/<v>/step.json`,
-// which serializes models.StepModel) and returns the decoded model.
 func (h *HTTPAPI) GetStepModel(ctx context.Context, step ResolvedStepVersion) (models.StepModel, error) {
 	p, err := steplibindex.StepJSONPath(step.ID, step.Version)
 	if err != nil {

@@ -54,7 +54,7 @@ func TestToStepGroupInfoModel(t *testing.T) {
 }
 
 func TestSteplib_getStepVersionInfo(t *testing.T) {
-	// FakeAPI's "script" step exposes versions 1.0.0, 1.1.5, 1.2.0, 2.0.0,
+	// newFakeAPI's "script" step exposes versions 1.0.0, 1.1.5, 1.2.0, 2.0.0,
 	// 2.4.0, 2.4.1, 3.0.0 with latest 3.0.0 and latest-by-major 1→1.2.0,
 	// 2→2.4.1, 3→3.0.0.
 	cases := map[string]struct {
@@ -74,16 +74,16 @@ func TestSteplib_getStepVersionInfo(t *testing.T) {
 		"invalid version constraint":         {stepID: "script", version: "1.2.3.4", wantErr: true},
 	}
 
-	s := &Steplib{
+	client := &Client{
 		log:         nil,
 		steplibURI:  "https://steplib.example",
-		api:         FakeAPI{},
+		api:         newFakeAPI(),
 		fileManager: nil,
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			stepInfo, resolved, gotErr := s.getStepVersionInfo(t.Context(), tc.stepID, tc.version)
+			stepInfo, resolved, gotErr := client.getStepVersionInfo(t.Context(), tc.stepID, tc.version)
 			if tc.wantErr {
 				require.Error(t, gotErr)
 				return

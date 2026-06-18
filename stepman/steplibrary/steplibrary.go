@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Steplib struct {
+type Client struct {
 	log stepman.Logger
 	// steplibURI is set by the `default_step_lib_source` property in bitrise.yml
 	steplibURI  string
@@ -22,10 +22,10 @@ type ActivateOutputPaths struct {
 	YMLPath, CodePath string
 }
 
-// New builds a Steplib. steplibURI is the steplib identity; inventoryURL is
+// New builds a Client. steplibURI is the steplib identity; inventoryURL is
 // the base URL the V2 inventory JSON is fetched from.
-func New(log stepman.Logger, steplibURI, inventoryURL string, fileManager fileutil.FileManager) *Steplib {
-	return &Steplib{
+func New(log stepman.Logger, steplibURI, inventoryURL string, fileManager fileutil.FileManager) *Client {
+	return &Client{
 		log:         log,
 		steplibURI:  steplibURI,
 		api:         NewHTTPAPI(inventoryURL, httpfetch.NewClient(log)),
@@ -33,13 +33,13 @@ func New(log stepman.Logger, steplibURI, inventoryURL string, fileManager fileut
 	}
 }
 
-func (s *Steplib) Activate(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivatedStep, error) {
-	stepInfo, resolved, err := s.getStepVersionInfo(ctx, stepID, version)
+func (c *Client) Activate(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivatedStep, error) {
+	stepInfo, resolved, err := c.getStepVersionInfo(ctx, stepID, version)
 	if err != nil {
 		return ActivatedStep{}, fmt.Errorf("resolve step version: %w", err)
 	}
 
-	stepModel, err := s.api.GetStepModel(ctx, resolved)
+	stepModel, err := c.api.GetStepModel(ctx, resolved)
 	if err != nil {
 		return ActivatedStep{}, fmt.Errorf("fetch step definition: %w", err)
 	}
@@ -49,7 +49,7 @@ func (s *Steplib) Activate(ctx context.Context, stepID, version string, outputPa
 		return ActivatedStep{}, fmt.Errorf("marshal step model to YAML: %w", err)
 	}
 
-	if err := s.fileManager.WriteBytes(outputPaths.YMLPath, stepYML); err != nil {
+	if err := c.fileManager.WriteBytes(outputPaths.YMLPath, stepYML); err != nil {
 		return ActivatedStep{}, fmt.Errorf("write step.yml: %w", err)
 	}
 
