@@ -7,6 +7,7 @@ import (
 	"github.com/bitrise-io/stepman/activator"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/steplibrary"
 )
 
 type stepActivator struct {
@@ -24,7 +25,7 @@ func (a stepActivator) activateStep(
 	workDir string, // $TMPDIR/bitrise
 	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
-) (activator.ActivatedStep, error) {
+) (steplibrary.ActivatedStep, error) {
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
 
 	if stepIDData.SteplibSource == "path" {
@@ -37,7 +38,7 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{ ActivationType: activator.ActivationTypePathRef }, fmt.Errorf("activate local step: %w", err)
+			return steplibrary.ActivatedStep{ActivationType: steplibrary.ActivationTypePathRef}, fmt.Errorf("activate local step: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource == "git" {
@@ -50,7 +51,7 @@ func (a stepActivator) activateStep(
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{ ActivationType: activator.ActivationTypeGitRef }, fmt.Errorf("activate git step reference: %w", err)
+			return steplibrary.ActivatedStep{ActivationType: steplibrary.ActivationTypeGitRef}, fmt.Errorf("activate git step reference: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource != "" {
@@ -64,12 +65,12 @@ func (a stepActivator) activateStep(
 			stepInfoPtr,
 		)
 		if err != nil {
-			// Note: we return the partial result on purpose because DidStepLibUpdate is important 
+			// Note: we return the partial result on purpose because DidStepLibUpdate is important
 			// even in case of an error
 			return activatedStep, fmt.Errorf("activate steplib step: %w", err)
 		}
 		return activatedStep, nil
 	} else {
-		return activator.ActivatedStep{}, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
+		return steplibrary.ActivatedStep{}, fmt.Errorf("invalid stepIDData: no SteplibSource or LocalPath defined (%v)", stepIDData)
 	}
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
 	utilslog "github.com/bitrise-io/go-utils/v2/log"
-	"github.com/bitrise-io/stepman/activator"
+	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/toolkits"
 )
 
@@ -117,7 +117,7 @@ type Tracker interface {
 	SendCLIWarning(message string)
 	SendCommandInfo(command, subcommand string, flags []string)
 	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
-	SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
+	SendStepActivationEvent(activationType steplibrary.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
 	SendToolkitPrepareEvent(stepExecutionID string, toolkitName string, stepID string, stepVersion string, result toolkits.PrepareForStepRunResult, err error)
 	IsTracking() bool
 	Wait()
@@ -388,7 +388,7 @@ func (t tracker) SendToolSetupEvent(
 	t.tracker.Enqueue(toolSetupEventName, props)
 }
 
-func (t tracker) SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
+func (t tracker) SendStepActivationEvent(activationType steplibrary.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
 	if !t.stateChecker.Enabled() {
 		return
 	}

@@ -32,7 +32,13 @@ func QueryStepInfoFromGit(gitURL, tagOrBranch string) (models.StepInfoModel, err
 		return models.StepInfoModel{}, fmt.Errorf("query git step info: clone %s: %s", gitURL, err)
 	}
 
-	stepDefinitionPth := filepath.Join(tmpStepDir, "step.yml")
+	return QueryStepInfoFromGitStepDir(tmpStepDir, gitURL, tagOrBranch)
+}
+
+// QueryStepInfoFromGitStepDir assembles step info from a git step that is already
+// cloned into stepDir, reading its step.yml definition.
+func QueryStepInfoFromGitStepDir(stepDir, gitURL, tagOrBranch string) (models.StepInfoModel, error) {
+	stepDefinitionPth := filepath.Join(stepDir, "step.yml")
 	if exist, err := pathutil.IsPathExists(stepDefinitionPth); err != nil {
 		return models.StepInfoModel{}, fmt.Errorf("query git step info: check if step.yml exist: %s", err)
 	} else if !exist {

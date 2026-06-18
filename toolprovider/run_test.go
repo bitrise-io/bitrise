@@ -8,10 +8,10 @@ import (
 	clianalytics "github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
 	"github.com/bitrise-io/go-utils/v2/analytics"
-	"github.com/bitrise-io/stepman/activator"
+	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-    "github.com/stretchr/testify/assert"
 )
 
 type trackingCall struct {
@@ -40,7 +40,7 @@ func (c *capturingTracker) SendToolSetupEvent(providerID string, request provide
 		isSuccessful: isSuccessful,
 	})
 }
-func (c *capturingTracker) SendStepActivationEvent(activator.ActivationType, string, bool, time.Duration, bool) {
+func (c *capturingTracker) SendStepActivationEvent(steplibrary.ActivationType, string, bool, time.Duration, bool) {
 }
 func (c *capturingTracker) SendToolkitPrepareEvent(string, string, string, string, toolkits.PrepareForStepRunResult, error) {
 }
