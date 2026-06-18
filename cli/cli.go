@@ -86,7 +86,17 @@ func Run() {
 		return
 	}
 
-	rootCmd.SetArgs(normalizeLegacyArgs(rawArgs, rootCmd))
+	normalized := normalizeLegacyArgs(rawArgs, rootCmd)
+
+	// An unknown top-level command is not a plugin and not a known command, so
+	// cobra's Find returns an error. The previous framework printed the app help
+	// and exited 1 in that case.
+	if _, _, err := rootCmd.Find(normalized); err != nil {
+		printRootHelp(rootCmd)
+		failf("")
+	}
+
+	rootCmd.SetArgs(normalized)
 	if err := rootCmd.Execute(); err != nil {
 		failf(err.Error())
 	}

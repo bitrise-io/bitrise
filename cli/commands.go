@@ -22,6 +22,10 @@ func requireKnownSubcommand(cmd *cobra.Command, args []string) error {
 }
 
 func newRootCommand() *cobra.Command {
+	// List commands in declaration order (like the previous framework) rather
+	// than cobra's default alphabetical sort.
+	cobra.EnableCommandSorting = false
+
 	rootCmd := &cobra.Command{
 		Use:               filepath.Base(os.Args[0]),
 		Short:             "Bitrise Automations Workflow Runner",
@@ -40,6 +44,7 @@ func newRootCommand() *cobra.Command {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 
+	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.PersistentFlags().Bool(DebugModeKey, false, "If true it enables DEBUG mode.")
 	rootCmd.PersistentFlags().Bool(CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
 	rootCmd.PersistentFlags().Bool(PRKey, false, "If true bitrise runs in pull request mode.")
@@ -64,13 +69,17 @@ func newRootCommand() *cobra.Command {
 		mergeConfigCommand,
 	)
 
+	// Register the help command eagerly so it shows up in the command list
+	// regardless of how help is reached.
+	rootCmd.InitDefaultHelpCmd()
+
 	defaultHelp := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		defaultHelp(cmd, args)
 		if cmd == rootCmd {
-			fmt.Fprintln(cmd.OutOrStdout())
-			fmt.Fprint(cmd.OutOrStdout(), getPluginsList())
+			printRootHelp(rootCmd)
+			return
 		}
+		defaultHelp(cmd, args)
 	})
 
 	return rootCmd
