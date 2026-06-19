@@ -1,24 +1,29 @@
 package cli
 
 import (
-	"errors"
 	"os"
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/spf13/cobra"
 )
 
-// envmanCommand exists only to register "envman" so help and completion list it.
-// Real invocations are intercepted before cobra by envmanPassthrough (see Run),
-// which forwards them to runEnvman, so this RunE is unreachable. DisableFlagParsing
-// means that if cobra ever did dispatch here, it would hit the guard below rather
-// than failing on envman's own flags first.
+// envmanCommand registers "envman" so help and completion list it. Real
+// invocations are normally intercepted before cobra by envmanPassthrough (see
+// Run), which strips the leading bitrise global flags and forwards the args after
+// "envman" to runEnvman. cobra reaches this RunE only when a non-global flag
+// precedes "envman" (so the pre-cobra check doesn't fire); DisableFlagParsing lets
+// us forward the leftover args (the stray flag included) verbatim, so envman itself
+// reports the unexpected flag rather than bitrise emitting an internal error.
 var envmanCommand = &cobra.Command{
 	Use:                "envman",
 	Short:              "Runs an envman command.",
 	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("envman must be dispatched before cobra by envmanPassthrough; reaching this point is a command dispatch bug")
+		logCommandParameters(cmd)
+		if err := runCommandWith("envman", args); err != nil {
+			failf("Command failed, error: %s", err)
+		}
+		return nil
 	},
 }
 
