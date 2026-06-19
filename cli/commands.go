@@ -85,5 +85,23 @@ func newRootCommand() *cobra.Command {
 		defaultHelp(cmd, args)
 	})
 
+	// urfave/cli left an unrecognised flag that followed a positional argument in
+	// the argument list and ignored it (e.g. `bitrise run wf --unknown` still ran
+	// the workflow); pflag rejects unknown flags outright. Reproduce the old
+	// leniency so the migration stays behaviour-preserving — the next major
+	// version, which reworks the command surface, can tighten this.
+	enableUnknownFlagPassthrough(rootCmd)
+
 	return rootCmd
+}
+
+// enableUnknownFlagPassthrough sets FParseErrWhitelist.UnknownFlags on the whole
+// command tree. The flag is per-command (cobra does not inherit it), and the
+// command that ultimately runs is the one that parses, so it must be set on every
+// command, not just the root.
+func enableUnknownFlagPassthrough(cmd *cobra.Command) {
+	cmd.FParseErrWhitelist.UnknownFlags = true
+	for _, sub := range cmd.Commands() {
+		enableUnknownFlagPassthrough(sub)
+	}
 }

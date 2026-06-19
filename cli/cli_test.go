@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -234,4 +235,19 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 			assert.Equal(t, tt.wantPR, pr, "pr")
 		})
 	}
+}
+
+// urfave/cli ignored an unrecognised flag that followed a positional argument;
+// the migration reproduces that via FParseErrWhitelist on every command (cobra
+// does not inherit it). Guard against a command — including a nested subcommand —
+// being added without the leniency.
+func Test_unknownFlagPassthroughEnabledOnWholeTree(t *testing.T) {
+	var check func(c *cobra.Command)
+	check = func(c *cobra.Command) {
+		assert.Truef(t, c.FParseErrWhitelist.UnknownFlags, "command %q must tolerate unknown flags", c.CommandPath())
+		for _, sub := range c.Commands() {
+			check(sub)
+		}
+	}
+	check(newRootCommand())
 }
