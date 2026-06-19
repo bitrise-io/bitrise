@@ -12,15 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var validateCmd = &cobra.Command{
+var validateCommand = &cobra.Command{
 	Use:   "validate",
 	Short: "Validates a specified bitrise config.",
 	RunE:  validate,
 }
 
 func init() {
-	addConfigAndInventoryFlags(validateCmd.Flags())
-	validateCmd.Flags().String(OuputFormatKey, "", "Output format. Accepted: json, yml.")
+	addConfigAndInventoryFlags(validateCommand.Flags())
+	validateCommand.Flags().String(OuputFormatKey, "", "Output format. Accepted: json, yml.")
 }
 
 // ValidationItemModel ...

@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var triggerCheckCmd = &cobra.Command{
+var triggerCheckCommand = &cobra.Command{
 	Use:   "trigger-check",
 	Short: "Prints out which workflow will triggered by specified pattern.",
 	RunE:  triggerCheck,
 }
 
 func init() {
-	flags := triggerCheckCmd.Flags()
+	flags := triggerCheckCommand.Flags()
 	addTriggerFilterFlags(flags)
 	addConfigAndInventoryFlags(flags)
 	flags.String(OuputFormatKey, "", "Output format. Accepted: json, yml.")

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var initCmd = &cobra.Command{
+var initCommand = &cobra.Command{
 	Use:     "init",
 	Aliases: []string{"i"},
 	Short:   "Init bitrise config.",
@@ -43,7 +43,7 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
-	initCmd.Flags().Bool("minimal", false, "creates empty bitrise config and secrets")
+	initCommand.Flags().Bool("minimal", false, "creates empty bitrise config and secrets")
 }
 
 func initConfig(cmd *cobra.Command) error {

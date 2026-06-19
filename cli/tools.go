@@ -56,6 +56,14 @@ const toolsConfigFlagUsage = `Config or version file paths to install tools from
 	- .fvm/fvm_config.json (legacy FVM): Flutter version from {"flutterSdkVersion": "<version>"}
 	- bitrise.yml: tools defined in the "tools" section`
 
+const (
+	toolsProviderFlagUsage = `Tool provider to use (asdf/mise). If not specified, uses the default.`
+	// activation commands (info/install/latest/setup) emit env vars that activate tools.
+	toolsActivationFormatFlagUsage = `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`
+	// list commands (catalog/versions) only print data.
+	toolsListFormatFlagUsage = `Output format. Options: plaintext, json`
+)
+
 var toolsInfoSubcommand = &cobra.Command{
 	Use:   toolsInfoCommandName + " [--active] [--format FORMAT]",
 	Short: "Show information about installed or active tools.",
@@ -205,29 +213,29 @@ func init() {
 
 	infoFlags := toolsInfoSubcommand.Flags()
 	infoFlags.BoolP(toolsActiveKey, toolsActiveShortKey, false, `Show only currently active tools in the shell context (based on config files in current directory)`)
-	infoFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`)
+	infoFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsActivationFormatFlagUsage)
 
 	installFlags := toolsInstallSubcommand.Flags()
-	installFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise). If not specified, uses the default.`)
-	installFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`)
+	installFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", toolsProviderFlagUsage)
+	installFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsActivationFormatFlagUsage)
 
 	latestFlags := toolsLatestSubcommand.Flags()
-	latestFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`)
-	latestFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise). If not specified, uses the default.`)
+	latestFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsActivationFormatFlagUsage)
+	latestFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", toolsProviderFlagUsage)
 
 	setupFlags := toolsSetupSubcommand.Flags()
-	setupFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise). If not specified, uses the default.`)
+	setupFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", toolsProviderFlagUsage)
 	setupFlags.String(toolsFastInstallKey, "", `Override fast install setting (true/false). Fast install uses Lix (Nix) for faster installation. If not specified, uses the default for the used stack.`)
 	setupFlags.StringArrayP(toolsConfigKey, toolsConfigShortKey, nil, toolsConfigFlagUsage)
-	setupFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format of the env vars that activate installed tools. Options: plaintext, json, bash`)
+	setupFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsActivationFormatFlagUsage)
 	setupFlags.StringP(toolsWorkflowKey, "w", "", "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)")
 
 	catalogFlags := toolsCatalogSubcommand.Flags()
-	catalogFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format. Options: plaintext, json`)
+	catalogFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsListFormatFlagUsage)
 
 	versionsFlags := toolsVersionsSubcommand.Flags()
 	versionsFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise) (default: "mise")`)
-	versionsFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, `Output format. Options: plaintext, json`)
+	versionsFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsListFormatFlagUsage)
 }
 
 func toolsSetup(cmd *cobra.Command) error {

@@ -42,7 +42,7 @@ func collectFlags(cmd *cobra.Command) []string {
 	var flags []string
 
 	persistent := cmd.Root().PersistentFlags()
-	for _, name := range []string{DebugModeKey, CIKey, PRKey} {
+	for _, name := range globalFlagNames {
 		if f := persistent.Lookup(name); f != nil && flagIsSet(f) {
 			flags = append(flags, name)
 		}

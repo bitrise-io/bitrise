@@ -92,15 +92,13 @@ func preloadSteps(cmd *cobra.Command) error {
 	if numMinor != 0 {
 		opts.NumMinor = numMinor
 	}
-	minorsSinceU, _ := cmd.Flags().GetUint("minors-since")
-	minorsSince := int(minorsSinceU)
+	minorsSince, _ := cmd.Flags().GetUint("minors-since")
 	if minorsSince != 0 {
-		opts.LatestMinorsSinceMonths = minorsSince
+		opts.LatestMinorsSinceMonths = int(minorsSince)
 	}
-	patchesSinceU, _ := cmd.Flags().GetUint("patches-since")
-	patchesSince := int(patchesSinceU)
+	patchesSince, _ := cmd.Flags().GetUint("patches-since")
 	if patchesSince != 0 {
-		opts.PatchesSinceMonths = patchesSince
+		opts.PatchesSinceMonths = int(patchesSince)
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())

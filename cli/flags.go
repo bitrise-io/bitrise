@@ -37,6 +37,11 @@ const (
 	StepIDKey = "stepid"
 )
 
+// globalFlagNames lists the persistent flags that configure bitrise itself.
+// They are recognised on the plugin/envman dispatch paths and reported to
+// analytics, so the list is shared rather than repeated at each use site.
+var globalFlagNames = []string{DebugModeKey, CIKey, PRKey}
+
 func addConfigAndInventoryFlags(fs *pflag.FlagSet) {
 	fs.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	fs.String(ConfigBase64Key, "", "base64 encoded config data.")

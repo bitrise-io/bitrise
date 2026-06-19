@@ -55,15 +55,15 @@ func newRootCommand() *cobra.Command {
 	markEnvVar(rootCmd.PersistentFlags(), CIKey, configs.CIModeEnvKey)
 
 	rootCmd.AddCommand(
-		initCmd,
+		initCommand,
 		setupCommand,
 		stepsCommand,
 		toolsCommand,
-		versionCmd,
-		validateCmd,
+		versionCommand,
+		validateCommand,
 		updateCommand,
 		runCommand,
-		triggerCheckCmd,
+		triggerCheckCommand,
 		triggerCommand,
 		workflowListCommand,
 		shareCommand,

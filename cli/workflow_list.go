@@ -31,7 +31,7 @@ var workflowListCommand = &cobra.Command{
 func init() {
 	workflowListCommand.Flags().StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	workflowListCommand.Flags().String(ConfigBase64Key, "", "base64 encoded config data.")
-	workflowListCommand.Flags().String("format", "", "Output format. Accepted: raw, json.")
+	workflowListCommand.Flags().String(OuputFormatKey, "", "Output format. Accepted: raw, json.")
 	workflowListCommand.Flags().Bool("minimal", false, "Print summary of workflows only.")
 	workflowListCommand.Flags().Bool("id-only", false, "Print workflow ids only.")
 }
@@ -165,10 +165,10 @@ func (output WorkflowListOutputModel) JSON() string {
 }
 
 func workflowList(cmd *cobra.Command) error {
-	bitriseConfigBase64Data, _ := cmd.Flags().GetString("config-base64")
-	bitriseConfigPath, _ := cmd.Flags().GetString("config")
+	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
+	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)
 
-	format, _ := cmd.Flags().GetString("format")
+	format, _ := cmd.Flags().GetString(OuputFormatKey)
 	minimal, _ := cmd.Flags().GetBool("minimal")
 	idOnly, _ := cmd.Flags().GetBool("id-only")
 

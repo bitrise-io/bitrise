@@ -21,15 +21,15 @@ type VersionOutputModel struct {
 	Commit        string `json:"commit"`
 }
 
-var versionCmd = &cobra.Command{
+var versionCommand = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the version",
 	RunE:  printVersionCmd,
 }
 
 func init() {
-	versionCmd.Flags().StringP(OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
-	versionCmd.Flags().Bool("full", false, "Prints the build number as well.")
+	versionCommand.Flags().StringP(OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	versionCommand.Flags().Bool("full", false, "Prints the build number as well.")
 }
 
 func printVersionCmd(cmd *cobra.Command, _ []string) error {
