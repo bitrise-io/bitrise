@@ -45,6 +45,9 @@ func newRootCommand() *cobra.Command {
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
 
 	rootCmd.PersistentFlags().SortFlags = false
+	// --debug is declared here for help, analytics and plugin/envman flag
+	// recognition, but its effective value is resolved by isDebugMode before
+	// cobra parses, so the logger can be configured up front.
 	rootCmd.PersistentFlags().Bool(DebugModeKey, false, "If true it enables DEBUG mode.")
 	rootCmd.PersistentFlags().Bool(CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
 	rootCmd.PersistentFlags().Bool(PRKey, false, "If true bitrise runs in pull request mode.")

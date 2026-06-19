@@ -10,7 +10,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/spf13/cobra"
 )
 
@@ -92,10 +91,7 @@ func triggerCheck(cmd *cobra.Command, args []string) error {
 
 	warnings := []string{}
 
-	var prGlobalFlagPtr *bool
-	if globalFlagChanged(cmd, PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(globalBoolFlag(cmd, PRKey))
-	}
+	prGlobalFlagPtr := prModeFlagOverride(cmd)
 
 	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
 	if triggerPattern == "" && len(args) > 0 {

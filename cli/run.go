@@ -24,7 +24,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/stepman/toolkits"
 	"github.com/gofrs/uuid"
@@ -63,6 +62,10 @@ func init() {
 	flags.String(WorkflowKey, "", "workflow id to run.")
 	flags.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	flags.StringP(InventoryKey, inventoryShortKey, "", "Path of the inventory file.")
+	// run's --secret-filtering, unlike trigger's, was never bound to the
+	// BITRISE_SECRET_FILTERING env var, so it is intentionally not markEnvVar'd
+	// (analytics report it as set only from the command line) and its env is
+	// matched literally — see runSecretFilteringOverride.
 	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
 
 	addJSONParamsFlags(flags)
@@ -368,29 +371,10 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 		workflowToRunID = args[0]
 	}
 
-	var prGlobalFlagPtr *bool
-	if globalFlagChanged(cmd, PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(globalBoolFlag(cmd, PRKey))
-	}
-
+	prGlobalFlagPtr := prModeFlagOverride(cmd)
 	ciGlobalFlagPtr := ciModeFlagOverride(cmd)
-
-	var secretFiltering *bool
-	if cmd.Flags().Changed(secretFilteringFlag) {
-		secretFilteringVal, _ := cmd.Flags().GetBool(secretFilteringFlag)
-		secretFiltering = pointers.NewBoolPtr(secretFilteringVal)
-	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
-		secretFiltering = pointers.NewBoolPtr(true)
-	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
-		secretFiltering = pointers.NewBoolPtr(false)
-	}
-
-	var secretEnvsFiltering *bool
-	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
-		secretEnvsFiltering = pointers.NewBoolPtr(true)
-	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
-		secretEnvsFiltering = pointers.NewBoolPtr(false)
-	}
+	secretFiltering := runSecretFilteringOverride(cmd)
+	secretEnvsFiltering := secretEnvsFilteringOverride()
 
 	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
 	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)

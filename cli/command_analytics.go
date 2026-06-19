@@ -10,16 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// envVarAnnotation records the environment variable a flag is bound to, so that
-// analytics reports the flag as set when its value comes from the environment.
-const envVarAnnotation = "bitrise_env_var"
-
 var globalTracker analytics.Tracker
-
-// markEnvVar binds a flag to an environment variable for analytics reporting.
-func markEnvVar(fs *pflag.FlagSet, name, envKey string) {
-	_ = fs.SetAnnotation(name, envVarAnnotation, []string{envKey})
-}
 
 func logPluginCommandParameters(name string, _ []string) {
 	// Plugin command parameters are routed into the function but are not processed yet because it is complex to correctly
@@ -80,4 +71,13 @@ func flagIsSet(f *pflag.Flag) bool {
 
 func sendCommandInfo(command, subcommand string, flags []string) {
 	globalTracker.SendCommandInfo(command, subcommand, flags)
+}
+
+// envVarAnnotation records the environment variable a flag is bound to, so that
+// analytics reports the flag as set when its value comes from the environment.
+const envVarAnnotation = "bitrise_env_var"
+
+// markEnvVar binds a flag to an environment variable for analytics reporting.
+func markEnvVar(fs *pflag.FlagSet, name, envKey string) {
+	_ = fs.SetAnnotation(name, envVarAnnotation, []string{envKey})
 }

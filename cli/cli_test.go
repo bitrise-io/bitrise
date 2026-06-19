@@ -13,39 +13,12 @@ func Test_loggerParameters(t *testing.T) {
 		args             []string
 		wantIsRunCommand bool
 		wantOutputFormat log.LoggerType
-		wantDebugMode    bool
 	}{
 		{
 			name:             "Empty test",
 			args:             []string{},
 			wantIsRunCommand: false,
 			wantOutputFormat: "",
-			wantDebugMode:    false,
-		},
-		{
-			name:          "Debug mode on with one dash syntax",
-			args:          []string{"-debug"},
-			wantDebugMode: true,
-		},
-		{
-			name:          "Debug mode on with two dash syntax",
-			args:          []string{"--debug"},
-			wantDebugMode: true,
-		},
-		{
-			name:          "Debug mode on with value syntax",
-			args:          []string{"-debug=true"},
-			wantDebugMode: true,
-		},
-		{
-			name:          "Debug mode off with value syntax",
-			args:          []string{"--debug=true"},
-			wantDebugMode: true,
-		},
-		{
-			name:          "Debug mode invalid syntax",
-			args:          []string{"--debug true"},
-			wantDebugMode: false,
 		},
 		{
 			name:             "Run command",
@@ -90,10 +63,9 @@ func Test_loggerParameters(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			isRunCommand, outputFormat, debugMode := loggerParameters(tt.args)
+			isRunCommand, outputFormat := loggerParameters(tt.args)
 			assert.Equalf(t, tt.wantIsRunCommand, isRunCommand, "loggerParameters(%v)", tt.args)
 			assert.Equalf(t, tt.wantOutputFormat, outputFormat, "loggerParameters(%v)", tt.args)
-			assert.Equalf(t, tt.wantDebugMode, debugMode, "loggerParameters(%v)", tt.args)
 		})
 	}
 }

@@ -2,32 +2,13 @@ package cli
 
 import (
 	"github.com/spf13/pflag"
-)
-
-// Flags ...
-const (
-	JSONParamsKey       = "json-params"
-	JSONParamsBase64Key = "json-params-base64"
-
-	WorkflowKey = "workflow"
-
-	PatternKey        = "pattern"
-	PushBranchKey     = "push-branch"
-	PRSourceBranchKey = "pr-source-branch"
-	PRTargetBranchKey = "pr-target-branch"
-	PRReadyStateKey   = "pr-ready-state"
-
-	ConfigKey      = "config"
-	InventoryKey   = "inventory"
-	OuputFormatKey = "format"
-)
+) // Flags ...
 
 const (
 	CollectionPathEnvKey = "STEPMAN_COLLECTION"
-
-	CIKey        = "ci"
-	PRKey        = "pr"
-	DebugModeKey = "debug"
+	CIKey                = "ci"
+	PRKey                = "pr"
+	DebugModeKey         = "debug"
 
 	CollectionKey = "collection"
 
@@ -38,6 +19,18 @@ const (
 	configShortKey = "c"
 
 	ConfigBase64Key = "config-base64"
+
+	JSONParamsKey       = "json-params"
+	JSONParamsBase64Key = "json-params-base64"
+	WorkflowKey         = "workflow"
+	PatternKey          = "pattern"
+	PushBranchKey       = "push-branch"
+	PRSourceBranchKey   = "pr-source-branch"
+	PRTargetBranchKey   = "pr-target-branch"
+	PRReadyStateKey     = "pr-ready-state"
+	ConfigKey           = "config"
+	InventoryKey        = "inventory"
+	OuputFormatKey      = "format"
 
 	TagKey    = "tag"
 	GitKey    = "git"

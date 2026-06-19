@@ -9,7 +9,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/spf13/cobra"
 )
 
@@ -56,21 +55,10 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 func trigger(cmd *cobra.Command, args []string) error {
 	logCommandParameters(cmd)
 
-	var prGlobalFlagPtr *bool
-	if globalFlagChanged(cmd, PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(globalBoolFlag(cmd, PRKey))
-	}
-
+	prGlobalFlagPtr := prModeFlagOverride(cmd)
 	ciGlobalFlagPtr := ciModeFlagOverride(cmd)
-
 	secretFiltering := secretFilteringFlagOverride(cmd)
-
-	var secretEnvsFiltering *bool
-	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
-		secretEnvsFiltering = pointers.NewBoolPtr(true)
-	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
-		secretEnvsFiltering = pointers.NewBoolPtr(false)
-	}
+	secretEnvsFiltering := secretEnvsFilteringOverride()
 
 	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
 	if triggerPattern == "" && len(args) > 0 {

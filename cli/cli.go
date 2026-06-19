@@ -7,11 +7,9 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -21,11 +19,8 @@ func Run() {
 	// In the case of `--output-format=json` flag is set for the run command, all the logs are expected in JSON format.
 	// Because logs might be printed before processing the run command args,
 	// we need to manually parse the logger configuration.
-	isRunCommand, logFormat, isDebugMode := loggerParameters(os.Args[1:])
-
-	if !isDebugMode {
-		isDebugMode = os.Getenv(configs.DebugModeEnvKey) == "true"
-	}
+	isRunCommand, logFormat := loggerParameters(os.Args[1:])
+	debugMode := isDebugMode(os.Args[1:])
 
 	loggerType := log.ConsoleLogger
 	if isRunCommand && string(logFormat) != "" {
@@ -36,13 +31,13 @@ func Run() {
 	opts := log.LoggerOpts{
 		LoggerType:      loggerType,
 		Producer:        log.BitriseCLI,
-		DebugLogEnabled: isDebugMode,
+		DebugLogEnabled: debugMode,
 		Writer:          os.Stdout,
 		TimeProvider:    time.Now,
 	}
 	log.InitGlobalLogger(opts)
 
-	if isDebugMode {
+	if debugMode {
 		// set for other tools, as an ENV
 		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
 			failf("Failed to set DEBUG env, error: %s", err)
@@ -102,7 +97,7 @@ func Run() {
 	}
 }
 
-func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType, isDebug bool) {
+func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType) {
 	for i, argument := range arguments {
 		if argument == "run" {
 			isRunCommand = true
@@ -138,32 +133,9 @@ func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.L
 				// the execution will fail when parsing the command's arguments.
 			}
 		}
-
-		if isFlag(DebugModeKey, argument) {
-			components := strings.Split(argument, "=")
-			if len(components) == 2 {
-				value, err := strconv.ParseBool(components[1])
-				if err == nil {
-					isDebug = value
-				}
-			} else {
-				components := strings.Split(argument, " ")
-
-				// "-flag x" Command line flag syntax is not supported for boolean flags
-				// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-				if len(components) == 1 {
-					isDebug = true
-				}
-			}
-		}
 	}
 
 	return
-}
-
-func isFlag(name, arg string) bool {
-	return arg == "--"+name || arg == "-"+name ||
-		strings.HasPrefix(arg, "--"+name+"=") || strings.HasPrefix(arg, "-"+name+"=")
 }
 
 func before(cmd *cobra.Command, _ []string) error {
@@ -217,64 +189,6 @@ func before(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// globalBoolFlag returns the value of a persistent (global) flag, read from the
-// root command so it is also available on the plugin dispatch path.
-func globalBoolFlag(cmd *cobra.Command, name string) bool {
-	v, _ := cmd.Root().PersistentFlags().GetBool(name)
-	return v
-}
-
-// globalFlagChanged reports whether a persistent (global) flag was explicitly
-// set on the command line (so an explicit value takes precedence over env vars).
-func globalFlagChanged(cmd *cobra.Command, name string) bool {
-	return cmd.Root().PersistentFlags().Changed(name)
-}
-
-// ciModeFlagOverride mirrors the --ci flag's CI env var binding: the override is
-// set (non-nil) when --ci was passed or the CI env var is present, with the value
-// taken from the flag, otherwise the parsed env value. A non-nil result takes
-// precedence over inventory-based CI detection.
-func ciModeFlagOverride(cmd *cobra.Command) *bool {
-	if globalFlagChanged(cmd, CIKey) {
-		return pointers.NewBoolPtr(globalBoolFlag(cmd, CIKey))
-	}
-	if val, ok := os.LookupEnv(configs.CIModeEnvKey); ok {
-		parsed, _ := strconv.ParseBool(val)
-		return pointers.NewBoolPtr(parsed)
-	}
-	return nil
-}
-
-// secretFilteringFlagOverride mirrors the trigger command's secret-filtering
-// flag, which was bound to the BITRISE_SECRET_FILTERING env var: the value comes
-// from the flag (if set) or the parsed env var (if present), aborting on a
-// non-bool env value (an empty value is treated as false), exactly as before.
-// Returns nil when neither is set, so detection falls back to the inventory.
-func secretFilteringFlagOverride(cmd *cobra.Command) *bool {
-	// The env var was bound to the flag and validated when the flag set was
-	// built, before the command-line value was applied, so a non-bool env value
-	// aborts even when --secret-filtering is also passed.
-	envVal, envSet := os.LookupEnv(configs.IsSecretFilteringKey)
-	if envSet && envVal != "" {
-		if _, err := strconv.ParseBool(envVal); err != nil {
-			failf("could not parse %q as bool value for $%s", envVal, configs.IsSecretFilteringKey)
-		}
-	}
-
-	if cmd.Flags().Changed(secretFilteringFlag) {
-		v, _ := cmd.Flags().GetBool(secretFilteringFlag)
-		return pointers.NewBoolPtr(v)
-	}
-	if !envSet {
-		return nil
-	}
-	if envVal == "" {
-		return pointers.NewBoolPtr(false)
-	}
-	parsed, _ := strconv.ParseBool(envVal)
-	return pointers.NewBoolPtr(parsed)
-}
-
 // validateGlobalBoolEnvs aborts when a global bool flag's bound environment
 // variable holds a non-bool value, matching the behaviour of the previous
 // framework (an empty value is allowed and treated as false).
@@ -300,74 +214,6 @@ func commandTokenIndex(args []string) int {
 		}
 	}
 	return len(args)
-}
-
-// detectPlugin decides plugin dispatch: it only happens when the first
-// non-global-flag token is not a known command, so e.g. `bitrise run a:b` stays
-// a run invocation rather than being treated as a plugin.
-func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool) {
-	i := commandTokenIndex(rawArgs)
-	if i == len(rawArgs) {
-		return "", nil, false
-	}
-	if isKnownCommand(root, rawArgs[i]) {
-		return "", nil, false
-	}
-	// Pass the args from the command token onward (not globals-stripped) so that
-	// flags following the plugin name — including ones that share a global flag's
-	// name, e.g. the plugin's own --debug — are forwarded to the plugin verbatim.
-	return plugins.ParseArgs(rawArgs[i:])
-}
-
-// envmanPassthrough reports whether the invocation targets the envman command
-// (the first non-global-flag token is "envman") and, if so, returns the args
-// that follow it, to be forwarded verbatim.
-func envmanPassthrough(rawArgs []string) ([]string, bool) {
-	i := commandTokenIndex(rawArgs)
-	if i < len(rawArgs) && rawArgs[i] == envmanCommand.Name() {
-		return rawArgs[i+1:], true
-	}
-	return nil, false
-}
-
-func runEnvman(root *cobra.Command, rawArgs []string, envmanArgs []string) {
-	applyGlobalFlagsFromArgs(root, rawArgs)
-	if err := before(root, nil); err != nil {
-		failf(err.Error())
-	}
-
-	logCommandParameters(envmanCommand)
-
-	if err := runCommandWith("envman", envmanArgs); err != nil {
-		failf("Command failed, error: %s", err)
-	}
-}
-
-func runPlugin(root *cobra.Command, rawArgs []string, pluginName string, pluginArgs []string) {
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-
-	applyGlobalFlagsFromArgs(root, rawArgs)
-	if err := before(root, nil); err != nil {
-		failf(err.Error())
-	}
-
-	logPluginCommandParameters(pluginName, pluginArgs)
-
-	plugin, found, err := plugins.LoadPlugin(pluginName)
-	if err != nil {
-		failf("failed to get plugin (%s), error: %s", pluginName, err)
-	}
-	if !found {
-		failf("plugin (%s) not installed", pluginName)
-	}
-
-	if err := bitrise.RunSetupIfNeeded(logger); err != nil {
-		failf("Setup failed, error: %s", err)
-	}
-
-	if err := plugins.RunPluginByCommand(plugin, pluginArgs); err != nil {
-		failf("failed to run plugin (%s), error: %s", pluginName, err)
-	}
 }
 
 // applyGlobalFlagsFromArgs sets the global flags on the plugin/envman dispatch
