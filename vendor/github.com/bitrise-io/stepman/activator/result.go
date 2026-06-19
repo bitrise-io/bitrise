@@ -1,6 +1,10 @@
 package activator
 
+import "github.com/bitrise-io/stepman/models"
+
 type ActivatedStep struct {
+	StepInfo models.StepInfoModel
+
 	StepYMLPath string
 
 	ActivationType ActivationType
@@ -10,7 +14,7 @@ type ActivatedStep struct {
 	// - step was activated from a git reference (we checked out the source dir directly)
 	// - step was activated from a local path (we copied the source dir directly)
 	// - step was activated from a steplib reference, but step.yml has no entry for pre-compiled binaries (we fallback to source checkout)
-	// - step was activated from a stpelib reference, but step.yml has no pre-compiled binary for the current OS+arch combo (we fallback to source checkout)
+	// - step was activated from a steplib reference, but step.yml has no pre-compiled binary for the current OS+arch combo (we fallback to source checkout)
 	ExecutablePath string
 
 	// DidStepLibUpdate indicates that the local steplib cache was updated while resolving the exact step version.
