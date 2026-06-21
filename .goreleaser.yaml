@@ -13,10 +13,6 @@ builds:
   goarch:
   - amd64
   - arm64
-  ignore:
-  # We don't want to publish a linux-arm64 binary
-  - goos: linux
-    goarch: arm64
   ldflags:
   - -w -s # strip debug info and symbol table
   - -X github.com/bitrise-io/bitrise/v2/version.VERSION={{ .Version }}
