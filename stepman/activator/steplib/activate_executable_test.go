@@ -72,14 +72,14 @@ func TestBuildDownloadURLs(t *testing.T) {
 		expectedErr  error
 	}{
 		{
-			name:  "Default list: GCS first, gateway second",
+			name:  "Default list: steplib.bitrise.io first, GCS second",
 			bases: precompiledStepsDefaultStorageURLs,
 			executable: models.Executable{
 				StorageURI: "steps/step1.tar.gz",
 			},
 			expectedURLs: []string{
+				"https://steplib.bitrise.io/steps/step1.tar.gz",
 				"https://storage.googleapis.com/bitrise-steplib-storage/steps/step1.tar.gz",
-				"https://storage-gateway.services.bitrise.io/steps/step1.tar.gz",
 			},
 		},
 		{
