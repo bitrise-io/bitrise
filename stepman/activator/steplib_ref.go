@@ -8,7 +8,6 @@ import (
 	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
 )
 
@@ -20,10 +19,10 @@ func ActivateSteplibRefStep(
 	didStepLibUpdateInWorkflow bool,
 	isOfflineMode bool,
 	stepInfoPtr *models.StepInfoModel,
-) (steplibrary.ActivatedStep, error) {
+) (ActivatedStep, error) {
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	//nolint:exhaustruct // missing fields are added down below based on activation result
-	activationResult := steplibrary.ActivatedStep{
+	activationResult := ActivatedStep{
 		StepYMLPath:      stepYMLPath,
 		DidStepLibUpdate: false,
 	}
@@ -37,9 +36,9 @@ func ActivateSteplibRefStep(
 	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
 	activationResult.ExecutablePath = execPath
 	if execPath != "" {
-		activationResult.ActivationType = steplibrary.ActivationTypeSteplibExecutable
+		activationResult.ActivationType = ActivationTypeSteplibExecutable
 	} else {
-		activationResult.ActivationType = steplibrary.ActivationTypeSteplibSource
+		activationResult.ActivationType = ActivationTypeSteplibSource
 	}
 	if err != nil {
 		return activationResult, err

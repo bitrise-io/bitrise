@@ -8,7 +8,6 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/stretchr/testify/require"
 )
 
@@ -206,9 +205,9 @@ func BenchmarkActivateSteplibRefStep(b *testing.B) {
 					b.Fatal("ActivateSteplibRefStep() succeeded unexpectedly")
 				}
 
-				want := steplibrary.ActivatedStep{
+				want := ActivatedStep{
 					StepYMLPath:      tmpDir + "/current_step.yml",
-					ActivationType:   steplibrary.ActivationTypeSteplibSource,
+					ActivationType:   ActivationTypeSteplibSource,
 					DidStepLibUpdate: !tt.didStepLibUpdateInWorkflow,
 				}
 				require.Equal(b, want, got)

@@ -33,31 +33,28 @@ func New(log stepman.Logger, steplibURI, inventoryURL string, fileManager fileut
 	}
 }
 
-func (c *Client) Activate(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivatedStep, error) {
+func (c *Client) Activate(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivateResult, error) {
 	stepInfo, resolved, err := c.getStepVersionInfo(ctx, stepID, version)
 	if err != nil {
-		return ActivatedStep{}, fmt.Errorf("resolve step version: %w", err)
+		return ActivateResult{}, fmt.Errorf("resolve step version: %w", err)
 	}
 
 	stepModel, err := c.api.GetStepModel(ctx, resolved)
 	if err != nil {
-		return ActivatedStep{}, fmt.Errorf("fetch step definition: %w", err)
+		return ActivateResult{}, fmt.Errorf("fetch step definition: %w", err)
 	}
 
 	stepYML, err := yaml.Marshal(stepModel)
 	if err != nil {
-		return ActivatedStep{}, fmt.Errorf("marshal step model to YAML: %w", err)
+		return ActivateResult{}, fmt.Errorf("marshal step model to YAML: %w", err)
 	}
 
 	if err := c.fileManager.WriteBytes(outputPaths.YMLPath, stepYML); err != nil {
-		return ActivatedStep{}, fmt.Errorf("write step.yml: %w", err)
+		return ActivateResult{}, fmt.Errorf("write step.yml: %w", err)
 	}
 
-	return ActivatedStep{
-		StepInfo:         stepInfo,
-		StepYMLPath:      outputPaths.YMLPath,
-		ExecutablePath:   "",
-		ActivationType:   ActivationTypeSteplibSource,
-		DidStepLibUpdate: false, // deprecated
+	return ActivateResult{
+		StepInfo:    stepInfo,
+		StepYMLPath: outputPaths.YMLPath,
 	}, nil
 }
