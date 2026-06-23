@@ -39,6 +39,7 @@ func generateStepStartedHeaderLines(params StepStartedParams) []string {
 	lines = append(lines, getHeaderSubsection("id", params.ID))
 	lines = append(lines, getHeaderSubsection("version", params.Version))
 	lines = append(lines, getHeaderSubsection("collection", params.Collection))
+	lines = append(lines, getHeaderSubsection("toolkit", params.Toolkit))
 	lines = append(lines, getHeaderSubsection("time", params.StartTime))
 	lines = append(lines, separator)
 	lines = append(lines, stepLogStartIndicator)
