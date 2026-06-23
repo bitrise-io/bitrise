@@ -21,7 +21,7 @@ func ActivateGitRefStep(
 ) (ActivatedStep, error) {
 	repo, err := git.New(activatedStepDir)
 	if err != nil {
-		return ActivatedStep{}, err
+		return ActivatedStep{},err
 	}
 
 	var cloneCmd *command.Model
@@ -39,20 +39,26 @@ even if the repository is open source!`)
 		}
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
-			return ActivatedStep{}, fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
+			return ActivatedStep{},fmt.Errorf("command failed with exit status %d (%s): %w", exitErr.ExitCode(), cloneCmd.PrintableCommandArgs(), errors.New(out))
 		}
-		return ActivatedStep{}, err
+		return ActivatedStep{},err
 	}
 
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	if err := command.CopyFile(filepath.Join(activatedStepDir, "step.yml"), stepYMLPath); err != nil {
-		return ActivatedStep{}, err
+		return ActivatedStep{},err
+	}
+
+	stepInfo, err := stepman.QueryStepInfoFromGitStepDir(activatedStepDir, id.IDorURI, id.Version)
+	if err != nil {
+		return ActivatedStep{},err
 	}
 
 	return ActivatedStep{
-		StepYMLPath:     stepYMLPath,
+		StepInfo:         stepInfo,
+		StepYMLPath:      stepYMLPath,
 		DidStepLibUpdate: false,
-		ActivationType: ActivationTypeGitRef,
-		ExecutablePath: "",
+		ActivationType:   ActivationTypeGitRef,
+		ExecutablePath:   "",
 	}, nil
 }
