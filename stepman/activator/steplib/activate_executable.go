@@ -16,9 +16,12 @@ import (
 )
 
 func activateStepExecutable(
+	stepLibURI string,
 	stepID string,
+	version string,
 	executable models.Executable,
 	destinationDir string,
+	destinationStepYML string,
 ) (string, error) {
 	body, err := downloadExecutable(executable)
 	if err != nil {
@@ -60,6 +63,10 @@ func activateStepExecutable(
 	err = os.Chmod(path, 0755)
 	if err != nil {
 		return "", fmt.Errorf("set executable permission on file: %s", err)
+	}
+
+	if err := copyStepYML(stepLibURI, stepID, version, destinationStepYML); err != nil {
+		return "", fmt.Errorf("copy step.yml: %s", err)
 	}
 
 	return path, nil
