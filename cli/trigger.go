@@ -23,8 +23,12 @@ func init() {
 	flags := triggerCommand.Flags()
 	addTriggerFilterFlags(flags)
 	addConfigAndInventoryFlags(flags)
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+	// trigger's --secret-filtering was bound to BITRISE_SECRET_FILTERING (urfave
+	// EnvVar): a non-bool env value aborts. See secretFilteringFlagOverride.
 	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
 	markEnvVar(flags, secretFilteringFlag, configs.IsSecretFilteringKey)
+	// END MIGRATION PERIOD COMPATIBILITY
 	addJSONParamsFlags(flags)
 }
 

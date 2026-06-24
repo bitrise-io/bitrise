@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 // printRootHelp renders the root help in the layout the previous framework used
 // (NAME / USAGE / VERSION / GLOBAL OPTIONS / COMMANDS / PLUGINS), including the
 // installed plugin list. Subcommands keep cobra's native help.

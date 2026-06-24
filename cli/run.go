@@ -62,6 +62,7 @@ func init() {
 	flags.String(WorkflowKey, "", "workflow id to run.")
 	flags.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	flags.StringP(InventoryKey, inventoryShortKey, "", "Path of the inventory file.")
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 	// run's --secret-filtering, unlike trigger's, was never bound to the
 	// BITRISE_SECRET_FILTERING env var, so it is intentionally not markEnvVar'd
 	// (analytics report it as set only from the command line) and its env is

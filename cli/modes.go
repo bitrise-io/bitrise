@@ -11,12 +11,13 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// These overrides resolve the flag/env part of each bool mode, returning nil when
-// neither is set so the caller falls back to inventory-based detection (the
-// isXMode functions).
-//
-// The env semantics intentionally differ per mode, mirroring the env bindings of
-// the pre-cobra (urfave) CLI. Do not unify them:
+// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+// These overrides hand-roll the env-var bindings of the pre-cobra (urfave) CLI
+// (pflag has no EnvVar equivalent), resolving the flag/env part of each bool mode
+// and returning nil when neither is set so the caller falls back to inventory-based
+// detection (the isXMode functions). Reading these envs is a kept feature; the
+// intentionally inconsistent per-mode semantics are the compat burden the next
+// major can unify. Do not unify them now:
 //   - --ci was bound to the CI env var (urfave EnvVar): the env is parsed with
 //     ParseBool and its mere presence overrides the inventory.
 //   - --pr had no env binding: only the flag is resolved here; the PR env vars are

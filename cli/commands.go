@@ -22,10 +22,6 @@ func requireKnownSubcommand(cmd *cobra.Command, args []string) error {
 }
 
 func newRootCommand() *cobra.Command {
-	// List commands in declaration order (like the previous framework) rather
-	// than cobra's default alphabetical sort.
-	cobra.EnableCommandSorting = false
-
 	rootCmd := &cobra.Command{
 		Use:               filepath.Base(os.Args[0]),
 		Short:             "Bitrise Automations Workflow Runner",
@@ -41,10 +37,17 @@ func newRootCommand() *cobra.Command {
 		},
 	}
 
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	rootCmd.SetVersionTemplate("{{.Version}}\n")
-
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+	// Reproduce the previous framework's command surface: declaration-order (not
+	// alphabetical) command and flag listing, a bare version string (not cobra's
+	// "bitrise version X"), and no auto-generated `completion` command. The next
+	// major version can drop these and adopt cobra's defaults.
+	cobra.EnableCommandSorting = false
 	rootCmd.PersistentFlags().SortFlags = false
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	// END MIGRATION PERIOD COMPATIBILITY
+
 	// --debug is declared here for help, analytics and plugin/envman flag
 	// recognition, but its effective value is resolved by isDebugMode before
 	// cobra parses, so the logger can be configured up front.
@@ -76,6 +79,9 @@ func newRootCommand() *cobra.Command {
 	// regardless of how help is reached.
 	rootCmd.InitDefaultHelpCmd()
 
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+	// Route the root command's --help to the hand-rendered printRootHelp; other
+	// commands fall through to cobra's native help. The next major can drop this.
 	defaultHelp := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		if cmd == rootCmd {
@@ -85,6 +91,7 @@ func newRootCommand() *cobra.Command {
 		defaultHelp(cmd, args)
 	})
 
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 	// urfave/cli left an unrecognised flag that followed a positional argument in
 	// the argument list and ignored it (e.g. `bitrise run wf --unknown` still ran
 	// the workflow); pflag rejects unknown flags outright. Reproduce the old

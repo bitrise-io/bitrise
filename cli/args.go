@@ -65,11 +65,14 @@ func isKnownCommand(root *cobra.Command, name string) bool {
 	return false
 }
 
+// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 // normalizeLegacyArgs rewrites single-dash long flags (e.g. `-config`) to their
-// double-dash form, so both spellings are accepted. Passthrough args are left
-// untouched: everything after `--` and everything from the envman command
-// onwards (envman forwards its args verbatim and uses single-dash long flags of
-// its own).
+// double-dash form, so both spellings are accepted: urfave/Go-flag took `-config`
+// ≡ `--config`, but pflag accepts only `--config` / `-c`. The next major can drop
+// this (with its normalizeArg / knownLongFlagNames helpers) and accept only the
+// double-dash form. Passthrough args are left untouched: everything after `--` and
+// everything from the envman command onwards (envman forwards its args verbatim
+// and uses single-dash long flags of its own).
 func normalizeLegacyArgs(args []string, root *cobra.Command) []string {
 	known := knownLongFlagNames(root)
 	out := make([]string, 0, len(args))

@@ -58,8 +58,12 @@ func init() {
 	pf.String("maintainer", bitriseMaintainer, "Maintainer of the steps to list or preload")
 	pf.Uint("majors", 2, "Include X latest major versions")
 	pf.Uint("minors", 1, "Include X latest minor versions for each major version")
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+	// minors-since/patches-since were UintFlag in urfave but read via c.Int; they
+	// stay uint flags and are cast to int at use (see preloadSteps).
 	pf.Uint("minors-since", 2, "Include latest patch version of minors that were released in the last X months")
 	pf.Uint("patches-since", 1, "Include all patch version that were released in the last X months")
+	// END MIGRATION PERIOD COMPATIBILITY
 }
 
 func listCachedSteps(cmd *cobra.Command) error {

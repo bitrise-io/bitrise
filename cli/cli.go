@@ -82,6 +82,7 @@ func Run() {
 
 	normalized := normalizeLegacyArgs(rawArgs, rootCmd)
 
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 	// An unknown top-level command is not a plugin and not a known command, so
 	// cobra's Find returns an error. The previous framework printed the app help
 	// and exited 1 in that case.
@@ -188,6 +189,7 @@ func before(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 // validateGlobalBoolEnvs aborts when a global bool flag's bound environment
 // variable holds a non-bool value, matching the behaviour of the previous
 // framework (an empty value is allowed and treated as false).
