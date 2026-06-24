@@ -39,9 +39,13 @@ func ActivateStep(stepLibURI, id, version, destination, destinationStepYML strin
 		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
-			execPath, err := activateStepExecutable(stepLibURI, id, version, executableForPlatform, destination, destinationStepYML)
+			execPath, err := activateStepExecutable(id, executableForPlatform, destination)
 			if err == nil {
 				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
+
+				if err := copyStepYML(stepLibURI, id, version, destinationStepYML); err != nil {
+					return "", fmt.Errorf("copy step.yml: %s", err)
+				}
 				return execPath, nil
 			}
 			log.Warnf("Failed to download step executable, fallback to step source activation: %s", err)
