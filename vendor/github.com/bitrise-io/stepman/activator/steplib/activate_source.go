@@ -32,7 +32,7 @@ func activateStepSource(
 
 	if !stepCacheDirExists {
 		if isOfflineMode {
-			errMsg := collectOfflineAvailableStepVersions(stepLib, stepLibURI, id, version, log)
+			errMsg := collectOfflineAvailableStepVersions(stepLib, stepLibURI, id, log)
 			return fmt.Errorf("download step: %s", errMsg)
 		}
 
@@ -68,7 +68,7 @@ func copyStep(src, dst string) error {
 	return nil
 }
 
-func collectOfflineAvailableStepVersions(stepLib models.StepCollectionModel, stepLibURI, id, version string, log stepman.Logger) string {
+func collectOfflineAvailableStepVersions(stepLib models.StepCollectionModel, stepLibURI, id string, log stepman.Logger) string {
 	availableVersions := ListCachedStepVersions(log, stepLib, stepLibURI, id)
 	versionList := "Other versions available in the local cache:"
 	for _, version := range availableVersions {

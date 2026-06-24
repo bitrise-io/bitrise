@@ -246,7 +246,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Run step
-	logStepStarted(stepInfoPtr, stepIDx, stepExecutionID, stepStartTime)
+	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
 
 	// Evaluate run_if from step.yml default (only reached when bitrise.yml didn't set run_if).
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
@@ -482,8 +482,7 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 		analytics.StepExecutionIDEnvKey: stepExecutionID,
 	})
 
-	// add an extra env to allow the next step to access the current step's working directory
-	// (for source-built steps this is the source directory, for binary steps it may not contain source code)
+	// add an extra env for the next step run to be able to access the step's source location
 	additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
 		"BITRISE_STEP_SOURCE_DIR": stepDir,
 	})
@@ -1118,7 +1117,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 	return nil
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
@@ -1131,6 +1130,7 @@ func logStepStarted(stepInfo stepmanModels.StepInfoModel, idx int, stepExcutionI
 		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
+		Toolkit:     toolkits.ToolkitForStep(step, logger).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)
