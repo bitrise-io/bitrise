@@ -586,7 +586,7 @@ func (r WorkflowRunner) runStep(
 			log.Warn("Installing Step dependency failed, retrying ...")
 		}
 
-		return checkAndInstallStepDependencies(step)
+		return checkAndInstallStepDependencies(step, envsToMap(environments))
 	}); err != nil {
 		return 1, []envmanModels.EnvironmentItemModel{},
 			fmt.Errorf("failed to install Step dependency, error: %s", err)
@@ -1066,7 +1066,7 @@ func getCurrentBitriseSourceDir(envlist []envmanModels.EnvironmentItemModel) (st
 	return bitriseSourceDir, nil
 }
 
-func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
+func checkAndInstallStepDependencies(step stepmanModels.StepModel, extraEnvs map[string]string) error {
 	if len(step.Dependencies) > 0 {
 		log.Warnf("step.dependencies is deprecated... Use step.deps instead.")
 	}
@@ -1077,7 +1077,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		switch runtime.GOOS {
 		case "darwin":
 			for _, brewDep := range step.Deps.Brew {
-				if err := bitrise.InstallWithBrewIfNeeded(brewDep, configs.IsCIMode); err != nil {
+				if err := bitrise.InstallWithBrewIfNeeded(brewDep, configs.IsCIMode, extraEnvs); err != nil {
 					log.Infof("Failed to install (%s) with brew", brewDep.Name)
 					return err
 				}
@@ -1086,7 +1086,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 		case "linux":
 			for _, aptGetDep := range step.Deps.AptGet {
 				log.Infof("Start installing (%s) with apt-get", aptGetDep.Name)
-				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep, configs.IsCIMode); err != nil {
+				if err := bitrise.InstallWithAptGetIfNeeded(aptGetDep, configs.IsCIMode, extraEnvs); err != nil {
 					log.Infof("Failed to install (%s) with apt-get", aptGetDep.Name)
 					return err
 				}
@@ -1104,7 +1104,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel) error {
 			switch dep.Manager {
 			case depManagerBrew:
 				if runtime.GOOS == "darwin" {
-					err := bitrise.InstallWithBrewIfNeeded(stepmanModels.BrewDepModel{Name: dep.Name}, configs.IsCIMode)
+					err := bitrise.InstallWithBrewIfNeeded(stepmanModels.BrewDepModel{Name: dep.Name}, configs.IsCIMode, extraEnvs)
 					if err != nil {
 						return err
 					}
