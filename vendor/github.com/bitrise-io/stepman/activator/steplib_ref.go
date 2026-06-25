@@ -29,6 +29,7 @@ func ActivateSteplibRefStep(
 
 	stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
 	activationResult.DidStepLibUpdate = didUpdate
+	activationResult.StepInfo = stepInfo
 	if err != nil {
 		return activationResult, err
 	}
