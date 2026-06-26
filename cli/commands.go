@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/spf13/cobra"
@@ -49,8 +50,8 @@ func newRootCommand() *cobra.Command {
 	// END MIGRATION PERIOD COMPATIBILITY
 
 	// --debug is declared here for help, analytics and plugin/envman flag
-	// recognition, but its effective value is resolved by isDebugMode before
-	// cobra parses, so the logger can be configured up front.
+	// recognition, but its effective value is resolved by legacy.IsDebugMode
+	// before cobra parses, so the logger can be configured up front.
 	rootCmd.PersistentFlags().Bool(DebugModeKey, false, "If true it enables DEBUG mode.")
 	rootCmd.PersistentFlags().Bool(CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
 	rootCmd.PersistentFlags().Bool(PRKey, false, "If true bitrise runs in pull request mode.")
@@ -92,23 +93,10 @@ func newRootCommand() *cobra.Command {
 	})
 
 	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// urfave/cli left an unrecognised flag that followed a positional argument in
-	// the argument list and ignored it (e.g. `bitrise run wf --unknown` still ran
-	// the workflow); pflag rejects unknown flags outright. Reproduce the old
-	// leniency so the migration stays behaviour-preserving — the next major
-	// version, which reworks the command surface, can tighten this.
-	enableUnknownFlagPassthrough(rootCmd)
+	// Reproduce urfave/cli's leniency towards an unrecognised flag that follows a
+	// positional argument (see legacy.EnableUnknownFlagPassthrough) so the
+	// migration stays behaviour-preserving.
+	legacy.EnableUnknownFlagPassthrough(rootCmd)
 
 	return rootCmd
-}
-
-// enableUnknownFlagPassthrough sets FParseErrWhitelist.UnknownFlags on the whole
-// command tree. The flag is per-command (cobra does not inherit it), and the
-// command that ultimately runs is the one that parses, so it must be set on every
-// command, not just the root.
-func enableUnknownFlagPassthrough(cmd *cobra.Command) {
-	cmd.FParseErrWhitelist.UnknownFlags = true
-	for _, sub := range cmd.Commands() {
-		enableUnknownFlagPassthrough(sub)
-	}
 }

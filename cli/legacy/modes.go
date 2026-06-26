@@ -1,6 +1,7 @@
-package cli
+package legacy
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 // These overrides hand-roll the env-var bindings of the pre-cobra (urfave) CLI
 // (pflag has no EnvVar equivalent), resolving the flag/env part of each bool mode
 // and returning nil when neither is set so the caller falls back to inventory-based
@@ -52,10 +52,10 @@ func literalBoolEnv(envKey string) *bool {
 	return nil
 }
 
-// ciModeFlagOverride resolves the --ci flag bound to the CI env var: the flag
+// CIModeFlagOverride resolves the --ci flag bound to the CI env var: the flag
 // value if passed, otherwise the parsed env value if present, otherwise nil.
-func ciModeFlagOverride(cmd *cobra.Command) *bool {
-	if override := flagBoolOverride(cmd.Root().PersistentFlags(), CIKey); override != nil {
+func CIModeFlagOverride(cmd *cobra.Command, ciFlagName string) *bool {
+	if override := flagBoolOverride(cmd.Root().PersistentFlags(), ciFlagName); override != nil {
 		return override
 	}
 	if val, ok := os.LookupEnv(configs.CIModeEnvKey); ok {
@@ -65,65 +65,79 @@ func ciModeFlagOverride(cmd *cobra.Command) *bool {
 	return nil
 }
 
-// prModeFlagOverride resolves the --pr flag. Unlike CI, the PR env vars (PR mode
+// PRModeFlagOverride resolves the --pr flag. Unlike CI, the PR env vars (PR mode
 // and pull request ID) are interpreted by isPRMode together with the inventory,
 // so only the flag is resolved here.
-func prModeFlagOverride(cmd *cobra.Command) *bool {
-	return flagBoolOverride(cmd.Root().PersistentFlags(), PRKey)
+func PRModeFlagOverride(cmd *cobra.Command, prFlagName string) *bool {
+	return flagBoolOverride(cmd.Root().PersistentFlags(), prFlagName)
 }
 
-// secretFilteringFlagOverride resolves trigger's --secret-filtering flag, which
+// SecretFilteringFlagOverride resolves trigger's --secret-filtering flag, which
 // was bound to the BITRISE_SECRET_FILTERING env var: the flag value if passed,
 // otherwise the parsed env value if present (an empty value is treated as false),
-// otherwise nil. A non-bool env value aborts, matching the previous framework.
-// run's flag was not env-bound — see runSecretFilteringOverride.
-func secretFilteringFlagOverride(cmd *cobra.Command) *bool {
+// otherwise nil. A non-bool env value returns an error, matching the previous
+// framework's abort. run's flag was not env-bound — see RunSecretFilteringOverride.
+func SecretFilteringFlagOverride(cmd *cobra.Command, flagName string) (*bool, error) {
 	// The env var was bound to the flag and validated when the flag set was
 	// built, before the command-line value was applied, so a non-bool env value
 	// aborts even when --secret-filtering is also passed.
 	envVal, envSet := os.LookupEnv(configs.IsSecretFilteringKey)
 	if envSet && envVal != "" {
 		if _, err := strconv.ParseBool(envVal); err != nil {
-			failf("could not parse %q as bool value for $%s", envVal, configs.IsSecretFilteringKey)
+			return nil, fmt.Errorf("could not parse %q as bool value for $%s", envVal, configs.IsSecretFilteringKey)
 		}
 	}
 
-	if override := flagBoolOverride(cmd.Flags(), secretFilteringFlag); override != nil {
-		return override
+	if override := flagBoolOverride(cmd.Flags(), flagName); override != nil {
+		return override, nil
 	}
 	if !envSet {
-		return nil
+		return nil, nil
 	}
 	if envVal == "" {
-		return pointers.NewBoolPtr(false)
+		return pointers.NewBoolPtr(false), nil
 	}
 	parsed, _ := strconv.ParseBool(envVal)
-	return pointers.NewBoolPtr(parsed)
+	return pointers.NewBoolPtr(parsed), nil
 }
 
-// runSecretFilteringOverride resolves run's --secret-filtering flag, which (unlike
+// RunSecretFilteringOverride resolves run's --secret-filtering flag, which (unlike
 // trigger's) was never bound to the BITRISE_SECRET_FILTERING env var: the flag
 // value if passed, otherwise the env matched literally, otherwise nil. A non-bool
 // env value is ignored (not aborted), matching the pre-cobra behaviour.
-func runSecretFilteringOverride(cmd *cobra.Command) *bool {
-	if override := flagBoolOverride(cmd.Flags(), secretFilteringFlag); override != nil {
+func RunSecretFilteringOverride(cmd *cobra.Command, flagName string) *bool {
+	if override := flagBoolOverride(cmd.Flags(), flagName); override != nil {
 		return override
 	}
 	return literalBoolEnv(configs.IsSecretFilteringKey)
 }
 
-// secretEnvsFilteringOverride resolves the secret-envs-filtering mode, which has
+// SecretEnvsFilteringOverride resolves the secret-envs-filtering mode, which has
 // no flag and was never env-bound: the env matched literally, otherwise nil so
 // detection falls back to the inventory.
-func secretEnvsFilteringOverride() *bool {
+func SecretEnvsFilteringOverride() *bool {
 	return literalBoolEnv(configs.IsSecretEnvsFilteringKey)
 }
 
-// isDebugMode resolves debug mode before cobra parses the command line, so the
+// ValidateGlobalBoolEnvs returns an error when a global bool flag's bound
+// environment variable holds a non-bool value, matching the behaviour of the
+// previous framework (an empty value is allowed and treated as false).
+func ValidateGlobalBoolEnvs() error {
+	for _, envKey := range []string{configs.CIModeEnvKey, configs.DebugModeEnvKey} {
+		if val, ok := os.LookupEnv(envKey); ok && val != "" {
+			if _, err := strconv.ParseBool(val); err != nil {
+				return fmt.Errorf("could not parse %q as bool value for $%s", val, envKey)
+			}
+		}
+	}
+	return nil
+}
+
+// IsDebugMode resolves debug mode before cobra parses the command line, so the
 // logger can be configured up front. An explicit --debug flag wins (matching
 // the --ci/--pr precedence); otherwise the bound DEBUG env var decides.
-func isDebugMode(arguments []string) bool {
-	if value, set := debugFlagFromArgs(arguments); set {
+func IsDebugMode(arguments []string, debugFlagName string) bool {
+	if value, set := debugFlagFromArgs(arguments, debugFlagName); set {
 		return value
 	}
 	return os.Getenv(configs.DebugModeEnvKey) == "true"
@@ -133,9 +147,9 @@ func isDebugMode(arguments []string) bool {
 // cobra, returning set=false when it is absent or carries a non-bool value (in
 // which case cobra later reports the error). cobra re-parses the same flag for
 // help, analytics and the command itself; this early pass only feeds the logger.
-func debugFlagFromArgs(arguments []string) (value bool, set bool) {
+func debugFlagFromArgs(arguments []string, debugFlagName string) (value bool, set bool) {
 	for _, argument := range arguments {
-		if !isFlag(DebugModeKey, argument) {
+		if !IsFlag(debugFlagName, argument) {
 			continue
 		}
 		// "-flag x" syntax is not supported for boolean flags, so only the bare
@@ -151,7 +165,7 @@ func debugFlagFromArgs(arguments []string) (value bool, set bool) {
 	return
 }
 
-func isFlag(name, arg string) bool {
+func IsFlag(name, arg string) bool {
 	return arg == "--"+name || arg == "-"+name ||
 		strings.HasPrefix(arg, "--"+name+"=") || strings.HasPrefix(arg, "-"+name+"=")
 }

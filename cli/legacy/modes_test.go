@@ -1,4 +1,4 @@
-package cli
+package legacy
 
 import (
 	"os"
@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	secretFilteringFlag = "secret-filtering"
+	debugModeKey        = "debug"
 )
 
 func secretFilteringTestCmd(t *testing.T, flag *bool) *cobra.Command {
@@ -34,7 +39,7 @@ func setEnv(t *testing.T, key, value string, set bool) {
 
 // run's --secret-filtering was never env-bound: the env is matched literally,
 // non-bool values are ignored (no abort), and the flag wins when set.
-func Test_runSecretFilteringOverride(t *testing.T) {
+func Test_RunSecretFilteringOverride(t *testing.T) {
 	tests := []struct {
 		name   string
 		flag   *bool
@@ -54,21 +59,22 @@ func Test_runSecretFilteringOverride(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setEnv(t, configs.IsSecretFilteringKey, tt.env, tt.envSet)
-			assert.Equal(t, tt.want, runSecretFilteringOverride(secretFilteringTestCmd(t, tt.flag)))
+			assert.Equal(t, tt.want, RunSecretFilteringOverride(secretFilteringTestCmd(t, tt.flag), secretFilteringFlag))
 		})
 	}
 }
 
 // trigger's --secret-filtering was env-bound: the env is parsed with ParseBool,
-// an empty value is false, and unset falls through. (The non-bool abort path
-// calls os.Exit and is exercised by the integration tests, not here.)
-func Test_secretFilteringFlagOverride(t *testing.T) {
+// an empty value is false, and unset falls through. A non-bool value returns an
+// error (the caller aborts).
+func Test_SecretFilteringFlagOverride(t *testing.T) {
 	tests := []struct {
-		name   string
-		flag   *bool
-		env    string
-		envSet bool
-		want   *bool
+		name    string
+		flag    *bool
+		env     string
+		envSet  bool
+		want    *bool
+		wantErr bool
 	}{
 		{name: "no flag, no env", want: nil},
 		{name: "env true", env: "true", envSet: true, want: pointers.NewBoolPtr(true)},
@@ -76,19 +82,26 @@ func Test_secretFilteringFlagOverride(t *testing.T) {
 		{name: "env 0 parses to false", env: "0", envSet: true, want: pointers.NewBoolPtr(false)},
 		{name: "env 1 parses to true", env: "1", envSet: true, want: pointers.NewBoolPtr(true)},
 		{name: "env empty is false", env: "", envSet: true, want: pointers.NewBoolPtr(false)},
+		{name: "env non-bool returns error", env: "notabool", envSet: true, wantErr: true},
 		{name: "flag false wins over env true", flag: pointers.NewBoolPtr(false), env: "true", envSet: true, want: pointers.NewBoolPtr(false)},
 		{name: "flag true wins", flag: pointers.NewBoolPtr(true), want: pointers.NewBoolPtr(true)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setEnv(t, configs.IsSecretFilteringKey, tt.env, tt.envSet)
-			assert.Equal(t, tt.want, secretFilteringFlagOverride(secretFilteringTestCmd(t, tt.flag)))
+			got, err := SecretFilteringFlagOverride(secretFilteringTestCmd(t, tt.flag), secretFilteringFlag)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 // secret-envs-filtering has no flag and was never env-bound: literal match only.
-func Test_secretEnvsFilteringOverride(t *testing.T) {
+func Test_SecretEnvsFilteringOverride(t *testing.T) {
 	tests := []struct {
 		name   string
 		env    string
@@ -104,14 +117,14 @@ func Test_secretEnvsFilteringOverride(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setEnv(t, configs.IsSecretEnvsFilteringKey, tt.env, tt.envSet)
-			assert.Equal(t, tt.want, secretEnvsFilteringOverride())
+			assert.Equal(t, tt.want, SecretEnvsFilteringOverride())
 		})
 	}
 }
 
 // debug mode is resolved before cobra parses: an explicit --debug flag wins,
 // otherwise the DEBUG env (matched literally) decides.
-func Test_isDebugMode(t *testing.T) {
+func Test_IsDebugMode(t *testing.T) {
 	tests := []struct {
 		name   string
 		args   []string
@@ -133,7 +146,7 @@ func Test_isDebugMode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setEnv(t, configs.DebugModeEnvKey, tt.env, tt.envSet)
-			assert.Equalf(t, tt.want, isDebugMode(tt.args), "isDebugMode(%v) env=%q", tt.args, tt.env)
+			assert.Equalf(t, tt.want, IsDebugMode(tt.args, debugModeKey), "IsDebugMode(%v) env=%q", tt.args, tt.env)
 		})
 	}
 }

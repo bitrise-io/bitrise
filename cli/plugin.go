@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/spf13/cobra"
@@ -33,11 +34,11 @@ func showSubcommandHelp(cmd *cobra.Command) {
 // non-global-flag token is not a known command, so e.g. `bitrise run a:b` stays
 // a run invocation rather than being treated as a plugin.
 func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool) {
-	i := commandTokenIndex(rawArgs)
+	i := legacy.CommandTokenIndex(rawArgs, globalFlagNames)
 	if i == len(rawArgs) {
 		return "", nil, false
 	}
-	if isKnownCommand(root, rawArgs[i]) {
+	if legacy.IsKnownCommand(root, rawArgs[i]) {
 		return "", nil, false
 	}
 	// Pass the args from the command token onward (not globals-stripped) so that
@@ -49,7 +50,7 @@ func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool
 func runPlugin(root *cobra.Command, rawArgs []string, pluginName string, pluginArgs []string) {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 
-	applyGlobalFlagsFromArgs(root, rawArgs)
+	legacy.ApplyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
 	if err := before(root, nil); err != nil {
 		failf(err.Error())
 	}

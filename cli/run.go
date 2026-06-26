@@ -15,6 +15,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/cli/containermanager"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -66,7 +67,7 @@ func init() {
 	// run's --secret-filtering, unlike trigger's, was never bound to the
 	// BITRISE_SECRET_FILTERING env var, so it is intentionally not markEnvVar'd
 	// (analytics report it as set only from the command line) and its env is
-	// matched literally — see runSecretFilteringOverride.
+	// matched literally — see legacy.RunSecretFilteringOverride.
 	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
 
 	addJSONParamsFlags(flags)
@@ -372,10 +373,10 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 		workflowToRunID = args[0]
 	}
 
-	prGlobalFlagPtr := prModeFlagOverride(cmd)
-	ciGlobalFlagPtr := ciModeFlagOverride(cmd)
-	secretFiltering := runSecretFilteringOverride(cmd)
-	secretEnvsFiltering := secretEnvsFilteringOverride()
+	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
+	ciGlobalFlagPtr := legacy.CIModeFlagOverride(cmd, CIKey)
+	secretFiltering := legacy.RunSecretFilteringOverride(cmd, secretFilteringFlag)
+	secretEnvsFiltering := legacy.SecretEnvsFilteringOverride()
 
 	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
 	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
@@ -19,7 +20,7 @@ func Run() {
 	// Because logs might be printed before processing the run command args,
 	// we need to manually parse the logger configuration.
 	isRunCommand, logFormat := loggerParameters(os.Args[1:])
-	debugMode := isDebugMode(os.Args[1:])
+	debugMode := legacy.IsDebugMode(os.Args[1:], DebugModeKey)
 
 	loggerType := log.ConsoleLogger
 	if isRunCommand && string(logFormat) != "" {
@@ -62,7 +63,9 @@ func Run() {
 		globalTracker.Wait()
 	}()
 
-	validateGlobalBoolEnvs()
+	if err := legacy.ValidateGlobalBoolEnvs(); err != nil {
+		failf(err.Error())
+	}
 
 	rootCmd := newRootCommand()
 
@@ -80,7 +83,7 @@ func Run() {
 		return
 	}
 
-	normalized := normalizeLegacyArgs(rawArgs, rootCmd)
+	normalized := legacy.NormalizeLegacyArgs(rawArgs, rootCmd)
 
 	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 	// An unknown top-level command is not a plugin and not a known command, so
@@ -110,7 +113,7 @@ func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.L
 		// -flag x  // non-boolean flags only
 		// One or two dashes may be used; they are equivalent.
 		// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-		if isFlag(OutputFormatKey, argument) {
+		if legacy.IsFlag(OutputFormatKey, argument) {
 			var value string
 			components := strings.Split(argument, "=")
 
@@ -187,20 +190,6 @@ func before(cmd *cobra.Command, _ []string) error {
 	registerSteplibOfflineMode(isOfflineMode)
 
 	return nil
-}
-
-// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-// validateGlobalBoolEnvs aborts when a global bool flag's bound environment
-// variable holds a non-bool value, matching the behaviour of the previous
-// framework (an empty value is allowed and treated as false).
-func validateGlobalBoolEnvs() {
-	for _, envKey := range []string{configs.CIModeEnvKey, configs.DebugModeEnvKey} {
-		if val, ok := os.LookupEnv(envKey); ok && val != "" {
-			if _, err := strconv.ParseBool(val); err != nil {
-				failf("could not parse %q as bool value for $%s", val, envKey)
-			}
-		}
-	}
 }
 
 func failf(format string, args ...interface{}) {

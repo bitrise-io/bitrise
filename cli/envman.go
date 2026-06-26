@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +32,7 @@ var envmanCommand = &cobra.Command{
 // (the first non-global-flag token is "envman") and, if so, returns the args
 // that follow it, to be forwarded verbatim.
 func envmanPassthrough(rawArgs []string) ([]string, bool) {
-	i := commandTokenIndex(rawArgs)
+	i := legacy.CommandTokenIndex(rawArgs, globalFlagNames)
 	if i < len(rawArgs) && rawArgs[i] == envmanCommand.Name() {
 		return rawArgs[i+1:], true
 	}
@@ -39,7 +40,7 @@ func envmanPassthrough(rawArgs []string) ([]string, bool) {
 }
 
 func runEnvman(root *cobra.Command, rawArgs []string, envmanArgs []string) {
-	applyGlobalFlagsFromArgs(root, rawArgs)
+	legacy.ApplyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
 	if err := before(root, nil); err != nil {
 		failf(err.Error())
 	}

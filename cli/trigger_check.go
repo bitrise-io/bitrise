@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
@@ -91,7 +92,7 @@ func triggerCheck(cmd *cobra.Command, args []string) error {
 
 	warnings := []string{}
 
-	prGlobalFlagPtr := prModeFlagOverride(cmd)
+	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
 
 	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
 	if triggerPattern == "" && len(args) > 0 {

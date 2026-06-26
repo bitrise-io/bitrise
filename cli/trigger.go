@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
@@ -25,7 +26,7 @@ func init() {
 	addConfigAndInventoryFlags(flags)
 	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
 	// trigger's --secret-filtering was bound to BITRISE_SECRET_FILTERING (urfave
-	// EnvVar): a non-bool env value aborts. See secretFilteringFlagOverride.
+	// EnvVar): a non-bool env value aborts. See legacy.SecretFilteringFlagOverride.
 	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
 	markEnvVar(flags, secretFilteringFlag, configs.IsSecretFilteringKey)
 	// END MIGRATION PERIOD COMPATIBILITY
@@ -59,10 +60,13 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 func trigger(cmd *cobra.Command, args []string) error {
 	logCommandParameters(cmd)
 
-	prGlobalFlagPtr := prModeFlagOverride(cmd)
-	ciGlobalFlagPtr := ciModeFlagOverride(cmd)
-	secretFiltering := secretFilteringFlagOverride(cmd)
-	secretEnvsFiltering := secretEnvsFilteringOverride()
+	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
+	ciGlobalFlagPtr := legacy.CIModeFlagOverride(cmd, CIKey)
+	secretFiltering, err := legacy.SecretFilteringFlagOverride(cmd, secretFilteringFlag)
+	if err != nil {
+		failf(err.Error())
+	}
+	secretEnvsFiltering := legacy.SecretEnvsFilteringOverride()
 
 	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
 	if triggerPattern == "" && len(args) > 0 {
