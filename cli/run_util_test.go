@@ -76,8 +76,8 @@ func TestIsSecretFiltering(t *testing.T) {
 
 func TestIsPRMode(t *testing.T) {
 	t.Run("Should be false for: prGlobalFlag: nil, prModeEnv: '', prIDEnv: ''", func(t *testing.T) {
-		setEnv(t, configs.PRModeEnvKey, "", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
@@ -85,8 +85,8 @@ func TestIsPRMode(t *testing.T) {
 	})
 
 	t.Run("Should be true for: prGlobalFlag: true, prModeEnv: '', prIDEnv: ''", func(t *testing.T) {
-		setEnv(t, configs.PRModeEnvKey, "", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
@@ -102,8 +102,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -119,8 +119,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "false", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "false")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -136,8 +136,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "true", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "ID", true)
+		t.Setenv(configs.PRModeEnvKey, "true")
+		t.Setenv(configs.PullRequestIDEnvKey, "ID")
 
 		pr, err := isPRMode(pointers.NewBoolPtr(false), inventory.Envs)
 		require.NoError(t, err)
@@ -153,8 +153,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
@@ -170,8 +170,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "true", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "true")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -187,8 +187,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "false", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "some", true)
+		t.Setenv(configs.PRModeEnvKey, "false")
+		t.Setenv(configs.PullRequestIDEnvKey, "some")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -204,8 +204,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -221,8 +221,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "false", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "false")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -238,8 +238,8 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.PRModeEnvKey, "false", true)
-		setEnv(t, configs.PullRequestIDEnvKey, "", true)
+		t.Setenv(configs.PRModeEnvKey, "false")
+		t.Setenv(configs.PullRequestIDEnvKey, "")
 
 		pr, err := isPRMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
@@ -249,7 +249,7 @@ envs:
 
 func TestIsCIMode(t *testing.T) {
 	t.Run("Should be false for: ciGlobalFlag: nil, ciModeEnv: 'false'", func(t *testing.T) {
-		setEnv(t, configs.CIModeEnvKey, "false", true)
+		t.Setenv(configs.CIModeEnvKey, "false")
 
 		ci, err := isCIMode(nil, []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
@@ -257,7 +257,7 @@ func TestIsCIMode(t *testing.T) {
 	})
 
 	t.Run("Should be true for: ciGlobalFlag: true, ciModeEnv: 'false'", func(t *testing.T) {
-		setEnv(t, configs.CIModeEnvKey, "", true)
+		t.Setenv(configs.CIModeEnvKey, "")
 
 		ci, err := isCIMode(pointers.NewBoolPtr(true), []envmanModels.EnvironmentItemModel{})
 		require.NoError(t, err)
@@ -272,7 +272,7 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.CIModeEnvKey, "false", true)
+		t.Setenv(configs.CIModeEnvKey, "false")
 
 		ci, err := isCIMode(pointers.NewBoolPtr(false), inventory.Envs)
 		require.NoError(t, err)
@@ -287,7 +287,7 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.CIModeEnvKey, "", true)
+		t.Setenv(configs.CIModeEnvKey, "")
 
 		ci, err := isCIMode(pointers.NewBoolPtr(true), inventory.Envs)
 		require.NoError(t, err)
@@ -302,7 +302,7 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.CIModeEnvKey, "true", true)
+		t.Setenv(configs.CIModeEnvKey, "true")
 
 		ci, err := isCIMode(nil, inventory.Envs)
 		require.NoError(t, err)
@@ -317,7 +317,7 @@ envs:
 		inventory, err := bitrise.InventoryModelFromYAMLBytes([]byte(inventoryStr))
 		require.NoError(t, err)
 
-		setEnv(t, configs.CIModeEnvKey, "", true)
+		t.Setenv(configs.CIModeEnvKey, "")
 
 		ci, err := isCIMode(nil, inventory.Envs)
 		require.NoError(t, err)

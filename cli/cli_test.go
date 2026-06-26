@@ -1,14 +1,12 @@
 package cli
 
 import (
-	"os"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_loggerParameters(t *testing.T) {
@@ -253,15 +251,4 @@ func Test_unknownFlagPassthroughEnabledOnWholeTree(t *testing.T) {
 		}
 	}
 	check(newRootCommand())
-}
-
-// setEnv sets or, when set is false, unsets an env var for the duration of the
-// test (t.Setenv registers the original value for restoration; unset cases then
-// remove it so os.LookupEnv reports it as absent during the test).
-func setEnv(t *testing.T, key, value string, set bool) {
-	t.Helper()
-	t.Setenv(key, value)
-	if !set {
-		require.NoError(t, os.Unsetenv(key))
-	}
 }
