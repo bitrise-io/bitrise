@@ -376,7 +376,7 @@ func (r WorkflowRunner) activateStep(
 
 	activationStartedAt := time.Now()
 	activator := newStepActivator()
-	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, isStepLibOfflineMode)
 	r.tracker.SendStepActivationEvent(
 		activatedStep.ActivationType,
 		stepIDData.IDorURI,
@@ -390,6 +390,15 @@ func (r WorkflowRunner) activateStep(
 	if err != nil {
 		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepDir, "", err)
 	}
+
+	// Fill the presentation step info (shown in the step header boxes) from stepman's result.
+	// Since stepman v0.21.3 this is populated for every activation type, so no guard is needed.
+	// ID and Title are left as newStepInfoPtr seeded them (the bitrise.yml reference, e.g. "./"
+	// for a path step) so we keep the relative ref rather than stepman's absolute path.
+	stepInfoPtr.Version = activatedStep.StepInfo.Version
+	stepInfoPtr.LatestVersion = activatedStep.StepInfo.LatestVersion
+	stepInfoPtr.OriginalVersion = activatedStep.StepInfo.OriginalVersion
+	stepInfoPtr.GroupInfo = activatedStep.StepInfo.GroupInfo
 
 	// Fill step info with default step info, if exist
 	mergedStep := step

@@ -1,0 +1,53 @@
+format_version: "11"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  # No workflow title -> the step.yml title is merged in, per activation type.
+  # path: "path::./" -> "Local Title From Step YML"
+  path_merged_title:
+    steps:
+    - path::./: {}
+
+  # steplib: "script" -> "Script"
+  steplib_merged_title:
+    steps:
+    - script:
+        inputs:
+        - content: echo "steplib step ran"
+
+  # git: "git::...steps-script.git@master" -> "Script"
+  git_merged_title:
+    steps:
+    - git::https://github.com/bitrise-steplib/steps-script.git@master:
+        inputs:
+        - content: echo "git step ran"
+
+  # Title source matrix, (step.yml title) x (workflow title):
+  # SET x SET -> workflow title wins.
+  explicit_title:
+    steps:
+    - path::./:
+        title: Explicit Workflow Title
+
+  # EMPTY x SET -> workflow title is shown.
+  workflow_title_no_step_title:
+    steps:
+    - path::./step_no_title:
+        title: Workflow Title Without Step Title
+
+  # EMPTY x EMPTY -> nothing to merge, falls back to the reference ("path::./step_no_title").
+  # (SET x EMPTY is covered by *_merged_title above.)
+  no_title_at_all:
+    steps:
+    - path::./step_no_title: {}
+
+  # Activation fails (missing path), no title -> falls back to the reference, build fails.
+  activation_error:
+    steps:
+    - path::./this-path-does-not-exist: {}
+
+  # Activation fails (missing path) but a workflow title is set -> the failing step keeps that title.
+  activation_error_with_title:
+    steps:
+    - path::./this-path-does-not-exist:
+        title: Title For A Failing Step
