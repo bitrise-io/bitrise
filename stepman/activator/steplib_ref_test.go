@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/require"
 )
@@ -193,8 +192,7 @@ func BenchmarkActivateSteplibRefStep(b *testing.B) {
 					b.Errorf("failed to create dir for step.yml: %s", err)
 				}
 
-				stepInfoPtr := new(models.StepInfoModel)
-				got, gotErr := ActivateSteplibRefStep(logger, tt.id, stepYMLCopyPth, tmpDir, tt.didStepLibUpdateInWorkflow, tt.isOfflineMode, stepInfoPtr)
+				got, gotErr := ActivateSteplibRefStep(logger, tt.id, stepYMLCopyPth, tmpDir, tt.didStepLibUpdateInWorkflow, tt.isOfflineMode)
 				if gotErr != nil {
 					if !tt.wantErr {
 						b.Errorf("ActivateSteplibRefStep() failed: %v", gotErr)
@@ -205,12 +203,10 @@ func BenchmarkActivateSteplibRefStep(b *testing.B) {
 					b.Fatal("ActivateSteplibRefStep() succeeded unexpectedly")
 				}
 
-				want := ActivatedStep{
-					StepYMLPath:      tmpDir + "/current_step.yml",
-					ActivationType:   ActivationTypeSteplibSource,
-					DidStepLibUpdate: !tt.didStepLibUpdateInWorkflow,
-				}
-				require.Equal(b, want, got)
+				require.Equal(b, tmpDir+"/current_step.yml", got.StepYMLPath)
+				require.Equal(b, ActivationTypeSteplibSource, got.ActivationType)
+				require.Equal(b, !tt.didStepLibUpdateInWorkflow, got.DidStepLibUpdate)
+				require.Equal(b, tt.id.IDorURI, got.StepInfo.ID)
 			}
 		})
 	}
