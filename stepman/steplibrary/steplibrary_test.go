@@ -75,10 +75,10 @@ func TestSteplib_getStepVersionInfo(t *testing.T) {
 	}
 
 	client := &Client{
-		log:         nil,
-		steplibURI:  "https://steplib.example",
-		api:         newFakeAPI(),
-		fileManager: nil,
+		log:          nil,
+		inventoryURL: "https://steplib.example",
+		api:          newFakeAPI(),
+		fileManager:  nil,
 	}
 
 	for name, tc := range cases {

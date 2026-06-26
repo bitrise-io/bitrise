@@ -11,11 +11,10 @@ import (
 )
 
 type Client struct {
-	log stepman.Logger
-	// steplibURI is set by the `default_step_lib_source` property in bitrise.yml
-	steplibURI  string
-	api         API
-	fileManager fileutil.FileManager
+	log          stepman.Logger
+	inventoryURL string
+	api          API
+	fileManager  fileutil.FileManager
 }
 
 type ActivateOutputPaths struct {
@@ -26,14 +25,14 @@ type ActivateOutputPaths struct {
 // the base URL the V2 inventory JSON is fetched from.
 func New(log stepman.Logger, steplibURI, inventoryURL string, fileManager fileutil.FileManager) *Client {
 	return &Client{
-		log:         log,
-		steplibURI:  steplibURI,
-		api:         NewHTTPAPI(inventoryURL, httpfetch.NewClient(log)),
-		fileManager: fileManager,
+		log:          log,
+		inventoryURL: inventoryURL,
+		api:          NewHTTPAPI(inventoryURL, httpfetch.NewClient(log)),
+		fileManager:  fileManager,
 	}
 }
 
-func (c *Client) Activate(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivateResult, error) {
+func (c *Client) FetchStepMetadata(ctx context.Context, stepID, version string, outputPaths ActivateOutputPaths) (ActivateResult, error) {
 	stepInfo, resolved, err := c.getStepVersionInfo(ctx, stepID, version)
 	if err != nil {
 		return ActivateResult{}, fmt.Errorf("resolve step version: %w", err)

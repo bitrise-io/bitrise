@@ -30,7 +30,7 @@ func (c *Client) getStepVersionInfo(ctx context.Context, stepID, version string)
 		return models.StepInfoModel{}, ResolvedStepVersion{}, fmt.Errorf("fetching available step IDs: %w", err)
 	}
 	if !slices.Contains(allSteps, stepID) {
-		return models.StepInfoModel{}, ResolvedStepVersion{}, fmt.Errorf("%s steplib does not contain %s step", c.steplibURI, stepID)
+		return models.StepInfoModel{}, ResolvedStepVersion{}, fmt.Errorf("%s steplib does not contain %s step", c.inventoryURL, stepID)
 	}
 
 	latestVersions, err := c.api.GetLatestStepVersions(ctx, stepID)
@@ -50,7 +50,7 @@ func (c *Client) getStepVersionInfo(ctx context.Context, stepID, version string)
 
 	//nolint:exhaustruct // Step and DefinitionPth aren't surfaced by the v2 API yet
 	return models.StepInfoModel{
-		Library:         c.steplibURI,
+		Library:         c.inventoryURL,
 		ID:              stepID,
 		Version:         resolvedVersion,
 		OriginalVersion: version,
@@ -74,14 +74,14 @@ func (c *Client) resolveVersion(ctx context.Context, stepID, version string, con
 			return "", fmt.Errorf("fetching all versions of `%s`: %w", stepID, err)
 		}
 		if !slices.Contains(allVersions, resolved) {
-			return "", fmt.Errorf("%s steplib does not contain %s step %s version", c.steplibURI, stepID, resolved)
+			return "", fmt.Errorf("%s steplib does not contain %s step %s version", c.inventoryURL, stepID, resolved)
 		}
 		return resolved, nil
 	case models.MajorLocked:
 		majorKey := strconv.FormatUint(constraint.Version.Major, 10)
 		v, ok := latestVersions.LatestByMajor[majorKey]
 		if !ok {
-			return "", fmt.Errorf("%s steplib does not contain %s step with major version %s", c.steplibURI, stepID, majorKey)
+			return "", fmt.Errorf("%s steplib does not contain %s step with major version %s", c.inventoryURL, stepID, majorKey)
 		}
 		return v, nil
 	case models.MinorLocked:
@@ -91,7 +91,7 @@ func (c *Client) resolveVersion(ctx context.Context, stepID, version string, con
 		}
 		resolved, err := resolveMinorLocked(allVersions, constraint.Version)
 		if err != nil {
-			return "", fmt.Errorf("%s steplib: %w", c.steplibURI, err)
+			return "", fmt.Errorf("%s steplib: %w", c.inventoryURL, err)
 		}
 		return resolved, nil
 	default:
