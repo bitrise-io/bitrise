@@ -9,10 +9,12 @@ import (
 )
 
 // logLine is a single structured log message emitted by the CLI in JSON output
-// mode. We only care about the level and the (normalized) message text.
+// mode. Message is normalized (used for matching/dedup); Raw is the original
+// text with only ANSI stripped (shown in the report so diffs carry real values).
 type logLine struct {
 	Level   string
 	Message string
+	Raw     string
 }
 
 // rawJSONLine mirrors the CLI's JSON log schema (log/corelog/json_logger.go).
@@ -49,9 +51,15 @@ func parseCLILogs(raw string) []logLine {
 		if msg == "" {
 			continue
 		}
-		out = append(out, logLine{Level: r.Level, Message: msg})
+		out = append(out, logLine{Level: r.Level, Message: msg, Raw: rawText(r.Message)})
 	}
 	return out
+}
+
+// rawText strips ANSI and trailing whitespace but keeps the real values
+// (paths, durations, URLs) so the report shows actual log content.
+func rawText(s string) string {
+	return strings.TrimSpace(reANSI.ReplaceAllString(s, ""))
 }
 
 // isNoise drops cosmetic and non-activation lines that would swamp the diff:
@@ -65,7 +73,12 @@ func isNoise(msg string) bool {
 	if strings.HasPrefix(t, "Spec read from YML:") {
 		return true
 	}
-	// Box-drawing / separator rows of the step+summary tables.
+	// Box-drawing / separator rows and the cosmetic step + run-summary table
+	// rows ("| ✓ | … | 4.14 sec |", "| Total runtime: … |"). The stepman
+	// activation logs we care about are plain messages, never table rows.
+	if strings.HasPrefix(t, "|") || strings.HasPrefix(t, "+--") {
+		return true
+	}
 	if strings.Trim(t, "+-| ") == "" {
 		return true
 	}

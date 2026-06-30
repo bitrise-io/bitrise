@@ -41,7 +41,10 @@ func gitCloneURL() string {
 
 // pathVariant selects which stepman activation path a cell exercises.
 //
-//	v1-source:      legacy local-steplib path, source fetch (no precompiled support)
+//	v1-source:      legacy local-steplib path, source fetch
+//	v1-precompiled: legacy path with the precompiled flag on. The prod v1 steplib
+//	                step.yml carries an executables block, so this downloads the
+//	                prebuilt binary just like v2-precompiled.
 //	v2-source:      API path, source fetch
 //	v2-precompiled: API path, precompiled-binary fetch (falls back to source if
 //	                the step has no prebuilt executable — e.g. bash steps)
@@ -53,6 +56,7 @@ type pathVariant struct {
 
 var variants = []pathVariant{
 	{name: "v1-source", useAPI: false, precompiled: false},
+	{name: "v1-precompiled", useAPI: false, precompiled: true},
 	{name: "v2-source", useAPI: true, precompiled: false},
 	{name: "v2-precompiled", useAPI: true, precompiled: true},
 }

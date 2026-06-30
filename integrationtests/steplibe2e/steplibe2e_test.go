@@ -49,7 +49,7 @@ func TestSteplibActivationMatrix(t *testing.T) {
 				versionRef:   v.version,
 				v1Status:     statusOf(v1),
 			}
-			for _, variant := range []string{"v2-source", "v2-precompiled"} {
+			for _, variant := range []string{"v1-precompiled", "v2-source", "v2-precompiled"} {
 				v2 := results[cellName(s.id, v.label, variant)]
 				v1Only, v2Only := diffLogs(v1.logs, v2.logs)
 				cmp.pairs = append(cmp.pairs, pairDiff{
@@ -63,7 +63,33 @@ func TestSteplibActivationMatrix(t *testing.T) {
 		}
 	}
 
-	path, err := writeReport(comparisons, runStatus)
+	// Failure-case coverage: each negative case must fail to activate through
+	// both paths. Capture how v1 and v2 report the failure.
+	v1srcVariant := pathVariant{name: "v1-source", useAPI: false, precompiled: false}
+	v2srcVariant := pathVariant{name: "v2-source", useAPI: true, precompiled: false}
+	var failRows []failureRow
+	for _, fc := range failureCases() {
+		fc := fc
+		t.Run("fail/"+fc.name, func(t *testing.T) {
+			v1 := runCell(fc.cell(v1srcVariant))
+			v2 := runCell(fc.cell(v2srcVariant))
+			// Verdict from the process exit (reliable: catches graceful errors,
+			// config errors, and crashes); message from the structured event.
+			assert.Error(t, v1.runErr, "v1 activation should fail for %s (%s)", fc.name, fc.desc)
+			assert.Error(t, v2.runErr, "v2 activation should fail for %s (%s)", fc.name, fc.desc)
+			failRows = append(failRows, failureRow{
+				name:      fc.name,
+				desc:      fc.desc,
+				ref:       fc.cell(v1srcVariant).stepRef(),
+				v1Failed:  v1.runErr != nil,
+				v1Message: failureMessage(v1),
+				v2Failed:  v2.runErr != nil,
+				v2Message: failureMessage(v2),
+			})
+		})
+	}
+
+	path, err := writeReport(comparisons, failRows, runStatus)
 	require.NoError(t, err, "write report")
 	t.Logf("steplib log parity report written to: %s", path)
 }
