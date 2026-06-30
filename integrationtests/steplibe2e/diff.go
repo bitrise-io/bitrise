@@ -37,19 +37,21 @@ func uniqueMissing(lines []logLine, other map[string]bool) []logLine {
 
 // pairDiff is the log diff between v1-source and one v2 variant for a step+version.
 type pairDiff struct {
-	v2Variant string  // "v2-source" or "v2-precompiled"
-	v2Status  string  // "OK" / "FAILED: ..." for that v2 cell
+	v2Variant string    // "v2-source" or "v2-precompiled"
+	v2Status  string    // "OK" / "FAILED: ..." for that v2 cell
+	v2Logs    []logLine // full captured bitrise_cli logs of the v2 variant
 	v1Only    []logLine // logged by v1-source, not by the v2 variant
 	v2Only    []logLine // logged by the v2 variant, not by v1-source
 }
 
-// comparison holds, for one step+version, the v1-source baseline status and the
-// diffs of each v2 variant against it.
+// comparison holds, for one step+version, the v1-source baseline status, its
+// full logs, and the diffs of each v2 variant against it.
 type comparison struct {
 	step         string
 	versionLabel string
 	versionRef   string
 	v1Status     string
+	v1Logs       []logLine
 	pairs        []pairDiff
 }
 

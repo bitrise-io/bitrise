@@ -48,6 +48,7 @@ func TestSteplibActivationMatrix(t *testing.T) {
 				versionLabel: v.label,
 				versionRef:   v.version,
 				v1Status:     statusOf(v1),
+				v1Logs:       v1.logs,
 			}
 			for _, variant := range []string{"v1-precompiled", "v2-source", "v2-precompiled"} {
 				v2 := results[cellName(s.id, v.label, variant)]
@@ -55,6 +56,7 @@ func TestSteplibActivationMatrix(t *testing.T) {
 				cmp.pairs = append(cmp.pairs, pairDiff{
 					v2Variant: variant,
 					v2Status:  statusOf(v2),
+					v2Logs:    v2.logs,
 					v1Only:    v1Only,
 					v2Only:    v2Only,
 				})
@@ -92,6 +94,10 @@ func TestSteplibActivationMatrix(t *testing.T) {
 	path, err := writeReport(comparisons, failRows, runStatus)
 	require.NoError(t, err, "write report")
 	t.Logf("steplib log parity report written to: %s", path)
+
+	htmlPath, err := writeHTMLReport(comparisons, failRows, runStatus)
+	require.NoError(t, err, "write HTML report")
+	t.Logf("steplib log parity HTML report written to: %s", htmlPath)
 }
 
 func statusOf(r cellResult) string {
