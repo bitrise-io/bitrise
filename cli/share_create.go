@@ -5,16 +5,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shareCreateCommand = &cobra.Command{
-	Use:   "create",
-	Short: "Create your change - add it to your own copy of the collection.",
-	RunE:  create,
-}
+func newShareCreateCommand() *cobra.Command {
+	shareCreateCommand := &cobra.Command{
+		Use:   "create",
+		Short: "Create your change - add it to your own copy of the collection.",
+		RunE:  create,
+	}
 
-func init() {
 	shareCreateCommand.Flags().String(TagKey, "", "Git (version) tag.")
 	shareCreateCommand.Flags().String(GitKey, "", "Git clone url of the step repository.")
 	shareCreateCommand.Flags().String(StepIDKey, "", "ID of the step.")
+
+	return shareCreateCommand
 }
 
 func create(cmd *cobra.Command, _ []string) error {

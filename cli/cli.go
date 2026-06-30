@@ -169,7 +169,12 @@ func initLogger(arguments []string) {
 
 func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType) {
 	for i, argument := range arguments {
+		// The run command is reachable both as the legacy top-level `run` alias
+		// and as the canonical `local run`.
 		if argument == "run" {
+			isRunCommand = true
+		}
+		if argument == "local" && i+1 < len(arguments) && arguments[i+1] == "run" {
 			isRunCommand = true
 		}
 

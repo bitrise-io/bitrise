@@ -5,10 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shareAuditCommand = &cobra.Command{
-	Use:   "audit",
-	Short: "Validates the step collection.",
-	RunE:  shareAudit,
+func newShareAuditCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "audit",
+		Short: "Validates the step collection.",
+		RunE:  shareAudit,
+	}
 }
 
 func shareAudit(cmd *cobra.Command, _ []string) error {

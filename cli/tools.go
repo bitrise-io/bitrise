@@ -64,10 +64,11 @@ const (
 	toolsListFormatFlagUsage = `Output format. Options: plaintext, json`
 )
 
-var toolsInfoSubcommand = &cobra.Command{
-	Use:   toolsInfoCommandName + " [--active] [--format FORMAT]",
-	Short: "Show information about installed or active tools.",
-	Long: `Show information about installed or active tools.
+func newToolsCommand() *cobra.Command {
+	toolsInfoSubcommand := &cobra.Command{
+		Use:   toolsInfoCommandName + " [--active] [--format FORMAT]",
+		Short: "Show information about installed or active tools.",
+		Long: `Show information about installed or active tools.
 
 Show installed tool versions. Use --active to show only tools currently active in the shell context.
 
@@ -75,20 +76,20 @@ EXAMPLES:
    bitrise tools info
    bitrise tools info --active
    bitrise tools info --active --format json`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
-		if err := toolsInfo(cmd); err != nil {
-			log.Errorf("Failed to get tool info: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
+			if err := toolsInfo(cmd); err != nil {
+				log.Errorf("Failed to get tool info: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsInstallSubcommand = &cobra.Command{
-	Use:   toolsInstallSubcommandName + " [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]",
-	Short: "Install a specific tool version",
-	Long: `Install a specific version of a tool using the configured tool provider.
+	toolsInstallSubcommand := &cobra.Command{
+		Use:   toolsInstallSubcommandName + " [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]",
+		Short: "Install a specific tool version",
+		Long: `Install a specific version of a tool using the configured tool provider.
 
 TOOL: tool name (e.g., nodejs, ruby, python, go, etc.)
 VERSION: specific version (20.10.0), prefix (22), latest, or installed.
@@ -97,20 +98,20 @@ EXAMPLES:
    bitrise tools install nodejs 20.10.0
    bitrise tools install nodejs 22:latest
    eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		logCommandParameters(cmd)
-		if err := toolsInstall(cmd, args); err != nil {
-			log.Errorf("Tool install failed: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logCommandParameters(cmd)
+			if err := toolsInstall(cmd, args); err != nil {
+				log.Errorf("Tool install failed: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsLatestSubcommand = &cobra.Command{
-	Use:   toolsLatestSubcommandName + " [--provider PROVIDER] [--format FORMAT] <TOOL> [VERSION[:SUFFIX]]",
-	Short: "Query the latest version of a tool",
-	Long: `Query the latest version of a tool, optionally matching a version prefix.
+	toolsLatestSubcommand := &cobra.Command{
+		Use:   toolsLatestSubcommandName + " [--provider PROVIDER] [--format FORMAT] <TOOL> [VERSION[:SUFFIX]]",
+		Short: "Query the latest version of a tool",
+		Long: `Query the latest version of a tool, optionally matching a version prefix.
 
 By default, queries latest available release. Use :installed suffix for latest installed version.
 
@@ -119,20 +120,20 @@ EXAMPLES:
    bitrise tools latest nodejs 20
    bitrise tools latest python 3.12:installed
    bitrise tools latest ruby installed`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		logCommandParameters(cmd)
-		if err := toolsLatest(cmd, args); err != nil {
-			log.Errorf("Tool latest failed: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logCommandParameters(cmd)
+			if err := toolsLatest(cmd, args); err != nil {
+				log.Errorf("Tool latest failed: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsSetupSubcommand = &cobra.Command{
-	Use:   toolsSetupSubcommandName + " [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
-	Short: "Install tools from version files or bitrise.yml",
-	Long: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json, package.json) or bitrise.yml.
+	toolsSetupSubcommand := &cobra.Command{
+		Use:   toolsSetupSubcommandName + " [--provider PROVIDER] [--fast-install true|false] [--config FILE] [--format FORMAT] [--workflow WORKFLOW]",
+		Short: "Install tools from version files or bitrise.yml",
+		Long: `Install tools from version files (e.g. .tool-versions, .node-version, .nvmrc, .fvmrc, .fvm/fvm_config.json, package.json) or bitrise.yml.
 
 EXAMPLES:
    bitrise tools setup --config .tool-versions
@@ -145,38 +146,38 @@ EXAMPLES:
 
    Setup and activate in current shell session:
    eval "$(bitrise tools setup --config .tool-versions --format bash)"`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
-		if err := toolsSetup(cmd); err != nil {
-			log.Errorf("Tool setup failed: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
+			if err := toolsSetup(cmd); err != nil {
+				log.Errorf("Tool setup failed: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsCatalogSubcommand = &cobra.Command{
-	Use:   toolsCatalogSubcommandName + " [--format FORMAT]",
-	Short: "List officially supported tools",
-	Long: `List officially supported tools
+	toolsCatalogSubcommand := &cobra.Command{
+		Use:   toolsCatalogSubcommandName + " [--format FORMAT]",
+		Short: "List officially supported tools",
+		Long: `List officially supported tools
 
 EXAMPLES:
    bitrise tools catalog
    bitrise tools catalog --format json`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
-		if err := toolsListTools(cmd); err != nil {
-			log.Errorf("Failed to list tools: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
+			if err := toolsListTools(cmd); err != nil {
+				log.Errorf("Failed to list tools: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsVersionsSubcommand = &cobra.Command{
-	Use:   toolsVersionsSubcommandName + " TOOL [VERSION_PREFIX] [--format FORMAT]",
-	Short: "List available versions for a supported tool",
-	Long: `List available versions for a supported tool
+	toolsVersionsSubcommand := &cobra.Command{
+		Use:   toolsVersionsSubcommandName + " TOOL [VERSION_PREFIX] [--format FORMAT]",
+		Short: "List available versions for a supported tool",
+		Long: `List available versions for a supported tool
 
 TOOL: tool name (e.g. nodejs, golang, ruby)
 VERSION_PREFIX: optional version prefix to filter by (e.g. 22, 3.12)
@@ -185,23 +186,22 @@ EXAMPLES:
    bitrise tools versions nodejs
    bitrise tools versions nodejs 22
    bitrise tools versions nodejs --format json`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		logCommandParameters(cmd)
-		if err := toolsVersions(cmd, args); err != nil {
-			log.Errorf("Failed to list versions: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			logCommandParameters(cmd)
+			if err := toolsVersions(cmd, args); err != nil {
+				log.Errorf("Failed to list versions: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-var toolsCommand = &cobra.Command{
-	Use:   "tools",
-	Short: "Manage available tools from inside the workflow.",
-	RunE:  requireKnownSubcommand,
-}
+	toolsCommand := &cobra.Command{
+		Use:   "tools",
+		Short: "Manage available tools from inside the workflow.",
+		RunE:  requireKnownSubcommand,
+	}
 
-func init() {
 	toolsCommand.AddCommand(
 		toolsInfoSubcommand,
 		toolsSetupSubcommand,
@@ -237,6 +237,8 @@ func init() {
 	versionsFlags := toolsVersionsSubcommand.Flags()
 	versionsFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", `Tool provider to use (asdf/mise) (default: "mise")`)
 	versionsFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsListFormatFlagUsage)
+
+	return toolsCommand
 }
 
 func toolsSetup(cmd *cobra.Command) error {

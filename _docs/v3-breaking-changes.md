@@ -65,3 +65,43 @@ default**. A non-bool env value is now an error.
   now enables debug mode). Non-bool values for these already errored and still do.
 - An empty value for any of these env vars is treated as unset (the CLI falls back
   to the inventory-based default) rather than as `false`.
+
+## Command reorganization
+
+The commands were regrouped by use case under `local`, `yml`, and `step` parent
+commands. The old top-level names continue to work as hidden aliases, so existing
+scripts keep running — only `trigger-check` was removed outright.
+
+### `trigger-check` removed
+
+- **`bitrise trigger-check` no longer exists.** It had not been updated with newer
+  trigger features for a long time and was unused.
+  *Migrate:* remove `bitrise trigger-check` invocations from scripts. There is no
+  direct replacement; `bitrise trigger` still runs a workflow by trigger params.
+
+### `trigger` hidden
+
+- **`bitrise trigger` is now hidden** from help output. It still works for backward
+  compatibility but is deprecated.
+
+### Commands grouped under `local`, `yml`, and `step`
+
+- **The canonical command paths changed.** Each command now lives under a parent
+  that reflects its use case. The old top-level names are kept as hidden aliases,
+  so they keep working, but help and documentation refer to the new paths.
+
+  | Old (still works) | New canonical path |
+  | --- | --- |
+  | `bitrise run` | `bitrise local run` |
+  | `bitrise init` | `bitrise local init` |
+  | `bitrise setup` | `bitrise local setup` |
+  | `bitrise tools …` | `bitrise local tools …` |
+  | `bitrise workflows` | `bitrise local workflows` |
+  | `bitrise validate` | `bitrise yml validate` |
+  | `bitrise merge` | `bitrise yml merge` |
+  | `bitrise steps list-cached` | `bitrise step list-cached` |
+  | `bitrise steps preload` | `bitrise step preload` |
+  | `bitrise share …` | `bitrise step share …` |
+
+  *Migrate:* no action required for existing scripts. New usage and documentation
+  should prefer the grouped paths.
