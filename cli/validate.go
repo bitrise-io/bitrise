@@ -88,29 +88,13 @@ func (v ValidateResponseModel) JSON() string {
 func (v ValidateResponseModel) String() string {
 	if v.Error != "" {
 		msg := fmt.Sprintf("%s: %s", colorstring.Red("Error"), v.Error)
-		if len(v.Warnings) > 0 {
-			msg += "\nWarning(s):\n"
-			for i, warning := range v.Warnings {
-				msg += fmt.Sprintf("- %s", warning)
-				if i != len(v.Warnings)-1 {
-					msg += "\n"
-				}
-			}
-		}
+		msg += formatWarnings(v.Warnings)
 		return msg
 	}
 
 	if v.Data != nil {
 		msg := v.Data.String()
-		if len(v.Warnings) > 0 {
-			msg += "\nWarning(s):\n"
-			for i, warning := range v.Warnings {
-				msg += fmt.Sprintf("- %s", warning)
-				if i != len(v.Warnings)-1 {
-					msg += "\n"
-				}
-			}
-		}
+		msg += formatWarnings(v.Warnings)
 		return msg
 	}
 
@@ -130,15 +114,7 @@ func (v ValidationModel) String() string {
 			msg += fmt.Sprintf("\nError: %s", colorstring.Red(config.Error))
 		}
 
-		if len(config.Warnings) > 0 {
-			msg += "\nWarning(s):\n"
-			for i, warning := range config.Warnings {
-				msg += fmt.Sprintf("- %s", warning)
-				if i != len(config.Warnings)-1 {
-					msg += "\n"
-				}
-			}
-		}
+		msg += formatWarnings(config.Warnings)
 	}
 
 	if v.Secrets != nil {
@@ -155,6 +131,20 @@ func (v ValidationModel) String() string {
 		}
 	}
 
+	return msg
+}
+
+func formatWarnings(warnings []string) string {
+	if len(warnings) == 0 {
+		return ""
+	}
+	msg := "\nWarning(s):\n"
+	for i, warning := range warnings {
+		msg += fmt.Sprintf("- %s", warning)
+		if i != len(warnings)-1 {
+			msg += "\n"
+		}
+	}
 	return msg
 }
 
@@ -243,13 +233,10 @@ func validate(cmd *cobra.Command, _ []string) error {
 		format = output.FormatRaw
 	}
 
-	var log Logger
-	log = NewDefaultRawLogger()
-	if format == output.FormatRaw {
-		log = NewDefaultRawLogger()
-	} else if format == output.FormatJSON {
+	var log Logger = NewDefaultRawLogger()
+	if format == output.FormatJSON {
 		log = NewDefaultJSONLogger()
-	} else {
+	} else if format != output.FormatRaw {
 		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
 		os.Exit(1)
 	}

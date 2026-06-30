@@ -15,7 +15,7 @@ var shareStartCommand = &cobra.Command{
 
 func init() {
 	shareStartCommand.Flags().StringP(CollectionKey, "c", "", "Collection of step.")
-	markEnvVar(shareStartCommand.Flags(), CollectionKey, CollectionPathEnvKey)
+	setFlagEnvVar(shareStartCommand.Flags(), CollectionKey, CollectionPathEnvKey)
 }
 
 func start(cmd *cobra.Command, _ []string) error {

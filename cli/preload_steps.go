@@ -58,12 +58,8 @@ func init() {
 	pf.String("maintainer", bitriseMaintainer, "Maintainer of the steps to list or preload")
 	pf.Uint("majors", 2, "Include X latest major versions")
 	pf.Uint("minors", 1, "Include X latest minor versions for each major version")
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// minors-since/patches-since were UintFlag in urfave but read via c.Int; they
-	// stay uint flags and are cast to int at use (see preloadSteps).
 	pf.Uint("minors-since", 2, "Include latest patch version of minors that were released in the last X months")
 	pf.Uint("patches-since", 1, "Include all patch version that were released in the last X months")
-	// END MIGRATION PERIOD COMPATIBILITY
 }
 
 func listCachedSteps(cmd *cobra.Command) error {
@@ -77,15 +73,18 @@ func listCachedSteps(cmd *cobra.Command) error {
 	}
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	if err := stepman.ListCachedSteps(steplibURL, maintaner, logger); err != nil {
-		return err
-	}
-	return nil
+	return stepman.ListCachedSteps(steplibURL, maintaner, logger)
 }
 
 func preloadSteps(cmd *cobra.Command) error {
 	steplibURL, _ := cmd.Flags().GetString("steplib-url")
+	if steplibURL == "" {
+		steplibURL = bitriseStepLibURL
+	}
 	maintaner, _ := cmd.Flags().GetString("maintainer")
+	if maintaner == "" {
+		maintaner = bitriseMaintainer
+	}
 
 	opts := preload.CacheOpts{}
 	numMajor, _ := cmd.Flags().GetUint("majors")
@@ -107,13 +106,13 @@ func preloadSteps(cmd *cobra.Command) error {
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	log.Info("Preloading...")
-	log.Info("Steplib: %s", steplibURL)
+	log.Infof("Steplib: %s", steplibURL)
 	if maintaner != "" {
 		log.Infof("Filtering Steps by maintaner: %s", maintaner)
 	}
 	log.Printf("Options: %#v\n", opts)
 
-	if err := preload.CacheSteps(logger, bitriseStepLibURL, bitriseMaintainer, opts); err != nil {
+	if err := preload.CacheSteps(logger, steplibURL, maintaner, opts); err != nil {
 		return err
 	}
 

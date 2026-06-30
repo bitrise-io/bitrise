@@ -14,7 +14,6 @@ func redactStepInputs(environment map[string]string, inputs []models.Environment
 	redactedStepInputs := make(map[string]string)
 	redactedOriginalInputs := map[string]string{}
 
-	// Filter inputs from enviroments
 	for _, input := range inputs {
 		inputKey, originalValue, err := input.GetKeyValuePair()
 		if err != nil {
@@ -60,6 +59,5 @@ func redactWithSecrets(inputValue string, secrets []string) (string, error) {
 		return "", fmt.Errorf("failed to redact secrets, closing the stream failed: %s", err)
 	}
 
-	redactedValue := dstBuf.String()
-	return redactedValue, nil
+	return dstBuf.String(), nil
 }
