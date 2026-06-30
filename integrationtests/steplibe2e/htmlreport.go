@@ -20,34 +20,54 @@ func htmlReportPath() string {
 }
 
 const htmlStyle = `<style>
-  :root { color-scheme: light dark; }
-  body { font-family: -apple-system, system-ui, sans-serif; line-height: 1.5; max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-  h1 { font-size: 1.6rem; } h2 { margin-top: 2rem; border-bottom: 1px solid #8884; padding-bottom: .3rem; }
-  h3 { margin-top: 1.5rem; } h4 { margin: .8rem 0 .3rem; color: #888; font-weight: 600; }
-  code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .82rem; }
-  .badges { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0; }
-  .badge { padding: .1rem .5rem; border-radius: .4rem; font-size: .78rem; white-space: nowrap; }
-  .ok { background: #1a7f3722; color: #1a7f37; } .fail { background: #cf222e22; color: #cf222e; }
-  .diff { overflow-x: auto; background: #8881; border-radius: .4rem; padding: .5rem .7rem; margin: 0; }
-  .diff .del { color: #cf222e; display: block; white-space: pre-wrap; }
-  .diff .add { color: #1a7f37; display: block; white-space: pre-wrap; }
-  .lvl { opacity: .6; }
-  .nodiff { color: #888; font-style: italic; }
-  details { margin: .3rem 0; } summary { cursor: pointer; color: #888; font-size: .82rem; }
-  details pre { overflow-x: auto; background: #8881; border-radius: .4rem; padding: .5rem .7rem; white-space: pre-wrap; }
-  .ref { color: #888; font-weight: normal; font-size: .85rem; }
-  .errs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .errs pre { overflow-x: auto; background: #8881; border-radius: .4rem; padding: .5rem .7rem; white-space: pre-wrap; }
-  @media (max-width: 700px) { .errs { grid-template-columns: 1fr; } }
+  :root {
+    color-scheme: light;
+    --ink: #1b2027; --ground: #fcfdfe; --surface: #eef2f6; --line: #d8dee6;
+    --muted: #5b6675; --accent: #2f6c9e; --del: #c0392b; --add: #1e7d4f;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: var(--sans); color: var(--ink); background: var(--ground);
+    line-height: 1.55; max-width: 1040px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem;
+    font-variant-numeric: tabular-nums; }
+  h1 { font-size: 1.7rem; letter-spacing: -.01em; margin: 0 0 .4rem; text-wrap: balance; }
+  .lede { color: var(--muted); max-width: 68ch; margin: 0 0 1rem; }
+  h2 { font-size: 1.22rem; letter-spacing: -.01em; margin: 2.6rem 0 1rem;
+    padding-bottom: .35rem; border-bottom: 2px solid var(--accent); }
+  h3 { font-size: 1.05rem; margin: 1.8rem 0 .5rem; font-family: var(--mono); }
+  h4 { margin: 1rem 0 .35rem; font-size: .72rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+  code { font-family: var(--mono); font-size: .85em; }
+  .badges { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 .2rem; }
+  .badge { padding: .12rem .55rem; border-radius: 999px; font-size: .76rem; font-weight: 600;
+    white-space: nowrap; border: 1px solid transparent; }
+  .ok { background: #e7f3ec; color: var(--add); border-color: #bfe0cd; }
+  .fail { background: #fbe9e7; color: var(--del); border-color: #f0c5be; }
+  pre { font-family: var(--mono); font-size: .8rem; margin: 0; overflow-x: auto;
+    background: var(--surface); border: 1px solid var(--line); border-radius: .5rem; padding: .6rem .8rem; }
+  .diff { border-left: 3px solid var(--accent); }
+  .diff .del, .diff .add { display: block; white-space: pre-wrap; word-break: break-word; }
+  .diff .del { color: var(--del); } .diff .add { color: var(--add); }
+  .lvl { opacity: .55; }
+  .nodiff { color: var(--muted); font-style: italic; margin: .2rem 0; }
+  details { margin: .4rem 0; }
+  summary { cursor: pointer; color: var(--accent); font-size: .8rem; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  details pre { margin-top: .35rem; white-space: pre-wrap; word-break: break-word; }
+  .ref { color: var(--muted); font-weight: 400; font-size: .85rem; font-family: var(--mono); }
+  .errs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .4rem; }
+  .errs pre { white-space: pre-wrap; word-break: break-word; }
+  @media (max-width: 720px) { .errs { grid-template-columns: 1fr; } }
 </style>`
 
 func writeHTMLReport(comparisons []comparison, failures []failureRow, runStatus []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(htmlStyle)
 	b.WriteString(`<h1>Steplib v1 vs v2 — activation log parity</h1>`)
-	b.WriteString(`<p>Each step+version was activated through the legacy (v1) and API (v2) paths in JSON+debug log mode. ` +
+	b.WriteString(`<p class="lede">Each step+version was activated through the legacy (v1) and API (v2) paths in JSON+debug log mode. ` +
 		`Log lines below are the raw <code>bitrise_cli</code> messages (ANSI stripped); the diff matches them by ` +
-		`level + a normalized form so timestamps/paths/durations don't create false diffs.</p>`)
+		`level + a normalized form so timestamps, paths and durations don't create false diffs.</p>`)
 
 	b.WriteString(`<h2>Matrix run status</h2><div class="badges">`)
 	for _, s := range runStatus {
