@@ -1,0 +1,74 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: other
+
+# End-to-end suite for the steplib v1 (legacy) vs v2 (API) activation paths.
+#
+# Builds the local bitrise CLI (optionally against a local stepman checkout, so
+# unreleased stepman logging changes can be tested), then runs the
+# integrationtests/steplibe2e matrix through that binary. The matrix activates a
+# curated set of steps across both paths × precompiled/source fetch × several
+# version forms, captures each run's structured (JSON) activation logs, diffs the
+# v1 vs v2 output, and writes steplib_log_parity_report.md to $BITRISE_DEPLOY_DIR.
+#
+# The matrix package is build-tagged `steplib_e2e` and hits live hosted steplib
+# infra, so it never runs in the normal integration test suite.
+#
+# Invoke (from the bitrise repo root):
+#   bitrise run --config bitrise_e2e_steplib.yml e2e-steplib
+# To test a local stepman checkout, also export STEPMAN_DIR:
+#   STEPMAN_DIR=/path/to/stepman bitrise run --config bitrise_e2e_steplib.yml e2e-steplib
+
+app:
+  envs:
+  - STEPLIB_E2E_API_URL: https://storage.googleapis.com/steplib-storage-dev
+  - BITRISE_BIN: /tmp/bitrise-e2e-steplib-bin
+
+workflows:
+  e2e-steplib:
+    title: Steplib v1 vs v2 activation e2e + log parity report
+    steps:
+    - script:
+        title: Build CLI (optional local stepman replace)
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            cd "$BITRISE_SOURCE_DIR"
+
+            # When STEPMAN_DIR is set, build the CLI against that local stepman
+            # checkout and restore the (vendored) module files afterwards so the
+            # working tree is left clean.
+            if [ -n "$STEPMAN_DIR" ]; then
+                trap 'git checkout -- go.mod go.sum vendor 2>/dev/null || true' EXIT
+                go mod edit -replace=github.com/bitrise-io/stepman="$STEPMAN_DIR"
+                go mod tidy
+                go mod vendor
+            fi
+
+            export CGO_ENABLED=0
+            go build -o "$BITRISE_BIN" .
+            "$BITRISE_BIN" --version
+            "$BITRISE_BIN" setup
+    - script:
+        title: Run steplib v1/v2 activation matrix
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            cd "$BITRISE_SOURCE_DIR/integrationtests"
+
+            export INTEGRATION_TEST_BINARY_PATH="$BITRISE_BIN"
+            export E2E_STEPLIB_API_URL="$STEPLIB_E2E_API_URL"
+            export BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR:-/tmp}"
+
+            # The matrix package imports nothing from stepman directly; it drives
+            # the prebuilt CLI binary, so no module replace is needed here.
+            test_failed=0
+            go test -v -p 1 -count=1 -timeout 30m --tags steplib_e2e ./steplibe2e/ || test_failed=1
+
+            report="$BITRISE_DEPLOY_DIR/steplib_log_parity_report.md"
+            echo "=== Log parity report ($report) ==="
+            cat "$report" || true
+
+            exit "$test_failed"
