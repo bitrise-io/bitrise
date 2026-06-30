@@ -116,6 +116,61 @@ func initLogger(arguments []string) {
 	}
 }
 
+// initLogger sets up the global logger up front, before cobra parses the args,
+// because log output can happen before the command itself runs.
+func initLogger(arguments []string) {
+	// For `--output-format=json` on the run command all logs are expected in JSON.
+	// Because logs might be printed before the run command args are processed, we
+	// parse the logger configuration manually here.
+	isRunCommand, logFormat := loggerParameters(arguments)
+	loggerType := log.ConsoleLogger
+	if isRunCommand && logFormat != "" {
+		loggerType = logFormat
+	}
+
+	// An explicit --debug flag wins (matching the --ci precedence); otherwise the
+	// bound DEBUG env decides. cobra re-parses the same flag later for help,
+	// analytics and the command itself; this early pass only feeds the logger.
+	// "--flag x" syntax is not supported for bool flags, so only the bare flag and
+	// the "--debug=x" form are accepted.
+	debugMode := false
+	debugSetByFlag := false
+	for _, argument := range arguments {
+		if !isFlag(DebugModeKey, argument) {
+			continue
+		}
+		if _, raw, ok := strings.Cut(argument, "="); ok {
+			if parsed, err := strconv.ParseBool(raw); err == nil {
+				debugMode, debugSetByFlag = parsed, true
+			}
+		} else {
+			debugMode, debugSetByFlag = true, true
+		}
+	}
+	if !debugSetByFlag {
+		debugMode, _ = strconv.ParseBool(os.Getenv(configs.DebugModeEnvKey))
+	}
+
+	log.InitGlobalLogger(log.LoggerOpts{
+		LoggerType:      loggerType,
+		Producer:        log.BitriseCLI,
+		DebugLogEnabled: debugMode,
+		Writer:          os.Stdout,
+		TimeProvider:    time.Now,
+	})
+
+	if debugMode {
+		// propagate to other tools (and our own log level) via env
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
+			failf("Failed to set DEBUG env, error: %s", err)
+		}
+		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
+			failf("Failed to set LOGLEVEL env, error: %s", err)
+		}
+		configs.IsDebugMode = true
+	}
+}
+
 func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType) {
 	for i, argument := range arguments {
 		// The run command is reachable both as the legacy top-level `run` alias
