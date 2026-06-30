@@ -132,13 +132,3 @@ func parseTriggerParams(
 	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
 	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag, "", bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
 }
-
-func parseTriggerCheckParams(
-	triggerPattern,
-	pushBranch, prSourceBranch, prTargetBranch string, prReadyState models.PullRequestReadyState, tag,
-	format,
-	bitriseConfigPath, bitriseConfigBase64Data,
-	inventoryPath, inventoryBase64Data,
-	jsonParams, base64JSONParams string) (RunAndTriggerParamsModel, error) {
-	return parseRunAndTriggerParams("", triggerPattern, pushBranch, prSourceBranch, prTargetBranch, prReadyState, tag, format, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, jsonParams, base64JSONParams)
-}

@@ -5,10 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shareFinishCommand = &cobra.Command{
-	Use:   "finish",
-	Short: "Finish up.",
-	RunE:  finish,
+func newShareFinishCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "finish",
+		Short: "Finish up.",
+		RunE:  finish,
+	}
 }
 
 func finish(cmd *cobra.Command, _ []string) error {

@@ -10,40 +10,42 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var initCommand = &cobra.Command{
-	Use:     "init",
-	Aliases: []string{"i"},
-	Short:   "Init bitrise config.",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
+func newInitCommand() *cobra.Command {
+	initCommand := &cobra.Command{
+		Use:     "init",
+		Aliases: []string{"i"},
+		Short:   "Init bitrise config.",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
 
-		logger := log.NewLogger(log.GetGlobalLoggerOpts())
-		if err := initConfig(cmd); err != nil {
+			logger := log.NewLogger(log.GetGlobalLoggerOpts())
+			if err := initConfig(cmd); err != nil {
 
-			// If the plugin is not installed yet run the bitrise setup first and try it again
-			perr, ok := err.(plugins.NotInstalledError)
-			if ok {
-				logger.Warn(perr)
-				logger.Print("Running setup to install the default plugins")
-				logger.Print()
+				// If the plugin is not installed yet run the bitrise setup first and try it again
+				perr, ok := err.(plugins.NotInstalledError)
+				if ok {
+					logger.Warn(perr)
+					logger.Print("Running setup to install the default plugins")
+					logger.Print()
 
-				if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false, false); err != nil {
-					return fmt.Errorf("setup failed, error: %s", err)
-				}
+					if err := bitrise.RunSetup(logger, version.VERSION, bitrise.SetupModeDefault, false, false); err != nil {
+						return fmt.Errorf("setup failed, error: %s", err)
+					}
 
-				if err := initConfig(cmd); err != nil {
+					if err := initConfig(cmd); err != nil {
+						failf(err.Error())
+					}
+				} else {
 					failf(err.Error())
 				}
-			} else {
-				failf(err.Error())
 			}
-		}
-		return nil
-	},
-}
+			return nil
+		},
+	}
 
-func init() {
 	initCommand.Flags().Bool("minimal", false, "creates empty bitrise config and secrets")
+
+	return initCommand
 }
 
 func initConfig(cmd *cobra.Command) error {

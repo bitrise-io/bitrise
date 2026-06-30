@@ -14,26 +14,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var workflowListCommand = &cobra.Command{
-	Use:   "workflows",
-	Short: "List of available workflows in config.",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
+func newWorkflowListCommand() *cobra.Command {
+	workflowListCommand := &cobra.Command{
+		Use:   "workflows",
+		Short: "List of available workflows in config.",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
 
-		if err := workflowList(cmd); err != nil {
-			log.Errorf("List of available workflows in config failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+			if err := workflowList(cmd); err != nil {
+				log.Errorf("List of available workflows in config failed, error: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-func init() {
 	workflowListCommand.Flags().StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	workflowListCommand.Flags().String(ConfigBase64Key, "", "base64 encoded config data.")
 	workflowListCommand.Flags().String(OuputFormatKey, "", "Output format. Accepted: raw, json.")
 	workflowListCommand.Flags().Bool("minimal", false, "Print summary of workflows only.")
 	workflowListCommand.Flags().Bool("id-only", false, "Print workflow ids only.")
+
+	return workflowListCommand
 }
 
 // WorkflowListOutputModel ...

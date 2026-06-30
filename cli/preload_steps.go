@@ -16,42 +16,38 @@ const (
 	bitriseMaintainer = "bitrise"
 )
 
-var stepsCommand = &cobra.Command{
-	Use:   "steps",
-	Short: "Manage Steps cache.",
-	RunE:  requireKnownSubcommand,
-}
+func newListCachedStepsCommand() *cobra.Command {
+	listCachedStepsCommand := &cobra.Command{
+		Use:   "list-cached",
+		Short: "List all the cached steps",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
 
-var listCachedStepsCommand = &cobra.Command{
-	Use:   "list-cached",
-	Short: "List all the cached steps",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
-
-		return listCachedSteps(cmd)
-	},
-}
-
-var preloadStepsCommand = &cobra.Command{
-	Use:   "preload",
-	Short: "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
-	Long:  fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineModeEnvKey),
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
-
-		if err := preloadSteps(cmd); err != nil {
-			log.Errorf("Preload failed: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
-
-func init() {
-	stepsCommand.AddCommand(listCachedStepsCommand, preloadStepsCommand)
+			return listCachedSteps(cmd)
+		},
+	}
 
 	listCachedStepsCommand.Flags().String("steplib-url", bitriseStepLibURL, "URL of the steplib to list or preload steps from")
 	listCachedStepsCommand.Flags().String("maintainer", bitriseMaintainer, "Maintainer of the steps to list or preload")
+
+	return listCachedStepsCommand
+}
+
+func newPreloadStepsCommand() *cobra.Command {
+	preloadStepsCommand := &cobra.Command{
+		Use:   "preload",
+		Short: "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
+		Long:  fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineModeEnvKey),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
+
+			if err := preloadSteps(cmd); err != nil {
+				log.Errorf("Preload failed: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
 	pf := preloadStepsCommand.Flags()
 	pf.String("steplib-url", bitriseStepLibURL, "URL of the steplib to list or preload steps from")
@@ -60,6 +56,8 @@ func init() {
 	pf.Uint("minors", 1, "Include X latest minor versions for each major version")
 	pf.Uint("minors-since", 2, "Include latest patch version of minors that were released in the last X months")
 	pf.Uint("patches-since", 1, "Include all patch version that were released in the last X months")
+
+	return preloadStepsCommand
 }
 
 func listCachedSteps(cmd *cobra.Command) error {
