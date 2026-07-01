@@ -122,8 +122,9 @@ func Test_SecretEnvsFilteringOverride(t *testing.T) {
 	}
 }
 
-// debug mode is resolved before cobra parses: an explicit --debug flag wins,
-// otherwise the DEBUG env (matched literally) decides.
+// debug mode is resolved before cobra parses: an explicit truthy --debug enables
+// it, otherwise the DEBUG env (matched literally) decides — so a set DEBUG=true
+// overrides an explicit --debug=false, matching the pre-cobra CLI.
 func Test_IsDebugMode(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -140,7 +141,7 @@ func Test_IsDebugMode(t *testing.T) {
 		{name: "Invalid value falls back to env", args: []string{"--debug=notabool"}, want: false},
 		{name: "Space syntax is not a bool flag", args: []string{"--debug true"}, want: false},
 		{name: "Env enables debug", args: []string{}, env: "true", envSet: true, want: true},
-		{name: "Explicit false wins over enabled env", args: []string{"--debug=false"}, env: "true", envSet: true, want: false},
+		{name: "Enabled env overrides explicit false", args: []string{"--debug=false"}, env: "true", envSet: true, want: true},
 		{name: "Explicit flag wins over disabled env", args: []string{"--debug"}, env: "false", envSet: true, want: true},
 	}
 	for _, tt := range tests {

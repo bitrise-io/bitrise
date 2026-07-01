@@ -201,7 +201,10 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 		wantPR    bool
 	}{
 		{
-			// The regression: a plugin's own --debug must not toggle bitrise debug.
+			// A plugin's own --debug after the command token must not set bitrise's
+			// persistent --debug flag (nor seed CI/PR). The early debug logger
+			// (legacy.IsDebugMode) scans unbounded and still reacts — a kept compat
+			// quirk that matches the pre-cobra CLI; it is not asserted here.
 			name:      "global-named flag after the command token is not applied to bitrise",
 			args:      []string{":plugin", "--debug"},
 			wantDebug: false,

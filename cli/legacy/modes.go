@@ -134,11 +134,23 @@ func ValidateGlobalBoolEnvs() error {
 }
 
 // IsDebugMode resolves debug mode before cobra parses the command line, so the
-// logger can be configured up front. An explicit --debug flag wins (matching
-// the --ci/--pr precedence); otherwise the bound DEBUG env var decides.
+// logger can be configured up front. An explicit truthy --debug enables it;
+// otherwise the bound DEBUG env var decides, so a set DEBUG=true still enables
+// debug mode even alongside an explicit --debug=false.
+//
+// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+// The correct precedence is "explicit flag wins" (matching --ci/--pr), but the
+// pre-cobra CLI let a set DEBUG=true env override an explicit --debug=false
+// (loggerParameters resolved the flag, then fell through to the env unless the
+// flag was truthy). Reproduced here so debug mode toggles identically; the next
+// major can make the flag win.
+//
+// The arg scan is intentionally unbounded (no command-token boundary), so a
+// plugin's or envman's own trailing --debug also toggles this early logger —
+// again matching the pre-cobra CLI. See debugFlagFromArgs.
 func IsDebugMode(arguments []string, debugFlagName string) bool {
-	if value, set := debugFlagFromArgs(arguments, debugFlagName); set {
-		return value
+	if value, set := debugFlagFromArgs(arguments, debugFlagName); set && value {
+		return true
 	}
 	return os.Getenv(configs.DebugModeEnvKey) == "true"
 }
