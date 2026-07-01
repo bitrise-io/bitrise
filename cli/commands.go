@@ -48,21 +48,31 @@ func newRootCommand() *cobra.Command {
 	setFlagEnvVar(rootCmd.PersistentFlags(), CIKey, configs.CIModeEnvKey)
 
 	rootCmd.AddCommand(
-		initCommand,
-		setupCommand,
-		stepsCommand,
-		toolsCommand,
+		newLocalCommand(),
+		newYMLCommand(),
+		newStepCommand(),
+
 		versionCommand,
-		validateCommand,
 		updateCommand,
-		runCommand,
-		triggerCheckCommand,
-		triggerCommand,
-		workflowListCommand,
-		shareCommand,
 		pluginCommand,
 		envmanCommand,
-		mergeConfigCommand,
+
+		// Deprecated, kept for backward compatibility but hidden (see trigger.go).
+		triggerCommand,
+	)
+
+	// Backward-compatible hidden aliases: the old top-level command names keep
+	// working while the canonical versions live under the local/yml/step groups.
+	rootCmd.AddCommand(
+		asHidden(newRunCommand()),
+		asHidden(newInitCommand()),
+		asHidden(newSetupCommand()),
+		asHidden(newToolsCommand()),
+		asHidden(newWorkflowListCommand()),
+		asHidden(newValidateCommand()),
+		asHidden(newMergeCommand()),
+		asHidden(newShareCommand()),
+		newLegacyStepsCommand(),
 	)
 
 	// Register the help command eagerly so it shows up in the command list
@@ -80,4 +90,9 @@ func newRootCommand() *cobra.Command {
 	})
 
 	return rootCmd
+}
+
+func asHidden(cmd *cobra.Command) *cobra.Command {
+	cmd.Hidden = true
+	return cmd
 }

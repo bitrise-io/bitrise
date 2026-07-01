@@ -7,15 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shareStartCommand = &cobra.Command{
-	Use:   "start",
-	Short: "Preparations for publishing.",
-	RunE:  start,
-}
+func newShareStartCommand() *cobra.Command {
+	shareStartCommand := &cobra.Command{
+		Use:   "start",
+		Short: "Preparations for publishing.",
+		RunE:  start,
+	}
 
-func init() {
 	shareStartCommand.Flags().StringP(CollectionKey, "c", "", "Collection of step.")
 	setFlagEnvVar(shareStartCommand.Flags(), CollectionKey, CollectionPathEnvKey)
+
+	return shareStartCommand
 }
 
 func start(cmd *cobra.Command, _ []string) error {

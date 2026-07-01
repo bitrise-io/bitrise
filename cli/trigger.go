@@ -16,7 +16,9 @@ var triggerCommand = &cobra.Command{
 	Use:     "trigger",
 	Aliases: []string{"t"},
 	Short:   "Triggers a specified Workflow.",
-	RunE:    trigger,
+	// Deprecated: kept for backward compatibility but hidden.
+	Hidden: true,
+	RunE:   trigger,
 }
 
 func init() {
@@ -191,4 +193,32 @@ func trigger(cmd *cobra.Command, args []string) error {
 	os.Exit(0)
 
 	return nil
+}
+
+func migratePatternToParams(params RunAndTriggerParamsModel, isPullRequestMode bool) RunAndTriggerParamsModel {
+	if isPullRequestMode {
+		params.PushBranch = ""
+		params.PRSourceBranch = params.TriggerPattern
+		params.PRTargetBranch = ""
+		params.Tag = ""
+	} else {
+		params.PushBranch = params.TriggerPattern
+		params.PRSourceBranch = ""
+		params.PRTargetBranch = ""
+		params.Tag = ""
+	}
+
+	params.TriggerPattern = ""
+
+	return params
+}
+
+// migrates deprecated params.TriggerPattern to params.PushBranch or params.PRSourceBranch based on isPullRequestMode
+// and returns the triggered workflow id
+func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerMapModel, params RunAndTriggerParamsModel, isPullRequestMode bool) (string, string, error) {
+	if params.TriggerPattern != "" {
+		params = migratePatternToParams(params, isPullRequestMode)
+	}
+
+	return triggerMap.FirstMatchingTarget(params.PushBranch, params.PRSourceBranch, params.PRTargetBranch, params.PRReadyState, params.Tag)
 }
