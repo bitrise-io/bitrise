@@ -21,9 +21,6 @@ func printInstalledPlugins(w io.Writer) {
 	if len(pluginList) == 0 {
 		return
 	}
-	if len(pluginList) == 0 {
-		return
-	}
 
 	plugins.SortByName(pluginList)
 	tw := tabwriter.NewWriter(w, 0, 8, 2, ' ', 0)
