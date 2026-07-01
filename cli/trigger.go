@@ -64,7 +64,7 @@ func trigger(cmd *cobra.Command, args []string) error {
 	ciGlobalFlagPtr := legacy.CIModeFlagOverride(cmd, CIKey)
 	secretFiltering, err := legacy.SecretFilteringFlagOverride(cmd, secretFilteringFlag)
 	if err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 	secretEnvsFiltering := legacy.SecretEnvsFilteringOverride()
 

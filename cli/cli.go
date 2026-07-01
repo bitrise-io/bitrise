@@ -64,7 +64,7 @@ func Run() {
 	}()
 
 	if err := legacy.ValidateGlobalBoolEnvs(); err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	rootCmd := newRootCommand()
@@ -96,7 +96,7 @@ func Run() {
 
 	rootCmd.SetArgs(normalized)
 	if err := rootCmd.Execute(); err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 }
 

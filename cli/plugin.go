@@ -52,7 +52,7 @@ func runPlugin(root *cobra.Command, rawArgs []string, pluginName string, pluginA
 
 	legacy.ApplyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
 	if err := before(root, nil); err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	logPluginCommandParameters(pluginName, pluginArgs)

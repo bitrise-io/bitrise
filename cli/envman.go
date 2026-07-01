@@ -42,7 +42,7 @@ func envmanPassthrough(rawArgs []string) ([]string, bool) {
 func runEnvman(root *cobra.Command, rawArgs []string, envmanArgs []string) {
 	legacy.ApplyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
 	if err := before(root, nil); err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	logCommandParameters(envmanCommand)
