@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 )
 
@@ -15,7 +16,7 @@ import (
 func printInstalledPlugins(w io.Writer) {
 	pluginList, err := plugins.InstalledPluginList()
 	if err != nil {
-		failf("Failed to list plugins, error: %s", err)
+		cmdutil.Failf("Failed to list plugins, error: %s", err)
 	}
 	if len(pluginList) == 0 {
 		return

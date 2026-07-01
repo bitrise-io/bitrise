@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
@@ -22,17 +23,18 @@ func Run() {
 	// This is needed for printInstalledPlugins in the root help output, which is
 	// evaluated before executing the command's PersistentPreRunE.
 	if err := plugins.InitPaths(); err != nil {
-		failf("Failed to initialize plugin path, error: %s", err)
+		cmdutil.Failf("Failed to initialize plugin path, error: %s", err)
 	}
 
-	globalTracker = analytics.NewDefaultTracker()
-	defer globalTracker.Wait()
+	tracker := analytics.NewDefaultTracker()
+	cmdutil.SetTracker(tracker)
+	defer tracker.Wait()
 
 	// Abort when a global bool flag's bound env var holds a non-bool value (an
 	// empty value is allowed and treated as unset).
 	for _, envKey := range []string{configs.CIModeEnvKey, configs.DebugModeEnvKey} {
-		if _, err := resolveBoolEnv(envKey); err != nil {
-			failf("%s", err)
+		if _, err := cmdutil.ResolveBoolEnv(envKey); err != nil {
+			cmdutil.Failf("%s", err)
 		}
 	}
 
@@ -53,7 +55,7 @@ func Run() {
 
 	rootCmd.SetArgs(rawArgs)
 	if err := rootCmd.Execute(); err != nil {
-		failf("%s", err)
+		cmdutil.Failf("%s", err)
 	}
 }
 
@@ -77,7 +79,7 @@ func initLogger(arguments []string) {
 	debugMode := false
 	debugSetByFlag := false
 	for _, argument := range arguments {
-		if !isFlag(DebugModeKey, argument) {
+		if !cmdutil.IsFlag(cmdutil.DebugModeKey, argument) {
 			continue
 		}
 		if _, raw, ok := strings.Cut(argument, "="); ok {
@@ -103,10 +105,10 @@ func initLogger(arguments []string) {
 	if debugMode {
 		// propagate to other tools (and our own log level) via env
 		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			failf("Failed to set DEBUG env, error: %s", err)
+			cmdutil.Failf("Failed to set DEBUG env, error: %s", err)
 		}
 		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
-			failf("Failed to set LOGLEVEL env, error: %s", err)
+			cmdutil.Failf("Failed to set LOGLEVEL env, error: %s", err)
 		}
 		configs.IsDebugMode = true
 	}
@@ -126,7 +128,7 @@ func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.L
 		// Long flags use the double-dash form only:
 		//   --output-format value
 		//   --output-format=value
-		if isFlag(OutputFormatKey, argument) {
+		if cmdutil.IsFlag(cmdutil.OutputFormatKey, argument) {
 			var value string
 			components := strings.Split(argument, "=")
 
@@ -159,8 +161,8 @@ func before(cmd *cobra.Command, _ []string) error {
 
 	// CI Mode check. The --ci flag is seeded from the CI env var when not set
 	// explicitly on the command line (an explicit --ci=false still wins).
-	isCI, _ := root.PersistentFlags().GetBool(CIKey)
-	if !root.PersistentFlags().Changed(CIKey) {
+	isCI, _ := root.PersistentFlags().GetBool(cmdutil.CIKey)
+	if !root.PersistentFlags().Changed(cmdutil.CIKey) {
 		if envCI, err := strconv.ParseBool(os.Getenv(configs.CIModeEnvKey)); err == nil {
 			isCI = envCI
 		}
@@ -169,21 +171,21 @@ func before(cmd *cobra.Command, _ []string) error {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			failf("Failed to set CI env, error: %s", err)
+			cmdutil.Failf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		failf("Failed to initialize required paths, error: %s", err)
+		cmdutil.Failf("Failed to initialize required paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
-	if isPR, _ := root.PersistentFlags().GetBool(PRKey); isPR {
+	if isPR, _ := root.PersistentFlags().GetBool(cmdutil.PRKey); isPR {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			failf("Failed to set PR env, error: %s", err)
+			cmdutil.Failf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
@@ -196,14 +198,8 @@ func before(cmd *cobra.Command, _ []string) error {
 	}
 
 	// want to access this key in setup command too
-	isOfflineMode := isSteplibOfflineMode()
-	registerSteplibOfflineMode(isOfflineMode)
+	isOfflineMode := cmdutil.IsSteplibOfflineMode()
+	cmdutil.RegisterSteplibOfflineMode(isOfflineMode)
 
 	return nil
-}
-
-func failf(format string, args ...interface{}) {
-	log.Errorf(format, args...)
-	globalTracker.Wait()
-	os.Exit(1)
 }
