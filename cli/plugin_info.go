@@ -62,6 +62,21 @@ func createPluginInfo(name string) (plugins.PluginInfoModel, error) {
 	return pluginInfo, nil
 }
 
+func loggerForFormat(cmd *cobra.Command) (Logger, error) {
+	format, _ := cmd.Flags().GetString(output.FormatKey)
+	if format == "" {
+		format = output.FormatRaw
+	}
+	if format != output.FormatRaw && format != output.FormatJSON {
+		showSubcommandHelp(cmd)
+		return nil, fmt.Errorf("invalid format: %s", format)
+	}
+	if format == output.FormatJSON {
+		return NewDefaultJSONLogger(), nil
+	}
+	return NewDefaultRawLogger(), nil
+}
+
 func pluginInfo(cmd *cobra.Command, args []string) error {
 	// Input validation
 	if len(args) == 0 {
@@ -75,23 +90,11 @@ func pluginInfo(cmd *cobra.Command, args []string) error {
 		return errors.New("plugin_name not defined")
 	}
 
-	format, _ := cmd.Flags().GetString(output.FormatKey)
-	if format == "" {
-		format = output.FormatRaw
-	}
-	if format != output.FormatRaw && format != output.FormatJSON {
-		showSubcommandHelp(cmd)
-		return fmt.Errorf("invalid format: %s", format)
+	logger, err := loggerForFormat(cmd)
+	if err != nil {
+		return err
 	}
 
-	var logger Logger
-	logger = NewDefaultRawLogger()
-	if format == output.FormatJSON {
-		logger = NewDefaultJSONLogger()
-	}
-	// ---
-
-	// Info
 	pluginInfo, err := createPluginInfo(name)
 	if err != nil {
 		return err

@@ -226,9 +226,7 @@ func init() {
 	setupFlags := toolsSetupSubcommand.Flags()
 	setupFlags.StringP(toolsProviderKey, toolsProviderShortKey, "", toolsProviderFlagUsage)
 	setupFlags.String(toolsFastInstallKey, "", `Override fast install setting (true/false). Fast install uses Lix (Nix) for faster installation. If not specified, uses the default for the used stack.`)
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// --config is a repeatable StringArray (repeat the flag, no comma-splitting),
-	// matching urfave's StringSlice semantics.
+	// --config is repeatable: repeat the flag rather than comma-splitting a single value.
 	setupFlags.StringArrayP(toolsConfigKey, toolsConfigShortKey, nil, toolsConfigFlagUsage)
 	setupFlags.StringP(toolsOutputFormatKey, toolsOutputFormatShortKey, outputFormatPlaintext, toolsActivationFormatFlagUsage)
 	setupFlags.StringP(toolsWorkflowKey, "w", "", "Workflow ID to use when installing from bitrise.yml (optional, uses global tools if not specified)")

@@ -73,15 +73,12 @@ func sendCommandInfo(command, subcommand string, flags []string) {
 	globalTracker.SendCommandInfo(command, subcommand, flags)
 }
 
-// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-// pflag has no EnvVar equivalent, so envVarAnnotation + markEnvVar reproduce
-// urfave's env bindings: help shows the [$ENV] hint (printRootHelp) and analytics
-// report a flag as set when its value comes from the environment. The next major
-// can drop this once env handling is reworked.
-// envVarAnnotation records the environment variable a flag is bound to.
+// envVarAnnotation records the environment variable a flag is bound to. The
+// binding drives both analytics (a flag is reported as set when its value comes
+// from the env) and the flag/env mode resolution (see resolveBoolFlagOrEnv).
 const envVarAnnotation = "bitrise_env_var"
 
-// markEnvVar binds a flag to an environment variable for analytics reporting.
-func markEnvVar(fs *pflag.FlagSet, name, envKey string) {
+// setFlagEnvVar binds a flag to an environment variable.
+func setFlagEnvVar(fs *pflag.FlagSet, name, envKey string) {
 	_ = fs.SetAnnotation(name, envVarAnnotation, []string{envKey})
 }

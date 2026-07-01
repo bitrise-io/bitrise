@@ -181,8 +181,7 @@ func workflowList(cmd *cobra.Command) error {
 		return fmt.Errorf("invalid format: %s", format)
 	}
 
-	var logger Logger
-	logger = NewDefaultRawLogger()
+	var logger Logger = NewDefaultRawLogger()
 	if format == output.FormatJSON {
 		logger = NewDefaultJSONLogger()
 	}

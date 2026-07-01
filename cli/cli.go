@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
@@ -16,60 +15,29 @@ import (
 
 // Run ...
 func Run() {
-	// In the case of `--output-format=json` flag is set for the run command, all the logs are expected in JSON format.
-	// Because logs might be printed before processing the run command args,
-	// we need to manually parse the logger configuration.
-	isRunCommand, logFormat := loggerParameters(os.Args[1:])
-	debugMode := legacy.IsDebugMode(os.Args[1:], DebugModeKey)
+	rawArgs := os.Args[1:]
 
-	loggerType := log.ConsoleLogger
-	if isRunCommand && string(logFormat) != "" {
-		loggerType = logFormat
-	}
+	initLogger(rawArgs)
 
-	// Global logger needs to be initialised before using any log function
-	opts := log.LoggerOpts{
-		LoggerType:      loggerType,
-		Producer:        log.BitriseCLI,
-		DebugLogEnabled: debugMode,
-		Writer:          os.Stdout,
-		TimeProvider:    time.Now,
-	}
-	log.InitGlobalLogger(opts)
-
-	if debugMode {
-		// set for other tools, as an ENV
-		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			failf("Failed to set DEBUG env, error: %s", err)
-
-		}
-
-		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
-			failf("Failed to set LOGLEVEL env, error: %s", err)
-
-		}
-
-		configs.IsDebugMode = true
-	}
-
-	// This is needed for the getPluginsList func in the root help output,
-	// which is evaluated before executing the command's PersistentPreRunE.
+	// This is needed for printInstalledPlugins in the root help output, which is
+	// evaluated before executing the command's PersistentPreRunE.
 	if err := plugins.InitPaths(); err != nil {
 		failf("Failed to initialize plugin path, error: %s", err)
 	}
 
 	globalTracker = analytics.NewDefaultTracker()
-	defer func() {
-		globalTracker.Wait()
-	}()
+	defer globalTracker.Wait()
 
-	if err := legacy.ValidateGlobalBoolEnvs(); err != nil {
-		failf("%s", err)
+	// Abort when a global bool flag's bound env var holds a non-bool value (an
+	// empty value is allowed and treated as unset).
+	for _, envKey := range []string{configs.CIModeEnvKey, configs.DebugModeEnvKey} {
+		if _, err := resolveBoolEnv(envKey); err != nil {
+			failf("%s", err)
+		}
 	}
 
 	rootCmd := newRootCommand()
 
-	rawArgs := os.Args[1:]
 	if pluginName, pluginArgs, isPlugin := detectPlugin(rootCmd, rawArgs); isPlugin {
 		runPlugin(rootCmd, rawArgs, pluginName, pluginArgs)
 		return
@@ -83,20 +51,64 @@ func Run() {
 		return
 	}
 
-	normalized := legacy.NormalizeLegacyArgs(rawArgs, rootCmd)
-
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// An unknown top-level command is not a plugin and not a known command, so
-	// cobra's Find returns an error. The previous framework printed the app help
-	// and exited 1 in that case.
-	if _, _, err := rootCmd.Find(normalized); err != nil {
-		printRootHelp(rootCmd)
-		failf("")
-	}
-
-	rootCmd.SetArgs(normalized)
+	rootCmd.SetArgs(rawArgs)
 	if err := rootCmd.Execute(); err != nil {
 		failf("%s", err)
+	}
+}
+
+// initLogger sets up the global logger up front, before cobra parses the args,
+// because log output can happen before the command itself runs.
+func initLogger(arguments []string) {
+	// For `--output-format=json` on the run command all logs are expected in JSON.
+	// Because logs might be printed before the run command args are processed, we
+	// parse the logger configuration manually here.
+	isRunCommand, logFormat := loggerParameters(arguments)
+	loggerType := log.ConsoleLogger
+	if isRunCommand && logFormat != "" {
+		loggerType = logFormat
+	}
+
+	// An explicit --debug flag wins (matching the --ci precedence); otherwise the
+	// bound DEBUG env decides. cobra re-parses the same flag later for help,
+	// analytics and the command itself; this early pass only feeds the logger.
+	// "--flag x" syntax is not supported for bool flags, so only the bare flag and
+	// the "--debug=x" form are accepted.
+	debugMode := false
+	debugSetByFlag := false
+	for _, argument := range arguments {
+		if !isFlag(DebugModeKey, argument) {
+			continue
+		}
+		if _, raw, ok := strings.Cut(argument, "="); ok {
+			if parsed, err := strconv.ParseBool(raw); err == nil {
+				debugMode, debugSetByFlag = parsed, true
+			}
+		} else {
+			debugMode, debugSetByFlag = true, true
+		}
+	}
+	if !debugSetByFlag {
+		debugMode, _ = strconv.ParseBool(os.Getenv(configs.DebugModeEnvKey))
+	}
+
+	log.InitGlobalLogger(log.LoggerOpts{
+		LoggerType:      loggerType,
+		Producer:        log.BitriseCLI,
+		DebugLogEnabled: debugMode,
+		Writer:          os.Stdout,
+		TimeProvider:    time.Now,
+	})
+
+	if debugMode {
+		// propagate to other tools (and our own log level) via env
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
+			failf("Failed to set DEBUG env, error: %s", err)
+		}
+		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
+			failf("Failed to set LOGLEVEL env, error: %s", err)
+		}
+		configs.IsDebugMode = true
 	}
 }
 
@@ -106,14 +118,10 @@ func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.L
 			isRunCommand = true
 		}
 
-		// syntax
-		// -flag
-		// --flag   // double dashes are also permitted
-		// -flag=x
-		// -flag x  // non-boolean flags only
-		// One or two dashes may be used; they are equivalent.
-		// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-		if legacy.IsFlag(OutputFormatKey, argument) {
+		// Long flags use the double-dash form only:
+		//   --output-format value
+		//   --output-format=value
+		if isFlag(OutputFormatKey, argument) {
 			var value string
 			components := strings.Split(argument, "=")
 
@@ -175,13 +183,10 @@ func before(cmd *cobra.Command, _ []string) error {
 		configs.IsPullRequestMode = true
 	}
 
-	pullReqID := os.Getenv(configs.PullRequestIDEnvKey)
-	if pullReqID != "" {
+	if os.Getenv(configs.PullRequestIDEnvKey) != "" {
 		configs.IsPullRequestMode = true
 	}
-
-	IsPR := os.Getenv(configs.PRModeEnvKey)
-	if IsPR == "true" {
+	if os.Getenv(configs.PRModeEnvKey) == "true" {
 		configs.IsPullRequestMode = true
 	}
 

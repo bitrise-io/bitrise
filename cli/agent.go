@@ -52,35 +52,17 @@ func registerAgentOverrides(dirs configs.BitriseDirs) error {
 	return nil
 }
 
-func runBuildStartHooks(hooks configs.AgentHooks) error {
-	if hooks.DoOnBuildStart == "" {
+func runBuildHook(hookCmd, label string) error {
+	if hookCmd == "" {
 		return nil
 	}
 
 	log.Print()
-	log.Infof("Run build start hook")
-	log.Print(hooks.DoOnBuildStart)
+	log.Infof("Run %s hook", label)
+	log.Print(hookCmd)
 	log.Print()
 
-	cmd := exec.Command(hooks.DoOnBuildStart)
-	logger := log.NewLogger(log.GetGlobalLoggerOpts())
-	logWriter := logwriter.NewLogWriter(logger)
-	cmd.Stdout = logWriter
-	cmd.Stderr = logWriter
-	return cmd.Run()
-}
-
-func runBuildEndHooks(hooks configs.AgentHooks) error {
-	if hooks.DoOnBuildEnd == "" {
-		return nil
-	}
-
-	log.Print()
-	log.Infof("Run build end hook")
-	log.Print(hooks.DoOnBuildEnd)
-	log.Print()
-
-	cmd := exec.Command(hooks.DoOnBuildEnd)
+	cmd := exec.Command(hookCmd)
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logWriter := logwriter.NewLogWriter(logger)
 	cmd.Stdout = logWriter
