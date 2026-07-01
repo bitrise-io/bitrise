@@ -5,7 +5,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/stepman/activator"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 )
 
@@ -53,8 +52,6 @@ func (a stepActivator) activateStep(
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource != "" {
-		// The steplib activator mutates the passed *StepInfoModel in place, but the CLI now reads
-		// StepInfo from the returned ActivatedStep, so pass a throwaway to satisfy the signature.
 		activatedStep, err := activator.ActivateSteplibRefStep(
 			stepmanLogger,
 			stepIDData,
@@ -62,7 +59,6 @@ func (a stepActivator) activateStep(
 			workDir,
 			isStepLibUpdated,
 			isSteplibOfflineMode,
-			&stepmanModels.StepInfoModel{},
 		)
 		if err != nil {
 			// Note: we return the partial result on purpose because DidStepLibUpdate is important 
