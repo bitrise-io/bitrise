@@ -3,6 +3,7 @@ package cli
 import (
 	"testing"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -232,11 +233,11 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := newRootCommand()
-			applyGlobalFlagsFromArgs(root, tt.args, globalFlagNames)
+			cmdutil.ApplyGlobalFlagsFromArgs(root, tt.args, cmdutil.GlobalFlagNames)
 
-			debug, _ := root.PersistentFlags().GetBool(DebugModeKey)
-			ci, _ := root.PersistentFlags().GetBool(CIKey)
-			pr, _ := root.PersistentFlags().GetBool(PRKey)
+			debug, _ := root.PersistentFlags().GetBool(cmdutil.DebugModeKey)
+			ci, _ := root.PersistentFlags().GetBool(cmdutil.CIKey)
+			pr, _ := root.PersistentFlags().GetBool(cmdutil.PRKey)
 			assert.Equal(t, tt.wantDebug, debug, "debug")
 			assert.Equal(t, tt.wantCI, ci, "ci")
 			assert.Equal(t, tt.wantPR, pr, "pr")

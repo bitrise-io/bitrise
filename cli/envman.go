@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/spf13/cobra"
 )
@@ -19,9 +20,9 @@ var envmanCommand = &cobra.Command{
 	Short:              "Runs an envman command.",
 	DisableFlagParsing: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logCommandParameters(cmd)
+		cmdutil.LogCommandParameters(cmd)
 		if err := runCommandWith("envman", args); err != nil {
-			failf("Command failed, error: %s", err)
+			cmdutil.Failf("Command failed, error: %s", err)
 		}
 		return nil
 	},
@@ -31,7 +32,7 @@ var envmanCommand = &cobra.Command{
 // (the first non-global-flag token is "envman") and, if so, returns the args
 // that follow it, to be forwarded verbatim.
 func envmanPassthrough(rawArgs []string) ([]string, bool) {
-	i := commandTokenIndex(rawArgs, globalFlagNames)
+	i := cmdutil.CommandTokenIndex(rawArgs, cmdutil.GlobalFlagNames)
 	if i < len(rawArgs) && rawArgs[i] == envmanCommand.Name() {
 		return rawArgs[i+1:], true
 	}
@@ -39,15 +40,15 @@ func envmanPassthrough(rawArgs []string) ([]string, bool) {
 }
 
 func runEnvman(root *cobra.Command, rawArgs []string, envmanArgs []string) {
-	applyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
+	cmdutil.ApplyGlobalFlagsFromArgs(root, rawArgs, cmdutil.GlobalFlagNames)
 	if err := before(root, nil); err != nil {
-		failf("%s", err)
+		cmdutil.Failf("%s", err)
 	}
 
-	logCommandParameters(envmanCommand)
+	cmdutil.LogCommandParameters(envmanCommand)
 
 	if err := runCommandWith("envman", envmanArgs); err != nil {
-		failf("Command failed, error: %s", err)
+		cmdutil.Failf("Command failed, error: %s", err)
 	}
 }
 
