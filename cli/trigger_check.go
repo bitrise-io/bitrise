@@ -6,13 +6,27 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
+
+var triggerCheckCommand = &cobra.Command{
+	Use:   "trigger-check",
+	Short: "Prints out which workflow will triggered by specified pattern.",
+	RunE:  triggerCheck,
+}
+
+func init() {
+	flags := triggerCheckCommand.Flags()
+	addTriggerFilterFlags(flags)
+	addConfigAndInventoryFlags(flags)
+	flags.String(OuputFormatKey, "", "Output format. Accepted: json, yml.")
+	addJSONParamsFlags(flags)
+}
 
 // --------------------
 // Utility
@@ -73,39 +87,35 @@ func getPipelineAndWorkflowIDByParamsInCompatibleMode(triggerMap models.TriggerM
 // CLI command
 // --------------------
 
-func triggerCheck(c *cli.Context) error {
-	logCommandParameters(c)
+func triggerCheck(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
 	warnings := []string{}
 
-	//
-	// Expand cli.Context
-	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
+
+	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
+	if triggerPattern == "" && len(args) > 0 {
+		triggerPattern = args[0]
 	}
 
-	triggerPattern := c.String(PatternKey)
-	if triggerPattern == "" && len(c.Args()) > 0 {
-		triggerPattern = c.Args()[0]
-	}
+	pushBranch, _ := cmd.Flags().GetString(PushBranchKey)
+	prSourceBranch, _ := cmd.Flags().GetString(PRSourceBranchKey)
+	prTargetBranch, _ := cmd.Flags().GetString(PRTargetBranchKey)
+	prReadyStateStr, _ := cmd.Flags().GetString(PRReadyStateKey)
+	prReadyState := models.PullRequestReadyState(prReadyStateStr)
+	tag, _ := cmd.Flags().GetString(TagKey)
 
-	pushBranch := c.String(PushBranchKey)
-	prSourceBranch := c.String(PRSourceBranchKey)
-	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
-	tag := c.String(TagKey)
+	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
+	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)
 
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	inventoryBase64Data, _ := cmd.Flags().GetString(InventoryBase64Key)
+	inventoryPath, _ := cmd.Flags().GetString(InventoryKey)
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	jsonParams, _ := cmd.Flags().GetString(JSONParamsKey)
+	jsonParamsBase64, _ := cmd.Flags().GetString(JSONParamsBase64Key)
 
-	jsonParams := c.String(JSONParamsKey)
-	jsonParamsBase64 := c.String(JSONParamsBase64Key)
-
-	format := c.String(OuputFormatKey)
+	format, _ := cmd.Flags().GetString(OuputFormatKey)
 
 	triggerParams, err := parseTriggerCheckParams(
 		triggerPattern,

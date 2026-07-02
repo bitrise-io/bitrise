@@ -7,18 +7,18 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/version"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var initCmd = cli.Command{
-	Name:    "init",
+var initCommand = &cobra.Command{
+	Use:     "init",
 	Aliases: []string{"i"},
-	Usage:   "Init bitrise config.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+	Short:   "Init bitrise config.",
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		logCommandParameters(cmd)
 
 		logger := log.NewLogger(log.GetGlobalLoggerOpts())
-		if err := initConfig(c); err != nil {
+		if err := initConfig(cmd); err != nil {
 
 			// If the plugin is not installed yet run the bitrise setup first and try it again
 			perr, ok := err.(plugins.NotInstalledError)
@@ -31,7 +31,7 @@ var initCmd = cli.Command{
 					return fmt.Errorf("setup failed, error: %s", err)
 				}
 
-				if err := initConfig(c); err != nil {
+				if err := initConfig(cmd); err != nil {
 					failf(err.Error())
 				}
 			} else {
@@ -40,16 +40,14 @@ var initCmd = cli.Command{
 		}
 		return nil
 	},
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "minimal",
-			Usage: "creates empty bitrise config and secrets",
-		},
-	},
 }
 
-func initConfig(c *cli.Context) error {
-	minimal := c.Bool("minimal")
+func init() {
+	initCommand.Flags().Bool("minimal", false, "creates empty bitrise config and secrets")
+}
+
+func initConfig(cmd *cobra.Command) error {
+	minimal, _ := cmd.Flags().GetBool("minimal")
 
 	pluginName := "init"
 	plugin, found, err := plugins.LoadPlugin(pluginName)
