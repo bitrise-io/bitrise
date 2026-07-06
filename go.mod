@@ -18,13 +18,19 @@ require (
 	github.com/hashicorp/go-version v1.9.0
 	github.com/heimdalr/dag v1.4.0
 	github.com/ryanuber/go-glob v1.0.0
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli v1.22.17
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/mod v0.21.0
 	golang.org/x/sys v0.46.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
+)
+
+require (
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/urfave/cli v1.22.17 // indirect
 )
 
 require (
