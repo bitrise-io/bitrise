@@ -1,4 +1,4 @@
-FROM golang:1.20@sha256:2edf6aab2d57644f3fe7407132a0d1770846867465a39c2083770cf62734b05d
+FROM golang:1.25@sha256:31c1e53dfc1cc2d269deec9c83f58729fa3c53dc9a576f6426109d1e319e9e9a
 
 ENV GOOS=linux
 ENV GOARCH=arm
@@ -10,7 +10,6 @@ ENV PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig
 RUN dpkg --add-architecture armhf \
     && apt update \
     && apt install -y --no-install-recommends \
-        upx \
         gcc-arm-linux-gnueabihf \
         libc6-dev-armhf-cross \
         pkg-config \
