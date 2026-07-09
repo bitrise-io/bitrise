@@ -18,7 +18,6 @@ func ActivateSteplibRefStep(
 	workDir string,
 	didStepLibUpdateInWorkflow bool,
 	isOfflineMode bool,
-	stepInfoPtr *models.StepInfoModel,
 ) (ActivatedStep, error) {
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	//nolint:exhaustruct // missing fields are added down below based on activation result
@@ -29,6 +28,7 @@ func ActivateSteplibRefStep(
 
 	stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
 	activationResult.DidStepLibUpdate = didUpdate
+	activationResult.StepInfo = stepInfo
 	if err != nil {
 		return activationResult, err
 	}
@@ -43,16 +43,6 @@ func ActivateSteplibRefStep(
 	if err != nil {
 		return activationResult, err
 	}
-
-	// TODO: this is sketchy, we should clean this up, but this pointer originates in the CLI codebase
-	stepInfoPtr.ID = stepInfo.ID
-	if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
-		stepInfoPtr.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-	}
-	stepInfoPtr.Version = stepInfo.Version
-	stepInfoPtr.LatestVersion = stepInfo.LatestVersion
-	stepInfoPtr.OriginalVersion = stepInfo.OriginalVersion
-	stepInfoPtr.GroupInfo = stepInfo.GroupInfo
 
 	return activationResult, nil
 }

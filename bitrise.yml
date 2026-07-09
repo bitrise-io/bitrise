@@ -54,7 +54,7 @@ workflows:
 
             while IFS= read -r item; do
               bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/$item.json"
-            done < <(bitrise tools catalog)
+            done < <(bitrise tools catalog --format json | jq -r '.tools[].name')
     - script@1:
         title: Validate JSON files
         inputs:

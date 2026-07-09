@@ -11,7 +11,10 @@ import (
 )
 
 func TestSupportedTools_MiseCoreToolConsistency(t *testing.T) {
-	supported := SupportedTools()
+	var supported []string
+	for _, tool := range SupportedTools() {
+		supported = append(supported, tool.Name)
+	}
 
 	// Build a set of mise core tools resolved to canonical names.
 	miseCoreCanonical := map[string]bool{}
@@ -43,4 +46,18 @@ func TestSupportedTools_MiseCoreToolConsistency(t *testing.T) {
 				"nonMiseCoreExceptions entry %q is not in SupportedTools — remove it from exceptions", tool)
 		}
 	})
+}
+
+func TestSupportedTools_ListsAliases(t *testing.T) {
+	byName := map[string][]string{}
+	for _, tool := range SupportedTools() {
+		byName[tool.Name] = tool.Aliases
+	}
+
+	// Tools with aliases expose them.
+	assert.Equal(t, []string{"go"}, byName["golang"])
+	assert.Equal(t, []string{"node"}, byName["nodejs"])
+
+	// Tools without aliases don't invent any.
+	assert.Nil(t, byName["ruby"])
 }

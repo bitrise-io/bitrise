@@ -8,28 +8,25 @@ import (
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginInfoCommand = cli.Command{
-	Name:  "info",
-	Usage: "Installed bitrise plugin's info",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+var pluginInfoCommand = &cobra.Command{
+	Use:   "info <plugin_name>",
+	Short: "Installed bitrise plugin's info",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		logCommandParameters(cmd)
 
-		if err := pluginInfo(c); err != nil {
+		if err := pluginInfo(cmd, args); err != nil {
 			log.Errorf("Plugin info failed, error: %s", err)
 			os.Exit(1)
 		}
 		return nil
 	},
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  output.FormatKey,
-			Usage: "Output format. Accepted: raw, json.",
-		},
-	},
-	ArgsUsage: "<plugin_name>",
+}
+
+func init() {
+	pluginInfoCommand.Flags().String(output.FormatKey, "", "Output format. Accepted: raw, json.")
 }
 
 func createPluginInfo(name string) (plugins.PluginInfoModel, error) {
@@ -65,26 +62,25 @@ func createPluginInfo(name string) (plugins.PluginInfoModel, error) {
 	return pluginInfo, nil
 }
 
-func pluginInfo(c *cli.Context) error {
+func pluginInfo(cmd *cobra.Command, args []string) error {
 	// Input validation
-	args := c.Args()
 	if len(args) == 0 {
-		showSubcommandHelp(c)
+		showSubcommandHelp(cmd)
 		return errors.New("plugin_name not defined")
 	}
 
 	name := args[0]
 	if name == "" {
-		showSubcommandHelp(c)
+		showSubcommandHelp(cmd)
 		return errors.New("plugin_name not defined")
 	}
 
-	format := c.String(output.FormatKey)
+	format, _ := cmd.Flags().GetString(output.FormatKey)
 	if format == "" {
 		format = output.FormatRaw
 	}
 	if format != output.FormatRaw && format != output.FormatJSON {
-		showSubcommandHelp(c)
+		showSubcommandHelp(cmd)
 		return fmt.Errorf("invalid format: %s", format)
 	}
 
