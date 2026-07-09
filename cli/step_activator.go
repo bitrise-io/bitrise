@@ -5,7 +5,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/stepman/activator"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 )
 
@@ -22,7 +21,6 @@ func (a stepActivator) activateStep(
 	isStepLibUpdated bool,
 	stepDir string, // $TMPDIR/bitrise/step_src
 	workDir string, // $TMPDIR/bitrise
-	stepInfoPtr *stepmanModels.StepInfoModel,
 	isSteplibOfflineMode bool,
 ) (activator.ActivatedStep, error) {
 	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
@@ -61,7 +59,6 @@ func (a stepActivator) activateStep(
 			workDir,
 			isStepLibUpdated,
 			isSteplibOfflineMode,
-			stepInfoPtr,
 		)
 		if err != nil {
 			// Note: we return the partial result on purpose because DidStepLibUpdate is important 

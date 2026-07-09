@@ -2,7 +2,6 @@ package toolprovider
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
@@ -15,8 +14,8 @@ import (
 // If versionPrefix is non-empty, only versions starting with that prefix are returned.
 func ListToolVersions(toolName string, versionPrefix string, tp provider.ToolProvider) ([]string, error) {
 	canonicalName := string(alias.GetCanonicalToolID(provider.ToolID(toolName)))
-	if !slices.Contains(SupportedTools(), canonicalName) {
-		return nil, fmt.Errorf("%q is not a supported tool. Supported tools: %v", toolName, SupportedTools())
+	if !IsSupported(toolName) {
+		return nil, fmt.Errorf("%q is not a supported tool. Supported tools: %v", toolName, canonicalToolNames())
 	}
 
 	versions, err := tp.ListReleasedVersions(provider.ToolID(canonicalName))

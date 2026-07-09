@@ -3,38 +3,29 @@ package steplib
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
 func activateStepExecutable(
-	stepLibURI string,
 	stepID string,
-	version string,
 	executable models.Executable,
 	destinationDir string,
-	destinationStepYML string,
 ) (string, error) {
-	url := downloadURL(executable)
-
-	if strings.HasPrefix(url, "http://") {
-		return "", fmt.Errorf("http URL is unsupported, please use https: %s", url)
-	}
-
-	resp, err := retryablehttp.Get(url)
+	body, err := downloadExecutable(executable)
 	if err != nil {
-		return "", fmt.Errorf("fetch from %s: %w", url, err)
+		return "", err
 	}
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
+		if err := body.Close(); err != nil {
 			log.Warnf("Failed to close response body: %s\n", err)
 		}
 	}()
@@ -56,9 +47,9 @@ func activateStepExecutable(
 		}
 	}()
 
-	_, err = io.Copy(file, resp.Body)
+	_, err = io.Copy(file, body)
 	if err != nil {
-		return "", fmt.Errorf("download %s to %s: %w", url, path, err)
+		return "", fmt.Errorf("download to %s: %w", path, err)
 	}
 
 	err = validateHash(path, executable.Hash)
@@ -69,10 +60,6 @@ func activateStepExecutable(
 	err = os.Chmod(path, 0755)
 	if err != nil {
 		return "", fmt.Errorf("set executable permission on file: %s", err)
-	}
-
-	if err := copyStepYML(stepLibURI, stepID, version, destinationStepYML); err != nil {
-		return "", fmt.Errorf("copy step.yml: %s", err)
 	}
 
 	return path, nil
@@ -106,11 +93,58 @@ func validateHash(filePath string, expectedHash string) error {
 	return nil
 }
 
-func downloadURL(executable models.Executable) string {
-	baseURL := os.Getenv(precompiledStepsPrimaryStorageEnv)
-	if baseURL == "" {
-		baseURL = precompiledStepsDefaultStorage
+func buildDownloadURLs(bases []string, executable models.Executable) ([]string, error) {
+	uri := strings.TrimLeft(executable.StorageURI, "/")
+	var urls []string
+	for _, base := range bases {
+		base = strings.TrimRight(strings.TrimSpace(base), "/")
+		if base == "" {
+			continue
+		}
+		url := fmt.Sprintf("%s/%s", base, uri)
+		if strings.HasPrefix(url, "http://") {
+			return nil, fmt.Errorf("http URL is unsupported, please use https: %s", url)
+		}
+		urls = append(urls, url)
 	}
-	baseURL = strings.TrimRight(baseURL, "/")
-	return fmt.Sprintf("%s/%s", baseURL, strings.TrimLeft(executable.StorageURI, "/"))
+
+	if len(urls) == 0 {
+		return nil, fmt.Errorf("no storage URLs configured")
+	}
+	return urls, nil
+}
+
+func downloadExecutable(executable models.Executable) (io.ReadCloser, error) {
+	bases := precompiledStepsDefaultStorageURLs
+	if override := os.Getenv(precompiledStepsStorageURLsEnv); override != "" {
+		bases = strings.Split(override, ",")
+	}
+
+	urls, err := buildDownloadURLs(bases, executable)
+	if err != nil {
+		return nil, err
+	}
+	return downloadFromURLs(urls)
+}
+
+func downloadFromURLs(urls []string) (io.ReadCloser, error) {
+	var errs []error
+	for _, url := range urls {
+		resp, err := retryablehttp.Get(url)
+		if err == nil && resp.StatusCode < 400 {
+			return resp.Body, nil
+		}
+
+		if err != nil {
+			log.Warnf("Failed to download step from %s: %s\n", url, err)
+			errs = append(errs, fmt.Errorf("%s: %w", url, err))
+		} else {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				log.Warnf("Failed to close response body: %s\n", closeErr)
+			}
+			log.Warnf("Storage returned status %d for %s\n", resp.StatusCode, url)
+			errs = append(errs, fmt.Errorf("%s: status %d", url, resp.StatusCode))
+		}
+	}
+	return nil, fmt.Errorf("failed to download executable: %w", errors.Join(errs...))
 }

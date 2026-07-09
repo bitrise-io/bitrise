@@ -1,0 +1,16 @@
+title: Local Title From Step YML
+summary: Step used to verify step title merging in the step header.
+description: |-
+  This step defines its title here in step.yml. When a workflow references it without
+  setting its own title, the runner should display this title instead of the raw step
+  reference (e.g. `path::./`).
+type_tags:
+- script
+is_always_run: false
+is_skippable: false
+run_if: ""
+inputs:
+- example_input: example value
+  opts:
+    title: Example input
+outputs: []

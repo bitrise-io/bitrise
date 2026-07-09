@@ -1,0 +1,15 @@
+summary: Step with no title in its step.yml, used to verify title fallback behavior.
+description: |-
+  This step intentionally does NOT define a title in step.yml. It is used to verify what the
+  runner displays when the step.yml title is empty, both when the bitrise.yml sets a title and
+  when it doesn't.
+type_tags:
+- script
+is_always_run: false
+is_skippable: false
+run_if: ""
+inputs:
+- example_input: example value
+  opts:
+    title: Example input
+outputs: []
