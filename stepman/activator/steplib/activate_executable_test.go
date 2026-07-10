@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
@@ -159,7 +160,7 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer secondary.Close()
 
-		body, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		body, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
 		require.NoError(t, err)
 		defer func() { _ = body.Close() }()
 
@@ -179,7 +180,7 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer secondary.Close()
 
-		body, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		body, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
 		require.NoError(t, err)
 		defer func() { _ = body.Close() }()
 
@@ -198,7 +199,7 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer secondary.Close()
 
-		_, err := downloadFromURLs([]string{primary.URL, secondary.URL})
+		_, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to download executable")
 		require.Contains(t, err.Error(), primary.URL)

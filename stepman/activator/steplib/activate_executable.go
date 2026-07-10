@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/stepman/stepman"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -19,14 +19,15 @@ func activateStepExecutable(
 	stepID string,
 	executable models.Executable,
 	destinationDir string,
+	logger stepman.Logger,
 ) (string, error) {
-	body, err := downloadExecutable(executable)
+	body, err := downloadExecutable(executable, logger)
 	if err != nil {
 		return "", err
 	}
 	defer func() {
 		if err := body.Close(); err != nil {
-			log.Warnf("Failed to close response body: %s\n", err)
+			logger.Warnf("Failed to close response body: %s\n", err)
 		}
 	}()
 
@@ -43,7 +44,7 @@ func activateStepExecutable(
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			log.Warnf("Failed to close file %s: %s\n", path, err)
+			logger.Warnf("Failed to close file %s: %s\n", path, err)
 		}
 	}()
 
@@ -114,7 +115,7 @@ func buildDownloadURLs(bases []string, executable models.Executable) ([]string, 
 	return urls, nil
 }
 
-func downloadExecutable(executable models.Executable) (io.ReadCloser, error) {
+func downloadExecutable(executable models.Executable, logger stepman.Logger) (io.ReadCloser, error) {
 	bases := precompiledStepsDefaultStorageURLs
 	if override := os.Getenv(precompiledStepsStorageURLsEnv); override != "" {
 		bases = strings.Split(override, ",")
@@ -124,10 +125,10 @@ func downloadExecutable(executable models.Executable) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return downloadFromURLs(urls)
+	return downloadFromURLs(urls, logger)
 }
 
-func downloadFromURLs(urls []string) (io.ReadCloser, error) {
+func downloadFromURLs(urls []string, logger stepman.Logger) (io.ReadCloser, error) {
 	var errs []error
 	for _, url := range urls {
 		resp, err := retryablehttp.Get(url)
@@ -136,13 +137,13 @@ func downloadFromURLs(urls []string) (io.ReadCloser, error) {
 		}
 
 		if err != nil {
-			log.Warnf("Failed to download step from %s: %s\n", url, err)
+			logger.Warnf("Failed to download step from %s: %s\n", url, err)
 			errs = append(errs, fmt.Errorf("%s: %w", url, err))
 		} else {
 			if closeErr := resp.Body.Close(); closeErr != nil {
-				log.Warnf("Failed to close response body: %s\n", closeErr)
+				logger.Warnf("Failed to close response body: %s\n", closeErr)
 			}
-			log.Warnf("Storage returned status %d for %s\n", resp.StatusCode, url)
+			logger.Warnf("Storage returned status %d for %s\n", resp.StatusCode, url)
 			errs = append(errs, fmt.Errorf("%s: status %d", url, resp.StatusCode))
 		}
 	}
