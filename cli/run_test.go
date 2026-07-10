@@ -232,11 +232,57 @@ step_bundles:
 	require.Equal(t, 2, len(buildRunResults.SkippedSteps)) // run_if_test_2.script; run_if_test_2.run_if_test_3.script
 }
 
+// TestStepBundleRunIfEncapsulation verifies that a Step Bundle's run_if is evaluated once, when the
+// Bundle is entered, and is not re-evaluated for the Bundle's later Steps. The Bundle's first Step
+// sets FLAG=false (the variable the run_if reads), but because the run_if decision was already made
+// at Bundle entry (FLAG=true), the second Step must still run.
+func TestStepBundleRunIfEncapsulation(t *testing.T) {
+	configStr := `
+format_version: 1.3.0
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+
+workflows:
+  test:
+    envs:
+    - FLAG: "true"
+    steps:
+    - bundle::flip:
+
+step_bundles:
+  flip:
+    run_if: '{{enveq "FLAG" "true"}}'
+    steps:
+    - script@1:
+        title: flip flag
+        inputs:
+        - content: envman add --key FLAG --value false
+    - script@1:
+        title: should still run
+        inputs:
+        - content: echo "second step ran"
+`
+
+	config, warnings, err := bitrise.ConfigModelFromYAMLBytes([]byte(configStr))
+	require.NoError(t, err)
+	require.Equal(t, 0, len(warnings))
+
+	require.NoError(t, configs.InitPaths())
+
+	runConfig := RunConfig{Config: config, Workflow: "test", Secrets: nil}
+	runner := NewWorkflowRunner(runConfig, nil, noOpTracker{})
+	buildRunResults, err := runner.runWorkflows()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(buildRunResults.SuccessSteps)) // both bundle steps run; the flipped FLAG must not re-gate the second
+	require.Equal(t, 0, len(buildRunResults.FailedSteps))
+	require.Equal(t, 0, len(buildRunResults.FailedSkippableSteps))
+	require.Equal(t, 0, len(buildRunResults.SkippedSteps))
+}
+
 // TestStepRunIfBeforeActivation verifies that a run_if expression set in bitrise.yml is
 // evaluated before step activation. It uses a path:: step pointing to a nonexistent directory:
-// - when run_if is false, the step is skipped (SkippedWithRunIf) before activation is attempted
-// - when run_if is true, activation IS attempted and fails (PreparationFailed), proving the
-//   step was not skipped and that the pre-activation check correctly passes through
+//   - when run_if is false, the step is skipped (SkippedWithRunIf) before activation is attempted
+//   - when run_if is true, activation IS attempted and fails (PreparationFailed), proving the
+//     step was not skipped and that the pre-activation check correctly passes through
 func TestStepRunIfBeforeActivation(t *testing.T) {
 	tests := []struct {
 		name       string
