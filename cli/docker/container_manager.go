@@ -183,58 +183,9 @@ func (cm *ContainerManager) startContainer(options containerCreateOptions) (*Run
 }
 
 func (cm *ContainerManager) createContainer(container models.Container, options containerCreateOptions, envs map[string]string) error {
-	dockerRunArgs := []string{
-		"create",
-		"--platform", "linux/amd64",
-		fmt.Sprintf("--network=%s", bitriseNetwork),
-	}
-
-	for _, o := range options.volumes {
-		dockerRunArgs = append(dockerRunArgs, "-v", o)
-	}
-
-	for _, env := range container.Envs {
-		for name, value := range env {
-			resolvedValue := resolveEnvVariable(fmt.Sprintf("%s", value), envs)
-			dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, resolvedValue))
-		}
-	}
-
-	for _, port := range container.Ports {
-		dockerRunArgs = append(dockerRunArgs, "-p", port)
-	}
-
-	if options.workingDir != "" {
-		dockerRunArgs = append(dockerRunArgs, "-w", options.workingDir)
-	}
-
-	if options.user != "" {
-		dockerRunArgs = append(dockerRunArgs, "-u", options.user)
-	}
-
-	if container.Options != "" {
-		// This regex splits the string by spaces, but keeps quoted strings together
-		// For example --health-cmd "redis-cli ping" will be split into: "--health-cmd", "redis-cli ping"
-		r := regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
-		result := r.FindAllString(container.Options, -1)
-
-		// Remove quotes from the strings
-		var options []string
-		for _, result := range result {
-			options = append(options, strings.ReplaceAll(result, "\"", ""))
-		}
-
-		dockerRunArgs = append(dockerRunArgs, options...)
-	}
-
-	dockerRunArgs = append(dockerRunArgs,
-		fmt.Sprintf("--name=%s", options.name),
-		container.Image,
-	)
-
-	if options.command != "" {
-		commandArgsList := strings.Split(options.command, " ")
-		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
+	dockerRunArgs, err := buildCreateContainerCommandArgs(container, options, envs)
+	if err != nil {
+		return err
 	}
 
 	cm.logger.Infof("ℹ️ Running command: docker %s", strings.Join(dockerRunArgs, " "))
@@ -386,6 +337,66 @@ func (cm *ContainerManager) ensureNetwork() error {
 	}
 
 	return nil
+}
+
+func buildCreateContainerCommandArgs(container models.Container, options containerCreateOptions, envs map[string]string) ([]string, error) {
+	dockerRunArgs := []string{
+		"create",
+		"--platform", "linux/amd64",
+		fmt.Sprintf("--network=%s", bitriseNetwork),
+	}
+
+	for _, o := range options.volumes {
+		dockerRunArgs = append(dockerRunArgs, "-v", o)
+	}
+
+	for _, env := range container.Envs {
+		name, value, err := env.GetKeyValuePair()
+		if err != nil {
+			return nil, err
+		}
+		resolvedValue := resolveEnvVariable(value, envs)
+		dockerRunArgs = append(dockerRunArgs, "-e", fmt.Sprintf("%s=%s", name, resolvedValue))
+	}
+
+	for _, port := range container.Ports {
+		dockerRunArgs = append(dockerRunArgs, "-p", port)
+	}
+
+	if options.workingDir != "" {
+		dockerRunArgs = append(dockerRunArgs, "-w", options.workingDir)
+	}
+
+	if options.user != "" {
+		dockerRunArgs = append(dockerRunArgs, "-u", options.user)
+	}
+
+	if container.Options != "" {
+		// This regex splits the string by spaces, but keeps quoted strings together
+		// For example --health-cmd "redis-cli ping" will be split into: "--health-cmd", "redis-cli ping"
+		r := regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
+		result := r.FindAllString(container.Options, -1)
+
+		// Remove quotes from the strings
+		var opts []string
+		for _, result := range result {
+			opts = append(opts, strings.ReplaceAll(result, "\"", ""))
+		}
+
+		dockerRunArgs = append(dockerRunArgs, opts...)
+	}
+
+	dockerRunArgs = append(dockerRunArgs,
+		fmt.Sprintf("--name=%s", options.name),
+		container.Image,
+	)
+
+	if options.command != "" {
+		commandArgsList := strings.Split(options.command, " ")
+		dockerRunArgs = append(dockerRunArgs, commandArgsList...)
+	}
+
+	return dockerRunArgs, nil
 }
 
 func resolveEnvVariable(value string, envs map[string]string) string {
