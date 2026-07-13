@@ -109,6 +109,14 @@ func TestValidate(t *testing.T) {
 			},
 			wantPath: "hello-step/1.0.0/step.json", wantMsg: "missing",
 		},
+		"step.json with an empty title": {
+			mutate: func(t *testing.T, root string) {
+				// Keep a valid source so only the title check fires.
+				seedFile(t, root, mustFS(steplibindex.StepJSONPath("hello-step", "1.0.0")),
+					`{"title":"","source":{"git":"https://github.com/bitrise-steplib/hello-step.git","commit":"deadbeef"}}`)
+			},
+			wantPath: "hello-step/1.0.0/step.json", wantMsg: "missing title",
+		},
 		"missing mandatory step-info.json": {
 			mutate:   func(t *testing.T, root string) { removeFile(t, root, mustFS(steplibindex.StepInfoPath("hello-step"))) },
 			wantPath: "hello-step/step-info.json", wantMsg: "missing",

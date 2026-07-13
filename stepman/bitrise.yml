@@ -58,6 +58,9 @@ workflows:
             # Generator round-trip against a real steplib (build-tag gated, needs network).
             go test -tags integration -v ./steplibrary/indexgen/...
 
+            # Native v1/v2 activation matrix against real steplib URLs (build-tag gated, needs network).
+            go test -tags integration -v -timeout 30m ./_tests/activation/...
+
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:

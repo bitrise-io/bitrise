@@ -221,7 +221,12 @@ func Benchmark_goBuildStep(b *testing.B) {
 		require.NoError(b, err)
 	}()
 
-	_, err = steplib.ActivateStep("https://github.com/bitrise-io/bitrise-steplib", "xcode-test", "5.1.1", stepDir, "", logger, false)
+	id := stepid.CanonicalID{
+		SteplibSource: "https://github.com/bitrise-io/bitrise-steplib",
+		IDorURI:       "xcode-test",
+		Version:       "5.1.1",
+	}
+	_, err = steplib.ActivateStep(id, stepDir, "", logger, false, nil)
 	require.NoError(b, err)
 
 	packageName := "github.com/bitrise-steplib/steps-xcode-test"
@@ -316,7 +321,7 @@ func TestGoToolkit_PrepareForStepRun(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, result.CacheHit)
-		
+
 		// It's a weak check since durations are never negative, but it serves as documentation that the field is intentionally populated on every path
 		require.GreaterOrEqual(t, result.PrepareDuration, time.Duration(0))
 	})
@@ -328,7 +333,7 @@ func TestGoToolkit_PrepareForStepRun(t *testing.T) {
 			IDorURI:       "https://github.com/bitrise-steplib/my-step.git",
 			Version:       "main",
 		}
-		
+
 		// git step IDs are never unique resources, so the cache check is skipped
 		// and the nil Toolkit field triggers an immediate error
 		result, err := toolkit.PrepareForStepRun(models.StepModel{Toolkit: nil}, sIDData, t.TempDir())

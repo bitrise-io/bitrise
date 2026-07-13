@@ -78,7 +78,6 @@ func TestSteplib_getStepVersionInfo(t *testing.T) {
 		log:          nil,
 		inventoryURL: "https://steplib.example",
 		api:          newFakeAPI(),
-		fileManager:  nil,
 	}
 
 	for name, tc := range cases {

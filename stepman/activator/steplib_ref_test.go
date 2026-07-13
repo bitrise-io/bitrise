@@ -112,6 +112,71 @@ func Test_activateStepLibStep(t *testing.T) {
 	}
 }
 
+func TestActivateSteplibRefStep(t *testing.T) {
+	const steplib = "https://github.com/bitrise-io/bitrise-steplib.git"
+	logger := TestLogger[*testing.T]{t}
+
+	tests := []struct {
+		name        string
+		id          stepid.CanonicalID
+		wantVersion string
+		wantErr     bool
+	}{
+		{
+			name:        "Exact version resolves and activates from source",
+			id:          stepid.CanonicalID{SteplibSource: steplib, IDorURI: "xcode-archive", Version: "2.3.2"},
+			wantVersion: "2.3.2",
+		},
+		{
+			name:        "Minor version lock resolves to the highest patch",
+			id:          stepid.CanonicalID{SteplibSource: steplib, IDorURI: "xcode-archive", Version: "2.3"},
+			wantVersion: "2.3.7",
+		},
+		{
+			name:    "Invalid version constraint fails",
+			id:      stepid.CanonicalID{SteplibSource: steplib, IDorURI: "xcode-archive", Version: "1.2.3.4"},
+			wantErr: true,
+		},
+		{
+			name:    "Non-existent version fails",
+			id:      stepid.CanonicalID{SteplibSource: steplib, IDorURI: "xcode-archive", Version: "99.99.99"},
+			wantErr: true,
+		},
+		{
+			name:    "Non-existent step fails",
+			id:      stepid.CanonicalID{SteplibSource: steplib, IDorURI: "this-step-does-not-exist-xyz", Version: "1.0.0"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			activatedStepDir := t.TempDir()
+			workDir := t.TempDir()
+
+			// didStepLibUpdateInWorkflow=true keeps the StepLib update path off, so
+			// resolution is served from the local cache and DidStepLibUpdate is false.
+			got, err := ActivateSteplibRefStep(logger, tt.id, activatedStepDir, workDir, true, false)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			require.Equal(t, tt.id.IDorURI, got.StepInfo.ID)
+			require.Equal(t, tt.wantVersion, got.StepInfo.Version)
+			require.Equal(t, ActivationTypeSteplibSource, got.ActivationType)
+			require.Empty(t, got.ExecutablePath)
+			require.False(t, got.DidStepLibUpdate)
+
+			require.Equal(t, filepath.Join(workDir, "current_step.yml"), got.StepYMLPath)
+			exists, err := pathutil.IsPathExists(got.StepYMLPath)
+			require.NoError(t, err)
+			require.True(t, exists, "step.yml should be copied into the work dir")
+		})
+	}
+}
+
 type genericLogger interface {
 	Logf(format string, v ...any)
 }

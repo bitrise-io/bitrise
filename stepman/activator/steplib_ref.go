@@ -2,13 +2,20 @@ package activator
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
+)
+
+const (
+	bitriseSteplibURL    = "https://github.com/bitrise-io/bitrise-steplib.git"
+	bitriseSteplibAPIURL = "https://steplib.bitrise.io" // Base URL of steplib API
+	enableSteplibAPIEnv  = "BITRISE_STEPLIB_API_ENABLE"
 )
 
 func ActivateSteplibRefStep(
@@ -26,16 +33,26 @@ func ActivateSteplibRefStep(
 		DidStepLibUpdate: false,
 	}
 
-	stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
-	activationResult.DidStepLibUpdate = didUpdate
-	activationResult.StepInfo = stepInfo
-	if err != nil {
-		return activationResult, err
+	var libraryAPI *steplibrary.Client
+	if shouldUseSteplibAPI(id.SteplibSource) {
+		libraryAPI = steplibrary.New(log, bitriseSteplibAPIURL)
 	}
 
-	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
-	activationResult.ExecutablePath = execPath
-	if execPath != "" {
+	if libraryAPI == nil {
+		// Old stepman preparation codepath
+		stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
+		activationResult.StepInfo = stepInfo
+		activationResult.DidStepLibUpdate = didUpdate
+		if err != nil {
+			return activationResult, err
+		}
+	}
+
+	// ActivateStep dispatches to the v2 or legacy codepath.
+	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI)
+	activationResult.StepInfo = resolvedStep.StepInfo
+	activationResult.ExecutablePath = resolvedStep.ExecPath
+	if resolvedStep.ExecPath != "" {
 		activationResult.ActivationType = ActivationTypeSteplibExecutable
 	} else {
 		activationResult.ActivationType = ActivationTypeSteplibSource
@@ -45,6 +62,11 @@ func ActivateSteplibRefStep(
 	}
 
 	return activationResult, nil
+}
+
+func shouldUseSteplibAPI(steplibURI string) bool {
+	enableAPI := os.Getenv(enableSteplibAPIEnv) == "true" || os.Getenv(enableSteplibAPIEnv) == "1"
+	return enableAPI && steplibURI == bitriseSteplibURL
 }
 
 func prepareStepLibForActivation(
@@ -95,11 +117,6 @@ func prepareStepLibForActivation(
 			return stepInfo, didUpdate, err
 		}
 	}
-
-	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
-		stepInfo.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-	}
-	stepInfo.OriginalVersion = id.Version
 
 	return stepInfo, didUpdate, nil
 }

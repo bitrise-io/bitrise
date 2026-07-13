@@ -227,6 +227,11 @@ func (v *validator) checkStepJSON(id, version, versionsPath string) []Validation
 	if step.Source.Commit == "" {
 		issues = append(issues, violationf(p, "missing source.commit"))
 	}
+	// The V2 activation path serves the title as-is (no ID fallback), so the
+	// published inventory must carry a non-empty one.
+	if step.Title == nil || *step.Title == "" {
+		issues = append(issues, violationf(p, "missing title"))
+	}
 	return issues
 }
 

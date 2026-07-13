@@ -15,7 +15,6 @@ func activateStepSource(
 	stepLibURI, id, version string,
 	step models.StepModel,
 	destination string,
-	stepYMLDestination string,
 	log stepman.Logger,
 	isOfflineMode bool,
 ) error {
@@ -44,10 +43,6 @@ func activateStepSource(
 
 	if err := copyStep(stepCacheDir, destination); err != nil {
 		return fmt.Errorf("copy step failed: %s", err)
-	}
-
-	if err := copyStepYML(stepLibURI, id, version, stepYMLDestination); err != nil {
-		return fmt.Errorf("copy step.yml failed: %s", err)
 	}
 
 	return nil
