@@ -176,3 +176,21 @@ func TestSteplibActivation(t *testing.T) {
 		require.NoError(t, on.err)
 	})
 }
+
+// TestSteplibActivation_APISourceFreshEnv tests that API can fetch source even
+// if git steplib was never cloned. It sets up a clean $HOME.
+func TestSteplibActivation_APISourceFreshEnv(t *testing.T) {
+	t.Setenv("HOME", t.TempDir()) // fresh: ~/.stepman is not set up
+
+	id := steplibStep("git-clone", "8.5.0")
+	r := activate(t, v2Source, id, false, false)
+	logResult(t, "api-source (fresh env, no SetupLibrary)", r)
+
+	require.NoError(t, r.err, "api source activation must work without the git cloned steplib set up")
+	assert.Equal(t, activator.ActivationTypeSteplibSource, r.activated.ActivationType)
+	assert.Empty(t, r.activated.ExecutablePath)
+	// It must not have gone through the v1 StepLib setup/update path.
+	for _, e := range r.logs {
+		assert.NotContains(t, e.msg, "updating StepLib", "api source must not set up/update the git cloned StepLib")
+	}
+}
