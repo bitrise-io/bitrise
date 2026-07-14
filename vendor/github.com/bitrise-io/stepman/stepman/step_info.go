@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
 )
@@ -119,14 +120,25 @@ func QueryStepInfoFromLibrary(library, id, version string, log Logger) (models.S
 		return models.StepInfoModel{}, err
 	}
 
-	return models.StepInfoModel{
+	stepInfo := models.StepInfoModel{
 		Library:         library,
 		ID:              id,
 		Version:         stepVersion.Version,
-		OriginalVersion: "",
+		OriginalVersion: version,
 		LatestVersion:   stepVersion.LatestAvailableVersion,
 		GroupInfo:       groupInfo,
 		Step:            stepVersion.Step,
 		DefinitionPth:   stepDefinitionPth,
-	}, nil
+	}
+
+	return defaultStepTitle(stepInfo), nil
+}
+
+// defaultStepTitle sets the step title to the step ID when the definition omits
+// one, so callers always have a non-empty display title.
+func defaultStepTitle(info models.StepInfoModel) models.StepInfoModel {
+	if info.Step.Title == nil || *info.Step.Title == "" {
+		info.Step.Title = pointers.NewStringPtr(info.ID)
+	}
+	return info
 }
