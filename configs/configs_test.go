@@ -29,3 +29,26 @@ func TestSetupForVersionChecks(t *testing.T) {
 	versionMatch, _ = CheckIsSetupWasDoneForVersion("0.9.8")
 	require.Equal(t, false, versionMatch)
 }
+
+func TestLoadConfigModel(t *testing.T) {
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	require.Equal(t, nil, err)
+
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+
+	t.Setenv("HOME", fakeHomePth)
+
+	// Missing file returns the zero ConfigModel, not an error.
+	got, err := LoadConfigModel()
+	require.Equal(t, nil, err)
+	require.Equal(t, ConfigModel{}, got)
+
+	// LoadConfigModel is a pure passthrough: it sees whatever
+	// SaveSetupSuccessForVersion (and friends) already wrote to config.json.
+	require.Equal(t, nil, SaveSetupSuccessForVersion("1.2.3"))
+	got, err = LoadConfigModel()
+	require.Equal(t, nil, err)
+	require.Equal(t, "1.2.3", got.SetupVersion)
+}

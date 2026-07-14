@@ -117,6 +117,18 @@ func loadBitriseConfig() (ConfigModel, error) {
 	return config, nil
 }
 
+// LoadConfigModel exposes the on-disk ~/.bitrise/config.json contents so
+// internal/config can use it as the lowest-precedence layer in its
+// resolution chain. Thin wrapper around loadBitriseConfig — behavior is
+// unchanged (a missing file returns the zero ConfigModel, not an error).
+// Does not affect CheckIsSetupWasDoneForVersion / SaveSetupSuccessForVersion
+// / CheckIsCLIUpdateCheckRequired / SaveCLIUpdateCheck /
+// CheckIsPluginUpdateCheckRequired / SavePluginUpdateCheck, which keep
+// calling loadBitriseConfig/saveBitriseConfig directly.
+func LoadConfigModel() (ConfigModel, error) {
+	return loadBitriseConfig()
+}
+
 func saveBitriseConfig(config ConfigModel) error {
 	bytes, err := json.Marshal(config)
 	if err != nil {

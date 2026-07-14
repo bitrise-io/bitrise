@@ -18,12 +18,18 @@ channel, and there is one CLI to maintain.
   `5042241595` (space ENGI), status ACCEPTED.
 - New CLI repo: `github.com/bitrise-io/bitrise-cli` (checked out at `../bitrise-cli`).
 - This repo: `github.com/bitrise-io/bitrise/v2`.
-- Jira epic BACKEND-568 "Merge into old CLI" tracks the effort; subtasks BACKEND-569..578.
+- Jira: parent Story **BACKEND-568** "Merge into old CLI" tracks the effort overall;
+  subtasks BACKEND-569..578 are an older, narrower breakdown, superseded in practice.
+  **BACKEND-579** "Prepare old CLI for adding new commands" is the ticket actually
+  tagged on every PR in the current stack — its own checklist (remove compat handlers
+  → rename/alias → restructure into packages → auth token store → extend config
+  handling → Bitrise API core → command groups) is the current source of truth for
+  remaining scope (see §7-§8). Branch names still carry the historical
+  `BACKEND-573-*` prefix — that's just naming, unrelated to which ticket the PRs are
+  filed under.
 - Execution is a stack of small, single-purpose PRs on a long-lived `v3-development`
-  branch (merged to `master` later, when it makes sense), reviewed in order. Landed so
-  far: remove legacy compatibility hacks (breaking changes → `v3-breaking-changes.md`) →
-  command reorganization (RFC §2 shape, no functional change) → split commands into
-  packages (this doc's §5-§6, no functional change, BACKEND-573).
+  branch (merged to `master` later, when it makes sense), reviewed in order. See §8
+  for current stack status.
 
 ## 2. RFC target — "Commands after the merge"
 
@@ -75,71 +81,45 @@ The old repo has NO `internal/`/`bitriseapi/`/`cmdutil/` (no collision); it HAS
 
 1. **Mirror the new structure.** Split flat `cli` into per-group sub-packages under
    `cli/`: `cli/local`, `cli/yml`, `cli/step`, `cli/plugin`, each exposing `NewCmd()`.
-2. **Root stays `cli/`.** Root wiring stays in package `cli`; `cli/commands.go` renamed
-   to `cli/root.go`. Entrypoint stays `cli.Run()` — `main.go` unchanged.
-3. **Shared helpers → `cli/cmdutil`** (package `cmdutil`), mirroring `cmd/cmdutil`. Kept
-   lightweight. Leaf package (imports neither root nor groups) → no import cycle.
+2. **Root stays `cli/`.** Root wiring stays in package `cli`; entrypoint stays
+   `cli.Run()` — `main.go` unchanged.
+3. **Shared helpers → `cli/cmdutil`** (package `cmdutil`), mirroring `cmd/cmdutil`.
+   Leaf package (imports neither root nor groups) → no import cycle.
 4. **Runner engine → `cli/local`.** The WorkflowRunner engine (step activation/env,
-   build-result collector, agent hooks) is used only by `run` and `trigger`, so it lives
-   in `cli/local`. `trigger` also moves to `cli/local` and is **hidden everywhere**: a
-   hidden `local trigger` subcommand AND the hidden top-level `trigger` alias, both from
-   one `local.NewTriggerCommand()` constructor.
-5. **`bitriseapi/` top-level, `internal/` top-level** — created in the *later* v3 merge,
-   not now. `cmdutil` stays under `cli/` (the future `cmd/cmdutil` merges into it).
-6. **Scope now = structure + docs only.** No bitrise-cli command/service/API code ported.
+   build-result collector, agent hooks) is used only by `run` and `trigger`, so it
+   lives in `cli/local`. `trigger` also moved to `cli/local` and is **hidden
+   everywhere**: a hidden `local trigger` subcommand AND the hidden top-level
+   `trigger` alias, both from one `local.NewTriggerCommand()` constructor.
+5. **`bitriseapi/` top-level, `internal/` top-level** — created in the *later* v3
+   merge, not now. `cmdutil` stays under `cli/` (the future `cmd/cmdutil` merges
+   into it).
+6. **Scope of the reorg = structure + docs only.** No bitrise-cli command/service/API
+   code ported as part of it.
 
-## 5. Reorg design
+## 5. Reorg — landed
 
-### Package / import graph (acyclic)
+The flat `cli` package was split into per-group sub-packages (`cli/local`, `cli/yml`,
+`cli/step`, `cli/plugin`) plus a leaf `cli/cmdutil` for shared helpers, per §4's
+decisions. Landed across commits `c3b2356e` (removed legacy stuff), `06e04bae`
+(trigger-check removal + hidden aliases), `dc569f05` (package split) — see the code
+itself for the exact file layout and exported symbols rather than duplicating them
+here.
+
+Import graph (acyclic):
 ```
 main.go → cli(root)
 cli(root) → cli/local, cli/yml, cli/step, cli/plugin, cli/cmdutil
 cli/{local,yml,step,plugin} → cli/cmdutil
 cli/cmdutil → cli/docker, cli/containermanager, external only   (leaf)
 ```
-Pre-cobra dispatch (`detectPlugin`, `runPlugin`, `envmanPassthrough`, `runEnvman`) stays
-in package `cli` (`cli_test.go` pins it there). It calls `cmdutil.CommandTokenIndex` /
-`cmdutil.GlobalFlagNames` and iterates `root.Commands()` — works regardless of which
+Pre-cobra dispatch (`detectPlugin`, `runPlugin`, `envmanPassthrough`, `runEnvman`)
+stays in package `cli` (`cli_test.go` pins it there) and works regardless of which
 package built each command.
 
-### File-move map
-- **Stay root `cli`:** `cli.go`, `commands.go`→`root.go`, `help.go`, `envman.go`,
-  `version.go`, `update.go` (command shell; update-check cluster → cmdutil),
-  plugin detect/run dispatch (→ `plugin_dispatch.go`).
-- **→ `cli/cmdutil`:** `flags.go`, `modes.go`, `command_analytics.go`, `args.go`,
-  `json_output.go` + config/inventory + params + update-cluster helpers (exported).
-- **→ `cli/local`:** `local.go`(→cmd.go), `run.go`, `init.go`, `setup.go`, `tools.go`,
-  `workflow_list.go`, `trigger.go`, and the engine: `run_util.go`, `run_config.go`,
-  `run_trigger_params.go`, `build_run_result_collector.go`, `agent.go`,
-  `step_activator.go`, `step_environment.go`, `analytics.go`.
-- **→ `cli/yml`:** `validate.go`, `merge.go` (+ `cmd.go`).
-- **→ `cli/step`:** `preload_steps.go`(→cache.go), `share.go`, `share_*.go` (+ `cmd.go`).
-- **→ `cli/plugin`:** `plugin_install/update/delete/info/list.go` (+ `cmd.go`).
-- **Tests follow their symbols:** `run_*_test.go`, `tools_test.go`, `trigger_test.go`,
-  `modes_test.go`, `agent_test.go`, `analytics_test.go` → their group; `cli_test.go` → root.
-
-### `cli/cmdutil` exported symbols
-- Errors/tracker: `Failf`, `SetTracker` (root `Run()` inits the tracker), `LogCommandParameters`,
-  `LogPluginCommandParameters`, `SendCommandInfo`, `SetFlagEnvVar`, `EnvVarAnnotation`.
-- Flags: all `*Key` consts (incl. `OutputFormatKey`, relocated from run.go), `GlobalFlagNames`,
-  `AddConfigAndInventoryFlags`, `AddJSONParamsFlags`, `AddSecretFilteringFlag`, `AddTriggerFilterFlags`.
-- Dispatch/help: `CommandTokenIndex`, `ApplyGlobalFlagsFromArgs`, `IsFlag`,
-  `RequireKnownSubcommand`, `AsHidden`, `ShowSubcommandHelp`, json loggers.
-- Modes: `ResolveBoolEnv`, `ResolveBoolFlagOrEnv`, `IsPRMode`, `IsCIMode`, `IsSecretFiltering`,
-  `IsSecretEnvsFiltering`, `IsSteplibOfflineMode`, `RegisterSteplibOfflineMode`.
-- Config/inventory (yml + local): `CreateBitriseConfigFromCLIParams`, `CreateInventoryFromCLIParams`,
-  `GetBitriseConfigFilePath`, `GetInventoryFilePath`, `GetBitriseConfigFromBase64Data`,
-  `GetInventoryFromBase64Data`.
-- Params (run+trigger): `RunAndTriggerParamsModel`, `ParseRunParams`, `ParseTriggerParams`,
-  `ParseRunAndTriggerJSONParams`, `ParseRunAndTriggerParams`.
-- Update cluster (local runner + root `update`): `CheckUpdate`, `LatestTag`, `InstalledWithBrew`,
-  `NewVersionFromBrew`, `NewCLIVersion`, `PrintCLIUpdateInfos`.
-
-### Root wiring + alias block
-Groups attach via `group.NewCmd()`; old names re-registered as hidden aliases from the
-same exported leaf constructors wrapped in `cmdutil.AsHidden` (a `*cobra.Command` binds to
-one parent, so each alias is a fresh command from the constructor). `local.NewCmd()` also
-mounts `NewTriggerCommand()` hidden (→ hidden `local trigger`).
+Old top-level names are re-registered as hidden aliases via `cmdutil.AsHidden`, each
+built from the same exported leaf constructor as the group's own subcommand — a
+`*cobra.Command` can only bind to one parent, so each alias needs its own fresh
+instance from the constructor rather than reusing the group's command object.
 
 ## 6. yml / step reconciliation
 
@@ -155,7 +135,7 @@ applies to both `yml validate` and the hidden `validate` alias because both call
 constructor. Keep `RequireKnownSubcommand` (help on bare) for both parents in v2; do NOT
 copy the new CLI's bare-parent default-to-`get`/`list` (that would be a conscious v3 change).
 
-## 7. v3 merge recipe (later tasks)
+## 7. v3 merge recipe (remaining steps)
 
 Rather than redoing config/auth/API/flags/analytics reconciliation inside every
 per-group port, those cross-cutting concerns are pulled out as their own upfront
@@ -163,23 +143,8 @@ steps. Order below is dependency-driven, checked against actual imports in
 `../bitrise-cli` (not just the conceptual grouping) — see reasoning below the list.
 May still be split into further sub-PRs as work proceeds:
 
-1. **Port `internal/auth`** (token store only: `Auth` type, `Load`/`Save`/`Clear`/
-   `Path`, ~140 lines). Leaf package, zero internal imports. Needed first because
-   `config.Resolve` takes an `auth.Auth` param and `cmd/root.go`'s `persistentPreRun`
-   calls `auth.Load()` directly — config handling can't compile without it. This is
-   **not** the same as the `auth` command (login/logout) — that's `cmd/auth.go` +
-   `internal/oauth` (the OAuth device-flow login UX), which depends on this package
-   and is ported later as its own command group in step 4.
-2. **Extend config handling.** Port/reconcile `internal/config`
-   (`../bitrise-cli/internal/config/{config.go,resolve.go}`) into `cli/cmdutil` (or a
-   new `cli/config`). Old: `~/.bitrise/config.json`, package-global state, process env
-   (§3 DI row). New: `~/.config/bitrise/config.yaml` + `auth.yaml` + per-dir
-   `.bitrise-cli.yml`, XDG/YAML, precedence chain, `config.Resolved` threaded via
-   `cmd.Context()` (`config.WithResolved`/`FromContext`). Merged `PersistentPreRunE`
-   needs to keep old `configs.InitPaths`/mode env AND add new `config.Load`+`Resolve`+
-   `WithResolved`+`style.Configure`. Token resolution is "env > auth.yaml"
-   (`resolve.go`), so this is fully usable via env-var tokens before the `auth login`
-   UX exists.
+1. ~~Port `internal/auth`~~ — **done**, see §8.
+2. ~~Extend config handling~~ — **done**, see §8.
 3. **Port the `bitriseapi` core client only** — `client.go`+`raw.go`+`paging.go`+
    `me.go` (~390 lines: `Client`, `New`, generic `get[T]`/`getPage[T]`/`postDecode[T]`,
    `APIError`, `RawRequest`, paging types). Zero internal imports either way; this is
@@ -211,9 +176,8 @@ May still be split into further sub-PRs as work proceeds:
 6. **Make sure analytics work for new commands** — decide whether ported commands call
    `cmdutil.LogCommandParameters` (old CLI has this; new CLI has no analytics today).
 
-Why this order (checked via `grep` imports in `../bitrise-cli`, not assumed): the
-original draft had config before auth and a monolithic "API support" step; both were
-wrong. `internal/config` imports `internal/auth` (not the reverse) — auth must land
+Why this order (checked via `grep` imports in `../bitrise-cli`, not assumed):
+`internal/config` imports `internal/auth` (not the reverse) — auth had to land
 first. `bitriseapi/` (incl. `rde/`) has no internal imports in either direction, so
 it's not a hard prerequisite for config/auth at all — it only matters once a command
 group needs it, hence splitting it into a small shared core now and per-domain files
@@ -225,44 +189,61 @@ JSON stays pipeable); self-update (two mechanisms — pick one); bare-parent def
 
 ## 8. Task status
 
-Jira epic **BACKEND-568** "Merge into old CLI" (In Progress) tracks the stack; see
-subtasks BACKEND-569..578.
+**Don't assume this section is current without re-reading it and re-checking
+`gh pr list`/Jira — it changes every session.**
 
-- BACKEND-571 — migrate old commands from urfave to Cobra — **done**, PR approved but
-  not yet merged (Mobile team owns the phased rollout).
-- BACKEND-573 — reorganize into per-group sub-packages — **done**, committed as
-  `dc569f05` ("split commands into packages to prepare for new structure") on
-  `BACKEND-573-command-folders`, pushed. (Jira title is "Move new commands into old
-  CLI" — actual scope for this PR was structure-only, per decision §4.6.) No
-  functional change. Final `cli/` tree:
-  `cli/{cli.go,root.go,version.go,update.go,envman.go,help.go,cli_test.go,
-  plugin_dispatch.go}` (root, package `cli`) + `cli/{cmdutil,local,yml,step,plugin,
-  docker,containermanager}/` sub-packages, matching the design in §5-§6 with no
-  deviations; no import cycles. One unrelated pre-existing test failure:
-  `TestParseAndValidatePluginFromYML` (`plugins/model_methods_test.go`) fails because
-  `stepman` isn't installed in this sandbox — confirmed via `git stash` that it fails
-  identically on the untouched tree.
-- **BACKEND-573-token-store — port `internal/auth` (§7 step 1) — done**, on branch
-  `BACKEND-573-token-store` (stacked on `BACKEND-573-command-folders`), not yet
-  committed — left for the user to review/commit. Added `internal/auth/{auth.go,
-  auth_test.go}` — this repo's first top-level `internal/` package — ported from
-  `../bitrise-cli/internal/auth` (confirmed up to date at `310ac54` before porting;
-  the 4 newer commits there only touch `rde`/`picker`, not `internal/auth`). `auth.go`
-  copied verbatim (`Auth` struct, `IsOAuthManaged`, `TokenType`, `Path`/`Load`/`Save`/
-  `Clear`, XDG-based `auth.yaml` path, atomic write via `.tmp`+rename, 0600/0700 perms);
-  `auth_test.go`'s 9 cases ported with assertions adapted to this repo's testify
-  (`require`/`assert`) convention instead of bitrise-cli's stdlib-only style, per
-  `cli/cmdutil/modes_test.go`'s pattern. No new dependency: `gopkg.in/yaml.v3 v3.0.1`
-  was already a direct, vendored dep here (used by `envfile/`) at the exact version
-  bitrise-cli uses. Deliberately **not** wired into `cli/cli.go`'s `before()` yet —
-  that's part of the next step (config handling) since `auth.Load()` only gets called
-  once `config.Resolve` exists to take its result. Verification all green: `go build
-  ./...`, `go vet ./...`, `go test ./internal/... -v` (9/9 pass), `go test ./...` (only
-  the same pre-existing unrelated `TestParseAndValidatePluginFromYML` failure as
-  BACKEND-573 above), `golangci-lint run ./...` (0 issues).
-- **Next — extend config handling** (§7 step 2) — not started, no ticket yet (likely
-  BACKEND-579 or split further, per the stack in §7). This is where `auth.Load()`
-  actually gets wired into `cli/cli.go`'s `before()` and `config.Resolve` gets its
-  `auth.Auth` param.
-- Remaining §7 steps (API support, command groups one by one incl. `auth` login/logout,
-  global flags both ways, analytics for new commands) — **later**.
+Current PR stack (all open, unmerged, as of 2026-07-02), tagged `[BACKEND-579]`:
+- #1278 "Remove compatibility handlers" — base `v3-development`.
+- #1279 "Rename and alias commands as described in the RFC" — base
+  `BACKEND-573-legacy-cleanup`.
+- #1282 "Restructure commands code into packages per command family, like Platform
+  CLI" — base `BACKEND-573-command-reorganization`.
+- #1284 "Add auth token store from Platform CLI (dependency of config handling)" —
+  base `BACKEND-573-command-folders`. This is §7 step 1.
+- Not yet a PR: config handling (§7 step 2) is committed on
+  `BACKEND-579-config-handling`, stacked on top of #1284's branch.
+
+Separately, BACKEND-571 (migrate urfave→Cobra) is **done**, PR approved but not yet
+merged (Mobile team owns the phased rollout).
+
+One unrelated pre-existing test failure throughout this whole stack:
+`TestParseAndValidatePluginFromYML` (`plugins/model_methods_test.go`) fails because
+`stepman` isn't installed in this sandbox — confirmed via `git stash` that it fails
+identically on the untouched tree.
+
+**§7 step 1 (auth token store, PR #1284) — done**, commit `9b92ee58`. Added
+`internal/auth/{auth.go,auth_test.go}` (this repo's first top-level `internal/`
+package), ported verbatim from `../bitrise-cli/internal/auth`. No new dependency
+(`gopkg.in/yaml.v3` was already vendored).
+
+**§7 step 2 (config handling) — done**, on `BACKEND-579-config-handling`. Scope was
+narrowed during planning: bitrise-cli's 7-key config schema (`app_id`, `token`, API
+URLs, `output`, `theme`) has no consumer in this repo yet, so only
+`configs.ConfigModel`'s three real fields (`SetupVersion`, `LastCLIUpdateCheck`,
+`LastPluginUpdateChecks`) got the layered treatment.
+- New `internal/config/{config.go,resolve.go}`: reads `~/.config/bitrise/config.yaml`
+  (XDG) + per-dir `.bitrise-cli.yml` (ancestor search). `Resolve(global, dir, legacy)`
+  precedence: per-dir > global > legacy `~/.bitrise/config.json` > zero value;
+  threaded via `cmd.Context()` (`WithResolved`/`FromContext`), same pattern as
+  bitrise-cli.
+- `configs.LoadConfigModel()` — new exported wrapper around the existing private
+  `loadBitriseConfig()`; purely additive, existing setup/update-check functions
+  untouched.
+- Wired into `cli/cli.go`'s `before()`. Load failures are non-fatal (logged +
+  zero-value fallback) since nothing consumes the new config yet and all callers of
+  `before()` otherwise treat a returned error as fatal.
+- Consequence: `internal/auth` stays unwired (no field needs a token yet) — wire it
+  once a real key needing one lands (§7 step 4).
+- Verified: `go build/vet/test ./...` green (only the pre-existing stepman failure
+  above); `golangci-lint run` 0 issues; manual check of corrupted-config fallback and
+  legacy-config passthrough.
+
+**Open question, not yet resolved:** "layer the existing keys" was read as
+"`configs.ConfigModel`'s fields" (tied to the literal old config file named in the
+original request). The alternative reading — extending `configs`' env-var-only
+boolean toggles (`CI`/`DEBUG`/`PR`/secret filtering/offline mode) to also be
+YAML-configurable — was not implemented. If that turns out to be what's wanted, it's
+a separate, same-shape task, not a fix to what landed here.
+
+Remaining: §7 steps 3-6 (bitriseapi core, command groups incl. `auth` login/logout,
+global flags both ways, analytics for new commands).
