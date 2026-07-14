@@ -98,6 +98,10 @@ func stepInfo(c *cli.Context) error {
 		return err
 	}
 
+	// OriginalVersion is an activation-time concept (the requested version
+	// constraint); step-info doesn't report it, so keep it out of the output.
+	stepInfo.OriginalVersion = ""
+
 	logger.Print(stepInfo)
 	return nil
 }
