@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"strings"
@@ -221,7 +222,12 @@ func before(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		log.Warnf("Failed to load legacy config.json, ignoring: %s", err)
 	}
-	cmd.SetContext(config.WithResolved(cmd.Context(), config.Resolve(globalCfg, dirCfg, legacyCfg)))
+
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cmd.SetContext(config.WithResolved(ctx, config.Resolve(globalCfg, dirCfg, legacyCfg)))
 
 	return nil
 }

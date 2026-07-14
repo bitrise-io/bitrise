@@ -244,3 +244,16 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 		})
 	}
 }
+
+// runEnvman and runPlugin call before() directly, without ever going through
+// cobra's Execute()/ExecuteC() — the only place that seeds cmd.Context() with
+// context.Background() when nil. Regression test for a panic ("cannot create
+// context from nil parent") that this caused in config.WithResolved.
+func Test_before_calledWithoutExecute_doesNotPanic(t *testing.T) {
+	root := newRootCommand()
+
+	assert.NotPanics(t, func() {
+		err := before(root, nil)
+		assert.NoError(t, err)
+	})
+}
