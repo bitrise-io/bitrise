@@ -6,7 +6,7 @@ title: Bitrise CLI v3 breaking changes
 
 This document tracks the user-visible breaking changes introduced for the **v3**
 major release. v3 merges the cloud resource-management commands into the existing
-CLI (see the [RFC](https://bitrise.atlassian.net/wiki/spaces/ENGI/pages/5042241595)).
+CLI.
 
 Append new breaking changes here as later v3 steps land. List each change with
 what changed, the impact, and how to migrate.
