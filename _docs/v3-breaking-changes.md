@@ -40,8 +40,6 @@ native behavior.
   `NAME / USAGE / VERSION / GLOBAL OPTIONS / COMMANDS / PLUGINS` layout is gone.
   Installed plugins are still listed (in a `Plugins:` section appended to the help),
   but the `[$ENV]` env-binding hints next to global flags are no longer shown.
-- **`--version` / `-v` now prints `bitrise version <version>`** instead of a bare
-  version string.
 
 ### Command listing and completion
 
