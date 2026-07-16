@@ -308,9 +308,11 @@ func mapStepResultToEvent(result StepResult) (string, analytics.Properties, erro
 	case models.StepRunStatusCodeSuccess:
 		eventName = stepFinishedEventName
 		extraProperties = analytics.Properties{statusProperty: successfulValue}
+		extraProperties.AppendIfNotEmpty(stepIDProperty, result.Info.StepID)
 	case models.StepRunStatusCodeFailed, models.StepRunStatusCodeFailedSkippable:
 		eventName = stepFinishedEventName
 		extraProperties = analytics.Properties{statusProperty: failedValue}
+		extraProperties.AppendIfNotEmpty(stepIDProperty, result.Info.StepID)
 		extraProperties.AppendIfNotEmpty(errorMessageProperty, result.ErrorMessage)
 	case models.StepRunStatusAbortedWithCustomTimeout:
 		eventName = stepAbortedEventName

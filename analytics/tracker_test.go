@@ -21,21 +21,24 @@ func Test_mapStepResultToEvent(t *testing.T) {
 			result: StepResult{
 				Status:  models.StepRunStatusCodeSuccess,
 				Runtime: 30 * time.Second,
+				Info:    StepInfo{StepID: "ID"},
 			},
 			expectedEvent:      "step_finished",
-			expectedExtraProps: analytics.Properties{"status": "successful", "runtime": int64(30)},
+			expectedExtraProps: analytics.Properties{"status": "successful", "runtime": int64(30), "step_id": "ID"},
 		},
 		{
 			name: "Step failed",
 			result: StepResult{
 				Status:       models.StepRunStatusCodeFailed,
 				ErrorMessage: "msg",
+				Info:         StepInfo{StepID: "ID"},
 			},
 			expectedEvent: "step_finished",
 			expectedExtraProps: analytics.Properties{
 				"status":        "failed",
 				"error_message": "msg",
 				"runtime":       int64(0),
+				"step_id":       "ID",
 			},
 		},
 		{
