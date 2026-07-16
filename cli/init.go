@@ -32,10 +32,10 @@ var initCommand = &cobra.Command{
 				}
 
 				if err := initConfig(cmd); err != nil {
-					failf(err.Error())
+					failf("%s", err)
 				}
 			} else {
-				failf(err.Error())
+				failf("%s", err)
 			}
 		}
 		return nil

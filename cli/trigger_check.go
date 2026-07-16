@@ -93,7 +93,7 @@ func triggerCheck(cmd *cobra.Command, args []string) error {
 
 	prGlobalFlagPtr, err := resolveBoolFlagOrEnv(cmd.Root().PersistentFlags(), PRKey)
 	if err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	triggerPattern, _ := cmd.Flags().GetString(PatternKey)

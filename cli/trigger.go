@@ -56,15 +56,15 @@ func trigger(cmd *cobra.Command, args []string) error {
 
 	prGlobalFlagPtr, err := resolveBoolFlagOrEnv(cmd.Root().PersistentFlags(), PRKey)
 	if err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 	ciGlobalFlagPtr, err := resolveBoolFlagOrEnv(cmd.Root().PersistentFlags(), CIKey)
 	if err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 	secretFiltering, err := resolveBoolFlagOrEnv(cmd.Flags(), SecretFilteringKey)
 	if err != nil {
-		failf(err.Error())
+		failf("%s", err)
 	}
 	secretEnvsFiltering, err := resolveBoolEnv(configs.IsSecretEnvsFilteringKey)
 	if err != nil {
@@ -183,7 +183,7 @@ func trigger(cmd *cobra.Command, args []string) error {
 			os.Exit(exitCode)
 		}
 
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
