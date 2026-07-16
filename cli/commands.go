@@ -37,6 +37,8 @@ func newRootCommand() *cobra.Command {
 		},
 	}
 
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
+
 	// --debug, --ci and --pr are bound to their env vars: analytics report them as
 	// set when sourced from the env, and the flag/env value is resolved by the mode
 	// resolvers — for --debug additionally in Run() before cobra parses, so the
