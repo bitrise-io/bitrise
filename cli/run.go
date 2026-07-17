@@ -15,7 +15,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/cli/containermanager"
 	"github.com/bitrise-io/bitrise/v2/cli/docker"
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/envfile"
 	"github.com/bitrise-io/bitrise/v2/log"
@@ -36,8 +35,7 @@ const (
 	DefaultSecretsFileName       = ".bitrise.secrets.yml"
 	OutputFormatKey              = "output-format"
 
-	depManagerBrew      = "brew"
-	secretFilteringFlag = "secret-filtering"
+	depManagerBrew = "brew"
 )
 
 var errWorkflowNotSpecified = errors.New("workflow not specified")
@@ -63,12 +61,7 @@ func init() {
 	flags.String(WorkflowKey, "", "workflow id to run.")
 	flags.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
 	flags.StringP(InventoryKey, inventoryShortKey, "", "Path of the inventory file.")
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// run's --secret-filtering, unlike trigger's, was never bound to the
-	// BITRISE_SECRET_FILTERING env var, so it is intentionally not markEnvVar'd
-	// (analytics report it as set only from the command line) and its env is
-	// matched literally — see legacy.RunSecretFilteringOverride.
-	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
+	addSecretFilteringFlag(flags)
 
 	addJSONParamsFlags(flags)
 	flags.String(OutputFormatKey, "", "Log format. Available values: json, console")
@@ -134,7 +127,7 @@ func run(cmd *cobra.Command, args []string) error {
 			printWorkflowRunStatusMessage(msg)
 			os.Exit(exitCode)
 		}
-		failf(err.Error())
+		failf("%s", err)
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
@@ -215,14 +208,14 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	}
 
 	if r.agentConfig != nil {
-		if err := runBuildStartHooks(r.agentConfig.Hooks); err != nil {
+		if err := runBuildHook(r.agentConfig.Hooks.DoOnBuildStart, "build start"); err != nil {
 			return 1, fmt.Errorf("build start hooks: %s", err)
 		}
 		if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildStart); err != nil {
 			return 1, fmt.Errorf("build start dir cleanup: %s", err)
 		}
 		defer func() {
-			if err := runBuildEndHooks(r.agentConfig.Hooks); err != nil {
+			if err := runBuildHook(r.agentConfig.Hooks.DoOnBuildEnd, "build end"); err != nil {
 				log.Errorf("build end hooks: %s", err)
 			}
 			if err := cleanupDirs(r.agentConfig.Hooks.CleanupOnBuildEnd); err != nil {
@@ -249,7 +242,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 
 	envfile.LogEnvVarLimitIfExceeded()
 
-	// Register run modes
 	if err := registerRunModes(r.config.Modes); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to register workflow run modes: %w", err)
 	}
@@ -259,7 +251,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		targetWorkflow.Title = r.config.Workflow
 	}
 
-	// Envman setup
 	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.EnvstorePathEnvKey, err)
 	}
@@ -272,7 +263,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %w", err)
 	}
 
-	// App level environment
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
@@ -299,7 +289,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		}
 	}
 
-	// Trigger WillStartRun
 	buildRunStartModel := models.BuildRunStartModel{
 		EventName:   string(plugins.WillStartRun),
 		StartTime:   startTime,
@@ -337,7 +326,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		log.Print()
 	}
 
-	// Run workflows
 	for i, workflowRunPlan := range plan.ExecutionPlan {
 		bitrise.PrintRunningWorkflow(workflowRunPlan.WorkflowTitle)
 
@@ -355,10 +343,8 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		buildRunResults = r.runWorkflow(workflowRunPlan, r.config.Config.DefaultStepLibSource, buildRunResults, &environments, r.config.Secrets, isLastWorkflow, buildIDProperties)
 	}
 
-	// Build finished
 	bitrise.PrintSummary(buildRunResults)
 
-	// Trigger WorkflowRunDidFinish
 	buildRunResults.EventName = string(plugins.DidFinishRun)
 	if err := plugins.TriggerEvent(plugins.DidFinishRun, buildRunResults); err != nil {
 		log.Warnf("Failed to trigger WorkflowRunDidFinish: %s", err)
@@ -373,10 +359,22 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 		workflowToRunID = args[0]
 	}
 
-	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
-	ciGlobalFlagPtr := legacy.CIModeFlagOverride(cmd, CIKey)
-	secretFiltering := legacy.RunSecretFilteringOverride(cmd, secretFilteringFlag)
-	secretEnvsFiltering := legacy.SecretEnvsFilteringOverride()
+	prGlobalFlagPtr, err := resolveBoolFlagOrEnv(cmd.Root().PersistentFlags(), PRKey)
+	if err != nil {
+		return nil, err
+	}
+	ciGlobalFlagPtr, err := resolveBoolFlagOrEnv(cmd.Root().PersistentFlags(), CIKey)
+	if err != nil {
+		return nil, err
+	}
+	secretFiltering, err := resolveBoolFlagOrEnv(cmd.Flags(), SecretFilteringKey)
+	if err != nil {
+		return nil, err
+	}
+	secretEnvsFiltering, err := resolveBoolEnv(configs.IsSecretEnvsFilteringKey)
+	if err != nil {
+		return nil, err
+	}
 
 	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
 	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)

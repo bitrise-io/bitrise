@@ -307,9 +307,8 @@ func (r WorkflowRunner) activateAndRunStep(
 	if stepRunErr != nil {
 		if *mergedStep.IsSkippable {
 			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeFailedSkippable, exit, stepRunErr, false, redactedStepInputs, outEnvironments)
-		} else {
-			return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeFailed, exit, stepRunErr, false, redactedStepInputs, outEnvironments)
 		}
+		return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeFailed, exit, stepRunErr, false, redactedStepInputs, outEnvironments)
 	}
 
 	return newActivateAndRunStepResult(mergedStep, stepInfoPtr, models.StepRunStatusCodeSuccess, 0, nil, false, redactedStepInputs, outEnvironments)
@@ -950,7 +949,7 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 				return models.BitriseDataModel{}, []string{}, fmt.Errorf("failed to merge Bitrise config (%s): %w", bitriseConfigPath, err)
 			}
 
-			isJSON := filepath.Ext(bitriseConfigPath) == "json"
+			isJSON := filepath.Ext(bitriseConfigPath) == ".json"
 			config, warns, err := bitrise.ConfigModelFromFileContent([]byte(mergedConfigContent), isJSON, validation)
 			warnings = warns
 			if err != nil {

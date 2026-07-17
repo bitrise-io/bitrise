@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/spf13/cobra"
@@ -38,25 +37,17 @@ func newRootCommand() *cobra.Command {
 		},
 	}
 
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// Reproduce the previous framework's command surface: declaration-order (not
-	// alphabetical) command and flag listing, a bare version string (not cobra's
-	// "bitrise version X"), and no auto-generated `completion` command. The next
-	// major version can drop these and adopt cobra's defaults.
-	cobra.EnableCommandSorting = false
-	rootCmd.PersistentFlags().SortFlags = false
 	rootCmd.SetVersionTemplate("{{.Version}}\n")
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	// END MIGRATION PERIOD COMPATIBILITY
 
-	// --debug is declared here for help, analytics and plugin/envman flag
-	// recognition, but its effective value is resolved by legacy.IsDebugMode
-	// before cobra parses, so the logger can be configured up front.
+	// --debug, --ci and --pr are bound to their env vars: analytics report them as
+	// set when sourced from the env, and the flag/env value is resolved by the mode
+	// resolvers — for --debug additionally in Run() before cobra parses, so the
+	// logger can be configured up front.
 	rootCmd.PersistentFlags().Bool(DebugModeKey, false, "If true it enables DEBUG mode.")
 	rootCmd.PersistentFlags().Bool(CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
 	rootCmd.PersistentFlags().Bool(PRKey, false, "If true bitrise runs in pull request mode.")
-	markEnvVar(rootCmd.PersistentFlags(), DebugModeKey, configs.DebugModeEnvKey)
-	markEnvVar(rootCmd.PersistentFlags(), CIKey, configs.CIModeEnvKey)
+	setFlagEnvVar(rootCmd.PersistentFlags(), DebugModeKey, configs.DebugModeEnvKey)
+	setFlagEnvVar(rootCmd.PersistentFlags(), CIKey, configs.CIModeEnvKey)
 
 	rootCmd.AddCommand(
 		initCommand,
@@ -80,23 +71,15 @@ func newRootCommand() *cobra.Command {
 	// regardless of how help is reached.
 	rootCmd.InitDefaultHelpCmd()
 
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// Route the root command's --help to the hand-rendered printRootHelp; other
-	// commands fall through to cobra's native help. The next major can drop this.
+	// Render cobra's native help for every command, and append the installed
+	// plugin list to the root help (cobra has no notion of bitrise plugins).
 	defaultHelp := rootCmd.HelpFunc()
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		if cmd == rootCmd {
-			printRootHelp(rootCmd)
-			return
-		}
 		defaultHelp(cmd, args)
+		if cmd == rootCmd {
+			printInstalledPlugins(cmd.OutOrStdout())
+		}
 	})
-
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// Reproduce urfave/cli's leniency towards an unrecognised flag that follows a
-	// positional argument (see legacy.EnableUnknownFlagPassthrough) so the
-	// migration stays behaviour-preserving.
-	legacy.EnableUnknownFlagPassthrough(rootCmd)
 
 	return rootCmd
 }

@@ -1,8 +1,9 @@
 package cli
 
 import (
+	"slices"
+
 	"github.com/bitrise-io/bitrise/v2/bitrise"
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/spf13/cobra"
@@ -31,16 +32,24 @@ func showSubcommandHelp(cmd *cobra.Command) {
 }
 
 // detectPlugin decides plugin dispatch: it only happens when the first
-// non-global-flag token is not a known command, so e.g. `bitrise run a:b` stays
-// a run invocation rather than being treated as a plugin.
+// non-global-flag token is not a known command (or "help"), so e.g.
+// `bitrise run a:b` stays a run invocation rather than being treated as a plugin.
 func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool) {
-	i := legacy.CommandTokenIndex(rawArgs, globalFlagNames)
+	i := commandTokenIndex(rawArgs, globalFlagNames)
 	if i == len(rawArgs) {
 		return "", nil, false
 	}
-	if legacy.IsKnownCommand(root, rawArgs[i]) {
+
+	token := rawArgs[i]
+	if token == "help" {
 		return "", nil, false
 	}
+	for _, c := range root.Commands() {
+		if c.Name() == token || slices.Contains(c.Aliases, token) {
+			return "", nil, false
+		}
+	}
+
 	// Pass the args from the command token onward (not globals-stripped) so that
 	// flags following the plugin name — including ones that share a global flag's
 	// name, e.g. the plugin's own --debug — are forwarded to the plugin verbatim.
@@ -50,7 +59,7 @@ func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool
 func runPlugin(root *cobra.Command, rawArgs []string, pluginName string, pluginArgs []string) {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 
-	legacy.ApplyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
+	applyGlobalFlagsFromArgs(root, rawArgs, globalFlagNames)
 	if err := before(root, nil); err != nil {
 		failf("%s", err)
 	}

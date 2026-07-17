@@ -29,24 +29,11 @@ func init() {
 }
 
 func pluginList(cmd *cobra.Command) error {
-	// Input validation
-	format, _ := cmd.Flags().GetString(output.FormatKey)
-	if format == "" {
-		format = output.FormatRaw
-	}
-	if format != output.FormatRaw && format != output.FormatJSON {
-		showSubcommandHelp(cmd)
-		return fmt.Errorf("invalid format: %s", format)
+	logger, err := loggerForFormat(cmd)
+	if err != nil {
+		return err
 	}
 
-	var logger Logger
-	logger = NewDefaultRawLogger()
-	if format == output.FormatJSON {
-		logger = NewDefaultJSONLogger()
-	}
-	// ---
-
-	// List
 	installedPlugins, err := plugins.InstalledPluginList()
 	if err != nil {
 		return fmt.Errorf("failed to list plugins, error: %s", err)

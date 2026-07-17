@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/spf13/pflag"
 ) // Flags ...
 
@@ -35,6 +36,8 @@ const (
 	TagKey    = "tag"
 	GitKey    = "git"
 	StepIDKey = "stepid"
+
+	SecretFilteringKey = "secret-filtering"
 )
 
 // globalFlagNames lists the persistent flags that configure bitrise itself.
@@ -61,4 +64,9 @@ func addTriggerFilterFlags(fs *pflag.FlagSet) {
 	fs.String(PRTargetBranchKey, "", "Git pull request target branch name.")
 	fs.String(PRReadyStateKey, "", "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review")
 	fs.String(TagKey, "", "Git tag name.")
+}
+
+func addSecretFilteringFlag(fs *pflag.FlagSet) {
+	fs.Bool(SecretFilteringKey, false, "Hide secret values from the log.")
+	setFlagEnvVar(fs, SecretFilteringKey, configs.IsSecretFilteringKey)
 }

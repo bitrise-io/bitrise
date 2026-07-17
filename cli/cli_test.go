@@ -3,9 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,38 +26,43 @@ func Test_loggerParameters(t *testing.T) {
 			wantIsRunCommand: true,
 		},
 		{
-			name:             "Output format json with one dash syntax",
-			args:             []string{"-output-format", "json"},
+			name:             "Output format json with space syntax",
+			args:             []string{"--output-format", "json"},
 			wantOutputFormat: "json",
 		},
 		{
-			name:             "Output format console with two dash syntax",
+			name:             "Output format console with space syntax",
 			args:             []string{"--output-format", "console"},
 			wantOutputFormat: "console",
 		},
 		{
-			name:             "Output format json value with one dash syntax",
-			args:             []string{"-output-format=json"},
+			name:             "Output format json value with equals syntax",
+			args:             []string{"--output-format=json"},
 			wantOutputFormat: "json",
 		},
 		{
-			name:             "Output format console value with two dash syntax",
+			name:             "Output format console value with equals syntax",
 			args:             []string{"--output-format=console"},
 			wantOutputFormat: "console",
 		},
 		{
+			name:             "Single-dash long flag is not recognised",
+			args:             []string{"-output-format", "json"},
+			wantOutputFormat: "",
+		},
+		{
 			name:             "Output format invalid syntax",
-			args:             []string{"-output-format", "--log-level"},
+			args:             []string{"--output-format", "--log-level"},
 			wantOutputFormat: "",
 		},
 		{
 			name:             "Output format invalid value",
-			args:             []string{"-output-format", "invalid"},
+			args:             []string{"--output-format", "invalid"},
 			wantOutputFormat: "",
 		},
 		{
 			name:             "Invalid flag",
-			args:             []string{"-output-format-invalid=json"},
+			args:             []string{"--output-format-invalid=json"},
 			wantOutputFormat: "",
 		},
 	}
@@ -229,7 +232,7 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := newRootCommand()
-			legacy.ApplyGlobalFlagsFromArgs(root, tt.args, globalFlagNames)
+			applyGlobalFlagsFromArgs(root, tt.args, globalFlagNames)
 
 			debug, _ := root.PersistentFlags().GetBool(DebugModeKey)
 			ci, _ := root.PersistentFlags().GetBool(CIKey)
@@ -239,19 +242,4 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 			assert.Equal(t, tt.wantPR, pr, "pr")
 		})
 	}
-}
-
-// urfave/cli ignored an unrecognised flag that followed a positional argument;
-// the migration reproduces that via FParseErrWhitelist on every command (cobra
-// does not inherit it). Guard against a command — including a nested subcommand —
-// being added without the leniency.
-func Test_unknownFlagPassthroughEnabledOnWholeTree(t *testing.T) {
-	var check func(c *cobra.Command)
-	check = func(c *cobra.Command) {
-		assert.Truef(t, c.FParseErrWhitelist.UnknownFlags, "command %q must tolerate unknown flags", c.CommandPath())
-		for _, sub := range c.Commands() {
-			check(sub)
-		}
-	}
-	check(newRootCommand())
 }
