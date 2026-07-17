@@ -49,14 +49,14 @@ type RunConfig struct {
 	Secrets  []envmanModels.EnvironmentItemModel
 }
 
-var runCommand = &cobra.Command{
-	Use:     "run",
-	Aliases: []string{"r"},
-	Short:   "Runs a specified Workflow.",
-	RunE:    run,
-}
+func newRunCommand() *cobra.Command {
+	runCommand := &cobra.Command{
+		Use:     "run",
+		Aliases: []string{"r"},
+		Short:   "Runs a specified Workflow.",
+		RunE:    run,
+	}
 
-func init() {
 	flags := runCommand.Flags()
 	flags.String(WorkflowKey, "", "workflow id to run.")
 	flags.StringP(ConfigKey, configShortKey, "", "Path where the workflow config file is located.")
@@ -68,6 +68,8 @@ func init() {
 
 	flags.String(ConfigBase64Key, "", "base64 encoded config data.")
 	flags.String(InventoryBase64Key, "", "base64 encoded inventory data.")
+
+	return runCommand
 }
 
 func run(cmd *cobra.Command, args []string) error {

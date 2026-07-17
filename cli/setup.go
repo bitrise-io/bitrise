@@ -10,24 +10,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var setupCommand = &cobra.Command{
-	Use:   "setup",
-	Short: "Setup the current host. Install every required tool to run Workflows.",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
+func newSetupCommand() *cobra.Command {
+	setupCommand := &cobra.Command{
+		Use:   "setup",
+		Short: "Setup the current host. Install every required tool to run Workflows.",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			logCommandParameters(cmd)
 
-		if err := setup(cmd); err != nil {
-			log.Errorf("Setup failed, error: %s", err)
-			os.Exit(1)
-		}
-		return nil
-	},
-}
+			if err := setup(cmd); err != nil {
+				log.Errorf("Setup failed, error: %s", err)
+				os.Exit(1)
+			}
+			return nil
+		},
+	}
 
-func init() {
 	setupCommand.Flags().Bool("clean", false, "Removes bitrise's workdir before setup.")
 	setupCommand.Flags().Bool("minimal", false, "Only installs the required tools for running in CI mode.")
 	setupCommand.Flags().Bool("no-update", false, "Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated.")
+
+	return setupCommand
 }
 
 func setup(cmd *cobra.Command) error {

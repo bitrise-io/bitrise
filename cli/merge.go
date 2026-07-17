@@ -13,17 +13,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var mergeConfigCommand = &cobra.Command{
-	Use:   "merge",
-	Short: "Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.",
-	Long: `Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.
+func newMergeCommand() *cobra.Command {
+	mergeConfigCommand := &cobra.Command{
+		Use:   "merge",
+		Short: "Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.",
+		Long: `Resolves includes in a modular bitrise.yml and merges included config modules into a single bitrise.yml file.
 
 By default, the command looks for a bitrise.yml in the current directory, custom path can be specified as an argument.`,
-	RunE: mergeConfig,
-}
+		RunE: mergeConfig,
+	}
 
-func init() {
 	mergeConfigCommand.Flags().StringP("output", "o", "", "Output directory for the merged config file (bitrise.yml) and related config file tree (config_tree.json).")
+
+	return mergeConfigCommand
 }
 
 func mergeConfig(cmd *cobra.Command, args []string) error {

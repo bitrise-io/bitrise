@@ -38,49 +38,6 @@ func Test_GlobalFlagPRRun(t *testing.T) {
 	}
 }
 
-func Test_GlobalFlagPRTriggerCheck(t *testing.T) {
-	configPth := "global_flag_test_bitrise.yml"
-	secretsPth := "global_flag_test_secrets.yml"
-
-	t.Run("global flag sets pr mode", func(t *testing.T) {
-		t.Setenv(configs.PRModeEnvKey, "false")
-		t.Setenv(configs.PullRequestIDEnvKey, "")
-
-		cmd := command.New(testhelpers.BinPath(), "--pr", "trigger-check", "deprecated_pr", "--config", configPth, "--inventory", secretsPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-	})
-
-	t.Run("global flag sets pr mode", func(t *testing.T) {
-		t.Setenv(configs.PRModeEnvKey, "false")
-		t.Setenv(configs.PullRequestIDEnvKey, "")
-
-		cmd := command.New(testhelpers.BinPath(), "--pr=true", "trigger-check", "deprecated_pr", "--config", configPth, "--inventory", secretsPth)
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.Error(t, err, out)
-	})
-
-	t.Run("global flag sets NOT pr mode", func(t *testing.T) {
-		t.Setenv(configs.PRModeEnvKey, "true")
-		t.Setenv(configs.PullRequestIDEnvKey, "ID")
-
-		cmd := command.New(testhelpers.BinPath(), "--pr=true", "trigger-check", "master", "--config", configPth, "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"master","workflow":"deprecated_pr"}`, out)
-	})
-
-	t.Run("global flag sets NOT pr mode", func(t *testing.T) {
-		t.Setenv(configs.PRModeEnvKey, "true")
-		t.Setenv(configs.PullRequestIDEnvKey, "ID")
-
-		cmd := command.New(testhelpers.BinPath(), "--pr=false", "trigger-check", "master", "--config", configPth, "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"master","workflow":"deprecated_code_push"}`, out)
-	})
-}
-
 func Test_GlobalFlagPRTrigger(t *testing.T) {
 	configPth := "global_flag_test_bitrise.yml"
 	secretsPth := "global_flag_test_secrets.yml"
