@@ -34,16 +34,16 @@ func NewInitCommand() *cobra.Command {
 						return fmt.Errorf("setup failed, error: %s", err)
 					}
 
-				if err := initConfig(cmd); err != nil {
-					failf("%s", err)
+					if err := initConfig(cmd); err != nil {
+						cmdutil.Failf("%s", err)
+					}
+				} else {
+					cmdutil.Failf("%s", err)
 				}
-			} else {
-				failf("%s", err)
 			}
-		}
-		return nil
-	},
-}
+			return nil
+		},
+	}
 
 	initCommand.Flags().Bool("minimal", false, "creates empty bitrise config and secrets")
 

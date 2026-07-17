@@ -125,7 +125,7 @@ func run(cmd *cobra.Command, args []string) error {
 			printWorkflowRunStatusMessage(msg)
 			os.Exit(exitCode)
 		}
-		failf("%s", err)
+		cmdutil.Failf("%s", err)
 	}
 
 	msg := createWorkflowRunStatusMessage(0)
