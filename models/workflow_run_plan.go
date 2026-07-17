@@ -70,10 +70,11 @@ type StepExecutionPlan struct {
 	// Step Bundle group
 	StepBundleUUID string                              `json:"step_bundle_uuid,omitempty"`
 	StepBundleEnvs []envmanModels.EnvironmentItemModel `json:"-"`
-	// StepBundleRunIfs stores each run_if statements of the including Step Bundles.
+	// StepBundleRunIfs stores the run_if statement of each including Step Bundle, paired with the
+	// Bundle's UUID so the statement can be evaluated once per Bundle (on entry) and cached.
 	// The first element is the run_if statement of the top most Step Bundle including the given Step.
 	// To execute the Step, all run_if statements must be evaluated to true.
-	StepBundleRunIfs []string `json:"-"`
+	StepBundleRunIfs []StepBundleRunIf `json:"-"`
 
 	// Containers
 	ExecutionContainer *ContainerConfig  `json:"-"`
@@ -104,10 +105,19 @@ type WorkflowRunModes struct {
 	IsSteplibOfflineMode    bool
 }
 
+// StepBundleRunIf pairs a Step Bundle's run_if statement with the Bundle's UUID.
+// The UUID lets the runtime evaluate the statement once when the Bundle is entered and
+// reuse that decision for every Step in the Bundle, so a Bundle Step's output cannot
+// change the run_if outcome for its sibling Steps.
+type StepBundleRunIf struct {
+	BundleUUID string
+	RunIf      string
+}
+
 type BundleContext struct {
 	UUID               string
 	Envs               []envmanModels.EnvironmentItemModel
-	RunIfs             []string
+	RunIfs             []StepBundleRunIf
 	ExecutionContainer *ContainerConfig  // resolved exec container from parent chain
 	ServiceContainers  []ContainerConfig // accumulated services from parent chain
 }
@@ -340,6 +350,9 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 		bundleEnvs = append(bundleContext.Envs, bundleEnvs...)
 	}
 
+	// Register Bundle Plan
+	bundleUUID := builder.uuidProvider()
+
 	// Collect Bundle runIfs
 	runIf := bundleDefinition.RunIf
 	if bundleOverride.RunIf != nil {
@@ -350,17 +363,15 @@ func (builder *WorkflowRunPlanBuilder) processStepBundle(bundleID string, stepLi
 	// This is necessary to ensure that the runIfs of the current bundle are evaluated correctly in the context of the parent bundle.
 	// The Go slice wraps a pointer to the actual data inside.
 	// So passing it around and adding items to it would update all the slices internal data storage.
-	var runIfs []string
+	var runIfs []StepBundleRunIf
 	if bundleContext != nil && len(bundleContext.RunIfs) > 0 {
-		runIfs = make([]string, len(bundleContext.RunIfs))
+		runIfs = make([]StepBundleRunIf, len(bundleContext.RunIfs))
 		copy(runIfs, bundleContext.RunIfs)
 	}
 	if runIf != "" {
-		runIfs = append(runIfs, runIf)
+		runIfs = append(runIfs, StepBundleRunIf{BundleUUID: bundleUUID, RunIf: runIf})
 	}
 
-	// Register Bundle Plan
-	bundleUUID := builder.uuidProvider()
 	title := bundleDefinition.Title
 	if bundleOverride.Title != "" {
 		title = bundleOverride.Title

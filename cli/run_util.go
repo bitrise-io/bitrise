@@ -78,6 +78,11 @@ func (r WorkflowRunner) activateAndRunSteps(
 	currentStepBundleUUID := ""
 	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
 
+	// Each Step Bundle's run_if is evaluated once, when the Bundle is entered, and the decision is
+	// cached here keyed by the Bundle's UUID. This keeps the Bundle's run_if encapsulated: a Step in
+	// the Bundle cannot change the run_if outcome for its sibling Steps by setting an output env var.
+	stepBundleRunIfResults := map[string]bool{}
+
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
@@ -117,6 +122,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepStartTime,
 			stepStartedProperties,
 			stepPlan.StepBundleRunIfs,
+			stepBundleRunIfResults,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
@@ -184,7 +190,8 @@ func (r WorkflowRunner) activateAndRunStep(
 	isStepLibOfflineMode bool,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
-	stepBundleRunIfs []string,
+	stepBundleRunIfs []models.StepBundleRunIf,
+	stepBundleRunIfResults map[string]bool,
 ) activateAndRunStepResult {
 	stepInfoPtr, stepIDData, err := newStepInfoPtr(stepID, defaultStepLibSource, step)
 	if err != nil {
@@ -192,21 +199,29 @@ func (r WorkflowRunner) activateAndRunStep(
 	}
 
 	if len(stepBundleRunIfs) > 0 {
-		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
-		if err != nil {
-			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
-			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
-		}
-
 		// To run the Step each of the including Step Bundles run_if statements must evaluate to true, from the top most to the bottom most.
+		// Each Bundle's run_if is evaluated only once, when the Bundle is entered (its first Step), and the cached decision is reused
+		// for the Bundle's remaining Steps. This keeps the run_if encapsulated: a Step in the Bundle cannot change the outcome for its
+		// sibling Steps by modifying an env var.
 		for _, stepBundleRunIf := range stepBundleRunIfs {
-			isRun, err := bitrise.EvaluateTemplateToBool(stepBundleRunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
-			if err != nil {
-				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+			isRun, evaluated := stepBundleRunIfResults[stepBundleRunIf.BundleUUID]
+			if !evaluated {
+				runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
+				if err != nil {
+					err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+					return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+				}
+
+				isRun, err = bitrise.EvaluateTemplateToBool(stepBundleRunIf.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+				if err != nil {
+					return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+				}
+				stepBundleRunIfResults[stepBundleRunIf.BundleUUID] = isRun
 			}
+
 			if !isRun {
 				// In the workflow run logs stepInfoPtr.Step.RunIf is used as a reason for skipping the step.
-				stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf)
+				stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf.RunIf)
 				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, true, map[string]string{}, nil)
 			}
 		}

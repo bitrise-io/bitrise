@@ -681,7 +681,11 @@ func toolsListTools(cmd *cobra.Command) error {
 		fmt.Println(string(data))
 	case outputFormatPlaintext:
 		for _, t := range tools {
-			fmt.Println(t)
+			if len(t.Aliases) > 0 {
+				fmt.Printf("%s (alias: %s)\n", t.Name, strings.Join(t.Aliases, ", "))
+			} else {
+				fmt.Println(t.Name)
+			}
 		}
 	default:
 		return fmt.Errorf("invalid --format: %s", format)
