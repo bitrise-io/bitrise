@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
@@ -28,18 +29,18 @@ var versionCommand = &cobra.Command{
 }
 
 func init() {
-	versionCommand.Flags().StringP(OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	versionCommand.Flags().StringP(cmdutil.OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 	versionCommand.Flags().Bool("full", false, "Prints the build number as well.")
 }
 
 func printVersionCmd(cmd *cobra.Command, _ []string) error {
-	logCommandParameters(cmd)
+	cmdutil.LogCommandParameters(cmd)
 
 	fullVersion, _ := cmd.Flags().GetBool("full")
 
-	format, _ := cmd.Flags().GetString(OuputFormatKey)
+	format, _ := cmd.Flags().GetString(cmdutil.OuputFormatKey)
 	if err := output.ConfigureOutputFormat(format); err != nil {
-		failf("Failed to configure output format, error: %s", err)
+		cmdutil.Failf("Failed to configure output format, error: %s", err)
 	}
 
 	versionOutput := VersionOutputModel{
