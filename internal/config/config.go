@@ -18,10 +18,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config is the on-disk shape. Its fields mirror configs.ConfigModel exactly
-// so the legacy ~/.bitrise/config.json can act as a real top-precedence layer
-// in Resolve (see resolve.go), rather than a schema with no equivalent to
-// take precedence over.
+// Config is the on-disk shape. Its fields mirror configs.ConfigModel exactly,
+// so the legacy ~/.bitrise/config.json can act as a layer in Resolve (see
+// resolve.go) with the same fields to compare against.
 //
 // LastCLIUpdateCheck and LastPluginUpdateChecks are timestamps the CLI
 // itself writes during normal operation, not user preferences — unusual
@@ -35,8 +34,7 @@ type Config struct {
 
 // DirFileName is the file looked up in the working directory and its
 // ancestors to provide per-project overrides — above the global file, below
-// env vars/flags. Matches the Platform CLI's per-directory config file name,
-// so a future key added to both layers doesn't need a second file/migration.
+// env vars/flags.
 const DirFileName = ".bitrise-cli.yml"
 
 // Dir returns the absolute path to the bitrise CLI config directory — the

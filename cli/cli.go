@@ -204,13 +204,14 @@ func before(cmd *cobra.Command, _ []string) error {
 	cmdutil.RegisterSteplibOfflineMode(isOfflineMode)
 
 	// Load the layered config: the legacy ~/.bitrise/config.json is checked
-	// first and wins when present (per the RFC), with the new per-dir
-	// .bitrise-cli.yml and global config.yml as lower-precedence layers.
-	// Stash the resolved result on the command's context. Nothing consumes
-	// this yet, so a load failure is logged and ignored rather than aborting
-	// the command — every caller of before() (cobra, runEnvman, runPlugin)
-	// treats a returned error as fatal, which would be a regression for a
-	// feature nothing uses.
+	// first and wins when present, with the new per-dir .bitrise-cli.yml and
+	// global config.yml as lower-precedence layers. Stash the resolved result
+	// on the command's context. Nothing reads it back via FromContext yet
+	// (configs.CheckIsCLIUpdateCheckRequired and friends resolve the same
+	// layers independently for their own decisions), so a load failure here
+	// is logged and ignored rather than aborting the command — every caller
+	// of before() (cobra, runEnvman, runPlugin) treats a returned error as
+	// fatal, which would be a regression for a value nothing reads yet.
 	globalCfg, err := config.Load()
 	if err != nil {
 		log.Warnf("Failed to load config.yml, ignoring: %s", err)
@@ -219,7 +220,7 @@ func before(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		log.Warnf("Failed to load .bitrise-cli.yml, ignoring: %s", err)
 	}
-	legacyCfg, err := configs.LoadConfigModel()
+	legacyCfg, _, err := configs.LoadLegacyConfig()
 	if err != nil {
 		log.Warnf("Failed to load legacy config.json, ignoring: %s", err)
 	}
@@ -228,7 +229,7 @@ func before(cmd *cobra.Command, _ []string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	cmd.SetContext(config.WithResolved(ctx, config.Resolve(legacyCfg, dirCfg, globalCfg)))
+	cmd.SetContext(config.WithResolved(ctx, config.Resolve(legacyCfg.ToConfig(), dirCfg, globalCfg)))
 
 	return nil
 }

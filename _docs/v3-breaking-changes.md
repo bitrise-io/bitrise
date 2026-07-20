@@ -118,3 +118,8 @@ scripts keep running — only `trigger-check` was removed outright.
   one. *Migrate:* no action required. To have a value controlled by the new
   per-directory or global file instead, remove that value from
   `~/.bitrise/config.json`.
+- **`setup`/CLI-update-check/plugin-update-check now also write `config.yml`.** If you
+  already have `~/.bitrise/config.json`, it keeps being updated exactly as before (still
+  authoritative for reads), and `~/.config/bitrise/cli/config.yml` is kept in sync
+  alongside it. If you don't have a legacy file, one is no longer created — these
+  commands now write only the new `config.yml`. *Migrate:* no action required.

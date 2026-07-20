@@ -36,7 +36,7 @@ func GetBitriseHomeDirPath() string {
 	return filepath.Join(pathutil.UserHomeDir(), ".bitrise")
 }
 
-func getBitriseConfigFilePath() string {
+func getLegacyConfigFilePath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), bitriseConfigFileName)
 }
 

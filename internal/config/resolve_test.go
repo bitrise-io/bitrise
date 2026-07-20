@@ -5,17 +5,15 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/bitrise-io/bitrise/v2/configs"
 )
 
 func TestResolve_DefaultsWhenNothingSet(t *testing.T) {
-	r := Resolve(configs.ConfigModel{}, Config{}, Config{})
+	r := Resolve(Config{}, Config{}, Config{})
 	assert.Equal(t, Resolved{}, r)
 }
 
 func TestResolve_SetupVersionPrecedence(t *testing.T) {
-	legacy := configs.ConfigModel{SetupVersion: "legacy"}
+	legacy := Config{SetupVersion: "legacy"}
 	dir := Config{SetupVersion: "dir"}
 	global := Config{SetupVersion: "global"}
 
@@ -32,7 +30,7 @@ func TestResolve_SetupVersionPrecedence(t *testing.T) {
 	assert.Equal(t, "legacy", r.SetupVersion)
 
 	// without legacy, dir overrides global
-	r = Resolve(configs.ConfigModel{}, dir, global)
+	r = Resolve(Config{}, dir, global)
 	assert.Equal(t, "dir", r.SetupVersion)
 }
 
@@ -41,7 +39,7 @@ func TestResolve_LastCLIUpdateCheckPrecedence(t *testing.T) {
 	dirTime := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
 	globalTime := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
 
-	legacy := configs.ConfigModel{LastCLIUpdateCheck: legacyTime}
+	legacy := Config{LastCLIUpdateCheck: legacyTime}
 	dir := Config{LastCLIUpdateCheck: dirTime}
 	global := Config{LastCLIUpdateCheck: globalTime}
 
@@ -53,12 +51,12 @@ func TestResolve_LastCLIUpdateCheckPrecedence(t *testing.T) {
 	assert.True(t, r.LastCLIUpdateCheck.Equal(legacyTime))
 
 	// without legacy, dir overrides global
-	r = Resolve(configs.ConfigModel{}, dir, global)
+	r = Resolve(Config{}, dir, global)
 	assert.True(t, r.LastCLIUpdateCheck.Equal(dirTime))
 }
 
 func TestResolve_LastPluginUpdateChecksPrecedence(t *testing.T) {
-	legacy := configs.ConfigModel{LastPluginUpdateChecks: map[string]time.Time{"legacy-plugin": time.Now()}}
+	legacy := Config{LastPluginUpdateChecks: map[string]time.Time{"legacy-plugin": time.Now()}}
 	dir := Config{LastPluginUpdateChecks: map[string]time.Time{"dir-plugin": time.Now()}}
 	global := Config{LastPluginUpdateChecks: map[string]time.Time{"global-plugin": time.Now()}}
 
@@ -70,15 +68,14 @@ func TestResolve_LastPluginUpdateChecksPrecedence(t *testing.T) {
 	assert.Contains(t, r.LastPluginUpdateChecks, "legacy-plugin")
 
 	// without legacy, dir overrides global
-	r = Resolve(configs.ConfigModel{}, dir, global)
+	r = Resolve(Config{}, dir, global)
 	assert.Contains(t, r.LastPluginUpdateChecks, "dir-plugin")
 }
 
-// TestResolve_LegacyTakesPrecedence is the concrete behavior this task is
-// about: per the RFC, the pre-existing ~/.bitrise/config.json is read first
-// and wins over the new per-dir/global layers, even when they're also set.
+// TestResolve_LegacyTakesPrecedence asserts the legacy config wins over the
+// new per-dir/global layers even when they're also set.
 func TestResolve_LegacyTakesPrecedence(t *testing.T) {
-	legacy := configs.ConfigModel{
+	legacy := Config{
 		SetupVersion:           "9.9.9",
 		LastCLIUpdateCheck:     time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC),
 		LastPluginUpdateChecks: map[string]time.Time{"init": time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC)},

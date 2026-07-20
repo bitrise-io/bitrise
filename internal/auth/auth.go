@@ -1,9 +1,9 @@
 // Package auth persists and reads the Bitrise access token.
 //
 // Storage: YAML at $XDG_CONFIG_HOME/bitrise/cli/auth.yaml, falling back to
-// ~/.config/bitrise/cli/auth.yaml. Per the patterns guide, credentials live
-// in their own file (separate from preferences in config.yml) and at
-// 0600 permissions. OS-keychain integration is intentionally deferred.
+// ~/.config/bitrise/cli/auth.yaml. Credentials live in their own file,
+// separate from preferences in config.yml, at 0600 permissions. OS-keychain
+// integration is intentionally deferred.
 //
 // The Bitrise API accepts both Personal Access Tokens (user-scoped) and
 // Workspace API Tokens (workspace-scoped); they have identical wire format

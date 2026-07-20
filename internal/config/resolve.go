@@ -3,14 +3,11 @@ package config
 import (
 	"context"
 	"time"
-
-	"github.com/bitrise-io/bitrise/v2/configs"
 )
 
 // Resolved is Config, layered highest to lowest precedence:
 //  1. Legacy config (~/.bitrise/config.json) — the pre-existing store, kept
-//     authoritative so nothing changes for users who already have one, per
-//     the RFC.
+//     authoritative so nothing changes for users who already have one.
 //  2. Per-directory config (.bitrise-cli.yml, CWD or ancestors)
 //  3. Global config file (~/.config/bitrise/cli/config.yml)
 //  4. Zero value
@@ -20,10 +17,12 @@ type Resolved struct {
 	LastPluginUpdateChecks map[string]time.Time
 }
 
-// Resolve merges the legacy ~/.bitrise/config.json store, the per-directory
-// config, and the global config. dirCfg / legacyCfg are zero values when
-// their respective files were not found.
-func Resolve(legacyCfg configs.ConfigModel, dirCfg, globalCfg Config) Resolved {
+// Resolve merges the legacy, per-directory, and global config layers. All
+// three share the Config shape — the caller converts configs.ConfigModel
+// into a Config for legacyCfg, keeping this package independent of configs.
+// dirCfg / legacyCfg are zero values when their respective files were not
+// found.
+func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 	return Resolved{
 		SetupVersion:           firstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
