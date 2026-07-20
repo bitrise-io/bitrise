@@ -5,29 +5,33 @@ import (
 	"time"
 )
 
-// Resolved is Config, layered highest to lowest precedence:
+// Resolved is a Config merged from, highest to lowest precedence:
 //  1. Legacy config (~/.bitrise/config.json) — the pre-existing store, kept
 //     authoritative so nothing changes for users who already have one.
 //  2. Per-directory config (.bitrise-cli.yml, CWD or ancestors)
 //  3. Global config file (~/.config/bitrise/cli/config.yml)
 //  4. Zero value
+//
+// Resolved embeds Config (rather than being an identical, separately-typed
+// copy of its fields) so a new field only needs adding once — but it stays a
+// distinct type on purpose: Save takes a Config, and a Resolved carries
+// values from all three layers, so passing one straight to Save would risk
+// writing per-dir- or legacy-only data into a file that should only ever
+// reflect what was actually written to it.
 type Resolved struct {
-	SetupVersion           string
-	LastCLIUpdateCheck     time.Time
-	LastPluginUpdateChecks map[string]time.Time
+	Config
 }
 
-// Resolve merges the legacy, per-directory, and global config layers. All
-// three share the Config shape — the caller converts configs.ConfigModel
-// into a Config for legacyCfg, keeping this package independent of configs.
-// dirCfg / legacyCfg are zero values when their respective files were not
-// found.
+// Resolve merges the legacy, per-directory, and global config layers. The
+// caller converts configs.ConfigModel into a Config for legacyCfg, keeping
+// this package independent of configs. dirCfg / legacyCfg are zero values
+// when their respective files were not found.
 func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
-	return Resolved{
+	return Resolved{Config: Config{
 		SetupVersion:           firstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
 		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
-	}
+	}}
 }
 
 func firstNonEmptyString(values ...string) string {

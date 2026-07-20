@@ -97,7 +97,7 @@ func TestResolve_LegacyTakesPrecedence(t *testing.T) {
 }
 
 func TestContext_RoundTrip(t *testing.T) {
-	r := Resolved{SetupVersion: "abc"}
+	r := Resolved{Config: Config{SetupVersion: "abc"}}
 	ctx := WithResolved(t.Context(), r)
 	got := FromContext(ctx)
 	assert.Equal(t, r, got)
