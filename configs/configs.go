@@ -120,7 +120,7 @@ func LoadLegacyConfig() (ConfigModel, bool, error) {
 
 	config := ConfigModel{}
 	if err := json.Unmarshal(bytes, &config); err != nil {
-		return ConfigModel{}, true, fmt.Errorf("failed to marshal config (%s), error: %s", string(bytes), err)
+		return ConfigModel{}, true, fmt.Errorf("failed to unmarshal config (%s), error: %s", string(bytes), err)
 	}
 
 	return config, true, nil
