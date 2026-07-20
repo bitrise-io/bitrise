@@ -20,6 +20,7 @@ func TestSetupForVersionChecks(t *testing.T) {
 
 	t.Setenv("HOME", fakeHomePth)
 	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Chdir(t.TempDir())
 
 	versionMatch, _ := CheckIsSetupWasDoneForVersion("0.9.7")
 	require.Equal(t, false, versionMatch)
@@ -79,6 +80,7 @@ func TestSaveSetupSuccessForVersion_NewUser_OnlySavesToGlobalConfig(t *testing.T
 	}()
 	t.Setenv("HOME", fakeHomePth)
 	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Chdir(t.TempDir())
 
 	require.Equal(t, nil, SaveSetupSuccessForVersion("3.0.0"))
 

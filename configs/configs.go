@@ -146,7 +146,7 @@ func EnsureBitriseConfigDirExists() error {
 }
 
 func CheckIsCLIUpdateCheckRequired() bool {
-	config, err := resolveConfig()
+	config, err := ResolveConfig()
 	if err != nil {
 		return false
 	}
@@ -168,7 +168,7 @@ func SaveCLIUpdateCheck() error {
 }
 
 func CheckIsPluginUpdateCheckRequired(plugin string) bool {
-	config, err := resolveConfig()
+	config, err := ResolveConfig()
 	if err != nil {
 		return false
 	}
@@ -196,7 +196,7 @@ func SavePluginUpdateCheck(plugin string) error {
 }
 
 func CheckIsSetupWasDoneForVersion(ver string) (bool, string) {
-	config, err := resolveConfig()
+	config, err := ResolveConfig()
 	if err != nil {
 		return false, ""
 	}
@@ -223,22 +223,25 @@ func (m ConfigModel) ToConfig() internalconfig.Config {
 	}
 }
 
-// resolveConfig merges the legacy config with the current per-dir and global
+// ResolveConfig merges the legacy config with the current per-dir and global
 // layers, via internal/config.Resolve — the same precedence used everywhere
-// else, so Check* can't drift from it. A load failure in the per-dir or
-// global layer is treated as that layer being absent; a legacy load failure
-// is returned, since every caller here treats it as fatal (fail closed).
-func resolveConfig() (internalconfig.Resolved, error) {
+// else, so callers can't drift from it. A load failure in the per-dir or
+// global layer is logged and treated as that layer being absent; a legacy
+// load failure is returned, since Check* above treat it as fatal (fail
+// closed).
+func ResolveConfig() (internalconfig.Resolved, error) {
 	legacy, _, err := LoadLegacyConfig()
 	if err != nil {
 		return internalconfig.Resolved{}, err
 	}
 	dirCfg, _, err := internalconfig.LoadDir()
 	if err != nil {
+		log.Warnf("Failed to load .bitrise-cli.yml, ignoring: %s", err)
 		dirCfg = internalconfig.Config{}
 	}
 	globalCfg, err := internalconfig.Load()
 	if err != nil {
+		log.Warnf("Failed to load config.yml, ignoring: %s", err)
 		globalCfg = internalconfig.Config{}
 	}
 	return internalconfig.Resolve(legacy.ToConfig(), dirCfg, globalCfg), nil
@@ -261,7 +264,7 @@ func saveGlobalConfig(mutate func(*internalconfig.Config)) error {
 // mutate into the new global config.yml.
 //
 // legacy is deliberately the raw on-disk legacy value (each caller loads it
-// via LoadLegacyConfig, not resolveConfig): both writes below only ever touch
+// via LoadLegacyConfig, not ResolveConfig): both writes below only ever touch
 // the one field being changed, so a value that only exists in the per-dir or
 // global layer never gets copied into a file that should stay a
 // self-contained snapshot of what was actually written to it.

@@ -203,33 +203,20 @@ func before(cmd *cobra.Command, _ []string) error {
 	isOfflineMode := cmdutil.IsSteplibOfflineMode()
 	cmdutil.RegisterSteplibOfflineMode(isOfflineMode)
 
-	// Load the layered config: the legacy ~/.bitrise/config.json is checked
-	// first and wins when present, with the new per-dir .bitrise-cli.yml and
-	// global config.yml as lower-precedence layers. Stash the resolved result
-	// on the command's context. Nothing reads it back via FromContext yet
-	// (configs.CheckIsCLIUpdateCheckRequired and friends resolve the same
-	// layers independently for their own decisions), so a load failure here
-	// is logged and ignored rather than aborting the command — every caller
-	// of before() (cobra, runEnvman, runPlugin) treats a returned error as
-	// fatal, which would be a regression for a value nothing reads yet.
-	globalCfg, err := config.Load()
+	// Resolve the layered config (legacy ~/.bitrise/config.json, checked first
+	// and wins when present, then the new per-dir .bitrise-cli.yml and global
+	// config.yml as lower-precedence layers) and stash it on the command's
+	// context.
+	resolved, err := configs.ResolveConfig()
 	if err != nil {
-		log.Warnf("Failed to load config.yml, ignoring: %s", err)
-	}
-	dirCfg, _, err := config.LoadDir()
-	if err != nil {
-		log.Warnf("Failed to load .bitrise-cli.yml, ignoring: %s", err)
-	}
-	legacyCfg, _, err := configs.LoadLegacyConfig()
-	if err != nil {
-		log.Warnf("Failed to load legacy config.json, ignoring: %s", err)
+		log.Warnf("Failed to resolve config, ignoring: %s", err)
 	}
 
 	ctx := cmd.Context()
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	cmd.SetContext(config.WithResolved(ctx, config.Resolve(legacyCfg.ToConfig(), dirCfg, globalCfg)))
+	cmd.SetContext(config.WithResolved(ctx, resolved))
 
 	return nil
 }
