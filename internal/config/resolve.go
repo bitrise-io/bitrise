@@ -8,11 +8,11 @@ import (
 )
 
 // Resolved is Config, layered highest to lowest precedence:
-//  1. Per-directory config (.bitrise-cli.yml, CWD or ancestors)
-//  2. Global config file (~/.config/bitrise/config.yaml)
-//  3. Legacy config (~/.bitrise/config.json) — the pre-existing store, kept
-//     as the fallback so nothing regresses for users who've never seen the
-//     new files.
+//  1. Legacy config (~/.bitrise/config.json) — the pre-existing store, kept
+//     authoritative so nothing changes for users who already have one, per
+//     the RFC.
+//  2. Per-directory config (.bitrise-cli.yml, CWD or ancestors)
+//  3. Global config file (~/.config/bitrise/cli/config.yml)
 //  4. Zero value
 type Resolved struct {
 	SetupVersion           string
@@ -20,14 +20,14 @@ type Resolved struct {
 	LastPluginUpdateChecks map[string]time.Time
 }
 
-// Resolve merges the global config, per-directory config, and the legacy
-// ~/.bitrise/config.json store. dirCfg / legacyCfg are zero values when their
-// respective files were not found.
-func Resolve(globalCfg, dirCfg Config, legacyCfg configs.ConfigModel) Resolved {
+// Resolve merges the legacy ~/.bitrise/config.json store, the per-directory
+// config, and the global config. dirCfg / legacyCfg are zero values when
+// their respective files were not found.
+func Resolve(legacyCfg configs.ConfigModel, dirCfg, globalCfg Config) Resolved {
 	return Resolved{
-		SetupVersion:           firstNonEmptyString(dirCfg.SetupVersion, globalCfg.SetupVersion, legacyCfg.SetupVersion),
-		LastCLIUpdateCheck:     firstNonZeroTime(dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck, legacyCfg.LastCLIUpdateCheck),
-		LastPluginUpdateChecks: firstNonEmptyMap(dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks, legacyCfg.LastPluginUpdateChecks),
+		SetupVersion:           firstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
+		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
+		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
 	}
 }
 

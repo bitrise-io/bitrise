@@ -1,8 +1,8 @@
 // Package auth persists and reads the Bitrise access token.
 //
-// Storage: YAML at $XDG_CONFIG_HOME/bitrise/auth.yaml, falling back to
-// ~/.config/bitrise/auth.yaml. Per the patterns guide, credentials live
-// in their own file (separate from preferences in config.yaml) and at
+// Storage: YAML at $XDG_CONFIG_HOME/bitrise/cli/auth.yaml, falling back to
+// ~/.config/bitrise/cli/auth.yaml. Per the patterns guide, credentials live
+// in their own file (separate from preferences in config.yml) and at
 // 0600 permissions. OS-keychain integration is intentionally deferred.
 //
 // The Bitrise API accepts both Personal Access Tokens (user-scoped) and
@@ -72,7 +72,7 @@ func Path() (string, error) {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "bitrise", "auth.yaml"), nil
+	return filepath.Join(base, "bitrise", "cli", "auth.yaml"), nil
 }
 
 // Load reads the auth file. A missing file returns the zero Auth so

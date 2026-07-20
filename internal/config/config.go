@@ -1,9 +1,10 @@
 // Package config persists and reads the CLI's layered settings: a global
-// config file and a per-directory override file, both layered on top of the
-// pre-existing ~/.bitrise/config.json store as a fallback (see resolve.go).
+// config file and a per-directory override file, both layered underneath the
+// pre-existing ~/.bitrise/config.json store, which stays authoritative when
+// present (see resolve.go).
 //
-// Storage: YAML at $XDG_CONFIG_HOME/bitrise/config.yaml, falling back to
-// ~/.config/bitrise/config.yaml. Written with 0600 permissions.
+// Storage: YAML at $XDG_CONFIG_HOME/bitrise/cli/config.yml, falling back to
+// ~/.config/bitrise/cli/config.yml. Written with 0600 permissions.
 package config
 
 import (
@@ -18,9 +19,9 @@ import (
 )
 
 // Config is the on-disk shape. Its fields mirror configs.ConfigModel exactly
-// so the legacy ~/.bitrise/config.json can act as a real fallback layer in
-// Resolve (see resolve.go), rather than a schema with no equivalent to fall
-// back to.
+// so the legacy ~/.bitrise/config.json can act as a real top-precedence layer
+// in Resolve (see resolve.go), rather than a schema with no equivalent to
+// take precedence over.
 //
 // LastCLIUpdateCheck and LastPluginUpdateChecks are timestamps the CLI
 // itself writes during normal operation, not user preferences — unusual
@@ -38,9 +39,9 @@ type Config struct {
 // so a future key added to both layers doesn't need a second file/migration.
 const DirFileName = ".bitrise-cli.yml"
 
-// Dir returns the absolute path to the bitrise config directory — the parent
-// of the global config file. Honors XDG_CONFIG_HOME, falling back to
-// ~/.config/bitrise.
+// Dir returns the absolute path to the bitrise CLI config directory — the
+// parent of the global config file. Honors XDG_CONFIG_HOME, falling back to
+// ~/.config/bitrise/cli.
 func Dir() (string, error) {
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {
@@ -50,7 +51,7 @@ func Dir() (string, error) {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "bitrise"), nil
+	return filepath.Join(base, "bitrise", "cli"), nil
 }
 
 // Path returns the absolute path to the global config file (whether or not
@@ -60,7 +61,7 @@ func Path() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "config.yaml"), nil
+	return filepath.Join(dir, "config.yml"), nil
 }
 
 // Load reads the global config file. A missing file is not an error — it

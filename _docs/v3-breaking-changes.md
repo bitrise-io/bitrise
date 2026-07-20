@@ -105,3 +105,16 @@ scripts keep running — only `trigger-check` was removed outright.
 
   *Migrate:* no action required for existing scripts. New usage and documentation
   should prefer the grouped paths.
+
+## Config handling
+
+- **Two new config file locations are now read, layered under the existing one.**
+  Besides the pre-existing `~/.bitrise/config.json`, the CLI now also reads a global
+  `~/.config/bitrise/cli/config.yml` and a per-directory `.bitrise-cli.yml` (found by
+  searching the working directory and its ancestors). Precedence, highest to lowest:
+  `~/.bitrise/config.json` > `.bitrise-cli.yml` > `~/.config/bitrise/cli/config.yml`.
+  The pre-existing legacy file stays authoritative — if it sets a value, that value
+  wins over anything in the new files, so nothing changes for users who already have
+  one. *Migrate:* no action required. To have a value controlled by the new
+  per-directory or global file instead, remove that value from
+  `~/.bitrise/config.json`.

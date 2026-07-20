@@ -64,7 +64,7 @@ kept as **hidden aliases** so existing scripts keep working.
 | Service layer | domain pkgs (`bitrise/`, `tools/`, …) | `internal/` (app/build/rde/config/auth/output/…) |
 | API client | — | `bitriseapi/` (+ `bitriseapi/rde`) |
 | Global flags | `--debug/--ci/--pr` | `--output/-o`, `--quiet/-q`, `--no-color`, `--theme` |
-| Config | `~/.bitrise/config.json` (JSON) | `~/.config/bitrise/config.yaml` + `auth.yaml` + per-dir `.bitrise-cli.yml` (XDG, YAML), precedence chain |
+| Config | `~/.bitrise/config.json` (JSON) | `~/.config/bitrise/cli/config.yml` + `auth.yaml` + per-dir `.bitrise-cli.yml` (XDG, YAML), precedence chain |
 | DI | package globals + process env | `config.Resolved` on `cmd.Context()` (`config.WithResolved`/`FromContext`) |
 | Output | global JSON logger (`log/`), `--output-format` on `run` | `internal/output` (human/json) + `internal/output/style` (lipgloss themes) |
 | Analytics | `analytics/` (tracked per command) | none |
@@ -221,29 +221,37 @@ narrowed during planning: bitrise-cli's 7-key config schema (`app_id`, `token`, 
 URLs, `output`, `theme`) has no consumer in this repo yet, so only
 `configs.ConfigModel`'s three real fields (`SetupVersion`, `LastCLIUpdateCheck`,
 `LastPluginUpdateChecks`) got the layered treatment.
-- New `internal/config/{config.go,resolve.go}`: reads `~/.config/bitrise/config.yaml`
-  (XDG) + per-dir `.bitrise-cli.yml` (ancestor search). `Resolve(global, dir, legacy)`
-  precedence: per-dir > global > legacy `~/.bitrise/config.json` > zero value;
-  threaded via `cmd.Context()` (`WithResolved`/`FromContext`), same pattern as
-  bitrise-cli.
+- New `internal/config/{config.go,resolve.go}`: reads `~/.config/bitrise/cli/config.yml`
+  (XDG) + per-dir `.bitrise-cli.yml` (ancestor search). `Resolve(legacy, dir, global)`
+  precedence: legacy `~/.bitrise/config.json` > per-dir > global > zero value — the
+  RFC calls for reading the legacy JSON first if it exists, so it's authoritative
+  over the new layers rather than a fallback beneath them; threaded via
+  `cmd.Context()` (`WithResolved`/`FromContext`), same pattern as bitrise-cli.
 - `configs.LoadConfigModel()` — new exported wrapper around the existing private
   `loadBitriseConfig()`; purely additive, existing setup/update-check functions
   untouched.
+- **Known gap:** the RFC says "the new location will be used when saving," but
+  `SaveSetupSuccessForVersion`/`SaveCLIUpdateCheck`/`SavePluginUpdateCheck` still
+  write only to the legacy `~/.bitrise/config.json` — nothing writes to the new
+  `config.yml` yet. Since legacy stays top-precedence for reads, this doesn't cause
+  visibly wrong behavior for existing users, but new/first-time users never get a
+  `config.yml` written, and the RFC's save-target behavior isn't implemented.
+  Deliberately deferred to a later step (not fixed here).
 - Wired into `cli/cli.go`'s `before()`. Load failures are non-fatal (logged +
   zero-value fallback) since nothing consumes the new config yet and all callers of
   `before()` otherwise treat a returned error as fatal.
 - Consequence: `internal/auth` stays unwired (no field needs a token yet) — wire it
   once a real key needing one lands (§7 step 4).
 - Verified: `go build/vet/test ./...` green (only the pre-existing stepman failure
-  above); `golangci-lint run` 0 issues; manual check of corrupted-config fallback and
-  legacy-config passthrough.
+  above); `golangci-lint run` 0 issues; manual check that a pre-existing legacy value
+  wins over conflicting per-dir/global values, and that per-dir still overrides global
+  when no legacy value is set.
 
-**Open question, not yet resolved:** "layer the existing keys" was read as
-"`configs.ConfigModel`'s fields" (tied to the literal old config file named in the
-original request). The alternative reading — extending `configs`' env-var-only
+**Resolved:** "layer the existing keys" meant `configs.ConfigModel`'s three fields
+(tied to the literal old config file named in the original request), confirmed
+against the RFC — not the alternative reading of extending `configs`' env-var-only
 boolean toggles (`CI`/`DEBUG`/`PR`/secret filtering/offline mode) to also be
-YAML-configurable — was not implemented. If that turns out to be what's wanted, it's
-a separate, same-shape task, not a fix to what landed here.
+YAML-configurable, which stays out of scope for this step.
 
 Remaining: §7 steps 3-6 (bitriseapi core, command groups incl. `auth` login/logout,
 global flags both ways, analytics for new commands).

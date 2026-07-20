@@ -16,14 +16,14 @@ func TestPath_HonorsXDG(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "/custom/xdg")
 	got, err := Path()
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join("/custom/xdg", "bitrise", "config.yaml"), got)
+	assert.Equal(t, filepath.Join("/custom/xdg", "bitrise", "cli", "config.yml"), got)
 }
 
 func TestPath_FallsBackToHome(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	got, err := Path()
 	require.NoError(t, err)
-	assert.True(t, strings.HasSuffix(got, filepath.Join(".config", "bitrise", "config.yaml")))
+	assert.True(t, strings.HasSuffix(got, filepath.Join(".config", "bitrise", "cli", "config.yml")))
 }
 
 func TestSaveLoad_RoundTrip(t *testing.T) {
@@ -45,7 +45,7 @@ func TestSaveLoad_RoundTrip(t *testing.T) {
 	assert.True(t, got.LastPluginUpdateChecks["init"].Equal(want.LastPluginUpdateChecks["init"]))
 
 	if runtime.GOOS != "windows" {
-		p := filepath.Join(dir, "bitrise", "config.yaml")
+		p := filepath.Join(dir, "bitrise", "cli", "config.yml")
 		info, err := os.Stat(p)
 		require.NoError(t, err)
 		assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
@@ -62,8 +62,8 @@ func TestLoad_MissingFileIsZeroValue(t *testing.T) {
 func TestLoad_InvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
-	bad := filepath.Join(dir, "bitrise", "config.yaml")
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise", "cli"), 0o700))
+	bad := filepath.Join(dir, "bitrise", "cli", "config.yml")
 	require.NoError(t, os.WriteFile(bad, []byte("this: is :: not yaml"), 0o600))
 	_, err := Load()
 	assert.Error(t, err)
