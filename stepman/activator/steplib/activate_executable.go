@@ -1,97 +1,37 @@
 package steplib
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
-	"github.com/hashicorp/go-retryablehttp"
 )
 
 func activateStepExecutable(
+	ctx context.Context,
+	fetcher httpfetch.Client,
 	stepID string,
 	executable models.Executable,
 	destinationDir string,
 	logger stepman.Logger,
 ) (string, error) {
-	body, err := downloadExecutable(executable, logger)
-	if err != nil {
+	path := filepath.Join(destinationDir, stepID)
+
+	if err := downloadExecutable(ctx, fetcher, executable, path, logger); err != nil {
 		return "", err
 	}
-	defer func() {
-		if err := body.Close(); err != nil {
-			logger.Warnf("Failed to close response body: %s\n", err)
-		}
-	}()
 
-	err = os.MkdirAll(destinationDir, 0755)
-	if err != nil {
-		return "", fmt.Errorf("create directory %s: %w", destinationDir, err)
-	}
-
-	path := filepath.Join(destinationDir, stepID)
-	file, err := os.Create(path)
-	if err != nil {
-		return "", fmt.Errorf("create file %s: %w", path, err)
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			logger.Warnf("Failed to close file %s: %s\n", path, err)
-		}
-	}()
-
-	_, err = io.Copy(file, body)
-	if err != nil {
-		return "", fmt.Errorf("download to %s: %w", path, err)
-	}
-
-	err = validateHash(path, executable.Hash)
-	if err != nil {
-		return "", fmt.Errorf("validate hash: %s", err)
-	}
-
-	err = os.Chmod(path, 0755)
-	if err != nil {
+	if err := os.Chmod(path, 0755); err != nil {
 		return "", fmt.Errorf("set executable permission on file: %s", err)
 	}
 
 	return path, nil
-}
-
-func validateHash(filePath string, expectedHash string) error {
-	if expectedHash == "" {
-		return fmt.Errorf("hash is empty")
-	}
-
-	if !strings.HasPrefix(expectedHash, "sha256-") {
-		return fmt.Errorf("only SHA256 hashes supported at this time, make sure to prefix the hash with `sha256-`. Found hash value: %s", expectedHash)
-	}
-
-	expectedHash = strings.TrimPrefix(expectedHash, "sha256-")
-
-	reader, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-
-	h := sha256.New()
-	_, err = io.Copy(h, reader)
-	if err != nil {
-		return fmt.Errorf("calculate hash: %w", err)
-	}
-	actualHash := hex.EncodeToString(h.Sum(nil))
-	if actualHash != expectedHash {
-		return fmt.Errorf("hash mismatch: expected sha256-%s, got sha256-%s", expectedHash, actualHash)
-	}
-	return nil
 }
 
 func buildDownloadURLs(bases []string, executable models.Executable) ([]string, error) {
@@ -115,7 +55,7 @@ func buildDownloadURLs(bases []string, executable models.Executable) ([]string, 
 	return urls, nil
 }
 
-func downloadExecutable(executable models.Executable, logger stepman.Logger) (io.ReadCloser, error) {
+func downloadExecutable(ctx context.Context, fetcher httpfetch.Client, executable models.Executable, destPath string, logger stepman.Logger) error {
 	bases := precompiledStepsDefaultStorageURLs
 	if override := os.Getenv(precompiledStepsStorageURLsEnv); override != "" {
 		bases = strings.Split(override, ",")
@@ -123,29 +63,25 @@ func downloadExecutable(executable models.Executable, logger stepman.Logger) (io
 
 	urls, err := buildDownloadURLs(bases, executable)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return downloadFromURLs(urls, logger)
+	return downloadFromURLs(ctx, fetcher, urls, destPath, executable.Hash, logger)
 }
 
-func downloadFromURLs(urls []string, logger stepman.Logger) (io.ReadCloser, error) {
+// downloadFromURLs tries each URL in order via fetcher, verifying executable.Hash
+// on each attempt; a mismatch or failure falls through to the next mirror, logging
+// each failed attempt so a mirror silently degrading isn't invisible on fallback success.
+func downloadFromURLs(ctx context.Context, fetcher httpfetch.Client, urls []string, destPath, hash string, logger stepman.Logger) error {
 	var errs []error
 	for _, url := range urls {
-		resp, err := retryablehttp.Get(url)
-		if err == nil && resp.StatusCode < 400 {
-			return resp.Body, nil
+		err := fetcher.DownloadWithHash(ctx, destPath, url, hash)
+		if err == nil {
+			return nil
 		}
-
-		if err != nil {
-			logger.Warnf("Failed to download step from %s: %s\n", url, err)
-			errs = append(errs, fmt.Errorf("%s: %w", url, err))
-		} else {
-			if closeErr := resp.Body.Close(); closeErr != nil {
-				logger.Warnf("Failed to close response body: %s\n", closeErr)
-			}
-			logger.Warnf("Storage returned status %d for %s\n", resp.StatusCode, url)
-			errs = append(errs, fmt.Errorf("%s: status %d", url, resp.StatusCode))
-		}
+		// err already names the failing URL (fetcher wraps it in the underlying
+		// GET/status/hash-mismatch error), so it isn't repeated here.
+		logger.Warnf("Failed to download step executable: %s", err)
+		errs = append(errs, fmt.Errorf("%s: %w", url, err))
 	}
-	return nil, fmt.Errorf("failed to download executable: %w", errors.Join(errs...))
+	return fmt.Errorf("failed to download executable: %w", errors.Join(errs...))
 }

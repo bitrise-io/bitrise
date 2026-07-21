@@ -1,67 +1,25 @@
 package steplib
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 
-func TestValidateHash(t *testing.T) {
-	tests := []struct {
-		name         string
-		filePath     string
-		expectedHash string
-		expectedErr  error
-	}{
-		{
-			name:         "Valid hash",
-			filePath:     "testdata/file.txt",
-			expectedHash: "sha256-f2040af3939f5033be8ca9b363055b3e53107c4688ba39b71d4529869a9cc9b2",
-			expectedErr:  nil,
-		},
-		{
-			name:         "Hash mismatch",
-			filePath:     "testdata/file.txt",
-			expectedHash: "sha256-1234567890abcdef",
-			expectedErr:  fmt.Errorf("hash mismatch: expected sha256-1234567890abcdef, got sha256-f2040af3939f5033be8ca9b363055b3e53107c4688ba39b71d4529869a9cc9b2"),
-		},
-		{
-			name:         "Nonexistent file",
-			filePath:     "testdata/nonexistent.txt",
-			expectedHash: "sha256-3b6b4f1e2e8b8a9e4f7a4b5e6c7d8e9f",
-			expectedErr:  fmt.Errorf("open testdata/nonexistent.txt: no such file or directory"),
-		},
-		{
-			name:         "Empty hash",
-			filePath:     "testdata/file.txt",
-			expectedHash: "",
-			expectedErr:  fmt.Errorf("hash is empty"),
-		},
-		{
-			name:         "Invalid hash type",
-			filePath:     "testdata/file.txt",
-			expectedHash: "md5-3b6b4f1e2e8b8a9e4f7a4b5e6c7d8e9f",
-			expectedErr:  fmt.Errorf("only SHA256 hashes supported at this time, make sure to prefix the hash with `sha256-`. Found hash value: md5-3b6b4f1e2e8b8a9e4f7a4b5e6c7d8e9f"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := validateHash(tt.filePath, tt.expectedHash)
-			if tt.expectedErr == nil {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-				require.Equal(t, tt.expectedErr.Error(), err.Error())
-			}
-		})
-	}
+func sha256Hash(b []byte) string {
+	sum := sha256.Sum256(b)
+	return "sha256-" + hex.EncodeToString(sum[:])
 }
 
 func TestBuildDownloadURLs(t *testing.T) {
@@ -147,12 +105,17 @@ func TestBuildDownloadURLs(t *testing.T) {
 	}
 }
 
-
 func TestDownloadFromURLs(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewDefaultLogger(false)
+	fetcher := httpfetch.NewClient(logger)
+	payload := []byte("primary payload")
+	hash := sha256Hash(payload)
+
 	t.Run("primary succeeds, secondary is not called", func(t *testing.T) {
 		secondaryHits := 0
 		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = w.Write([]byte("from primary"))
+			_, _ = w.Write(payload)
 		}))
 		defer primary.Close()
 		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -160,14 +123,14 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer secondary.Close()
 
-		body, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
+		destPath := filepath.Join(t.TempDir(), "executable")
+		err := downloadFromURLs(ctx, fetcher, []string{primary.URL, secondary.URL}, destPath, hash, logger)
 		require.NoError(t, err)
-		defer func() { _ = body.Close() }()
-
-		b, err := io.ReadAll(body)
-		require.NoError(t, err)
-		require.Equal(t, "from primary", string(b))
 		require.Equal(t, 0, secondaryHits)
+
+		got, err := os.ReadFile(destPath)
+		require.NoError(t, err)
+		require.Equal(t, payload, got)
 	})
 
 	t.Run("primary 404 falls back to secondary", func(t *testing.T) {
@@ -176,17 +139,36 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer primary.Close()
 		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = w.Write([]byte("from secondary"))
+			_, _ = w.Write(payload)
 		}))
 		defer secondary.Close()
 
-		body, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
+		destPath := filepath.Join(t.TempDir(), "executable")
+		err := downloadFromURLs(ctx, fetcher, []string{primary.URL, secondary.URL}, destPath, hash, logger)
 		require.NoError(t, err)
-		defer func() { _ = body.Close() }()
 
-		b, err := io.ReadAll(body)
+		got, err := os.ReadFile(destPath)
 		require.NoError(t, err)
-		require.Equal(t, "from secondary", string(b))
+		require.Equal(t, payload, got)
+	})
+
+	t.Run("primary hash mismatch falls back to secondary", func(t *testing.T) {
+		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("corrupted"))
+		}))
+		defer primary.Close()
+		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write(payload)
+		}))
+		defer secondary.Close()
+
+		destPath := filepath.Join(t.TempDir(), "executable")
+		err := downloadFromURLs(ctx, fetcher, []string{primary.URL, secondary.URL}, destPath, hash, logger)
+		require.NoError(t, err)
+
+		got, err := os.ReadFile(destPath)
+		require.NoError(t, err)
+		require.Equal(t, payload, got)
 	})
 
 	t.Run("all URLs fail and the error lists each one", func(t *testing.T) {
@@ -199,12 +181,30 @@ func TestDownloadFromURLs(t *testing.T) {
 		}))
 		defer secondary.Close()
 
-		_, err := downloadFromURLs([]string{primary.URL, secondary.URL}, log.NewDefaultLogger(false))
+		destPath := filepath.Join(t.TempDir(), "executable")
+		err := downloadFromURLs(ctx, fetcher, []string{primary.URL, secondary.URL}, destPath, hash, logger)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to download executable")
 		require.Contains(t, err.Error(), primary.URL)
-		require.Contains(t, err.Error(), "status 404")
+		require.Contains(t, err.Error(), "404")
 		require.Contains(t, err.Error(), secondary.URL)
-		require.Contains(t, err.Error(), "status 403")
+		require.Contains(t, err.Error(), "403")
+	})
+
+	t.Run("hash mismatch on every URL is a final error", func(t *testing.T) {
+		primary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("corrupted-1"))
+		}))
+		defer primary.Close()
+		secondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write([]byte("corrupted-2"))
+		}))
+		defer secondary.Close()
+
+		destPath := filepath.Join(t.TempDir(), "executable")
+		err := downloadFromURLs(ctx, fetcher, []string{primary.URL, secondary.URL}, destPath, hash, logger)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to download executable")
+		require.Contains(t, err.Error(), "hash mismatch")
 	})
 }
