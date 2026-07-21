@@ -12,6 +12,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/v2/fileutil"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/steplibrary"
@@ -96,7 +97,7 @@ func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.Ca
 		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
-			execPath, err := activateStepExecutable(id.IDorURI, executableForPlatform, destination, log)
+			execPath, err := activateStepExecutable(context.Background(), httpfetch.NewClient(log), id.IDorURI, executableForPlatform, destination, log)
 			if err == nil {
 				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
 
