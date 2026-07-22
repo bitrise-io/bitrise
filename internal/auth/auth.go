@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
+	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
 // Auth is the on-disk shape of auth.yaml.
@@ -64,15 +64,11 @@ func TokenType(token string) string {
 }
 
 func Path() (string, error) {
-	base := os.Getenv("XDG_CONFIG_HOME")
-	if base == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("locate user home dir: %w", err)
-		}
-		base = filepath.Join(home, ".config")
+	dir, err := config.Dir()
+	if err != nil {
+		return "", err
 	}
-	return filepath.Join(base, "bitrise", "cli", "auth.yaml"), nil
+	return filepath.Join(dir, "auth.yaml"), nil
 }
 
 // Load reads the auth file. A missing file returns the zero Auth so
@@ -82,22 +78,13 @@ func Load() (Auth, error) {
 	if err != nil {
 		return Auth{}, err
 	}
-	data, err := os.ReadFile(p) //nolint:gosec // p is derived from XDG_CONFIG_HOME / user home, not user input
-	if errors.Is(err, fs.ErrNotExist) {
-		return Auth{}, nil
-	}
-	if err != nil {
-		return Auth{}, fmt.Errorf("read %s: %w", p, err)
-	}
-	var a Auth
-	if err := yaml.Unmarshal(data, &a); err != nil {
-		return Auth{}, fmt.Errorf("parse %s: %w", p, err)
-	}
-	return a, nil
+	return config.LoadYAML[Auth](p)
 }
 
 // Save atomically writes a to disk with 0600 permissions, creating the
-// parent directory (0700) if needed.
+// parent directory (0700) if needed. auth.yaml intentionally persists OAuth
+// material (PAT/JWT/refresh token) alongside the token — that's the file's
+// purpose.
 func Save(a Auth) error {
 	if a.Token == "" {
 		return fmt.Errorf("refusing to save auth with empty token")
@@ -106,21 +93,7 @@ func Save(a Auth) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(p), 0o700); err != nil {
-		return fmt.Errorf("create config dir: %w", err)
-	}
-	data, err := yaml.Marshal(&a) //nolint:gosec // G117: auth.yaml intentionally persists OAuth material (PAT/JWT/refresh token) — that's the file's purpose; it's written 0600
-	if err != nil {
-		return fmt.Errorf("marshal auth: %w", err)
-	}
-	tmp := p + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		return fmt.Errorf("write %s: %w", tmp, err)
-	}
-	if err := os.Rename(tmp, p); err != nil {
-		return fmt.Errorf("install %s: %w", p, err)
-	}
-	return nil
+	return config.SaveYAML(p, a)
 }
 
 // Clear removes the auth file. A non-existent file is not an error.

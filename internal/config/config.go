@@ -53,13 +53,51 @@ func Dir() (string, error) {
 }
 
 // Path returns the absolute path to the global config file (whether or not
-// it exists). Honors XDG_CONFIG_HOME, falling back to ~/.config.
+// it exists).
 func Path() (string, error) {
 	dir, err := Dir()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, "config.yml"), nil
+}
+
+// LoadYAML reads and unmarshals the YAML file at path into T. A missing
+// file is not an error — it returns the zero T, so callers can treat "not
+// yet configured" the same as "empty".
+func LoadYAML[T any](path string) (T, error) {
+	var v T
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return v, nil
+	}
+	if err != nil {
+		return v, fmt.Errorf("read %s: %w", path, err)
+	}
+	if err := yaml.Unmarshal(data, &v); err != nil {
+		return v, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return v, nil
+}
+
+// SaveYAML atomically marshals v to YAML and writes it to path with 0600
+// permissions, creating the parent directory (0700) if missing.
+func SaveYAML[T any](path string, v T) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return fmt.Errorf("create config dir: %w", err)
+	}
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("marshal %s: %w", path, err)
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+		return fmt.Errorf("write %s: %w", tmp, err)
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		return fmt.Errorf("install %s: %w", path, err)
+	}
+	return nil
 }
 
 // Load reads the global config file. A missing file is not an error — it
@@ -69,18 +107,7 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	data, err := os.ReadFile(p) //nolint:gosec // p is derived from XDG_CONFIG_HOME / user home, not user input
-	if errors.Is(err, fs.ErrNotExist) {
-		return Config{}, nil
-	}
-	if err != nil {
-		return Config{}, fmt.Errorf("read %s: %w", p, err)
-	}
-	var c Config
-	if err := yaml.Unmarshal(data, &c); err != nil {
-		return Config{}, fmt.Errorf("parse %s: %w", p, err)
-	}
-	return c, nil
+	return LoadYAML[Config](p)
 }
 
 // LoadDir searches the current working directory and its ancestors for a
