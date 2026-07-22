@@ -74,6 +74,7 @@ func TestResolve_LastCLIUpdateCheckPrecedence(t *testing.T) {
 
 func TestResolve_LastPluginUpdateChecksPrecedence(t *testing.T) {
 	legacy := Config{LastPluginUpdateChecks: map[string]time.Time{"legacy-plugin": time.Now()}}
+	dir := Config{LastPluginUpdateChecks: map[string]time.Time{"dir-plugin": time.Now()}}
 	global := Config{LastPluginUpdateChecks: map[string]time.Time{"global-plugin": time.Now()}}
 
 	r := Resolve(legacy, Config{}, Config{})
