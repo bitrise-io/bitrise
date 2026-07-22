@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/analytics"
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/internal/config"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/spf13/cobra"
@@ -200,6 +202,21 @@ func before(cmd *cobra.Command, _ []string) error {
 	// want to access this key in setup command too
 	isOfflineMode := cmdutil.IsSteplibOfflineMode()
 	cmdutil.RegisterSteplibOfflineMode(isOfflineMode)
+
+	// Resolve the layered config (legacy ~/.bitrise/config.json, checked first
+	// and wins when present, then the new per-dir .bitrise-cli.yml and global
+	// config.yml as lower-precedence layers) and stash it on the command's
+	// context.
+	resolved, err := configs.ResolveConfig()
+	if err != nil {
+		log.Warnf("Failed to resolve config, ignoring: %s", err)
+	}
+
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cmd.SetContext(config.WithResolved(ctx, resolved))
 
 	return nil
 }

@@ -16,14 +16,14 @@ func TestPath_HonorsXDG(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "/custom/xdg")
 	got, err := Path()
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join("/custom/xdg", "bitrise", "auth.yaml"), got)
+	assert.Equal(t, filepath.Join("/custom/xdg", "bitrise", "cli", "auth.yaml"), got)
 }
 
 func TestPath_FallsBackToHome(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	got, err := Path()
 	require.NoError(t, err)
-	assert.True(t, strings.HasSuffix(got, filepath.Join(".config", "bitrise", "auth.yaml")))
+	assert.True(t, strings.HasSuffix(got, filepath.Join(".config", "bitrise", "cli", "auth.yaml")))
 }
 
 func TestSaveLoadClear_RoundTrip(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSaveLoadClear_RoundTrip(t *testing.T) {
 	assert.Equal(t, want, got)
 
 	if runtime.GOOS != "windows" {
-		p := filepath.Join(dir, "bitrise", "auth.yaml")
+		p := filepath.Join(dir, "bitrise", "cli", "auth.yaml")
 		info, err := os.Stat(p)
 		require.NoError(t, err)
 		assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
@@ -69,8 +69,8 @@ func TestSave_RejectsEmptyToken(t *testing.T) {
 func TestLoad_InvalidYAML(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
-	bad := filepath.Join(dir, "bitrise", "auth.yaml")
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise", "cli"), 0o700))
+	bad := filepath.Join(dir, "bitrise", "cli", "auth.yaml")
 	require.NoError(t, os.WriteFile(bad, []byte("this: is :: bad yaml\n: oops"), 0o600))
 	_, err := Load()
 	assert.Error(t, err)
@@ -108,7 +108,7 @@ func TestIsOAuthManaged(t *testing.T) {
 func TestLoad_BackwardCompat_TokenOnly(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	p := filepath.Join(dir, "bitrise", "auth.yaml")
+	p := filepath.Join(dir, "bitrise", "cli", "auth.yaml")
 	require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o700))
 	// An auth.yaml written before OAuth support: only `token`.
 	require.NoError(t, os.WriteFile(p, []byte("token: bitpat_old\n"), 0o600))
