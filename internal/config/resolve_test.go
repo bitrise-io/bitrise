@@ -9,7 +9,24 @@ import (
 
 func TestResolve_DefaultsWhenNothingSet(t *testing.T) {
 	r := Resolve(Config{}, Config{}, Config{})
-	assert.Equal(t, Resolved{}, r)
+	assert.Equal(t, Resolved{Config: Config{APIBaseURL: DefaultAPIBaseURL}}, r)
+}
+
+func TestResolve_APIBaseURLPrecedence(t *testing.T) {
+	dir := Config{APIBaseURL: "https://dir.example"}
+	global := Config{APIBaseURL: "https://global.example"}
+
+	// no layer set: falls back to the default
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, DefaultAPIBaseURL, r.APIBaseURL)
+
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "https://global.example", r.APIBaseURL)
+
+	// dir overrides global (legacy has no concept of this field)
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "https://dir.example", r.APIBaseURL)
 }
 
 func TestResolve_SetupVersionPrecedence(t *testing.T) {

@@ -18,9 +18,9 @@ func NewCmd() *cobra.Command {
 		NewListCachedStepsCommand(),
 		NewPreloadStepsCommand(),
 		NewShareCommand(),
+		NewSearchCommand(),
+		NewInputsCommand(),
 	)
-
-	// v3 online subcommands mount here: NewSearchCommand(), NewInputsCommand()
 
 	return stepCommand
 }
