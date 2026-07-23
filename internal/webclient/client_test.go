@@ -200,6 +200,7 @@ func TestPostJSON_OmitsCSRFWhenNotPrimed(t *testing.T) {
 
 func TestPostJSON_ReturnsBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Location", "/dashboard")
 		w.WriteHeader(http.StatusCreated)
 		_, _ = io.WriteString(w, `{"ok":true}`)
 	}))
@@ -215,6 +216,9 @@ func TestPostJSON_ReturnsBody(t *testing.T) {
 	}
 	if resp.Status != http.StatusCreated {
 		t.Fatalf("status = %d", resp.Status)
+	}
+	if resp.Location != "/dashboard" {
+		t.Fatalf("Location = %q", resp.Location)
 	}
 	if !strings.Contains(string(resp.Body), `"ok":true`) {
 		t.Fatalf("body = %s", resp.Body)
