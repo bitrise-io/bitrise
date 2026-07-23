@@ -15,7 +15,7 @@ var ErrNoToken = errors.New("no Bitrise access token configured (run 'bitrise au
 // NewAPIClient builds a *bitriseapi.Client using the token resolved by
 // liveToken and the configured API base URL.
 func NewAPIClient(cmd *cobra.Command) (*bitriseapi.Client, error) {
-	tok, err := liveToken()
+	tok, err := liveToken(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -38,14 +38,18 @@ func ResolveToken() (token string, fromEnv bool, err error) {
 	return a.Token, false, nil
 }
 
-// liveToken resolves the token to use.
-func liveToken() (string, error) {
-	tok, _, err := ResolveToken()
+// liveToken resolves the token to use, refreshing an OAuth-managed token if
+// expired. BITRISE_TOKEN, when set, is used verbatim and never refreshed.
+func liveToken(cmd *cobra.Command) (string, error) {
+	tok, fromEnv, err := ResolveToken()
 	if err != nil {
 		return "", err
 	}
 	if tok == "" {
 		return "", ErrNoToken
 	}
-	return tok, nil
+	if fromEnv {
+		return tok, nil
+	}
+	return OAuthConfig().EnsureFreshPAT(cmd.Context(), tok)
 }

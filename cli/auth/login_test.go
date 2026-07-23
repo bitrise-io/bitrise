@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -100,4 +101,45 @@ func TestRunEmailLogin_EmptyPasswordErrors(t *testing.T) {
 	err := runEmailLogin(newTestCmd(t, "\n"), "alice@example.com", true)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "password is empty")
+}
+
+func TestRunOAuthLogin_SavesOAuthManagedToken(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/oauth2/token", func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		_, _ = w.Write([]byte(`{"access_token":"jwt-1","refresh_token":"refresh-1","expires_in":3600}`))
+	})
+	mux.HandleFunc("/oidc/token", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"access_token":"bitpat_oauth","expires_in":3600}`))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv(cmdutil.EnvOAuthIssuer, srv.URL)
+	t.Setenv(cmdutil.EnvOIDCTokenEndpoint, srv.URL+"/oidc/token")
+	t.Setenv(cmdutil.EnvOAuthClientID, "https://cli.example/cimd.json")
+
+	// Fake "browser": hit the loopback callback directly instead of opening a real one.
+	fakeBrowser := func(rawURL string) error {
+		u, err := url.Parse(rawURL)
+		if err != nil {
+			return err
+		}
+		q := u.Query()
+		cb := q.Get("redirect_uri") + "?code=auth-code&state=" + url.QueryEscape(q.Get("state"))
+		resp, err := http.Get(cb)
+		if err != nil {
+			return err
+		}
+		return resp.Body.Close()
+	}
+
+	cmd := newTestCmd(t, "")
+	require.NoError(t, doOAuthLogin(cmd, fakeBrowser))
+
+	saved, err := auth.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_oauth", saved.Token)
+	assert.True(t, saved.IsOAuthManaged())
 }
