@@ -92,11 +92,11 @@ func (e errorBody) pick() string {
 	return ""
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
 		return s
 	}
-	return s[:max] + "…"
+	return s[:limit] + "…"
 }
 
 func (c *Client) newRequest(ctx context.Context, path string, params url.Values) (*http.Request, error) {

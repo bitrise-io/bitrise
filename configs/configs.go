@@ -225,14 +225,18 @@ func (m ConfigModel) ToConfig() internalconfig.Config {
 
 // ResolveConfig merges the legacy config with the current per-dir and global
 // layers, via internal/config.Resolve — the same precedence used everywhere
-// else, so callers can't drift from it. A load failure in the per-dir or
-// global layer is logged and treated as that layer being absent; a legacy
-// load failure is returned, since Check* above treat it as fatal (fail
-// closed).
+// else, so callers can't drift from it. A load failure in any layer (legacy,
+// per-dir, or global) is logged and treated as that layer being absent, so
+// the other layers and the eventual default (e.g. APIBaseURL) still resolve
+// normally. A legacy load failure is still returned as an error — Check*
+// above treat it as fatal and ignore the resolved value — but the resolved
+// value itself is no longer discarded, so other callers (e.g. the CLI's root
+// context) don't end up with an all-zero config just because the legacy file
+// failed to load.
 func ResolveConfig() (internalconfig.Resolved, error) {
-	legacy, _, err := LoadLegacyConfig()
-	if err != nil {
-		return internalconfig.Resolved{}, err
+	legacy, _, legacyErr := LoadLegacyConfig()
+	if legacyErr != nil {
+		legacy = ConfigModel{}
 	}
 	dirCfg, _, err := internalconfig.LoadDir()
 	if err != nil {
@@ -244,7 +248,7 @@ func ResolveConfig() (internalconfig.Resolved, error) {
 		log.Warnf("Failed to load config.yml, ignoring: %s", err)
 		globalCfg = internalconfig.Config{}
 	}
-	return internalconfig.Resolve(legacy.ToConfig(), dirCfg, globalCfg), nil
+	return internalconfig.Resolve(legacy.ToConfig(), dirCfg, globalCfg), legacyErr
 }
 
 // saveGlobalConfig loads the current global config.yml

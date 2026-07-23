@@ -128,7 +128,7 @@ func LoadDir() (Config, string, error) {
 func loadDirFrom(start string) (Config, string, error) {
 	for dir := start; ; {
 		p := filepath.Join(dir, DirFileName)
-		data, err := os.ReadFile(p) //nolint:gosec // p is an ancestor-directory config path, not user input
+		data, err := os.ReadFile(p)
 		if err == nil {
 			var c Config
 			if err := yaml.Unmarshal(data, &c); err != nil {
