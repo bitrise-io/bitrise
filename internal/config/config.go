@@ -18,9 +18,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Config is the on-disk shape. Its fields mirror configs.ConfigModel exactly,
-// so the legacy ~/.bitrise/config.json can act as a layer in Resolve (see
-// resolve.go) with the same fields to compare against.
+// Config is the on-disk shape. SetupVersion, LastCLIUpdateCheck, and
+// LastPluginUpdateChecks mirror configs.ConfigModel exactly, so the legacy
+// ~/.bitrise/config.json can act as a layer in Resolve (see resolve.go) with
+// the same fields to compare against. Newer fields like APIBaseURL have no
+// legacy counterpart — the legacy layer simply leaves them zero.
 //
 // LastCLIUpdateCheck and LastPluginUpdateChecks are timestamps the CLI
 // itself writes during normal operation, not user preferences — unusual
@@ -30,6 +32,7 @@ type Config struct {
 	SetupVersion           string               `yaml:"setup_version,omitempty"`
 	LastCLIUpdateCheck     time.Time            `yaml:"last_cli_update_check,omitempty"`
 	LastPluginUpdateChecks map[string]time.Time `yaml:"last_plugin_update_checks,omitempty"`
+	APIBaseURL             string               `yaml:"api_base_url,omitempty"`
 }
 
 // DirFileName is the file looked up in the working directory and its
@@ -125,7 +128,7 @@ func LoadDir() (Config, string, error) {
 func loadDirFrom(start string) (Config, string, error) {
 	for dir := start; ; {
 		p := filepath.Join(dir, DirFileName)
-		data, err := os.ReadFile(p) //nolint:gosec // p is an ancestor-directory config path, not user input
+		data, err := os.ReadFile(p)
 		if err == nil {
 			var c Config
 			if err := yaml.Unmarshal(data, &c); err != nil {

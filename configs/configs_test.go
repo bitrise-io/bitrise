@@ -199,3 +199,50 @@ func TestCheckIsSetupWasDoneForVersion_FallsBackToPerDirConfig(t *testing.T) {
 	require.Equal(t, true, versionMatch)
 	require.Equal(t, "4.5.6", version)
 }
+
+func TestResolveConfig_APIBaseURLDefaultsWhenNothingSet(t *testing.T) {
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	require.Equal(t, nil, err)
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+	t.Setenv("HOME", fakeHomePth)
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Chdir(t.TempDir())
+
+	resolved, err := ResolveConfig()
+	require.Equal(t, nil, err)
+	require.Equal(t, internalconfig.DefaultAPIBaseURL, resolved.APIBaseURL)
+}
+
+// TestResolveConfig_LegacyLoadFailure_StillResolvesDirAndGlobalLayers asserts
+// that a broken legacy config file (still reported as an error, since Check*
+// callers treat it as fatal) no longer zeroes out the whole resolved config:
+// the per-dir layer and the APIBaseURL default must still come through.
+func TestResolveConfig_LegacyLoadFailure_StillResolvesDirAndGlobalLayers(t *testing.T) {
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	require.Equal(t, nil, err)
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+	t.Setenv("HOME", fakeHomePth)
+	t.Setenv("XDG_CONFIG_HOME", "")
+
+	projectDir := t.TempDir()
+	require.Equal(t, nil, os.WriteFile(
+		filepath.Join(projectDir, internalconfig.DirFileName),
+		[]byte("setup_version: 4.5.6\n"),
+		0o644,
+	))
+	t.Chdir(projectDir)
+
+	// An existing-but-empty legacy config file makes LoadLegacyConfig return
+	// an "empty config file" error.
+	require.Equal(t, nil, EnsureBitriseConfigDirExists())
+	require.Equal(t, nil, os.WriteFile(getLegacyConfigFilePath(), nil, 0o600))
+
+	resolved, err := ResolveConfig()
+	require.Error(t, err)
+	require.Equal(t, internalconfig.DefaultAPIBaseURL, resolved.APIBaseURL)
+	require.Equal(t, "4.5.6", resolved.SetupVersion)
+}

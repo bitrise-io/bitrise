@@ -9,91 +9,65 @@ import (
 
 func TestResolve_DefaultsWhenNothingSet(t *testing.T) {
 	r := Resolve(Config{}, Config{}, Config{})
-	assert.Equal(t, Resolved{}, r)
+	assert.Equal(t, Resolved{Config: Config{APIBaseURL: DefaultAPIBaseURL}}, r)
 }
 
-func TestResolve_SetupVersionPrecedence(t *testing.T) {
-	legacy := Config{SetupVersion: "legacy"}
-	dir := Config{SetupVersion: "dir"}
-	global := Config{SetupVersion: "global"}
+func TestResolve_APIBaseURLPrecedence(t *testing.T) {
+	dir := Config{APIBaseURL: "https://dir.example"}
+	global := Config{APIBaseURL: "https://global.example"}
 
-	// legacy only
-	r := Resolve(legacy, Config{}, Config{})
-	assert.Equal(t, "legacy", r.SetupVersion)
+	// no layer set: falls back to the default
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, DefaultAPIBaseURL, r.APIBaseURL)
 
-	// legacy still wins over dir
-	r = Resolve(legacy, dir, Config{})
-	assert.Equal(t, "legacy", r.SetupVersion)
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "https://global.example", r.APIBaseURL)
 
-	// legacy still wins over dir and global
-	r = Resolve(legacy, dir, global)
-	assert.Equal(t, "legacy", r.SetupVersion)
-
-	// without legacy, dir overrides global
+	// dir overrides global (legacy has no concept of this field)
 	r = Resolve(Config{}, dir, global)
-	assert.Equal(t, "dir", r.SetupVersion)
+	assert.Equal(t, "https://dir.example", r.APIBaseURL)
 }
 
-func TestResolve_LastCLIUpdateCheckPrecedence(t *testing.T) {
-	legacyTime := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	dirTime := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
-	globalTime := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
-
-	legacy := Config{LastCLIUpdateCheck: legacyTime}
-	dir := Config{LastCLIUpdateCheck: dirTime}
-	global := Config{LastCLIUpdateCheck: globalTime}
-
-	r := Resolve(legacy, Config{}, Config{})
-	assert.True(t, r.LastCLIUpdateCheck.Equal(legacyTime))
-
-	// legacy still wins over dir and global
-	r = Resolve(legacy, dir, global)
-	assert.True(t, r.LastCLIUpdateCheck.Equal(legacyTime))
-
-	// without legacy, dir overrides global
-	r = Resolve(Config{}, dir, global)
-	assert.True(t, r.LastCLIUpdateCheck.Equal(dirTime))
-}
-
-func TestResolve_LastPluginUpdateChecksPrecedence(t *testing.T) {
-	legacy := Config{LastPluginUpdateChecks: map[string]time.Time{"legacy-plugin": time.Now()}}
-	dir := Config{LastPluginUpdateChecks: map[string]time.Time{"dir-plugin": time.Now()}}
-	global := Config{LastPluginUpdateChecks: map[string]time.Time{"global-plugin": time.Now()}}
-
-	r := Resolve(legacy, Config{}, Config{})
-	assert.Contains(t, r.LastPluginUpdateChecks, "legacy-plugin")
-
-	// legacy still wins over dir and global
-	r = Resolve(legacy, dir, global)
-	assert.Contains(t, r.LastPluginUpdateChecks, "legacy-plugin")
-
-	// without legacy, dir overrides global
-	r = Resolve(Config{}, dir, global)
-	assert.Contains(t, r.LastPluginUpdateChecks, "dir-plugin")
-}
-
-// TestResolve_LegacyTakesPrecedence asserts the legacy config wins over the
-// new per-dir/global layers even when they're also set.
-func TestResolve_LegacyTakesPrecedence(t *testing.T) {
+// TestResolve_LayerPrecedence covers the three fields sharing the generic
+// legacy > dir > global precedence (SetupVersion, LastCLIUpdateCheck,
+// LastPluginUpdateChecks) in one pass, each via a different underlying
+// firstNonEmpty* helper (string/time/map) — one test per precedence
+// scenario, not one per field, since the precedence logic itself is
+// identical across all three.
+func TestResolve_LayerPrecedence(t *testing.T) {
 	legacy := Config{
-		SetupVersion:           "9.9.9",
-		LastCLIUpdateCheck:     time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC),
-		LastPluginUpdateChecks: map[string]time.Time{"init": time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC)},
+		SetupVersion:           "legacy",
+		LastCLIUpdateCheck:     time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		LastPluginUpdateChecks: map[string]time.Time{"legacy-plugin": time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)},
 	}
 	dir := Config{
-		SetupVersion:           "1.0.0",
-		LastCLIUpdateCheck:     time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC),
-		LastPluginUpdateChecks: map[string]time.Time{"dir-plugin": time.Now()},
+		SetupVersion:           "dir",
+		LastCLIUpdateCheck:     time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
+		LastPluginUpdateChecks: map[string]time.Time{"dir-plugin": time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)},
 	}
 	global := Config{
-		SetupVersion:           "2.0.0",
-		LastCLIUpdateCheck:     time.Date(2026, 7, 1, 0, 0, 0, 0, time.UTC),
-		LastPluginUpdateChecks: map[string]time.Time{"global-plugin": time.Now()},
+		SetupVersion:           "global",
+		LastCLIUpdateCheck:     time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
+		LastPluginUpdateChecks: map[string]time.Time{"global-plugin": time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)},
 	}
-	r := Resolve(legacy, dir, global)
-	assert.Equal(t, legacy.SetupVersion, r.SetupVersion)
-	assert.True(t, r.LastCLIUpdateCheck.Equal(legacy.LastCLIUpdateCheck))
-	assert.Equal(t, legacy.LastPluginUpdateChecks, r.LastPluginUpdateChecks)
+
+	assertResolvedAs := func(t *testing.T, want Config, r Resolved) {
+		t.Helper()
+		assert.Equal(t, want.SetupVersion, r.SetupVersion)
+		assert.True(t, r.LastCLIUpdateCheck.Equal(want.LastCLIUpdateCheck))
+		assert.Equal(t, want.LastPluginUpdateChecks, r.LastPluginUpdateChecks)
+	}
+
+	t.Run("legacy wins over dir and global", func(t *testing.T) {
+		assertResolvedAs(t, legacy, Resolve(legacy, dir, global))
+	})
+	t.Run("dir wins when legacy absent", func(t *testing.T) {
+		assertResolvedAs(t, dir, Resolve(Config{}, dir, global))
+	})
+	t.Run("global used when legacy and dir absent", func(t *testing.T) {
+		assertResolvedAs(t, global, Resolve(Config{}, Config{}, global))
+	})
 }
 
 func TestContext_RoundTrip(t *testing.T) {
