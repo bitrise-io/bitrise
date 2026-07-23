@@ -47,7 +47,7 @@ func newCallbackServer(state string) (*callbackServer, error) {
 }
 
 func (cs *callbackServer) port() int {
-	return cs.listener.Addr().(*net.TCPAddr).Port //nolint:forcetypeassert // always *net.TCPAddr for a tcp listener
+	return cs.listener.Addr().(*net.TCPAddr).Port // always *net.TCPAddr for a tcp listener
 }
 
 // redirectURI must match exactly between the authorize request and the

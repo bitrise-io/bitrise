@@ -11,7 +11,7 @@ import (
 // them directly.
 const (
 	EnvOAuthIssuer       = "BITRISE_OAUTH_ISSUER"
-	EnvOIDCTokenEndpoint = "BITRISE_OIDC_TOKEN_ENDPOINT" //nolint:gosec // G101: env var name, not a credential
+	EnvOIDCTokenEndpoint = "BITRISE_OIDC_TOKEN_ENDPOINT"
 	EnvOAuthClientID     = "BITRISE_OAUTH_CLIENT_ID"
 	EnvWebBaseURL        = "BITRISE_WEB_BASE_URL"
 )

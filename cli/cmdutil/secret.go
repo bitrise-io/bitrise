@@ -17,7 +17,7 @@ func terminalFd(stream any) (fd int, isTerminal bool) {
 	if !ok {
 		return 0, false
 	}
-	fd = int(f.Fd()) //nolint:gosec // file descriptors are small ints, no overflow risk
+	fd = int(f.Fd()) // file descriptors are small ints, no overflow risk
 	return fd, term.IsTerminal(fd)
 }
 

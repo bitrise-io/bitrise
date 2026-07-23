@@ -115,7 +115,7 @@ func runTokenLogin(cmd *cobra.Command) error {
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
-	confirmLoginSaved(cmd)
+	confirmLoginSaved()
 	return nil
 }
 
@@ -146,7 +146,7 @@ func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
-	confirmLoginSaved(cmd)
+	confirmLoginSaved()
 	return nil
 }
 
@@ -164,14 +164,14 @@ func doOAuthLogin(cmd *cobra.Command, openBrowser func(string) error) error {
 	if err := auth.Save(a); err != nil {
 		return err
 	}
-	confirmLoginSaved(cmd)
+	confirmLoginSaved()
 	return nil
 }
 
 // confirmLoginSaved warns when BITRISE_TOKEN is set, since it shadows the
 // token just saved (see liveToken) — otherwise the login silently has no
 // effect on later commands.
-func confirmLoginSaved(_ *cobra.Command) {
+func confirmLoginSaved() {
 	log.Print("Saved access token")
 	if os.Getenv(auth.EnvToken) != "" {
 		log.Warnf("%s is set and takes precedence over the token just saved.", auth.EnvToken)

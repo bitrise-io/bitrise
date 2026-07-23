@@ -39,13 +39,6 @@ func New(baseURL string) (*Client, error) {
 	}, nil
 }
 
-// WithHTTPClient replaces the default http.Client. Used by tests; the
-// supplied client must have a non-nil cookie Jar.
-func (c *Client) WithHTTPClient(hc *http.Client) *Client {
-	c.httpClient = hc
-	return c
-}
-
 // metaCSRFRegexp extracts the token from the <meta name="csrf-token"> tag
 // Rails emits on every page, rather than the CSRF-TOKEN cookie — Rails masks
 // the cookie value differently on each request, while the meta value is the

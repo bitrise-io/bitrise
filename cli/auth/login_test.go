@@ -128,7 +128,7 @@ func TestRunOAuthLogin_SavesOAuthManagedToken(t *testing.T) {
 		}
 		q := u.Query()
 		cb := q.Get("redirect_uri") + "?code=auth-code&state=" + url.QueryEscape(q.Get("state"))
-		resp, err := http.Get(cb) //nolint:gosec // G107: test-controlled loopback callback URL
+		resp, err := http.Get(cb)
 		if err != nil {
 			return err
 		}

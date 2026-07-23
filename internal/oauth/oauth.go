@@ -24,7 +24,7 @@ const DefaultIssuer = "https://oauth.bitrise.io"
 
 // DefaultOIDCTokenEndpoint is the monolith endpoint that exchanges a WorkOS
 // JWT for a Bitrise PAT (RFC 8693).
-const DefaultOIDCTokenEndpoint = "https://app.bitrise.io/oidc/token" //nolint:gosec // G101: public endpoint URL, not a credential
+const DefaultOIDCTokenEndpoint = "https://app.bitrise.io/oidc/token"
 
 // DefaultClientID is the CIMD URL identifying this client — the URL itself
 // is the id, not a secret.
@@ -47,8 +47,6 @@ type Config struct {
 	OIDCTokenEndpoint string
 	ClientID          string
 	Resource          string
-	// HTTPClient, when set, overrides the default client (used by tests).
-	HTTPClient *http.Client
 }
 
 // NewConfig builds a Config with the package-default Resource. client_id is
@@ -64,9 +62,6 @@ func NewConfig(issuer, oidcTokenEndpoint, clientID string) Config {
 }
 
 func (c Config) httpClient() *http.Client {
-	if c.HTTPClient != nil {
-		return c.HTTPClient
-	}
 	return &http.Client{Timeout: defaultTimeout}
 }
 

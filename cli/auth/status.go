@@ -60,17 +60,18 @@ Sources, in precedence order:
 	return cmd
 }
 
-// resolveTokenAndSource mirrors liveToken's precedence (env, then auth.yaml)
-// without refreshing — status reports what's stored, it doesn't mutate it.
+// resolveTokenAndSource reports what cmdutil.ResolveToken found, labeled for
+// display — status reports what's stored, it doesn't refresh or mutate it.
 func resolveTokenAndSource() (token, source string) {
-	if t := os.Getenv(auth.EnvToken); t != "" {
-		return t, "env (" + auth.EnvToken + ")"
-	}
-	a, err := auth.Load()
-	if err != nil || a.Token == "" {
+	tok, fromEnv, err := cmdutil.ResolveToken()
+	switch {
+	case err != nil || tok == "":
 		return "", "none"
+	case fromEnv:
+		return tok, "env (" + auth.EnvToken + ")"
+	default:
+		return tok, "auth file"
 	}
-	return a.Token, "auth file"
 }
 
 // currentStatus is kept separate from NewStatusCommand's RunE so it can be

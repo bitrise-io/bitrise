@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/internal/config"
 	"github.com/bitrise-io/bitrise/v2/internal/webclient"
 )
 
@@ -102,10 +103,10 @@ func (s *Service) Signup(ctx context.Context, in SignupInput) (Account, error) {
 	_ = json.Unmarshal(resp.Body, &raw)
 	return Account{
 		Slug:      raw.Slug,
-		Email:     firstNonEmpty(raw.Email, in.Email),
-		Username:  firstNonEmpty(raw.Username, in.Username),
-		FirstName: firstNonEmpty(raw.FirstName, in.FirstName),
-		LastName:  firstNonEmpty(raw.LastName, in.LastName),
+		Email:     config.FirstNonEmptyString(raw.Email, in.Email),
+		Username:  config.FirstNonEmptyString(raw.Username, in.Username),
+		FirstName: config.FirstNonEmptyString(raw.FirstName, in.FirstName),
+		LastName:  config.FirstNonEmptyString(raw.LastName, in.LastName),
 		Confirmed: raw.ConfirmedAt != "",
 	}, nil
 }
@@ -227,13 +228,4 @@ func formatServerError(status int, body []byte) string {
 func looksLikeUnconfirmed(body []byte) bool {
 	lower := strings.ToLower(string(body))
 	return strings.Contains(lower, "confirm your email") || strings.Contains(lower, "unconfirmed")
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }

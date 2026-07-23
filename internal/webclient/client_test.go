@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
 	"slices"
 	"strings"
@@ -13,7 +12,7 @@ import (
 )
 
 func TestPrime_ExtractsMetaCSRFAndStoresCookies(t *testing.T) {
-	const wantToken = "csrf-meta-value-abc" //nolint:gosec // G101: test fixture string, not a credential
+	const wantToken = "csrf-meta-value-abc"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/users/sign_up" {
 			http.NotFound(w, r)
@@ -142,23 +141,4 @@ func setTestCookie(w http.ResponseWriter, name, value string) {
 		Name: name, Value: value, Path: "/",
 		Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
 	})
-}
-
-func TestWithHTTPClient_UsesProvidedClient(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer srv.Close()
-
-	jar, _ := cookiejar.New(nil)
-	custom := &http.Client{Jar: jar}
-
-	c, err := New(srv.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	c = c.WithHTTPClient(custom)
-	if c.httpClient != custom {
-		t.Fatalf("WithHTTPClient did not replace the http client")
-	}
 }

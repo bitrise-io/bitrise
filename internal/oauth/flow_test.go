@@ -228,7 +228,7 @@ func callbackOpener(t *testing.T, code, overrideState string) func(string) error
 			state = overrideState
 		}
 		cb := q.Get("redirect_uri") + "?code=" + url.QueryEscape(code) + "&state=" + url.QueryEscape(state)
-		resp, err := http.Get(cb) //nolint:gosec // G107: test-controlled loopback callback URL
+		resp, err := http.Get(cb)
 		if err != nil {
 			return err
 		}
