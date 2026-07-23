@@ -20,7 +20,7 @@ Returns only the latest, non-deprecated version of each matching step.
 
 Valid categories:
   build, code-sign, test, deploy, notification, access-control,
-  artifact-info, installer, dependency, utility
+  artifact-info, installer, dependency, utility, security
 
 Valid maintainers:
   bitrise   official Bitrise steps

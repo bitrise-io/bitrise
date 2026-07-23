@@ -44,8 +44,9 @@ func New(baseURL, token string, opts ...Option) *Client {
 	return c
 }
 
-// Body is only populated when the response had no recognized JSON error
-// field, so unexpected error shapes still surface something to the user.
+// APIError represents an error response from the Bitrise API. Body is only
+// populated when the response had no recognized JSON error field, so
+// unexpected error shapes still surface something to the user.
 type APIError struct {
 	StatusCode  int
 	Message     string
@@ -117,7 +118,7 @@ func (c *Client) newRequest(ctx context.Context, path string, params url.Values)
 }
 
 func (c *Client) do(req *http.Request) ([]byte, error) {
-	resp, err := c.httpClient.Do(req) //nolint:gosec // URL is built from configured base + internal paths, not user-tainted input
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

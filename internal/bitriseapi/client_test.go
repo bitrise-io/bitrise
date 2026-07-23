@@ -10,13 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(handler)
-	t.Cleanup(srv.Close)
-	return srv
-}
-
 func TestNew_DefaultHTTPClientTimeout(t *testing.T) {
 	c := New("http://example.invalid", "t")
 	assert.Equal(t, defaultTimeout, c.httpClient.Timeout)
@@ -78,4 +71,11 @@ func TestAPIError_RequestInfo(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
 	assert.Contains(t, apiErr.RequestInfo, "GET /search-steps")
 	assert.Contains(t, err.Error(), "Unauthorized")
+}
+
+func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(handler)
+	t.Cleanup(srv.Close)
+	return srv
 }

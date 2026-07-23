@@ -14,14 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestCmd(t *testing.T, apiBaseURL string) *cobra.Command {
-	t.Helper()
-	cmd := &cobra.Command{}
-	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
-	cmd.SetContext(config.WithResolved(t.Context(), resolved))
-	return cmd
-}
-
 func TestNewAPIClient_EnvTokenTakesPrecedenceOverAuthFile(t *testing.T) {
 	var gotAuth string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,4 +58,12 @@ func TestNewAPIClient_ErrNoToken(t *testing.T) {
 
 	_, err := NewAPIClient(newTestCmd(t, "https://api.example.test"))
 	assert.ErrorIs(t, err, ErrNoToken)
+}
+
+func newTestCmd(t *testing.T, apiBaseURL string) *cobra.Command {
+	t.Helper()
+	cmd := &cobra.Command{}
+	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
+	cmd.SetContext(config.WithResolved(t.Context(), resolved))
+	return cmd
 }
