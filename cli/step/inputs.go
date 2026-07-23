@@ -16,8 +16,7 @@ func NewInputsCommand() *cobra.Command {
 		Short: "List inputs of a step version",
 		Long: `List the inputs (and their defaults) for a given step version.
 
-STEP_REF must include an exact version: step_id@version
-For custom step sources: step_lib_source::step_id@version`,
+STEP_REF must include an exact version: step_id@version`,
 		Example: `  bitrise step inputs git-clone@8.3.1
   bitrise step inputs git-clone@8.3.1 --format json`,
 		Args: cobra.ExactArgs(1),

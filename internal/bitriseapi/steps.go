@@ -69,7 +69,7 @@ func (c *Client) SearchSteps(ctx context.Context, opts StepSearchOptions) ([]Ste
 	return result, nil
 }
 
-// StepInputs stepRef must be formatted as [step_lib_source::]step_id@version (e.g. git-clone@8.3.1)
+// StepInputs stepRef must be formatted as step_id@version (e.g. git-clone@8.3.1)
 func (c *Client) StepInputs(ctx context.Context, stepRef string) ([]StepInputOutputResponse, error) {
 	req, err := c.newRequest(ctx, "/step-inputs", url.Values{"step_ref": {stepRef}})
 	if err != nil {
