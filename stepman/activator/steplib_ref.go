@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/stepman/activator/steplib"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/steplibrary"
@@ -49,7 +50,7 @@ func ActivateSteplibRefStep(
 	}
 
 	// ActivateStep dispatches to the v2 or legacy codepath.
-	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI)
+	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI, httpfetch.NewClient(log))
 	activationResult.StepInfo = resolvedStep.StepInfo
 	activationResult.ExecutablePath = resolvedStep.ExecPath
 	if resolvedStep.ExecPath != "" {

@@ -105,6 +105,42 @@ func TestBuildDownloadURLs(t *testing.T) {
 	}
 }
 
+// TestActivateStepExecutable covers the URL assembly and hash threading between
+// activateStepExecutable → downloadExecutable and the fetcher, using a fake
+// fetcher so no bytes are transferred. The download loop itself (mirror fallback,
+// hash verification) is covered by TestDownloadFromURLs.
+func TestActivateStepExecutable(t *testing.T) {
+	ctx := context.Background()
+	logger := log.NewDefaultLogger(false)
+	storageURI := "steps/hello-step/2.0.0/bin/hello-step"
+	const hash = "sha256-1111111111111111111111111111111111111111111111111111111111111111"
+
+	t.Run("default bases: first mirror + StorageURI, hash threaded through", func(t *testing.T) {
+		fake := &fakeExecutableFetcher{}
+		destDir := t.TempDir()
+
+		path, err := activateStepExecutable(ctx, fake, "hello-step",
+			models.Executable{StorageURI: storageURI, Hash: hash}, destDir, logger)
+		require.NoError(t, err)
+
+		require.Equal(t, filepath.Join(destDir, "hello-step"), path)
+		require.FileExists(t, path)
+		require.Equal(t, precompiledStepsDefaultStorageURLs[0]+"/"+storageURI, fake.calledURL)
+		require.Equal(t, hash, fake.calledHash)
+	})
+
+	t.Run("BITRISE_PRECOMPILED_STEPS_STORAGE_URLS override wins", func(t *testing.T) {
+		t.Setenv(precompiledStepsStorageURLsEnv, "https://custom.example.com")
+		fake := &fakeExecutableFetcher{}
+
+		_, err := activateStepExecutable(ctx, fake, "hello-step",
+			models.Executable{StorageURI: storageURI, Hash: hash}, t.TempDir(), logger)
+		require.NoError(t, err)
+
+		require.Equal(t, "https://custom.example.com/"+storageURI, fake.calledURL)
+	})
+}
+
 func TestDownloadFromURLs(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewDefaultLogger(false)
