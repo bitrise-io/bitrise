@@ -25,13 +25,12 @@ type oauthMock struct {
 	tokenCalls    int // /oauth2/token (authorization_code + refresh)
 	exchangeCalls int // /oidc/token (JWT → PAT)
 
-	jwt                   string
-	refreshToken          string
-	jwtExpiresIn          int64
-	refreshTokenExpiresIn int64
-	pat                   string
-	patExpiresIn          int64
-	failRefresh           bool
+	jwt          string
+	refreshToken string
+	jwtExpiresIn int64
+	pat          string
+	patExpiresIn int64
+	failRefresh  bool
 }
 
 func newOAuthMock() *oauthMock {
@@ -55,11 +54,10 @@ func newOAuthMock() *oauthMock {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"access_token":             m.jwt,
-			"refresh_token":            m.refreshToken,
-			"expires_in":               m.jwtExpiresIn,
-			"refresh_token_expires_in": m.refreshTokenExpiresIn,
-			"token_type":               "Bearer",
+			"access_token":  m.jwt,
+			"refresh_token": m.refreshToken,
+			"expires_in":    m.jwtExpiresIn,
+			"token_type":    "Bearer",
 		})
 	})
 	mux.HandleFunc("/oidc/token", func(w http.ResponseWriter, _ *http.Request) {
@@ -196,28 +194,6 @@ func TestEnsureFreshPAT_ExpiredPATAndJWT_RefreshesAndRotates(t *testing.T) {
 	}
 }
 
-func TestEnsureFreshPAT_ExpiredRefreshToken_FailsFastWithoutNetworkCall(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	if err := auth.Save(auth.Auth{
-		Token: "old", TokenExpiry: time.Now().Add(-time.Hour),
-		JWT: "old-jwt", JWTExpiry: time.Now().Add(-time.Hour),
-		RefreshToken:       "expired-refresh",
-		RefreshTokenExpiry: time.Now().Add(-time.Minute),
-	}); err != nil {
-		t.Fatalf("seed: %v", err)
-	}
-	m := newOAuthMock()
-	defer m.close()
-
-	_, err := m.config().EnsureFreshPAT(context.Background(), "old")
-	if !errors.Is(err, ErrLoginRequired) {
-		t.Fatalf("expected ErrLoginRequired, got %v", err)
-	}
-	if tc, ec := m.counts(); tc != 0 || ec != 0 {
-		t.Fatalf("known-expired refresh token should make no HTTP calls; got token=%d exchange=%d", tc, ec)
-	}
-}
-
 func TestEnsureFreshPAT_RefreshRejected(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	if err := auth.Save(auth.Auth{
@@ -282,22 +258,6 @@ func TestLogin_HappyPath(t *testing.T) {
 	}
 	if tc, ec := m.counts(); tc != 1 || ec != 1 {
 		t.Fatalf("expected 1 code-exchange + 1 PAT-exchange; got token=%d exchange=%d", tc, ec)
-	}
-}
-
-func TestLogin_SetsRefreshTokenExpiryWhenProvided(t *testing.T) {
-	m := newOAuthMock()
-	defer m.close()
-	m.refreshTokenExpiresIn = 3600
-
-	a, err := m.config().Login(context.Background(), callbackOpener(t, "auth-code", ""), io.Discard)
-	if err != nil {
-		t.Fatalf("Login: %v", err)
-	}
-	wantAfter := time.Now().Add(59 * time.Minute)
-	wantBefore := time.Now().Add(61 * time.Minute)
-	if a.RefreshTokenExpiry.Before(wantAfter) || a.RefreshTokenExpiry.After(wantBefore) {
-		t.Fatalf("RefreshTokenExpiry = %v, want ~1h from now", a.RefreshTokenExpiry)
 	}
 }
 

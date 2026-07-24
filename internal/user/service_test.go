@@ -111,6 +111,29 @@ func TestLogin_GenericFailure(t *testing.T) {
 	}
 }
 
+func TestLogin_FieldErrorsShape(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/users/sign_in" && r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `<meta name="csrf-token" content="t" />`)
+			return
+		}
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = io.WriteString(w, `{"errors":{"login":[{"error":"invalid"}],"password":[{"error":"too_short"}]}}`)
+	}))
+	defer srv.Close()
+
+	c, _ := webclient.New(srv.URL)
+	svc := NewService(c)
+	_, err := svc.Login(context.Background(), LoginInput{Login: "a@b", Password: "p"}, "desc")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	got := err.Error()
+	if !strings.Contains(got, "login: invalid") || !strings.Contains(got, "password: too_short") || !strings.Contains(got, "422") {
+		t.Fatalf("error %q does not include expected field details", got)
+	}
+}
+
 func TestLogin_MintFailure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
