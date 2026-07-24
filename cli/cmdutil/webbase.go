@@ -1,6 +1,10 @@
 package cmdutil
 
-import "os"
+import (
+	"os"
+
+	"github.com/bitrise-io/bitrise/v2/internal/config"
+)
 
 // EnvWebBaseURL overrides the web base URL — rarely changed, mostly for
 // pointing a build at a non-prod environment. Exported since tests set it
@@ -12,14 +16,5 @@ const defaultWebBaseURL = "https://app.bitrise.io"
 // ResolveWebBaseURL returns the resolved web base URL, overridable via
 // BITRISE_WEB_BASE_URL.
 func ResolveWebBaseURL() string {
-	return firstNonEmpty(os.Getenv(EnvWebBaseURL), defaultWebBaseURL)
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
+	return config.FirstNonEmptyString(os.Getenv(EnvWebBaseURL), defaultWebBaseURL)
 }

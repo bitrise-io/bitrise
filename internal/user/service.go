@@ -1,7 +1,7 @@
-// Package user holds account creation and email/password sign-in against
-// app.bitrise.io's Rails-Devise JSON endpoints (POST /users for signup,
-// /users/sign_in for sign-in, /me/profile/security/user_auth_tokens to mint
-// a PAT). Only the minted PAT is persisted, by the cli layer.
+// Package user holds email/password sign-in against app.bitrise.io's
+// Rails-Devise JSON endpoints (/users/sign_in for sign-in,
+// /me/profile/security/user_auth_tokens to mint a PAT). Only the minted PAT
+// is persisted, by the cli layer.
 package user
 
 import (
@@ -12,46 +12,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
 	"github.com/bitrise-io/bitrise/v2/internal/webclient"
 )
 
-// Service runs signup and login flows against an app.bitrise.io target.
+// Service runs the login flow against an app.bitrise.io target.
 type Service struct {
 	client *webclient.Client
 }
 
 func NewService(client *webclient.Client) *Service {
 	return &Service{client: client}
-}
-
-// SignupInput is the email-and-password signup payload; all five fields are
-// required by the server's User model validation.
-type SignupInput struct {
-	Email     string
-	Username  string
-	Password  string
-	FirstName string
-	LastName  string
-}
-
-// Account is the trimmed view of the user record POST /users returns.
-type Account struct {
-	Slug      string `json:"id,omitempty"`
-	Email     string `json:"email"`
-	Username  string `json:"username,omitempty"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
-	Confirmed bool   `json:"confirmed"`
-}
-
-type signupResponse struct {
-	Slug        string `json:"slug"`
-	Email       string `json:"email"`
-	Username    string `json:"username"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	ConfirmedAt string `json:"confirmed_at"`
 }
 
 // LoginInput is the email/username + password payload. The wire field is
@@ -69,47 +39,6 @@ var errUnconfirmedEmail = errors.New("email not yet verified")
 // IsUnconfirmedEmailErr reports whether err is the unconfirmed-email
 // sentinel returned by Login.
 func IsUnconfirmedEmailErr(err error) bool { return errors.Is(err, errUnconfirmedEmail) }
-
-// Signup creates a new account via POST /users. The account can't sign in
-// until the confirmation email's link is clicked; Signup never auto-signs-in.
-func (s *Service) Signup(ctx context.Context, in SignupInput) (Account, error) {
-	if s.client == nil {
-		return Account{}, fmt.Errorf("webclient not configured")
-	}
-	if err := s.client.Prime(ctx, "/users/sign_up"); err != nil {
-		return Account{}, fmt.Errorf("prime signup: %w", err)
-	}
-	body := map[string]any{
-		"user": map[string]string{
-			"email":                 in.Email,
-			"username":              in.Username,
-			"password":              in.Password,
-			"password_confirmation": in.Password,
-			"first_name":            in.FirstName,
-			"last_name":             in.LastName,
-		},
-	}
-	resp, err := s.client.PostJSON(ctx, "/users", body)
-	if err != nil {
-		return Account{}, err
-	}
-	if resp.Status < 200 || resp.Status >= 300 {
-		return Account{}, fmt.Errorf("signup failed: %s", formatServerError(resp.Status, resp.Body))
-	}
-	var raw signupResponse
-	// The website returns the user record on success; if the body is
-	// unexpectedly empty (e.g. a future server change) fall back to the
-	// fields we already have.
-	_ = json.Unmarshal(resp.Body, &raw)
-	return Account{
-		Slug:      raw.Slug,
-		Email:     config.FirstNonEmptyString(raw.Email, in.Email),
-		Username:  config.FirstNonEmptyString(raw.Username, in.Username),
-		FirstName: config.FirstNonEmptyString(raw.FirstName, in.FirstName),
-		LastName:  config.FirstNonEmptyString(raw.LastName, in.LastName),
-		Confirmed: raw.ConfirmedAt != "",
-	}, nil
-}
 
 // Login signs in via POST /users/sign_in and mints a PAT via
 // POST /me/profile/security/user_auth_tokens. On an unconfirmed-email 401,
