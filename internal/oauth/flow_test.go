@@ -25,12 +25,13 @@ type oauthMock struct {
 	tokenCalls    int // /oauth2/token (authorization_code + refresh)
 	exchangeCalls int // /oidc/token (JWT → PAT)
 
-	jwt          string
-	refreshToken string
-	jwtExpiresIn int64
-	pat          string
-	patExpiresIn int64
-	failRefresh  bool
+	jwt               string
+	refreshToken      string
+	jwtExpiresIn      int64
+	pat               string
+	patExpiresIn      int64
+	failRefresh       bool
+	failExchangeTimes int // number of leading /oidc/token calls to fail before succeeding
 }
 
 func newOAuthMock() *oauthMock {
@@ -63,7 +64,16 @@ func newOAuthMock() *oauthMock {
 	mux.HandleFunc("/oidc/token", func(w http.ResponseWriter, _ *http.Request) {
 		m.mu.Lock()
 		m.exchangeCalls++
+		shouldFail := m.failExchangeTimes > 0
+		if shouldFail {
+			m.failExchangeTimes--
+		}
 		m.mu.Unlock()
+		if shouldFail {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = io.WriteString(w, `{"error":"invalid_token"}`)
+			return
+		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"access_token": m.pat,
 			"token_type":   "bearer",
@@ -156,6 +166,34 @@ func TestEnsureFreshPAT_ExpiredPAT_ValidJWT(t *testing.T) {
 	}
 	if tc, ec := m.counts(); tc != 0 || ec != 1 {
 		t.Fatalf("expected 0 token + 1 exchange; got token=%d exchange=%d", tc, ec)
+	}
+	if saved, _ := auth.Load(); saved.Token != "bitpat_minted" {
+		t.Fatalf("new PAT not persisted: %q", saved.Token)
+	}
+}
+
+func TestEnsureFreshPAT_JWTLooksValidButExchangeRejected_FallsBackToFullRefresh(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := auth.Save(auth.Auth{
+		Token: "old-pat", TokenExpiry: time.Now().Add(-time.Minute),
+		JWT: "revoked-jwt", JWTExpiry: time.Now().Add(time.Hour), // unexpired by the clock, but the server rejects it anyway
+		RefreshToken: "r",
+	}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	m := newOAuthMock()
+	defer m.close()
+	m.failExchangeTimes = 1 // first exchange (using the stale-looking JWT) is rejected
+
+	got, err := m.config().EnsureFreshPAT(context.Background(), "old-pat")
+	if err != nil {
+		t.Fatalf("EnsureFreshPAT: %v", err)
+	}
+	if got != "bitpat_minted" {
+		t.Fatalf("got %q, want bitpat_minted", got)
+	}
+	if tc, ec := m.counts(); tc != 1 || ec != 2 {
+		t.Fatalf("expected 1 refresh + 2 exchange attempts (1 rejected, 1 after refresh); got token=%d exchange=%d", tc, ec)
 	}
 	if saved, _ := auth.Load(); saved.Token != "bitpat_minted" {
 		t.Fatalf("new PAT not persisted: %q", saved.Token)
