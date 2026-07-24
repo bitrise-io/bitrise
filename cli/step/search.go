@@ -33,7 +33,7 @@ Valid maintainers:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
-			format, _ := cmd.Flags().GetString(cmdutil.OuputFormatKey)
+			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 			if err := output.ConfigureOutputFormat(format); err != nil {
 				cmdutil.Failf("Failed to configure output format, error: %s", err)
 			}
@@ -63,7 +63,7 @@ Valid maintainers:
 
 	cmd.Flags().StringArrayVar(&categories, "category", nil, "filter by category (may be repeated)")
 	cmd.Flags().StringArrayVar(&maintainers, "maintainer", nil, "filter by maintainer: bitrise, verified, community (may be repeated)")
-	cmd.Flags().StringP(cmdutil.OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
 	return cmd
 }
