@@ -102,10 +102,8 @@ logout' to clear).`,
 	return cmd
 }
 
-// runTokenLogin never prompts — a bare interactive `auth login` defaults to
-// OAuth instead, so the token always arrives on stdin.
 func runTokenLogin(cmd *cobra.Command) error {
-	tok, err := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "", true)
+	tok, err := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package cmdutil
 import (
 	"os"
 
+	"github.com/bitrise-io/bitrise/v2/internal/config"
 	"github.com/bitrise-io/bitrise/v2/internal/oauth"
 )
 
@@ -19,8 +20,8 @@ const (
 // to production defaults.
 func OAuthConfig() oauth.Config {
 	return oauth.NewConfig(
-		firstNonEmpty(os.Getenv(EnvOAuthIssuer), oauth.DefaultIssuer),
-		firstNonEmpty(os.Getenv(EnvOIDCTokenEndpoint), oauth.DefaultOIDCTokenEndpoint),
-		firstNonEmpty(os.Getenv(EnvOAuthClientID), oauth.DefaultClientID),
+		config.FirstNonEmptyString(os.Getenv(EnvOAuthIssuer), oauth.DefaultIssuer),
+		config.FirstNonEmptyString(os.Getenv(EnvOIDCTokenEndpoint), oauth.DefaultOIDCTokenEndpoint),
+		config.FirstNonEmptyString(os.Getenv(EnvOAuthClientID), oauth.DefaultClientID),
 	)
 }
