@@ -34,7 +34,7 @@ func TestParseRunAndTriggerJSONParams(t *testing.T) {
 			cmdutil.PRReadyStateKey:   models.PullRequestReadyStateReadyForReview,
 			cmdutil.TagKey:            "0.9.0",
 
-			cmdutil.OuputFormatKey: "json",
+			cmdutil.FormatKey: "json",
 
 			cmdutil.ConfigKey:       "bitrise.yml",
 			cmdutil.ConfigBase64Key: toBase64("bitrise.yml"),
@@ -164,7 +164,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			cmdutil.PRTargetBranchKey: prTargetBranch,
 			cmdutil.PRReadyStateKey:   prReadyState,
 			cmdutil.TagKey:            tag,
-			cmdutil.OuputFormatKey:    format,
+			cmdutil.FormatKey:         format,
 
 			cmdutil.ConfigKey:       bitriseConfigPath,
 			cmdutil.ConfigBase64Key: bitriseConfigBase64Data,
@@ -224,7 +224,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			cmdutil.PRTargetBranchKey: prTargetBranch,
 			cmdutil.PRReadyStateKey:   prReadyState,
 			cmdutil.TagKey:            tag,
-			cmdutil.OuputFormatKey:    format,
+			cmdutil.FormatKey:         format,
 
 			cmdutil.ConfigKey:       bitriseConfigPath,
 			cmdutil.ConfigBase64Key: bitriseConfigBase64Data,
@@ -284,7 +284,7 @@ func TestParseRunAndTriggerParams(t *testing.T) {
 			cmdutil.PRTargetBranchKey: prTargetBranch,
 			cmdutil.PRReadyStateKey:   prReadyState,
 			cmdutil.TagKey:            tag,
-			cmdutil.OuputFormatKey:    format,
+			cmdutil.FormatKey:         format,
 
 			cmdutil.ConfigKey:       bitriseConfigPath,
 			cmdutil.ConfigBase64Key: bitriseConfigBase64Data,

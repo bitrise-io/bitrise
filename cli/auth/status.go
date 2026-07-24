@@ -38,7 +38,7 @@ Sources, in precedence order:
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
-			format, _ := cmd.Flags().GetString(cmdutil.OuputFormatKey)
+			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 			if err := output.ConfigureOutputFormat(format); err != nil {
 				cmdutil.Failf("Failed to configure output format, error: %s", err)
 			}
@@ -56,7 +56,7 @@ Sources, in precedence order:
 			return nil
 		},
 	}
-	cmd.Flags().StringP(cmdutil.OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 	return cmd
 }
 

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
@@ -25,6 +27,16 @@ func runLogout() error {
 	if err := auth.Clear(); err != nil {
 		return err
 	}
-	log.Print("Cleared saved access token")
+	confirmLogoutCleared()
 	return nil
+}
+
+// confirmLogoutCleared warns when BITRISE_TOKEN is set, since it shadows the
+// removal just performed (see liveToken) — otherwise commands stay
+// authenticated via the env var and the user believes they're signed out.
+func confirmLogoutCleared() {
+	log.Print("Cleared saved access token")
+	if os.Getenv(auth.EnvToken) != "" {
+		log.Warnf("%s is still set and will be used by commands — run 'unset %s' to fully sign out.", auth.EnvToken, auth.EnvToken)
+	}
 }
