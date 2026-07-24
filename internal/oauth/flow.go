@@ -77,12 +77,11 @@ func (c Config) Login(ctx context.Context, openBrowser func(string) error, stder
 
 	now := time.Now()
 	return auth.Auth{
-		Token:              pat,
-		TokenExpiry:        patExpiry,
-		JWT:                jwtResp.AccessToken,
-		JWTExpiry:          jwtExpiry(jwtResp, now),
-		RefreshToken:       jwtResp.RefreshToken,
-		RefreshTokenExpiry: refreshTokenExpiry(jwtResp, now),
+		Token:        pat,
+		TokenExpiry:  patExpiry,
+		JWT:          jwtResp.AccessToken,
+		JWTExpiry:    jwtExpiry(jwtResp, now),
+		RefreshToken: jwtResp.RefreshToken,
 	}, nil
 }
 
@@ -141,9 +140,8 @@ func (c Config) EnsureFreshPAT(ctx context.Context, resolvedToken string) (strin
 		// full refresh before giving up.
 	}
 
-	// PAT and JWT both stale: refresh the JWT, then exchange it. A known,
-	// past refresh-token expiry fails fast, without a doomed network call.
-	if a.RefreshToken == "" || (!a.RefreshTokenExpiry.IsZero() && !now.Before(a.RefreshTokenExpiry)) {
+	// PAT and JWT both stale: refresh the JWT, then exchange it.
+	if a.RefreshToken == "" {
 		return "", ErrLoginRequired
 	}
 	refreshed, err := c.refreshJWT(ctx, a.RefreshToken)
@@ -155,7 +153,6 @@ func (c Config) EnsureFreshPAT(ctx context.Context, resolvedToken string) (strin
 	if refreshed.RefreshToken != "" { // WorkOS may rotate the refresh token
 		a.RefreshToken = refreshed.RefreshToken
 	}
-	a.RefreshTokenExpiry = refreshTokenExpiry(refreshed, now)
 
 	pat, expiry, err := c.exchangeJWTForPAT(ctx, a.JWT)
 	if err != nil {
