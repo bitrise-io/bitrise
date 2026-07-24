@@ -19,6 +19,10 @@ type tokenResponse struct {
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int64  `json:"expires_in"`
 	TokenType    string `json:"token_type"`
+	// RefreshTokenExpiresIn is WorkOS's TTL for the refresh token itself, if
+	// the response includes one; not part of the base OAuth2 token response
+	// shape, so absent means "unknown", not "never expires".
+	RefreshTokenExpiresIn int64 `json:"refresh_token_expires_in"`
 }
 
 // exchangeCodeForJWT trades a code for a JWT + refresh token. redirectURI
@@ -104,6 +108,15 @@ func jwtExpiry(resp tokenResponse, now time.Time) time.Time {
 		return exp
 	}
 	return now.Add(5 * time.Minute)
+}
+
+// refreshTokenExpiry returns the refresh token's expiry, or the zero Time
+// when the response didn't include one (unknown, not "never expires").
+func refreshTokenExpiry(resp tokenResponse, now time.Time) time.Time {
+	if resp.RefreshTokenExpiresIn <= 0 {
+		return time.Time{}
+	}
+	return now.Add(time.Duration(resp.RefreshTokenExpiresIn) * time.Second)
 }
 
 // parseJWTExp decodes the exp claim from a JWT without verifying its signature
