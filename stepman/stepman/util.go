@@ -145,6 +145,14 @@ func DownloadStepSourceArchive(destDir string, downloadLocations []models.Downlo
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				// Clone into a clean target. git clone refuses a non-empty dir, so a
+				// retry after an attempt that already populated stepPth (e.g. a clone
+				// that succeeded but failed the commit-hash check) would otherwise
+				// fail with a misleading "already exists and is not empty" error,
+				// masking the real cause.
+				if err := os.RemoveAll(destDir); err != nil {
+					return fmt.Errorf("clean %s before clone: %s", destDir, err)
+				}
 				repo, err := git.New(destDir)
 				if err != nil {
 					return err
