@@ -134,11 +134,12 @@ func TestPostJSON_ReturnsBodyAndLocation(t *testing.T) {
 	}
 }
 
-// setTestCookie writes a Secure/HttpOnly/SameSite cookie so gosec G124
-// doesn't trip on httptest fixtures.
+// setTestCookie writes a test cookie. Not Secure: the test server runs over
+// plain HTTP, and pre-1.26 Go's cookiejar won't forward a Secure cookie
+// there even for localhost.
 func setTestCookie(w http.ResponseWriter, name, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name: name, Value: value, Path: "/",
-		Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
+		HttpOnly: true, SameSite: http.SameSiteLaxMode,
 	})
 }
