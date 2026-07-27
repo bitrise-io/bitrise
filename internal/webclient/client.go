@@ -12,17 +12,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
+	"strings"
 	"time"
+
+	"github.com/bitrise-io/bitrise/v2/version"
 )
 
 // defaultTimeout bounds a single request against app.bitrise.io, mirroring
 // internal/bitriseapi's client so a stalled server can't hang a command
 // indefinitely.
 const defaultTimeout = 30 * time.Second
+
+// userAgent identifies this CLI to app.bitrise.io, which sits behind a
+// CDN/WAF that can block Go's default User-Agent.
+var userAgent = "bitrise-cli/" + version.VERSION
 
 // Client wraps an http.Client with a per-call cookie jar and CSRF priming.
 // Construct one per command invocation; do not reuse across commands.
@@ -35,15 +43,28 @@ type Client struct {
 // New builds a Client targeting baseURL, with its own cookie jar — pass one
 // Client through a single sequence of calls (Prime → PostJSON …) and discard it.
 func New(baseURL string) (*Client, error) {
+	normalized, err := normalizeBaseURL(baseURL)
+	if err != nil {
+		return nil, err
+	}
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, fmt.Errorf("create cookie jar: %w", err)
 	}
 	return &Client{
-		baseURL: baseURL,
+		baseURL: normalized,
 		httpClient: &http.Client{
 			Jar:     jar,
 			Timeout: defaultTimeout,
+			// This is a JSON API flow; a redirect means something unexpected
+			// happened (e.g. a failed sign-in bouncing to an HTML page).
+			// ErrUseLastResponse stops at the redirect response itself so it
+			// surfaces through the normal non-2xx status handling below,
+			// rather than being followed silently or resending the request
+			// body to whatever host Location names.
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
 		},
 	}, nil
 }
@@ -66,6 +87,7 @@ func (c *Client) Prime(ctx context.Context, path string) error {
 		return fmt.Errorf("build prime request: %w", err)
 	}
 	req.Header.Set("Accept", "text/html")
+	req.Header.Set("User-Agent", userAgent)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("prime: %w", err)
@@ -87,12 +109,10 @@ func (c *Client) Prime(ctx context.Context, path string) error {
 	return nil
 }
 
-// Response carries the decoded body, status code, and final URL of a
-// website request.
+// Response carries the status code and body of a website request.
 type Response struct {
-	Status   int
-	Location string
-	Body     []byte
+	Status int
+	Body   []byte
 }
 
 // PostJSON sends body as JSON to path, attaching X-CSRF-Token when Prime
@@ -112,6 +132,7 @@ func (c *Client) PostJSON(ctx context.Context, path string, body any) (Response,
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", userAgent)
 	if c.csrfToken != "" {
 		req.Header.Set("X-CSRF-Token", c.csrfToken)
 	}
@@ -126,9 +147,8 @@ func (c *Client) PostJSON(ctx context.Context, path string, body any) (Response,
 		return Response{}, fmt.Errorf("read response: %w", err)
 	}
 	return Response{
-		Status:   resp.StatusCode,
-		Location: resp.Header.Get("Location"),
-		Body:     respBody,
+		Status: resp.StatusCode,
+		Body:   respBody,
 	}, nil
 }
 
@@ -138,4 +158,31 @@ func (c *Client) url(path string) (string, error) {
 		return "", fmt.Errorf("parse URL: %w", err)
 	}
 	return u.String(), nil
+}
+
+// normalizeBaseURL rejects a relative URL or a plaintext http:// URL against
+// a non-loopback host (this flow sends a password), and trims a trailing
+// slash so concatenating a leading-slash path in url() can't produce "//".
+// Loopback is allowed over http so tests can point at an httptest server.
+func normalizeBaseURL(raw string) (string, error) {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("parse base URL %q: %w", raw, err)
+	}
+	if !u.IsAbs() || u.Host == "" {
+		return "", fmt.Errorf("base URL %q must be an absolute URL", raw)
+	}
+	if u.Scheme != "https" && !isLoopbackHost(u.Hostname()) {
+		return "", fmt.Errorf("base URL %q must use https (got %q)", raw, u.Scheme)
+	}
+	u.Path = strings.TrimSuffix(u.Path, "/")
+	return u.String(), nil
+}
+
+func isLoopbackHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }

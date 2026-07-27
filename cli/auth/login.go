@@ -47,20 +47,30 @@ logout' to clear).`,
   bitrise auth login --email alice@example.com           # email/password`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
-
-			switch {
-			case emailLogin != "":
-				return runEmailLogin(cmd, emailLogin, passwordStdin)
-			case passwordStdin:
-				return fmt.Errorf("--password-stdin requires --email (token login reads the token, not a password)")
-			default:
-				return runTokenLogin(cmd)
-			}
+			return selectLoginMode(cmd, emailLogin, cmd.Flags().Changed("email"), passwordStdin)
 		},
 	}
 	cmd.Flags().StringVar(&emailLogin, "email", "", "sign in by email/password and mint a Personal Access Token")
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "with --email, read the password from stdin without prompting")
 	return cmd
+}
+
+// selectLoginMode picks token vs. email/password login based on the --email
+// and --password-stdin flags. emailFlagSet distinguishes --email "" (an
+// explicit but empty value) from omitting --email entirely — both leave
+// email == "", but only the former should be rejected rather than silently
+// falling back to token login.
+func selectLoginMode(cmd *cobra.Command, email string, emailFlagSet, passwordStdin bool) error {
+	switch {
+	case email != "":
+		return runEmailLogin(cmd, email, passwordStdin)
+	case emailFlagSet:
+		return fmt.Errorf("--email requires a non-empty value")
+	case passwordStdin:
+		return fmt.Errorf("--password-stdin requires --email (token login reads the token, not a password)")
+	default:
+		return runTokenLogin(cmd)
+	}
 }
 
 // checkPasswordStdinPiped reports an error when --password-stdin is set but

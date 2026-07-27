@@ -102,6 +102,28 @@ func TestRunEmailLogin_EmptyPasswordErrors(t *testing.T) {
 	assert.Contains(t, err.Error(), "password is empty")
 }
 
+func TestSelectLoginMode_ExplicitEmptyEmailErrors(t *testing.T) {
+	err := selectLoginMode(newTestCmd(t, ""), "", true, false)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--email requires a non-empty value")
+}
+
+func TestSelectLoginMode_OmittedEmailFallsBackToTokenLogin(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	require.NoError(t, selectLoginMode(newTestCmd(t, "bitpat_faketoken\n"), "", false, false))
+
+	saved, err := auth.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_faketoken", saved.Token)
+}
+
+func TestSelectLoginMode_PasswordStdinWithoutEmailErrors(t *testing.T) {
+	err := selectLoginMode(newTestCmd(t, ""), "", false, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--password-stdin requires --email")
+}
+
 func TestCheckPasswordStdinPiped_ErrorsWhenTerminal(t *testing.T) {
 	err := checkPasswordStdinPiped(true, true)
 	require.Error(t, err)

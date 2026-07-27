@@ -11,6 +11,57 @@ import (
 	"testing"
 )
 
+func TestNew_RejectsInvalidBaseURLs(t *testing.T) {
+	for _, raw := range []string{
+		"app.bitrise.io",        // no scheme
+		"http://app.bitrise.io", // plaintext against a non-loopback host
+		"ftp://app.bitrise.io",  // wrong scheme entirely
+		"not a url \x7f",        // unparsable
+	} {
+		if _, err := New(raw); err == nil {
+			t.Fatalf("New(%q) = nil error, want an error", raw)
+		}
+	}
+}
+
+func TestNew_AllowsHTTPOnLoopback(t *testing.T) {
+	for _, raw := range []string{"http://localhost:1234", "http://127.0.0.1:1234"} {
+		if _, err := New(raw); err != nil {
+			t.Fatalf("New(%q): %v", raw, err)
+		}
+	}
+}
+
+func TestNew_TrimsTrailingSlash(t *testing.T) {
+	c, err := New("https://app.bitrise.io/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.baseURL != "https://app.bitrise.io" {
+		t.Fatalf("baseURL = %q, want no trailing slash", c.baseURL)
+	}
+}
+
+func TestPrime_SendsUserAgent(t *testing.T) {
+	var capturedUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedUA = r.Header.Get("User-Agent")
+		_, _ = io.WriteString(w, `<meta name="csrf-token" content="t" />`)
+	}))
+	defer srv.Close()
+
+	c, err := New(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Prime(context.Background(), "/users/sign_up"); err != nil {
+		t.Fatalf("Prime: %v", err)
+	}
+	if capturedUA != userAgent {
+		t.Fatalf("User-Agent = %q, want %q", capturedUA, userAgent)
+	}
+}
+
 func TestPrime_ExtractsMetaCSRFAndStoresCookies(t *testing.T) {
 	const wantToken = "csrf-meta-value-abc"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -147,9 +198,8 @@ func TestPostJSON_OmitsCSRFWhenNotPrimed(t *testing.T) {
 	}
 }
 
-func TestPostJSON_ReturnsBodyAndLocation(t *testing.T) {
+func TestPostJSON_ReturnsBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Location", "/dashboard")
 		w.WriteHeader(http.StatusCreated)
 		_, _ = io.WriteString(w, `{"ok":true}`)
 	}))
@@ -166,11 +216,31 @@ func TestPostJSON_ReturnsBodyAndLocation(t *testing.T) {
 	if resp.Status != http.StatusCreated {
 		t.Fatalf("status = %d", resp.Status)
 	}
-	if resp.Location != "/dashboard" {
-		t.Fatalf("Location = %q", resp.Location)
-	}
 	if !strings.Contains(string(resp.Body), `"ok":true`) {
 		t.Fatalf("body = %s", resp.Body)
+	}
+}
+
+func TestPostJSON_RedirectSurfacesAsNonSuccessStatus(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/users/sign_in" {
+			http.Redirect(w, r, "/users/sign_in", http.StatusFound)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c, err := New(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := c.PostJSON(context.Background(), "/users/sign_in", map[string]any{})
+	if err != nil {
+		t.Fatalf("PostJSON: %v", err)
+	}
+	if resp.Status != http.StatusFound {
+		t.Fatalf("status = %d, want %d (redirect not followed)", resp.Status, http.StatusFound)
 	}
 }
 
