@@ -71,19 +71,14 @@ func (c *Command) Start() error {
 		return err
 	}
 
-	// Wait for the process to finish
+	// Wait for the process to finish. cmd.Wait (not cmd.Process.Wait) is required
+	// here: it also waits for the goroutines exec.Cmd spawns to copy the child's
+	// stdout/stderr into our io.Writer, so callers observing that writer after
+	// Start returns see the complete output. cmd.Process.Wait only reaps the
+	// process and can return before that copying has finished.
 	done := make(chan error, 1)
 	go func() {
-		switch p, err := c.cmd.Process.Wait(); {
-		case err != nil:
-			done <- err
-		case p != nil:
-			if !p.Success() {
-				done <- &exec.ExitError{ProcessState: p}
-			} else {
-				done <- nil
-			}
-		}
+		done <- c.cmd.Wait()
 	}()
 
 	// or kill it after a timeout (whichever happens first)
