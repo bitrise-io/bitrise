@@ -30,7 +30,7 @@ const defaultTimeout = 30 * time.Second
 
 // userAgent identifies this CLI to app.bitrise.io, which sits behind a
 // CDN/WAF that can block Go's default User-Agent.
-var userAgent = "bitrise-cli/" + version.VERSION
+var userAgent = "bitrise/" + version.VERSION
 
 // Client wraps an http.Client with a per-call cookie jar and CSRF priming.
 // Construct one per command invocation; do not reuse across commands.

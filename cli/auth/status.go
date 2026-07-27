@@ -118,6 +118,7 @@ func printStatusHuman(s authStatus) {
 		return
 	}
 	log.Print("✓ Access token configured")
+	log.Print("Token:   ******** (set)")
 	log.Printf("Type:    %s", s.TokenType)
 	log.Printf("Source:  %s", s.Source)
 	if s.TokenExpiry != "" {
