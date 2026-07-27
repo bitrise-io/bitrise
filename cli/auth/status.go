@@ -62,15 +62,18 @@ Sources, in precedence order:
 
 // resolveTokenAndSource reports what cmdutil.ResolveToken found, labeled for
 // display — status reports what's stored, it doesn't refresh or mutate it.
-func resolveTokenAndSource() (token, source string) {
+func resolveTokenAndSource() (token, source string, err error) {
 	tok, fromEnv, err := cmdutil.ResolveToken()
+	if err != nil {
+		return "", "", err
+	}
 	switch {
-	case err != nil || tok == "":
-		return "", "none"
+	case tok == "":
+		return "", "none", nil
 	case fromEnv:
-		return tok, "env (" + auth.EnvToken + ")"
+		return tok, "env (" + auth.EnvToken + ")", nil
 	default:
-		return tok, "auth file"
+		return tok, "auth file", nil
 	}
 }
 
@@ -81,7 +84,10 @@ func currentStatus() (authStatus, error) {
 	if err != nil {
 		return authStatus{}, err
 	}
-	tok, source := resolveTokenAndSource()
+	tok, source, err := resolveTokenAndSource()
+	if err != nil {
+		return authStatus{}, err
+	}
 	s := authStatus{
 		HasToken: tok != "",
 		Path:     p,
