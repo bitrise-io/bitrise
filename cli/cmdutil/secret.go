@@ -37,12 +37,13 @@ func ReadSecretInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bo
 		if _, err := fmt.Fprint(stderr, prompt); err != nil {
 			return "", err
 		}
-		b, err := term.ReadPassword(fd)
-		if _, perr := fmt.Fprintln(stderr); perr != nil { // newline after no-echo input
-			return "", perr
+		b, readErr := term.ReadPassword(fd)
+		_, writeErr := fmt.Fprintln(stderr) // newline after no-echo input
+		if readErr != nil {
+			return "", readErr
 		}
-		if err != nil {
-			return "", err
+		if writeErr != nil {
+			return "", writeErr
 		}
 		return strings.TrimSpace(string(b)), nil
 	}
