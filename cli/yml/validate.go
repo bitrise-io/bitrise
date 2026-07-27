@@ -22,7 +22,7 @@ func NewValidateCommand() *cobra.Command {
 	}
 
 	cmdutil.AddConfigAndInventoryFlags(validateCommand.Flags())
-	validateCommand.Flags().String(cmdutil.OuputFormatKey, "", "Output format. Accepted: json, yml.")
+	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: json, yml.")
 
 	return validateCommand
 }
@@ -232,7 +232,7 @@ func validate(cmd *cobra.Command, _ []string) error {
 	inventoryBase64Data, _ := cmd.Flags().GetString(cmdutil.InventoryBase64Key)
 	inventoryPath, _ := cmd.Flags().GetString(cmdutil.InventoryKey)
 
-	format, _ := cmd.Flags().GetString(cmdutil.OuputFormatKey)
+	format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 	if format == "" {
 		format = output.FormatRaw
 	}

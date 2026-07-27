@@ -24,6 +24,9 @@ import (
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
+// EnvToken overrides the stored access token; it takes precedence over auth.yaml.
+const EnvToken = "BITRISE_TOKEN"
+
 // Auth is the on-disk shape of auth.yaml.
 //
 // Token is the working credential read by every command — a Personal Access

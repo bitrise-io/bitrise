@@ -31,7 +31,7 @@ const (
 	PRReadyStateKey     = "pr-ready-state"
 	ConfigKey           = "config"
 	InventoryKey        = "inventory"
-	OuputFormatKey      = "format"
+	FormatKey           = "format"
 
 	TagKey    = "tag"
 	GitKey    = "git"

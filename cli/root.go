@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bitrise-io/bitrise/v2/cli/auth"
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/cli/local"
 	"github.com/bitrise-io/bitrise/v2/cli/plugin"
@@ -47,6 +48,7 @@ func newRootCommand() *cobra.Command {
 		local.NewCmd(),
 		yml.NewCmd(),
 		step.NewCmd(),
+		auth.NewCmd(),
 
 		versionCommand,
 		updateCommand,
