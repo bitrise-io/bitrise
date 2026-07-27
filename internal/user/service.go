@@ -148,7 +148,20 @@ func formatServerError(status int, body []byte) string {
 	if len(body) == 0 {
 		return fmt.Sprintf("HTTP %d", status)
 	}
-	return fmt.Sprintf("HTTP %d: %s", status, strings.TrimSpace(string(body)))
+	return fmt.Sprintf("HTTP %d: %s", status, truncate(strings.TrimSpace(string(body)), maxErrorBodySnippet))
+}
+
+// maxErrorBodySnippet bounds how much of an unrecognized (non-JSON) error
+// body — e.g. a Rails HTML error page — gets embedded in a CLI error
+// message; the website response is already capped at 1 MiB by
+// webclient.PostJSON, which is still too much to print verbatim.
+const maxErrorBodySnippet = 500
+
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit] + "…"
 }
 
 // looksLikeUnconfirmed checks whether the server's error body matches

@@ -101,3 +101,15 @@ func TestRunEmailLogin_EmptyPasswordErrors(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "password is empty")
 }
+
+func TestCheckPasswordStdinPiped_ErrorsWhenTerminal(t *testing.T) {
+	err := checkPasswordStdinPiped(true, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--password-stdin requires piped stdin")
+}
+
+func TestCheckPasswordStdinPiped_OKCases(t *testing.T) {
+	assert.NoError(t, checkPasswordStdinPiped(true, false))  // --password-stdin + piped input: fine
+	assert.NoError(t, checkPasswordStdinPiped(false, true))  // no --password-stdin, terminal: interactive masked prompt, fine
+	assert.NoError(t, checkPasswordStdinPiped(false, false)) // no --password-stdin, non-terminal: fine
+}

@@ -29,11 +29,51 @@ func TestPrime_ExtractsMetaCSRFAndStoresCookies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if c.httpClient.Timeout != defaultTimeout {
+		t.Fatalf("httpClient.Timeout = %v, want %v", c.httpClient.Timeout, defaultTimeout)
+	}
+	if c.httpClient.Jar == nil {
+		t.Fatal("httpClient.Jar is nil, want a cookie jar for the Prime/PostJSON flow")
+	}
 	if err := c.Prime(context.Background(), "/users/sign_up"); err != nil {
 		t.Fatalf("Prime: %v", err)
 	}
 	if c.csrfToken != wantToken {
 		t.Fatalf("csrfToken = %q, want %q", c.csrfToken, wantToken)
+	}
+}
+
+func TestPrime_ReturnsErrorOnNon2xxStatus(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = io.WriteString(w, `<html>maintenance</html>`)
+	}))
+	defer srv.Close()
+
+	c, err := New(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Prime(context.Background(), "/users/sign_in"); err == nil {
+		t.Fatal("expected Prime to error on a 503 response")
+	}
+	if c.csrfToken != "" {
+		t.Fatalf("csrfToken = %q, want unset after a failed prime", c.csrfToken)
+	}
+}
+
+func TestPrime_ReturnsErrorWhenNoCSRFTokenFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `<html><body>no csrf meta here</body></html>`)
+	}))
+	defer srv.Close()
+
+	c, err := New(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Prime(context.Background(), "/users/sign_in"); err == nil {
+		t.Fatal("expected Prime to error when no CSRF meta tag is present")
 	}
 }
 

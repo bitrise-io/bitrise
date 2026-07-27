@@ -16,7 +16,13 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
+	"time"
 )
+
+// defaultTimeout bounds a single request against app.bitrise.io, mirroring
+// internal/bitriseapi's client so a stalled server can't hang a command
+// indefinitely.
+const defaultTimeout = 30 * time.Second
 
 // Client wraps an http.Client with a per-call cookie jar and CSRF priming.
 // Construct one per command invocation; do not reuse across commands.
@@ -34,8 +40,11 @@ func New(baseURL string) (*Client, error) {
 		return nil, fmt.Errorf("create cookie jar: %w", err)
 	}
 	return &Client{
-		baseURL:    baseURL,
-		httpClient: &http.Client{Jar: jar},
+		baseURL: baseURL,
+		httpClient: &http.Client{
+			Jar:     jar,
+			Timeout: defaultTimeout,
+		},
 	}, nil
 }
 
@@ -67,9 +76,14 @@ func (c *Client) Prime(ctx context.Context, path string) error {
 	if err != nil {
 		return fmt.Errorf("prime: read body: %w", err)
 	}
-	if m := metaCSRFRegexp.FindSubmatch(body); m != nil {
-		c.csrfToken = string(m[1])
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("prime %s: unexpected status %d", path, resp.StatusCode)
 	}
+	m := metaCSRFRegexp.FindSubmatch(body)
+	if m == nil {
+		return fmt.Errorf("prime %s: no CSRF token found in response", path)
+	}
+	c.csrfToken = string(m[1])
 	return nil
 }
 
