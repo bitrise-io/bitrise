@@ -37,7 +37,16 @@ func Lock(ctx context.Context) (unlock func(), err error) {
 		if !errors.Is(err, fs.ErrExist) {
 			return nil, fmt.Errorf("create lock %s: %w", p, err)
 		}
-		if stale, statErr := lockIsStale(p); statErr == nil && stale {
+		stale, statErr := lockIsStale(p)
+		if statErr != nil {
+			if errors.Is(statErr, fs.ErrNotExist) {
+				// The lock file vanished between our OpenFile and this stat
+				// (the holder released it) — retry immediately.
+				continue
+			}
+			return nil, fmt.Errorf("check lock %s: %w", p, statErr)
+		}
+		if stale {
 			_ = os.Remove(p)
 			continue
 		}
@@ -57,8 +66,13 @@ func lockPath() (string, error) {
 	return p + ".lock", nil
 }
 
+// statLockFile is a var so tests can simulate stat failures other than
+// fs.ErrNotExist (e.g. permission denied) without depending on real,
+// platform-specific filesystem permission behavior.
+var statLockFile = os.Stat
+
 func lockIsStale(p string) (bool, error) {
-	info, err := os.Stat(p)
+	info, err := statLockFile(p)
 	if err != nil {
 		return false, err
 	}
