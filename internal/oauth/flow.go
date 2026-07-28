@@ -53,7 +53,11 @@ func (c Config) Login(ctx context.Context, openBrowser func(string) error, stder
 	}
 	if openBrowser != nil {
 		if err := openBrowser(authURL); err != nil {
-			if _, werr := fmt.Fprintf(stderr, "(couldn't open the browser automatically: %v)\n", err); werr != nil {
+			// Still completable by hand, but only in a browser on this machine —
+			// the callback goes to a loopback address. Spell that out rather than
+			// waiting out loginTimeout in silence, which is what a headless host
+			// with a TTY would otherwise do.
+			if _, werr := fmt.Fprintf(stderr, "(couldn't open the browser automatically: %v)\nOpen the URL above in a browser on this machine to continue, or press Ctrl-C to cancel and pipe a token instead:\n  echo \"$BITRISE_PAT\" | bitrise auth login --with-token\n\n", err); werr != nil {
 				return auth.Auth{}, werr
 			}
 		}
@@ -166,7 +170,7 @@ func (c Config) EnsureFreshPAT(ctx context.Context, resolvedToken string) (strin
 		return "", fmt.Errorf("%w (refresh failed: %v)", ErrLoginRequired, err)
 	}
 	a.JWT = refreshed.AccessToken
-	a.JWTExpiry = jwtExpiry(refreshed, now)
+	a.JWTExpiry = jwtExpiry(refreshed, time.Now())
 	if refreshed.RefreshToken != "" { // WorkOS may rotate the refresh token
 		a.RefreshToken = refreshed.RefreshToken
 	}

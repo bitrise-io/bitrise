@@ -10,9 +10,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// globalTracker is nil until SetTracker runs at CLI startup (cli/cli.go), so
-// every use guards against that — analytics must never crash a command, and
-// commands are also driven directly by tests that don't set up a tracker.
+// globalTracker is nil until SetTracker runs at CLI startup (cli/cli.go). The
+// sends in this package tolerate that — analytics must never crash a command,
+// and commands are also driven directly by tests that set up no tracker.
+// Tracker() hands it out unguarded: its callers run inside real command
+// execution, after startup.
 var globalTracker analytics.Tracker
 
 // SetTracker sets the package-level tracker used by LogCommandParameters,

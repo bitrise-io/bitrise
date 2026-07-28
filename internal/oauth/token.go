@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
 )
 
 // tokenResponse covers both the WorkOS token endpoint (code→JWT, refresh) and
@@ -35,11 +37,19 @@ func (c Config) exchangeCodeForJWT(ctx context.Context, code, verifier, redirect
 
 // refreshJWT obtains a fresh JWT (and possibly a rotated refresh token).
 func (c Config) refreshJWT(ctx context.Context, refreshToken string) (tokenResponse, error) {
-	return c.postForm(ctx, c.tokenEndpoint(), url.Values{
+	form := url.Values{
 		"grant_type":    {"refresh_token"},
 		"refresh_token": {refreshToken},
 		"client_id":     {c.ClientID},
-	})
+	}
+	// Repeat the authorize request's resource indicator (RFC 8707), or the
+	// refreshed JWT can come back without the audience the monolith's OIDC
+	// exchange requires — a failure that only surfaces once the first JWT
+	// expires, not at login.
+	if c.Resource != "" {
+		form.Set("resource", c.Resource)
+	}
+	return c.postForm(ctx, c.tokenEndpoint(), form)
 }
 
 // exchangeJWTForPAT trades a JWT for a Bitrise PAT (RFC 8693), mirroring the
@@ -83,7 +93,7 @@ func (c Config) postForm(ctx context.Context, endpoint string, form url.Values) 
 		return tokenResponse{}, fmt.Errorf("read token response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return tokenResponse{}, fmt.Errorf("token endpoint %s returned %d: %s", endpoint, resp.StatusCode, truncate(strings.TrimSpace(string(body)), maxTokenErrorBodySnippet))
+		return tokenResponse{}, fmt.Errorf("token endpoint %s returned %d: %s", endpoint, resp.StatusCode, stringutil.Truncate(strings.TrimSpace(string(body)), maxTokenErrorBodySnippet))
 	}
 
 	var tr tokenResponse
@@ -96,13 +106,6 @@ func (c Config) postForm(ctx context.Context, endpoint string, form url.Values) 
 // maxTokenErrorBodySnippet bounds how much of a non-200 token endpoint
 // response gets embedded in a CLI error message.
 const maxTokenErrorBodySnippet = 500
-
-func truncate(s string, limit int) string {
-	if len(s) <= limit {
-		return s
-	}
-	return s[:limit] + "…"
-}
 
 // jwtExpiry prefers expires_in, falls back to the JWT's exp claim, and
 // finally to a short conservative window so a refresh is attempted soon

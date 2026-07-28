@@ -3,9 +3,9 @@
 // JWT (WorkOS) -> PAT (monolith OIDC exchange, RFC 8693, same call the MCP
 // server makes).
 //
-// Depends only on internal/auth and the standard library — must not import
-// internal/config or cli/*. The cli layer resolves the environment-specific
-// endpoints and builds a Config (see cmdutil.OAuthConfig).
+// Depends only on internal/auth, dependency-free leaf packages and the standard
+// library — must not import internal/config or cli/*. The cli layer resolves the
+// environment-specific endpoints and builds a Config (see cmdutil.OAuthConfig).
 package oauth
 
 import (

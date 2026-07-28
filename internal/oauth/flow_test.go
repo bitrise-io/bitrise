@@ -209,6 +209,10 @@ func newOAuthMock(t *testing.T) *oauthMock {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/oauth2/token", func(w http.ResponseWriter, r *http.Request) {
 		_ = r.ParseForm()
+		if r.FormValue("grant_type") == "refresh_token" {
+			assert.Equal(t, "https://cli.example", r.FormValue("resource"),
+				"the refresh grant must repeat the authorize request's resource indicator, or the new JWT loses its audience")
+		}
 
 		m.mu.Lock()
 		m.tokenCalls++

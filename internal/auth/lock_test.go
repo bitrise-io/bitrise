@@ -104,3 +104,49 @@ func TestLock_CtxTimeoutWhileWaiting(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "timed out waiting for auth lock")
 }
+
+// TestLock_HeldLockSurvivesTheStaleWindow covers the case a plain mtime check
+// gets wrong: the OAuth ladder can hold the lock across three sequential token
+// requests, longer than lockStaleAfter, and a waiter must not then reclaim the
+// lock and spend the same refresh token.
+func TestLock_HeldLockSurvivesTheStaleWindow(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	compressLockTimings(t, 100*time.Millisecond, 10*time.Millisecond)
+
+	unlock, err := Lock(context.Background())
+	require.NoError(t, err)
+	defer unlock()
+
+	time.Sleep(5 * lockStaleAfter)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	_, err = Lock(ctx)
+	assert.Error(t, err, "a still-held lock must not be reclaimed just because the hold outlived lockStaleAfter")
+}
+
+func TestLock_UnlockLeavesAReclaimedLockAlone(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	unlock, err := Lock(context.Background())
+	require.NoError(t, err)
+
+	// Stand in for another process reclaiming the lock as stale and taking it:
+	// same path, different owner.
+	p, err := lockPath()
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(p, []byte("another-process"), 0o600))
+
+	unlock()
+
+	got, err := os.ReadFile(p)
+	require.NoError(t, err, "unlock must not delete a lock held by someone else")
+	assert.Equal(t, "another-process", string(got))
+}
+
+func compressLockTimings(t *testing.T, staleAfter, refreshInterval time.Duration) {
+	t.Helper()
+	origStale, origRefresh := lockStaleAfter, lockRefreshInterval
+	lockStaleAfter, lockRefreshInterval = staleAfter, refreshInterval
+	t.Cleanup(func() { lockStaleAfter, lockRefreshInterval = origStale, origRefresh })
+}
