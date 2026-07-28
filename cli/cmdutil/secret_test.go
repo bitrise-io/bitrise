@@ -26,13 +26,13 @@ func TestIsTerminal_NonTerminalInputs(t *testing.T) {
 	}
 }
 
-func TestReadSecretInput_NonTerminalReadsLine(t *testing.T) {
+func TestReadTokenInput_NonTerminalReadsLine(t *testing.T) {
 	in := strings.NewReader("  a-token-value  \nrest\n")
 	var stderr bytes.Buffer
 
-	got, err := ReadSecretInput(in, &stderr, "Token: ", false)
+	got, err := ReadTokenInput(in, &stderr, "Token: ", false)
 	if err != nil {
-		t.Fatalf("ReadSecretInput: %v", err)
+		t.Fatalf("ReadTokenInput: %v", err)
 	}
 	if got != "a-token-value" {
 		t.Fatalf("got %q, want %q", got, "a-token-value")
@@ -42,13 +42,58 @@ func TestReadSecretInput_NonTerminalReadsLine(t *testing.T) {
 	}
 }
 
-func TestReadSecretInput_EOFWithoutNewline(t *testing.T) {
+func TestReadTokenInput_EOFWithoutNewline(t *testing.T) {
 	in := strings.NewReader("no-trailing-newline")
-	got, err := ReadSecretInput(in, &bytes.Buffer{}, "", true)
+	got, err := ReadTokenInput(in, &bytes.Buffer{}, "", true)
 	if err != nil {
-		t.Fatalf("ReadSecretInput: %v", err)
+		t.Fatalf("ReadTokenInput: %v", err)
 	}
 	if got != "no-trailing-newline" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+func TestReadTokenInput_StillFullyTrims(t *testing.T) {
+	in := strings.NewReader("  tok  \n")
+	got, err := ReadTokenInput(in, &bytes.Buffer{}, "", false)
+	if err != nil {
+		t.Fatalf("ReadTokenInput: %v", err)
+	}
+	if got != "tok" {
+		t.Fatalf("got %q, want %q", got, "tok")
+	}
+}
+
+func TestReadPasswordInput_PreservesInternalWhitespace(t *testing.T) {
+	in := strings.NewReader(" hunter 2 \n")
+	got, err := ReadPasswordInput(in, &bytes.Buffer{}, "", true)
+	if err != nil {
+		t.Fatalf("ReadPasswordInput: %v", err)
+	}
+	if got != " hunter 2 " {
+		t.Fatalf("got %q, want %q (only trailing newline should be trimmed)", got, " hunter 2 ")
+	}
+}
+
+func TestReadPasswordInput_StripsTrailingCRLF(t *testing.T) {
+	in := strings.NewReader("hunter2\r\n")
+	got, err := ReadPasswordInput(in, &bytes.Buffer{}, "", true)
+	if err != nil {
+		t.Fatalf("ReadPasswordInput: %v", err)
+	}
+	if got != "hunter2" {
+		t.Fatalf("got %q, want %q", got, "hunter2")
+	}
+}
+
+func TestReadPasswordInput_NoTrailingNewline(t *testing.T) {
+	// Mirrors `printf '%s' "$PW" | ... --password-stdin` (no newline at all).
+	in := strings.NewReader("hunter2")
+	got, err := ReadPasswordInput(in, &bytes.Buffer{}, "", true)
+	if err != nil {
+		t.Fatalf("ReadPasswordInput: %v", err)
+	}
+	if got != "hunter2" {
+		t.Fatalf("got %q, want %q", got, "hunter2")
 	}
 }

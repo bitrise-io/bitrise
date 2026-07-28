@@ -32,17 +32,18 @@ const DefaultAPIBaseURL = "https://api.bitrise.io/v0.1"
 // when their respective files were not found.
 func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 	return Resolved{Config: Config{
-		SetupVersion:           firstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
+		SetupVersion:           FirstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
 		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
 		// legacyCfg.APIBaseURL is always empty (configs.ConfigModel predates
 		// the cloud API and has no such field), so this is effectively
 		// dir > global > default.
-		APIBaseURL: firstNonEmptyString(legacyCfg.APIBaseURL, dirCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
+		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, dirCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
 	}}
 }
 
-func firstNonEmptyString(values ...string) string {
+// FirstNonEmptyString returns the first non-empty value, or "" if all are empty.
+func FirstNonEmptyString(values ...string) string {
 	for _, v := range values {
 		if v != "" {
 			return v
