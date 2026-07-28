@@ -61,14 +61,6 @@ func TestNewAPIClient_ErrNoToken(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNoToken)
 }
 
-func newTestCmd(t *testing.T, apiBaseURL string) *cobra.Command {
-	t.Helper()
-	cmd := &cobra.Command{}
-	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
-	cmd.SetContext(config.WithResolved(t.Context(), resolved))
-	return cmd
-}
-
 func TestNewAPIClient_RefreshesExpiredOAuthManagedToken(t *testing.T) {
 	var gotAuth string
 	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -82,8 +74,18 @@ func TestNewAPIClient_RefreshesExpiredOAuthManagedToken(t *testing.T) {
 	}))
 	t.Cleanup(oidcSrv.Close)
 
+	// The stored JWT is still valid, so a single OIDC exchange should refresh
+	// the PAT. Pinning the issuer keeps a regression here from reaching the
+	// real WorkOS endpoint, and asserts the refresh-token grant stays unused.
+	issuerSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("unexpected call to the issuer at %s: the stored JWT is still valid", r.URL.Path)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(issuerSrv.Close)
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv(EnvOIDCTokenEndpoint, oidcSrv.URL)
+	t.Setenv(EnvOAuthIssuer, issuerSrv.URL)
 	require.NoError(t, auth.Save(auth.Auth{
 		Token:        "old-pat",
 		TokenExpiry:  time.Now().Add(-time.Minute),
@@ -102,4 +104,12 @@ func TestNewAPIClient_RefreshesExpiredOAuthManagedToken(t *testing.T) {
 	saved, err := auth.Load()
 	require.NoError(t, err)
 	assert.Equal(t, "bitpat_refreshed", saved.Token)
+}
+
+func newTestCmd(t *testing.T, apiBaseURL string) *cobra.Command {
+	t.Helper()
+	cmd := &cobra.Command{}
+	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
+	cmd.SetContext(config.WithResolved(t.Context(), resolved))
+	return cmd
 }

@@ -4,7 +4,8 @@
 // server makes).
 //
 // Depends only on internal/auth and the standard library — must not import
-// internal/config or cli/* (the cli layer bridges config.Resolved into a Config).
+// internal/config or cli/*. The cli layer resolves the environment-specific
+// endpoints and builds a Config (see cmdutil.OAuthConfig).
 package oauth
 
 import (

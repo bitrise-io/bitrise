@@ -28,7 +28,7 @@ func (c Config) Login(ctx context.Context, openBrowser func(string) error, stder
 		return auth.Auth{}, errors.New("OAuth login is not configured: no issuer (set BITRISE_OAUTH_ISSUER)")
 	}
 	if c.ClientID == "" {
-		return auth.Auth{}, errors.New("OAuth login is not available in this build: no client_id is compiled in. Use 'auth login' or 'auth login --email' instead")
+		return auth.Auth{}, errors.New("OAuth login is not configured: no client_id (set BITRISE_OAUTH_CLIENT_ID), or sign in with 'auth login --with-token' or 'auth login --email' instead")
 	}
 
 	state, err := newState()

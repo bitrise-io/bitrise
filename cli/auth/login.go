@@ -41,8 +41,10 @@ Bitrise (OAuth) and stores a managed, auto-refreshing token. The modes:
      it can't complete — pipe a token instead (see below).
 
   Token (--with-token, or any non-interactive stdin).
-     Reads a Personal Access Token from stdin. This is also used automatically
-     when stdin is not a terminal, so CI and pipes keep working without a flag:
+     Reads a Personal Access Token from stdin, or prompts for one (masked, not
+     echoed) when stdin is an interactive terminal. This mode is also used
+     automatically when stdin is not a terminal, so CI and pipes keep working
+     without a flag:
 
          echo "$BITRISE_PAT" | bitrise auth login
          echo "$BITRISE_PAT" | bitrise auth login --with-token
@@ -86,7 +88,7 @@ logout' to clear).`,
 		},
 	}
 
-	cmd.Flags().BoolVar(&withToken, "with-token", false, "read token from stdin without an interactive prompt")
+	cmd.Flags().BoolVar(&withToken, "with-token", false, "read a Personal Access Token from stdin, prompting for it (masked) in a terminal")
 	cmd.Flags().StringVar(&emailLogin, "email", "", "sign in by email/password and mint a Personal Access Token")
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "with --email, read the password from stdin without prompting")
 	cmd.Flags().BoolVar(&oauthLogin, "oauth", false, "sign in via the browser (OAuth) and store a managed, auto-refreshing token")
@@ -117,8 +119,9 @@ func checkPasswordStdinPiped(passwordStdin, isTerminal bool) error {
 	return nil
 }
 
-// runTokenLogin never prompts — a bare interactive `auth login` defaults to
-// OAuth instead, so the token always arrives on stdin.
+// runTokenLogin reads the token from stdin, or prompts for it (masked) when
+// stdin is a terminal. The prompt is only reachable via an explicit
+// --with-token, since a bare interactive `auth login` defaults to OAuth.
 func runTokenLogin(cmd *cobra.Command) error {
 	tok, err := cmdutil.ReadTokenInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
 	if err != nil {
