@@ -90,3 +90,5 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
+
+replace github.com/bitrise-io/stepman => github.com/bitrise-io/stepman v0.24.2-0.20260728164249-05d182f42ff8

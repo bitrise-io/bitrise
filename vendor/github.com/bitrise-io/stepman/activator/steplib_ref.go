@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/stepman/activator/steplib"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/steplibrary"
@@ -33,9 +34,14 @@ func ActivateSteplibRefStep(
 		DidStepLibUpdate: false,
 	}
 
+	// Set before any return: the caller keeps the partial result on error, so a
+	// failed activation stays attributable to the inventory that served it.
 	var libraryAPI *steplibrary.Client
 	if shouldUseSteplibAPI(id.SteplibSource) {
 		libraryAPI = steplibrary.New(log, bitriseSteplibAPIURL)
+		activationResult.ActivationInventorySource = ActivationInventorySourceSteplibAPI
+	} else {
+		activationResult.ActivationInventorySource = ActivationInventorySourceGitClone
 	}
 
 	if libraryAPI == nil {
@@ -49,7 +55,7 @@ func ActivateSteplibRefStep(
 	}
 
 	// ActivateStep dispatches to the v2 or legacy codepath.
-	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI)
+	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI, httpfetch.NewClient(log))
 	activationResult.StepInfo = resolvedStep.StepInfo
 	activationResult.ExecutablePath = resolvedStep.ExecPath
 	if resolvedStep.ExecPath != "" {

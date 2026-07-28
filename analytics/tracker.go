@@ -117,7 +117,7 @@ type Tracker interface {
 	SendCLIWarning(message string)
 	SendCommandInfo(command, subcommand string, flags []string)
 	SendToolSetupEvent(provider string, request provider.ToolRequest, result provider.ToolInstallResult, is_successful bool, setupTime time.Duration)
-	SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
+	SendStepActivationEvent(stepExecutionID string, activationType activator.ActivationType, inventorySource activator.ActivationInventorySource, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool)
 	SendToolkitPrepareEvent(stepExecutionID string, toolkitName string, stepID string, stepVersion string, result toolkits.PrepareForStepRunResult, err error)
 	IsTracking() bool
 	Wait()
@@ -390,7 +390,7 @@ func (t tracker) SendToolSetupEvent(
 	t.tracker.Enqueue(toolSetupEventName, props)
 }
 
-func (t tracker) SendStepActivationEvent(activationType activator.ActivationType, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
+func (t tracker) SendStepActivationEvent(stepExecutionID string, activationType activator.ActivationType, inventorySource activator.ActivationInventorySource, ref string, isSuccessful bool, duration time.Duration, didSteplibUpdate bool) {
 	if !t.stateChecker.Enabled() {
 		return
 	}
@@ -399,14 +399,18 @@ func (t tracker) SendStepActivationEvent(activationType activator.ActivationType
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 
 	props := analytics.Properties{
-		"is_successful":   isSuccessful,
-		"step_ref":        ref,
-		"duration_ms":     duration.Milliseconds(),
-		"cli_version":     version.VERSION,
-		"is_ci":           isCI,
-		"build_slug":      buildSlug,
-		"activation_type": activationType,
+		"step_execution_id": stepExecutionID,
+		"is_successful":     isSuccessful,
+		"step_ref":          ref,
+		"duration_ms":       duration.Milliseconds(),
+		"cli_version":       version.VERSION,
+		"is_ci":             isCI,
+		"build_slug":        buildSlug,
+		"activation_type":   activationType,
 	}
+
+	// Only steplib references have an inventory: it is empty for git and path refs.
+	props.AppendIfNotEmpty("inventory_source", string(inventorySource))
 
 	if isSuccessful {
 		props["did_steplib_update"] = didSteplibUpdate

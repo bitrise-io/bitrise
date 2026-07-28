@@ -249,7 +249,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	//
 	// Activate step
 	activateStartTime := time.Now()
-	activateResult := r.activateStep(step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(stepExecutionID, step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
 	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
@@ -370,6 +370,7 @@ func newStepInfoPtr(stepID, defaultStepLibSource string, step stepmanModels.Step
 }
 
 func (r WorkflowRunner) activateStep(
+	stepExecutionID string,
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIDData stepid.CanonicalID,
@@ -393,7 +394,9 @@ func (r WorkflowRunner) activateStep(
 	activator := newStepActivator()
 	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, isStepLibOfflineMode)
 	r.tracker.SendStepActivationEvent(
+		stepExecutionID,
 		activatedStep.ActivationType,
+		activatedStep.ActivationInventorySource,
 		stepIDData.IDorURI,
 		err == nil,
 		time.Since(activationStartedAt),
