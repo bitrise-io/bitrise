@@ -187,6 +187,20 @@ func TestRunOAuthLogin_SavesOAuthManagedToken(t *testing.T) {
 	assert.True(t, saved.IsOAuthManaged())
 }
 
+func TestDoOAuthLogin_FailsFastOverSSH(t *testing.T) {
+	t.Setenv("SSH_CONNECTION", "10.0.0.1 1234 10.0.0.2 22")
+
+	browserCalled := false
+	err := doOAuthLogin(newTestCmd(t, ""), func(string) error {
+		browserCalled = true
+		return nil
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--with-token")
+	assert.False(t, browserCalled, "should fail before ever trying to open a browser")
+}
+
 // The tests below exercise NewLoginCommand()'s actual cobra dispatch (flag
 // parsing, mutual exclusivity, and the interactive-vs-piped default) end to
 // end, rather than calling the run*Login functions directly.

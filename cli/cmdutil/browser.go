@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 )
@@ -20,4 +21,11 @@ func OpenBrowser(url string) error {
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 	return cmd.Start()
+}
+
+// IsSSHSession reports whether the CLI is running inside an SSH session,
+// where OpenBrowser would try to launch a browser on the remote host and the
+// OAuth loopback redirect could never reach back to this process.
+func IsSSHSession() bool {
+	return os.Getenv("SSH_CONNECTION") != "" || os.Getenv("SSH_TTY") != ""
 }

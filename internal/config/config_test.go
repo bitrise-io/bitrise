@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -88,4 +89,38 @@ func TestLoadDir_NoFileReturnsZero(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, found)
 	assert.Equal(t, Config{}, got)
+}
+
+// TestSaveYAML_ConcurrentWritesDontCorrupt writes to the same path from many
+// goroutines at once. Each writer used to share a fixed ".tmp" name, so one
+// writer's rename could race another's still-in-progress write; the fix
+// gives each writer its own temp file. The file left behind must always be
+// one full, valid write — never a half-written blend of two.
+func TestSaveYAML_ConcurrentWritesDontCorrupt(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "concurrent.yaml")
+
+	type payload struct {
+		Value string `yaml:"value"`
+	}
+
+	const writers = 20
+	var wg sync.WaitGroup
+	errs := make([]error, writers)
+	for i := range writers {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			errs[i] = SaveYAML(path, payload{Value: strings.Repeat("x", 100)})
+		}(i)
+	}
+	wg.Wait()
+
+	for i, err := range errs {
+		require.NoError(t, err, "writer %d", i)
+	}
+
+	got, err := LoadYAML[payload](path)
+	require.NoError(t, err)
+	assert.Equal(t, strings.Repeat("x", 100), got.Value)
 }

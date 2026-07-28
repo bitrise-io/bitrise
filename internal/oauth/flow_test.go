@@ -232,6 +232,49 @@ func TestEnsureFreshPAT_ExpiredPATAndJWT_RefreshesAndRotates(t *testing.T) {
 	}
 }
 
+// TestEnsureFreshPAT_ConcurrentCallsRefreshOnlyOnce simulates two overlapping
+// CLI invocations (e.g. two commands started at once) both finding a stale
+// PAT+JWT. Only the first to grab the lock should actually spend the refresh
+// token; the second, after acquiring the lock, should see the already-fresh
+// PAT written by the first and skip its own refresh entirely.
+func TestEnsureFreshPAT_ConcurrentCallsRefreshOnlyOnce(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	if err := auth.Save(auth.Auth{
+		Token: "old", TokenExpiry: time.Now().Add(-time.Hour),
+		JWT: "old-jwt", JWTExpiry: time.Now().Add(-time.Minute),
+		RefreshToken: "refresh-old",
+	}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	m := newOAuthMock()
+	defer m.close()
+
+	cfg := m.config()
+	var wg sync.WaitGroup
+	results := make([]string, 2)
+	errs := make([]error, 2)
+	for i := range 2 {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			results[i], errs[i] = cfg.EnsureFreshPAT(context.Background(), "old")
+		}(i)
+	}
+	wg.Wait()
+
+	for i := range 2 {
+		if errs[i] != nil {
+			t.Fatalf("call %d: EnsureFreshPAT: %v", i, errs[i])
+		}
+		if results[i] != "bitpat_minted" {
+			t.Fatalf("call %d: got %q, want bitpat_minted", i, results[i])
+		}
+	}
+	if tc, ec := m.counts(); tc != 1 || ec != 1 {
+		t.Fatalf("expected exactly 1 refresh + 1 exchange across both calls; got token=%d exchange=%d", tc, ec)
+	}
+}
+
 func TestEnsureFreshPAT_RefreshRejected(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	if err := auth.Save(auth.Auth{

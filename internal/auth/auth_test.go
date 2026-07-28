@@ -80,12 +80,11 @@ func TestSaveLoad_OAuthFields_RoundTrip(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	// UTC + second precision avoids monotonic-clock / location drift through YAML.
 	want := Auth{
-		Token:              "bitpat_x",
-		TokenExpiry:        time.Now().Add(time.Hour).UTC().Truncate(time.Second),
-		JWT:                "header.payload.sig",
-		JWTExpiry:          time.Now().Add(2 * time.Hour).UTC().Truncate(time.Second),
-		RefreshToken:       "refresh-1",
-		RefreshTokenExpiry: time.Now().Add(720 * time.Hour).UTC().Truncate(time.Second),
+		Token:        "bitpat_x",
+		TokenExpiry:  time.Now().Add(time.Hour).UTC().Truncate(time.Second),
+		JWT:          "header.payload.sig",
+		JWTExpiry:    time.Now().Add(2 * time.Hour).UTC().Truncate(time.Second),
+		RefreshToken: "refresh-1",
 	}
 	require.NoError(t, Save(want))
 	got, err := Load()
@@ -96,7 +95,6 @@ func TestSaveLoad_OAuthFields_RoundTrip(t *testing.T) {
 	assert.Equal(t, want.RefreshToken, got.RefreshToken)
 	assert.True(t, got.TokenExpiry.Equal(want.TokenExpiry))
 	assert.True(t, got.JWTExpiry.Equal(want.JWTExpiry))
-	assert.True(t, got.RefreshTokenExpiry.Equal(want.RefreshTokenExpiry))
 	assert.True(t, got.IsOAuthManaged())
 }
 

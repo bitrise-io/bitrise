@@ -121,9 +121,26 @@ func (c Config) EnsureFreshPAT(ctx context.Context, resolvedToken string) (strin
 		return resolvedToken, nil
 	}
 
+	if pat, ok := freshPAT(a, time.Now()); ok {
+		return pat, nil
+	}
+
+	// PAT is stale: only one concurrent CLI invocation should spend the
+	// refresh token / mint a new PAT. Others block here, then re-read below —
+	// by the time they get the lock, the refresh may already be done.
+	unlock, err := auth.Lock(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer unlock()
+
+	a, err = auth.Load()
+	if err != nil {
+		return "", err
+	}
 	now := time.Now()
-	if a.Token != "" && now.Add(refreshSkew).Before(a.TokenExpiry) {
-		return a.Token, nil
+	if pat, ok := freshPAT(a, now); ok {
+		return pat, nil
 	}
 
 	// PAT stale. If the JWT is still good, a single exchange refreshes the PAT.
@@ -163,4 +180,14 @@ func (c Config) EnsureFreshPAT(ctx context.Context, resolvedToken string) (strin
 		return "", err
 	}
 	return pat, nil
+}
+
+// freshPAT reports whether a's PAT is still usable (with refreshSkew of
+// margin before its real expiry), checked both before and after taking
+// auth.Lock in EnsureFreshPAT.
+func freshPAT(a auth.Auth, now time.Time) (string, bool) {
+	if a.Token != "" && now.Add(refreshSkew).Before(a.TokenExpiry) {
+		return a.Token, true
+	}
+	return "", false
 }

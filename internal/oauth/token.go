@@ -78,12 +78,12 @@ func (c Config) postForm(ctx context.Context, endpoint string, form url.Values) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
 	if err != nil {
 		return tokenResponse{}, fmt.Errorf("read token response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return tokenResponse{}, fmt.Errorf("token endpoint %s returned %d: %s", endpoint, resp.StatusCode, strings.TrimSpace(string(body)))
+		return tokenResponse{}, fmt.Errorf("token endpoint %s returned %d: %s", endpoint, resp.StatusCode, truncate(strings.TrimSpace(string(body)), maxTokenErrorBodySnippet))
 	}
 
 	var tr tokenResponse
@@ -91,6 +91,17 @@ func (c Config) postForm(ctx context.Context, endpoint string, form url.Values) 
 		return tokenResponse{}, fmt.Errorf("parse token response: %w", err)
 	}
 	return tr, nil
+}
+
+// maxTokenErrorBodySnippet bounds how much of a non-200 token endpoint
+// response gets embedded in a CLI error message.
+const maxTokenErrorBodySnippet = 500
+
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit] + "…"
 }
 
 // jwtExpiry prefers expires_in, falls back to the JWT's exp claim, and

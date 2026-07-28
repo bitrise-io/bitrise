@@ -85,7 +85,7 @@ logout' to clear).`,
 			}
 		},
 	}
-	
+
 	cmd.Flags().BoolVar(&withToken, "with-token", false, "read token from stdin without an interactive prompt")
 	cmd.Flags().StringVar(&emailLogin, "email", "", "sign in by email/password and mint a Personal Access Token")
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "with --email, read the password from stdin without prompting")
@@ -102,7 +102,7 @@ logout' to clear).`,
 	}
 	cmd.MarkFlagsMutuallyExclusive("with-token", "email")
 	cmd.MarkFlagsMutuallyExclusive("with-token", "password-stdin")
-	
+
 	return cmd
 }
 
@@ -175,6 +175,9 @@ func runOAuthLogin(cmd *cobra.Command) error {
 // doOAuthLogin takes openBrowser as a param so tests can complete the
 // loopback callback without a real browser.
 func doOAuthLogin(cmd *cobra.Command, openBrowser func(string) error) error {
+	if cmdutil.IsSSHSession() {
+		return fmt.Errorf("browser sign-in doesn't work over SSH (the loopback redirect can't reach this machine) — pipe a token instead:\n  echo \"$BITRISE_PAT\" | bitrise auth login --with-token")
+	}
 	a, err := cmdutil.OAuthConfig().Login(cmd.Context(), openBrowser, cmd.ErrOrStderr())
 	if err != nil {
 		return err
