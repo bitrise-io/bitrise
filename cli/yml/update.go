@@ -58,7 +58,7 @@ this command succeeds but the change will not affect builds.`,
 	}
 
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "path to the bitrise.yml file (reads from stdin if omitted)")
-	cmdutil.AddAppFlag(cmd.Flags(), "app ID to update the bitrise.yml for")
+	cmdutil.AddAppFlag(cmd.Flags(), "app ID to update the bitrise.yml for (or set BITRISE_APP_ID)")
 
 	return cmd
 }

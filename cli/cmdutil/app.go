@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"errors"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -9,6 +10,15 @@ import (
 
 // FlagApp is the app slug a command acts on.
 const FlagApp = "app"
+
+// EnvAppID overrides the app slug when --app isn't passed. Deliberately does
+// NOT also accept BITRISE_APP_SLUG the way the reference CLI does: Bitrise
+// auto-injects that variable into every build to identify the app the build
+// is running for (see analytics/tracker.go, configs/agent_config.go), so
+// honoring it here would make a bare `bitrise yml update` step running
+// inside app X's build silently target and overwrite app X's own
+// bitrise.yml.
+const EnvAppID = "BITRISE_APP_ID"
 
 // AddAppFlag registers --app. Registered per-subcommand rather than as a
 // persistent parent flag, since some of these commands are also
@@ -18,10 +28,14 @@ func AddAppFlag(fs *pflag.FlagSet, help string) {
 	fs.String(FlagApp, "", help)
 }
 
-// ResolveAppSlug returns the app slug from --app. There is no env var or
-// config-file fallback yet — add one when a command needs it.
+// ResolveAppSlug returns the app slug from --app, falling back to
+// BITRISE_APP_ID. There is no config-file fallback yet — add one when a
+// command needs it.
 func ResolveAppSlug(cmd *cobra.Command) (string, error) {
 	if v, _ := cmd.Flags().GetString(FlagApp); v != "" {
+		return v, nil
+	}
+	if v := os.Getenv(EnvAppID); v != "" {
 		return v, nil
 	}
 	return "", AppSlugRequiredErr()

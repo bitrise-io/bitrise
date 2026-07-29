@@ -106,6 +106,37 @@ scripts keep running — only `trigger-check` was removed outright.
   *Migrate:* no action required for existing scripts. New usage and documentation
   should prefer the grouped paths.
 
+## Cloud resource-management commands
+
+New commands were added under `auth`, `stack`, and `yml`, plus new subcommands
+under `step`, to manage cloud-side resources without leaving the CLI.
+
+### `auth`
+
+- **`bitrise auth login`, `logout`, and `status` are new.** Authenticate with a
+  personal access token, OAuth (browser flow), or email/password. Credentials
+  are stored at `~/.config/bitrise/cli/auth.yaml`.
+
+### `stack`
+
+- **`bitrise stack list` is new.** Lists the build stacks available to your
+  account/workspace.
+
+### `yml`
+
+- **`bitrise yml get` and `update` are new.** Read/write the bitrise.yml stored
+  on Bitrise for a given app (`--app`, or set `BITRISE_APP_ID`). `validate`
+  gained an optional `--app` flag enabling app-specific checks (stacks, machine
+  types, license pools) alongside the existing schema validation.
+
+### `step`
+
+- **`bitrise step search` and `inputs` are new.** Search the steplib and
+  inspect a step's declared inputs.
+
+*Migrate:* no action required — all additive. These require a Bitrise access
+token (`bitrise auth login`, or `$BITRISE_TOKEN`).
+
 ## Config handling
 
 - **Two new config file locations are now read, layered under the existing one.**
@@ -123,3 +154,10 @@ scripts keep running — only `trigger-check` was removed outright.
   authoritative for reads), and `~/.config/bitrise/cli/config.yml` is kept in sync
   alongside it. If you don't have a legacy file, one is no longer created — these
   commands now write only the new `config.yml`. *Migrate:* no action required.
+- **A missing/unwritable `~/.config` directory can now fail `setup` and every
+  plugin invocation.** If `~/.config/bitrise/cli/config.yml` can't be written
+  (e.g. a CI container where `~/.bitrise` is writable but `~/.config` isn't),
+  `bitrise setup` reports failure even though setup itself succeeded, and any
+  `bitrise <plugin>` invocation aborts before running the plugin. *Migrate:*
+  ensure `~/.config` (or `$XDG_CONFIG_HOME`) is writable wherever `setup` or
+  plugins run.
