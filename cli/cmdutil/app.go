@@ -35,6 +35,9 @@ func ResolveAppSlug(cmd *cobra.Command) (string, error) {
 	if slug := LookupAppSlug(cmd); slug != "" {
 		return slug, nil
 	}
+	if v := os.Getenv(EnvAppID); v != "" {
+		return v, nil
+	}
 	return "", AppSlugRequiredErr()
 }
 
