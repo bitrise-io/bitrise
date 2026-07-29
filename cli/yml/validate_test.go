@@ -44,7 +44,7 @@ func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 
 func TestValidateConfig_Offline_UsesLocalEvenWithToken(t *testing.T) {
 	var onlineCalled bool
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, _ *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
 		onlineCalled = true
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
@@ -59,7 +59,7 @@ func TestValidateConfig_Offline_UsesLocalEvenWithToken(t *testing.T) {
 func TestValidateConfig_NoConfigGiven_IsANoop(t *testing.T) {
 	// No -c/--config-base64, and this package's directory has no bitrise.yml
 	// for the default-path lookup to find either.
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, _ *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
 		t.Fatal("online validation must not be attempted when no config was given")
 	})
 
@@ -71,7 +71,7 @@ func TestValidateConfig_NoConfigGiven_IsANoop(t *testing.T) {
 
 func TestValidateConfig_OnlineSucceeds_SkipsLocalEntirely(t *testing.T) {
 	var gotQuery string
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, r *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.RawQuery
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":["deprecated step used"]}`))
 	})
@@ -88,7 +88,7 @@ func TestValidateConfig_OnlineSucceeds_SkipsLocalEntirely(t *testing.T) {
 }
 
 func TestValidateConfig_Online422_UsesOnlyOnlineResult(t *testing.T) {
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, _ *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		_, _ = w.Write([]byte(`{"message":"rejected by server-side schema"}`))
 	})
@@ -104,7 +104,7 @@ func TestValidateConfig_Online422_UsesOnlyOnlineResult(t *testing.T) {
 }
 
 func TestValidateConfig_OnlineTransientFailure_FallsBackToLocal(t *testing.T) {
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, _ *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"message":"upstream exploded"}`))
 	})
@@ -116,7 +116,7 @@ func TestValidateConfig_OnlineTransientFailure_FallsBackToLocal(t *testing.T) {
 }
 
 func TestRunValidate_PropagatesConfigWarningIntoTopLevelWarnings(t *testing.T) {
-	cmd := newTestValidateCmd(t, "", func(w http.ResponseWriter, _ *http.Request) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"message":"upstream exploded"}`))
 	})
@@ -142,15 +142,13 @@ func newValidateFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Ser
 
 // newTestValidateCmd builds a bare *cobra.Command with a real token
 // available (via a temp XDG_CONFIG_HOME + auth.yaml) and its context wired
-// to apiBaseURL, or to handler's own httptest.Server when apiBaseURL is "".
-func newTestValidateCmd(t *testing.T, apiBaseURL string, handler http.HandlerFunc) *cobra.Command {
+// to handler's own httptest.Server.
+func newTestValidateCmd(t *testing.T, handler http.HandlerFunc) *cobra.Command {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
-	if apiBaseURL == "" {
-		apiBaseURL = newValidateFakeServer(t, handler).URL
-	}
+	apiBaseURL := newValidateFakeServer(t, handler).URL
 
 	cmd := &cobra.Command{}
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
