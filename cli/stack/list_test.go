@@ -78,6 +78,30 @@ func TestPrintStacksTable_Empty(t *testing.T) {
 	assert.Equal(t, "No stacks found.\n", buf.String())
 }
 
+func TestListCmd_PropagatesAPIError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"forbidden"}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	err := cmd.RunE(cmd, nil)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "listing stacks failed")
+	assert.Contains(t, err.Error(), "forbidden")
+}
+
+func TestListCmd_RejectsPositionalArgs(t *testing.T) {
+	cmd := NewListCommand()
+	cmd.SetArgs([]string{"unexpected"})
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+
+	assert.Error(t, cmd.Execute(), "positional args should be rejected before the command runs")
+}
+
 // newTestListCmd builds a NewListCommand() wired to apiBaseURL, with its
 // output captured in the returned buffer.
 func newTestListCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {

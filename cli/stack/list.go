@@ -26,31 +26,29 @@ Without --workspace, returns globally available stacks.`,
 		Example: `  bitrise stack list
   bitrise stack list --workspace my-workspace-id
   bitrise stack list --format json`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
 			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 			if err := output.ConfigureOutputFormat(format); err != nil {
-				cmdutil.Failf("Failed to configure output format, error: %s", err)
+				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
 			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
-				cmdutil.Failf("%s", err)
+				return err
 			}
 
 			result, err := internalstack.NewService(client).List(cmd.Context(), workspaceSlug)
 			if err != nil {
-				cmdutil.Failf("Listing stacks failed, error: %s", err)
+				return fmt.Errorf("listing stacks failed: %w", err)
 			}
 
 			if output.Format == output.FormatRaw {
-				if err := printStacksTable(cmd.OutOrStdout(), result.Items); err != nil {
-					cmdutil.Failf("%s", err)
-				}
-			} else {
-				output.Print(result, output.Format)
+				return printStacksTable(cmd.OutOrStdout(), result.Items)
 			}
+			output.Print(result, output.Format)
 			return nil
 		},
 	}

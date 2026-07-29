@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 )
 
 // StackInfo is the wire-format stack record returned by the available-stacks
@@ -32,7 +33,7 @@ type StackInfo struct {
 func (c *Client) AvailableStacks(ctx context.Context, orgSlug string) (map[string]StackInfo, error) {
 	path := "/available-stacks"
 	if orgSlug != "" {
-		path = "/organizations/" + orgSlug + "/available-stacks"
+		path = "/organizations/" + url.PathEscape(orgSlug) + "/available-stacks"
 	}
 
 	req, err := c.newRequest(ctx, path, nil)

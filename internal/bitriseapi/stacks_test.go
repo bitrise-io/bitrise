@@ -35,6 +35,30 @@ func TestAvailableStacks_OrgScopedPath(t *testing.T) {
 	assert.Equal(t, "/organizations/my-workspace/available-stacks", gotPath)
 }
 
+func TestAvailableStacks_EscapesOrgSlug(t *testing.T) {
+	// The slug reaches the path unvalidated, so it must be escaped: an
+	// unescaped "/" would silently split into extra path segments, and ".."
+	// would let a slug walk out of /organizations and hit another endpoint.
+	tests := map[string]string{
+		"a/b":         "/organizations/a%2Fb/available-stacks",
+		"../../admin": "/organizations/..%2F..%2Fadmin/available-stacks",
+		"a b":         "/organizations/a%20b/available-stacks",
+	}
+	for slug, wantURI := range tests {
+		t.Run(slug, func(t *testing.T) {
+			var gotURI string
+			srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+				gotURI = r.RequestURI
+				_, _ = w.Write([]byte(`{}`))
+			})
+
+			_, err := New(srv.URL, "t").AvailableStacks(context.Background(), slug)
+			require.NoError(t, err)
+			assert.Equal(t, wantURI, gotURI)
+		})
+	}
+}
+
 func TestAvailableStacks_ParsesResponse(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{
