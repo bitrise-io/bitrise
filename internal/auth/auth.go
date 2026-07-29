@@ -42,9 +42,6 @@ type Auth struct {
 	JWT          string    `yaml:"jwt,omitempty"`
 	JWTExpiry    time.Time `yaml:"jwt_expiry,omitempty"`
 	RefreshToken string    `yaml:"refresh_token,omitempty"`
-	// RefreshTokenExpiry is when the refresh token itself expires; past this,
-	// the OAuth ladder can no longer recover and the user must re-run login.
-	RefreshTokenExpiry time.Time `yaml:"refresh_token_expiry,omitempty"`
 }
 
 // IsOAuthManaged reports whether this token was obtained through the OAuth

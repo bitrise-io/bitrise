@@ -15,20 +15,39 @@ import (
 
 func NewLoginCommand() *cobra.Command {
 	var (
+		withToken     bool
 		emailLogin    string
 		passwordStdin bool
+		oauthLogin    bool
+		webLogin      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Save a Bitrise access token",
 		Long: `Save a Bitrise access token for future commands to use.
 
-  Token (default). Reads a Personal Access Token from stdin — pasted
-  interactively (masked, not echoed) or piped in non-interactively (CI,
-  scripts):
+By default, in an interactive terminal, this opens your browser to sign in to
+Bitrise (OAuth) and stores a managed, auto-refreshing token. The modes:
 
-      bitrise auth login
-      echo "$BITRISE_PAT" | bitrise auth login
+  Browser sign-in (default in an interactive terminal; explicit with --oauth).
+     Opens your browser to sign in, exchanges the result for a Personal Access
+     Token, and refreshes it automatically so you rarely sign in again:
+
+         bitrise auth login
+         bitrise auth login --oauth
+
+     This needs the browser on the same machine as the CLI (the sign-in is
+     handed back over a loopback address). On a remote/headless host over SSH
+     it can't complete — pipe a token instead (see below).
+
+  Token (--with-token, or any non-interactive stdin).
+     Reads a Personal Access Token from stdin, or prompts for one (masked, not
+     echoed) when stdin is an interactive terminal. This mode is also used
+     automatically when stdin is not a terminal, so CI and pipes keep working
+     without a flag:
+
+         echo "$BITRISE_PAT" | bitrise auth login
+         echo "$BITRISE_PAT" | bitrise auth login --with-token
 
   Email and password (--email).
      Signs in to app.bitrise.io with your account credentials, then asks the
@@ -42,35 +61,51 @@ func NewLoginCommand() *cobra.Command {
 The resulting token is written to $XDG_CONFIG_HOME/bitrise/cli/auth.yaml with
 0600 permissions and is never echoed (use 'auth status' to verify, 'auth
 logout' to clear).`,
-		Example: `  bitrise auth login                                     # paste a token
-  echo "$BITRISE_PAT" | bitrise auth login               # pipe a token
+		Example: `  bitrise auth login                                     # browser sign-in (OAuth)
+  echo "$BITRISE_PAT" | bitrise auth login --with-token  # paste/pipe a token
   bitrise auth login --email alice@example.com           # email/password`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
-			return selectLoginMode(cmd, emailLogin, cmd.Flags().Changed("email"), passwordStdin)
+
+			switch {
+			case oauthLogin || webLogin:
+				return runOAuthLogin(cmd)
+			case emailLogin != "":
+				return runEmailLogin(cmd, emailLogin, passwordStdin)
+			case cmd.Flags().Changed("email"):
+				return fmt.Errorf("--email requires a non-empty value")
+			case withToken:
+				return runTokenLogin(cmd)
+			case passwordStdin:
+				return fmt.Errorf("--password-stdin requires --email (token login reads the token, not a password)")
+			case cmdutil.IsTerminal(cmd.InOrStdin()):
+				// Interactive and no mode chosen: default to browser OAuth.
+				return runOAuthLogin(cmd)
+			default:
+				// Non-interactive stdin (CI, pipes): read a token from stdin.
+				return runTokenLogin(cmd)
+			}
 		},
 	}
+
+	cmd.Flags().BoolVar(&withToken, "with-token", false, "read a Personal Access Token from stdin, prompting for it (masked) in a terminal")
 	cmd.Flags().StringVar(&emailLogin, "email", "", "sign in by email/password and mint a Personal Access Token")
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "with --email, read the password from stdin without prompting")
-	return cmd
-}
-
-// selectLoginMode picks token vs. email/password login based on the --email
-// and --password-stdin flags. emailFlagSet distinguishes --email "" (an
-// explicit but empty value) from omitting --email entirely — both leave
-// email == "", but only the former should be rejected rather than silently
-// falling back to token login.
-func selectLoginMode(cmd *cobra.Command, email string, emailFlagSet, passwordStdin bool) error {
-	switch {
-	case email != "":
-		return runEmailLogin(cmd, email, passwordStdin)
-	case emailFlagSet:
-		return fmt.Errorf("--email requires a non-empty value")
-	case passwordStdin:
-		return fmt.Errorf("--password-stdin requires --email (token login reads the token, not a password)")
-	default:
-		return runTokenLogin(cmd)
+	cmd.Flags().BoolVar(&oauthLogin, "oauth", false, "sign in via the browser (OAuth) and store a managed, auto-refreshing token")
+	// --web is a hidden alias for --oauth ("open in the browser").
+	cmd.Flags().BoolVar(&webLogin, "web", false, "alias for --oauth")
+	_ = cmd.Flags().MarkHidden("web")
+	// The three login modes are mutually exclusive. --oauth and --web are
+	// aliases, so they're not exclusive with each other.
+	for _, mode := range []string{"oauth", "web"} {
+		cmd.MarkFlagsMutuallyExclusive(mode, "with-token")
+		cmd.MarkFlagsMutuallyExclusive(mode, "email")
+		cmd.MarkFlagsMutuallyExclusive(mode, "password-stdin")
 	}
+	cmd.MarkFlagsMutuallyExclusive("with-token", "email")
+	cmd.MarkFlagsMutuallyExclusive("with-token", "password-stdin")
+
+	return cmd
 }
 
 // checkPasswordStdinPiped reports an error when --password-stdin is set but
@@ -84,6 +119,9 @@ func checkPasswordStdinPiped(passwordStdin, isTerminal bool) error {
 	return nil
 }
 
+// runTokenLogin reads the token from stdin, or prompts for it (masked) when
+// stdin is a terminal. The prompt is only reachable via an explicit
+// --with-token, since a bare interactive `auth login` defaults to OAuth.
 func runTokenLogin(cmd *cobra.Command) error {
 	tok, err := cmdutil.ReadTokenInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
 	if err != nil {
@@ -127,6 +165,27 @@ func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
 		return err
 	}
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
+		return err
+	}
+	confirmLoginSaved()
+	return nil
+}
+
+func runOAuthLogin(cmd *cobra.Command) error {
+	return doOAuthLogin(cmd, cmdutil.OpenBrowser)
+}
+
+// doOAuthLogin takes openBrowser as a param so tests can complete the
+// loopback callback without a real browser.
+func doOAuthLogin(cmd *cobra.Command, openBrowser func(string) error) error {
+	if cmdutil.IsSSHSession() {
+		return fmt.Errorf("browser sign-in doesn't work over SSH (the loopback redirect can't reach this machine) — pipe a token instead:\n  echo \"$BITRISE_PAT\" | bitrise auth login --with-token")
+	}
+	a, err := cmdutil.OAuthConfig().Login(cmd.Context(), openBrowser, cmd.ErrOrStderr())
+	if err != nil {
+		return err
+	}
+	if err := auth.Save(a); err != nil {
 		return err
 	}
 	confirmLoginSaved()

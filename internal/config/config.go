@@ -93,14 +93,7 @@ func SaveYAML[T any](path string, v T) error {
 	if err != nil {
 		return fmt.Errorf("marshal %s: %w", path, err)
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		return fmt.Errorf("write %s: %w", tmp, err)
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		return fmt.Errorf("install %s: %w", path, err)
-	}
-	return nil
+	return writeAtomic(path, data)
 }
 
 // Load reads the global config file. A missing file is not an error — it
@@ -161,12 +154,29 @@ func Save(c Config) error {
 	if err != nil {
 		return fmt.Errorf("marshal config: %w", err)
 	}
-	tmp := p + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
+	return writeAtomic(p, data)
+}
+
+// writeAtomic writes data to a uniquely-named temp file beside path and
+// renames it into place, so two processes writing the same path concurrently
+// never race the rename with a shared temp name.
+func writeAtomic(path string, data []byte) error {
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	if err != nil {
+		return fmt.Errorf("create temp file for %s: %w", path, err)
+	}
+	tmp := f.Name()
+	defer func() { _ = os.Remove(tmp) }() // no-op once the rename below succeeds
+
+	if _, err := f.Write(data); err != nil {
+		_ = f.Close()
 		return fmt.Errorf("write %s: %w", tmp, err)
 	}
-	if err := os.Rename(tmp, p); err != nil {
-		return fmt.Errorf("install %s: %w", p, err)
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("write %s: %w", tmp, err)
+	}
+	if err := os.Rename(tmp, path); err != nil {
+		return fmt.Errorf("install %s: %w", path, err)
 	}
 	return nil
 }

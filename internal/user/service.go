@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
 	"github.com/bitrise-io/bitrise/v2/internal/webclient"
 )
 
@@ -148,7 +149,7 @@ func formatServerError(status int, body []byte) string {
 	if len(body) == 0 {
 		return fmt.Sprintf("HTTP %d", status)
 	}
-	return fmt.Sprintf("HTTP %d: %s", status, truncate(strings.TrimSpace(string(body)), maxErrorBodySnippet))
+	return fmt.Sprintf("HTTP %d: %s", status, stringutil.Truncate(strings.TrimSpace(string(body)), maxErrorBodySnippet))
 }
 
 // maxErrorBodySnippet bounds how much of an unrecognized (non-JSON) error
@@ -156,13 +157,6 @@ func formatServerError(status int, body []byte) string {
 // message; the website response is already capped at 1 MiB by
 // webclient.PostJSON, which is still too much to print verbatim.
 const maxErrorBodySnippet = 500
-
-func truncate(s string, limit int) string {
-	if len(s) <= limit {
-		return s
-	}
-	return s[:limit] + "…"
-}
 
 // looksLikeUnconfirmed checks whether the server's error body matches
 // Devise's unconfirmed-email phrasing. The exact wording can drift across

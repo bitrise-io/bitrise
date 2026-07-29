@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
@@ -58,6 +59,51 @@ func TestNewAPIClient_ErrNoToken(t *testing.T) {
 
 	_, err := NewAPIClient(newTestCmd(t, "https://api.example.test"))
 	assert.ErrorIs(t, err, ErrNoToken)
+}
+
+func TestNewAPIClient_RefreshesExpiredOAuthManagedToken(t *testing.T) {
+	var gotAuth string
+	apiSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(apiSrv.Close)
+
+	oidcSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"access_token":"bitpat_refreshed","token_type":"bearer","expires_in":3600}`))
+	}))
+	t.Cleanup(oidcSrv.Close)
+
+	// The stored JWT is still valid, so a single OIDC exchange should refresh
+	// the PAT. Pinning the issuer keeps a regression here from reaching the
+	// real WorkOS endpoint, and asserts the refresh-token grant stays unused.
+	issuerSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("unexpected call to the issuer at %s: the stored JWT is still valid", r.URL.Path)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(issuerSrv.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv(EnvOIDCTokenEndpoint, oidcSrv.URL)
+	t.Setenv(EnvOAuthIssuer, issuerSrv.URL)
+	require.NoError(t, auth.Save(auth.Auth{
+		Token:        "old-pat",
+		TokenExpiry:  time.Now().Add(-time.Minute),
+		JWT:          "good-jwt",
+		JWTExpiry:    time.Now().Add(time.Hour),
+		RefreshToken: "refresh-1",
+	}))
+
+	client, err := NewAPIClient(newTestCmd(t, apiSrv.URL))
+	require.NoError(t, err)
+
+	_, err = client.SearchSteps(context.Background(), bitriseapi.StepSearchOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, "token bitpat_refreshed", gotAuth)
+
+	saved, err := auth.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_refreshed", saved.Token)
 }
 
 func newTestCmd(t *testing.T, apiBaseURL string) *cobra.Command {

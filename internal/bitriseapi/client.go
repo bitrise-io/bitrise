@@ -14,6 +14,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -59,7 +61,7 @@ func (e *APIError) Error() string {
 	if e.Message != "" {
 		base += ": " + e.Message
 	} else if e.Body != "" {
-		base += ": " + truncate(e.Body, 500)
+		base += ": " + stringutil.Truncate(e.Body, 500)
 	}
 	if e.RequestInfo != "" {
 		return e.RequestInfo + ": " + base
@@ -90,13 +92,6 @@ func (e errorBody) pick() string {
 		return strings.Join(e.Errors, "; ")
 	}
 	return ""
-}
-
-func truncate(s string, limit int) string {
-	if len(s) <= limit {
-		return s
-	}
-	return s[:limit] + "…"
 }
 
 func (c *Client) newRequest(ctx context.Context, path string, params url.Values) (*http.Request, error) {

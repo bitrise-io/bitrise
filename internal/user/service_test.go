@@ -111,6 +111,58 @@ func TestLogin_GenericFailure(t *testing.T) {
 	}
 }
 
+func TestLogin_FieldErrorsShape(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/users/sign_in" && r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, `<meta name="csrf-token" content="t" />`)
+			return
+		}
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = io.WriteString(w, `{"errors":{"login":[{"error":"invalid"}],"password":[{"error":"too_short"}]}}`)
+	}))
+	defer srv.Close()
+
+	c, _ := webclient.New(srv.URL)
+	svc := NewService(c)
+	_, err := svc.Login(context.Background(), LoginInput{Login: "a@b", Password: "p"}, "desc")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	got := err.Error()
+	if !strings.Contains(got, "login: invalid") || !strings.Contains(got, "password: too_short") || !strings.Contains(got, "422") {
+		t.Fatalf("error %q does not include expected field details", got)
+	}
+}
+
+func TestLogin_EmptyMintedTokenErrors(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/users/sign_in" && r.Method == http.MethodGet:
+			_, _ = io.WriteString(w, `<meta name="csrf-token" content="t" />`)
+		case r.URL.Path == "/users/sign_in":
+			w.WriteHeader(http.StatusCreated)
+		case r.URL.Path == "/me/profile/security":
+			_, _ = io.WriteString(w, `<meta name="csrf-token" content="t2" />`)
+		case r.URL.Path == "/me/profile/security/user_auth_tokens":
+			w.WriteHeader(http.StatusCreated)
+			_, _ = io.WriteString(w, `{}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c, _ := webclient.New(srv.URL)
+	svc := NewService(c)
+	_, err := svc.Login(context.Background(), LoginInput{Login: "a@b", Password: "p"}, "desc")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "server returned an empty token") {
+		t.Fatalf("unexpected error %q", err.Error())
+	}
+}
+
 func TestLogin_MintFailure(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {

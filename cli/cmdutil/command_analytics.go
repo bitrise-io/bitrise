@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// globalTracker is nil until SetTracker runs at CLI startup (cli/cli.go). The
+// sends in this package tolerate that — analytics must never crash a command,
+// and commands are also driven directly by tests that set up no tracker.
+// Tracker() hands it out unguarded: its callers run inside real command
+// execution, after startup.
 var globalTracker analytics.Tracker
 
 // SetTracker sets the package-level tracker used by LogCommandParameters,
@@ -84,6 +89,9 @@ func flagIsSet(f *pflag.Flag) bool {
 
 // SendCommandInfo ...
 func SendCommandInfo(command, subcommand string, flags []string) {
+	if globalTracker == nil {
+		return
+	}
 	globalTracker.SendCommandInfo(command, subcommand, flags)
 }
 

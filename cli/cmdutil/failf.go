@@ -9,6 +9,8 @@ import (
 // Failf ...
 func Failf(format string, args ...interface{}) {
 	log.Errorf(format, args...)
-	globalTracker.Wait()
+	if globalTracker != nil {
+		globalTracker.Wait()
+	}
 	os.Exit(1)
 }
