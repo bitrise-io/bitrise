@@ -23,25 +23,6 @@ func AsHidden(cmd *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-// DelegateTo returns a RunE that forwards a bare parent invocation to its
-// subcommand named name, propagating the parent's context so resolved
-// config is available. Falls back to printing help if no such subcommand
-// is registered.
-func DelegateTo(name string) func(cmd *cobra.Command, args []string) error {
-	return func(cmd *cobra.Command, args []string) error {
-		for _, sub := range cmd.Commands() {
-			if sub.Name() == name {
-				sub.SetContext(cmd.Context())
-				return sub.RunE(sub, args)
-			}
-		}
-		return cmd.Help()
-	}
-}
-
-// DelegateToList forwards a bare parent invocation to its "list" subcommand.
-var DelegateToList = DelegateTo("list")
-
 // ShowSubcommandHelp prints cmd's help output.
 func ShowSubcommandHelp(cmd *cobra.Command) {
 	if err := cmd.Help(); err != nil {
