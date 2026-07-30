@@ -104,8 +104,7 @@ Email verification:
 				printCreateHuman(acct)
 				return nil
 			}
-			output.Print(acct, output.Format)
-			return nil
+			return output.Print(acct, output.Format)
 		},
 	}
 

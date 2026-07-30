@@ -46,8 +46,7 @@ The token is resolved from BITRISE_TOKEN, auth.yaml, or config.yaml — run
 				log.Printf("Email:    %s", profile.Email)
 				return nil
 			}
-			output.Print(profile, output.Format)
-			return nil
+			return output.Print(profile, output.Format)
 		},
 	}
 
