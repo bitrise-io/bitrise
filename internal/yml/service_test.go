@@ -108,8 +108,20 @@ func TestValidate_Valid(t *testing.T) {
 	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "")
 	require.NoError(t, err)
 	assert.True(t, result.Valid)
-	assert.Empty(t, result.Errors)
-	assert.Empty(t, result.Warnings)
+	assert.Equal(t, []string{}, result.Errors)
+	assert.Equal(t, []string{}, result.Warnings)
+}
+
+func TestValidate_OmittedSlicesAreNormalized(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	})
+
+	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "")
+	require.NoError(t, err)
+	assert.True(t, result.Valid)
+	assert.Equal(t, []string{}, result.Errors)
+	assert.Equal(t, []string{}, result.Warnings)
 }
 
 func TestValidate_WithWarnings(t *testing.T) {
@@ -133,6 +145,10 @@ func TestValidate_422TreatedAsInvalid(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, result.Valid)
 	assert.Equal(t, []string{"could not parse YAML"}, result.Errors)
+	// Both slices are always non-nil, on every return path: ValidateResult's
+	// JSON tags have no omitempty, so a nil slice would serialize as null
+	// instead of [].
+	assert.Equal(t, []string{}, result.Warnings)
 }
 
 func TestValidate_PropagatesOtherErrors(t *testing.T) {

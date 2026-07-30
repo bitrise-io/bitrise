@@ -89,7 +89,7 @@ func (s *Service) Validate(ctx context.Context, rawYAML, appSlug string) (Valida
 	if err != nil {
 		var apiErr *bitriseapi.APIError
 		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity {
-			return ValidateResult{Valid: false, Errors: []string{apiErr.Message}}, nil
+			return ValidateResult{Valid: false, Errors: []string{apiErr.Message}, Warnings: []string{}}, nil
 		}
 		return ValidateResult{}, err
 	}
