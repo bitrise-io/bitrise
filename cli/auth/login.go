@@ -108,17 +108,6 @@ logout' to clear).`,
 	return cmd
 }
 
-// checkPasswordStdinPiped reports an error when --password-stdin is set but
-// stdin is an interactive terminal rather than a pipe. Falling through to a
-// plain (non-masked) read in that case would block on terminal input with
-// local echo still on, silently printing the password to the screen.
-func checkPasswordStdinPiped(passwordStdin, isTerminal bool) error {
-	if passwordStdin && isTerminal {
-		return fmt.Errorf("--password-stdin requires piped stdin (got an interactive terminal); pipe the password in, e.g.:\n  printf '%%s' \"$PW\" | bitrise auth login --email <email> --password-stdin")
-	}
-	return nil
-}
-
 // runTokenLogin reads the token from stdin, or prompts for it (masked) when
 // stdin is a terminal. The prompt is only reachable via an explicit
 // --with-token, since a bare interactive `auth login` defaults to OAuth.
@@ -138,7 +127,7 @@ func runTokenLogin(cmd *cobra.Command) error {
 }
 
 func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
-	if err := checkPasswordStdinPiped(passwordStdin, cmdutil.IsTerminal(cmd.InOrStdin())); err != nil {
+	if err := cmdutil.CheckPasswordStdinPiped(passwordStdin, cmdutil.IsTerminal(cmd.InOrStdin()), "bitrise auth login --email <email>"); err != nil {
 		return err
 	}
 	pw, err := cmdutil.ReadPasswordInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Password: ", passwordStdin)
