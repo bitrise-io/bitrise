@@ -38,12 +38,12 @@ type SignupInput struct {
 
 // Account is the trimmed view of the user record POST /users returns.
 type Account struct {
-	Slug      string `json:"id,omitempty"`
-	Email     string `json:"email"`
-	Username  string `json:"username,omitempty"`
-	FirstName string `json:"first_name,omitempty"`
-	LastName  string `json:"last_name,omitempty"`
-	Confirmed bool   `json:"confirmed"`
+	Slug      string `json:"id,omitempty" yaml:"id,omitempty"`
+	Email     string `json:"email" yaml:"email"`
+	Username  string `json:"username,omitempty" yaml:"username,omitempty"`
+	FirstName string `json:"first_name,omitempty" yaml:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty" yaml:"last_name,omitempty"`
+	Confirmed bool   `json:"confirmed" yaml:"confirmed"`
 }
 
 type signupResponse struct {

@@ -2,13 +2,14 @@ package user
 
 import (
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	internaluser "github.com/bitrise-io/bitrise/v2/internal/user"
 	"github.com/bitrise-io/bitrise/v2/internal/webclient"
-	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 )
 
@@ -21,6 +22,20 @@ func NewCreateCommand() *cobra.Command {
 		lastName      string
 		passwordStdin bool
 	)
+
+	// MarkFlagRequired only checks that a flag was set, so an explicitly empty
+	// value would reach the signup request; the non-empty guard in RunE closes
+	// that, and both read the flag names from here.
+	requiredFlags := []struct {
+		name  string
+		value *string
+		usage string
+	}{
+		{"email", &email, "email address to register"},
+		{"username", &username, "desired username"},
+		{"first-name", &firstName, "first name on the account"},
+		{"last-name", &lastName, "last name on the account"},
+	}
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -60,17 +75,10 @@ Email verification:
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			if email == "" {
-				return fmt.Errorf("--email is required")
-			}
-			if username == "" {
-				return fmt.Errorf("--username is required")
-			}
-			if firstName == "" {
-				return fmt.Errorf("--first-name is required")
-			}
-			if lastName == "" {
-				return fmt.Errorf("--last-name is required")
+			for _, f := range requiredFlags {
+				if *f.value == "" {
+					return fmt.Errorf("--%s requires a non-empty value", f.name)
+				}
 			}
 
 			if err := cmdutil.CheckPasswordStdinPiped(passwordStdin, cmdutil.IsTerminal(cmd.InOrStdin()), "bitrise user create --email <email>"); err != nil {
@@ -101,35 +109,35 @@ Email verification:
 			}
 
 			if output.Format == output.FormatRaw {
-				printCreateHuman(acct)
-				return nil
+				return printCreateHuman(cmd.OutOrStdout(), acct)
 			}
 			return output.Print(acct, output.Format)
 		},
 	}
 
-	cmd.Flags().StringVar(&email, "email", "", "email address to register (required)")
-	cmd.Flags().StringVar(&username, "username", "", "desired username (required)")
-	cmd.Flags().StringVar(&firstName, "first-name", "", "first name on the account (required)")
-	cmd.Flags().StringVar(&lastName, "last-name", "", "last name on the account (required)")
+	for _, f := range requiredFlags {
+		cmd.Flags().StringVar(f.value, f.name, "", f.usage+" (required)")
+		_ = cmd.MarkFlagRequired(f.name)
+	}
 	cmd.Flags().BoolVar(&passwordStdin, "password-stdin", false, "read the password from stdin without prompting")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
 	return cmd
 }
 
-func printCreateHuman(a internaluser.Account) {
-	log.Print("✓ Account created")
-	log.Printf("Email:    %s", a.Email)
+func printCreateHuman(w io.Writer, a internaluser.Account) error {
+	var b strings.Builder
+	fmt.Fprintln(&b, "✓ Account created")
+	fmt.Fprintf(&b, "Email:    %s\n", a.Email)
 	if a.Username != "" {
-		log.Printf("Username: %s", a.Username)
+		fmt.Fprintf(&b, "Username: %s\n", a.Username)
 	}
 	if a.Slug != "" {
-		log.Printf("ID:       %s", a.Slug)
+		fmt.Fprintf(&b, "ID:       %s\n", a.Slug)
 	}
 	if !a.Confirmed {
-		log.Print("")
-		log.Print("Check your email and click the verification link, then run:")
-		log.Printf("  bitrise auth login --email %s", a.Email)
+		fmt.Fprintf(&b, "\nCheck your email and click the verification link, then run:\n  bitrise auth login --email %s\n", a.Email)
 	}
+	_, err := io.WriteString(w, b.String())
+	return err
 }

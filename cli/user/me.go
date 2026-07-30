@@ -7,7 +7,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	internaluser "github.com/bitrise-io/bitrise/v2/internal/user"
-	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 )
 
@@ -18,8 +17,9 @@ func NewMeCommand() *cobra.Command {
 		Short: "Show the currently authenticated user",
 		Long: `Show the profile of the user whose token is in use.
 
-The token is resolved from BITRISE_TOKEN, auth.yaml, or config.yaml — run
-'bitrise auth status' to confirm which source is active.`,
+The token comes from the BITRISE_TOKEN environment variable, or from auth.yaml
+as written by 'bitrise auth login' — run 'bitrise auth status' to confirm which
+source is active.`,
 		Example: `  bitrise user me
   bitrise user me --format json`,
 		Args: cobra.NoArgs,
@@ -42,9 +42,8 @@ The token is resolved from BITRISE_TOKEN, auth.yaml, or config.yaml — run
 			}
 
 			if output.Format == output.FormatRaw {
-				log.Printf("Username: %s", profile.Username)
-				log.Printf("Email:    %s", profile.Email)
-				return nil
+				_, err := fmt.Fprintf(cmd.OutOrStdout(), "Username: %s\nEmail:    %s\n", profile.Username, profile.Email)
+				return err
 			}
 			return output.Print(profile, output.Format)
 		},

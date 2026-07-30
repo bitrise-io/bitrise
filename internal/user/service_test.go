@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/bitrise-io/bitrise/v2/internal/webclient"
 )
 
@@ -81,6 +83,26 @@ func TestSignup_422IncludesFieldErrors(t *testing.T) {
 	got := err.Error()
 	if !strings.Contains(got, "email: taken") || !strings.Contains(got, "password: too_short") || !strings.Contains(got, "422") {
 		t.Fatalf("error %q does not include expected fields", got)
+	}
+}
+
+// TestAccount_YAMLKeysMatchJSON locks in the yaml tags: yaml.v2 ignores json
+// tags, so without them `user create --format yml` would emit `slug` and
+// `firstname` where --format json emits `id` and `first_name`.
+func TestAccount_YAMLKeysMatchJSON(t *testing.T) {
+	out, err := yaml.Marshal(Account{Slug: "u-aaa", Email: "a@b.io", FirstName: "Alice"})
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	for _, want := range []string{"id:", "first_name:"} {
+		if !strings.Contains(string(out), want) {
+			t.Errorf("yaml output %q is missing %q", out, want)
+		}
+	}
+	for _, unwanted := range []string{"slug:", "firstname:"} {
+		if strings.Contains(string(out), unwanted) {
+			t.Errorf("yaml output %q still contains %q", out, unwanted)
+		}
 	}
 }
 
