@@ -52,6 +52,19 @@ func TestGetCmd_Build(t *testing.T) {
 	assert.Equal(t, "/apps/app-slug/builds/build-slug/bitrise.yml", gotPath)
 }
 
+func TestGetCmd_AppendsMissingTrailingNewline(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("format_version: \"13\""))
+	}))
+	t.Cleanup(srv.Close)
+
+	cmd, out := newTestGetCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "format_version: \"13\"\n", out.String())
+}
+
 func TestGetCmd_JSONOutput(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))

@@ -1,7 +1,9 @@
 package yml
 
 import (
+	"bytes"
 	"encoding/base64"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
@@ -41,6 +44,7 @@ func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, item.IsValid)
 	assert.Empty(t, warning)
+	assert.Empty(t, item.Source, "a local result must not claim a source")
 	assert.False(t, onlineCalled, "online validation must be skipped without a token")
 }
 
@@ -113,6 +117,7 @@ func TestValidateConfig_OnlineSucceeds_SkipsLocalEntirely(t *testing.T) {
 	assert.True(t, item.IsValid)
 	assert.Equal(t, []string{"deprecated step used"}, item.Warnings)
 	assert.Empty(t, warning, "no top-level warning expected when the online call itself succeeds")
+	assert.Equal(t, sourceOnline, item.Source)
 	assert.Equal(t, "app_slug=app-slug", gotQuery)
 }
 
@@ -130,6 +135,7 @@ func TestValidateConfig_Online422_UsesOnlyOnlineResult(t *testing.T) {
 	assert.False(t, item.IsValid)
 	assert.Equal(t, "rejected by server-side schema", item.Error)
 	assert.Empty(t, warning, "a 422 is a completed online result, not a fallback case")
+	assert.Equal(t, sourceOnline, item.Source)
 }
 
 func TestValidateConfig_OnlineTransientFailure_FallsBackToLocal(t *testing.T) {
@@ -142,6 +148,7 @@ func TestValidateConfig_OnlineTransientFailure_FallsBackToLocal(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, item.IsValid, "local validation must actually run as the fallback")
 	assert.Contains(t, warning, "online validation unavailable")
+	assert.Empty(t, item.Source, "the fallback result comes from local validation")
 }
 
 func TestRunValidate_PropagatesConfigWarningIntoTopLevelWarnings(t *testing.T) {
@@ -158,6 +165,58 @@ func TestRunValidate_PropagatesConfigWarningIntoTopLevelWarnings(t *testing.T) {
 	assert.Contains(t, warnings[0], "online validation unavailable")
 }
 
+func TestValidateCmd_OnlineNoteGoesToStderrWithTheOfflineHint(t *testing.T) {
+	cmd, stderr := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+
+	require.NoError(t, cmd.RunE(cmd, nil))
+	assert.Contains(t, stderr.String(), "Validated online")
+	assert.Contains(t, stderr.String(), "--"+offlineKey, "the note must name the escape hatch")
+}
+
+func TestValidateCmd_LocalValidationPrintsNoNote(t *testing.T) {
+	// The result itself must stay byte-identical to v2 on the local path, so
+	// the note is the only new output and it only appears for online runs.
+	cmd, stderr := newTestValidateCommand(t, func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fatal("online validation must not be attempted with --offline")
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+	require.NoError(t, cmd.Flags().Set(offlineKey, "true"))
+
+	require.NoError(t, cmd.RunE(cmd, nil))
+	assert.Empty(t, stderr.String())
+}
+
+func TestValidateCmd_AppSlugFallsBackToEnv(t *testing.T) {
+	// --app is optional here, so validate uses the non-erroring lookup; the
+	// env var must reach the API the same way it does for get/update.
+	var gotQuery string
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	t.Setenv(cmdutil.EnvAppID, "env-app-slug")
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+
+	require.NoError(t, cmd.RunE(cmd, nil))
+	assert.Equal(t, "app_slug=env-app-slug", gotQuery)
+}
+
+func TestValidateCmd_OfflineAndAppAreMutuallyExclusive(t *testing.T) {
+	cmd := NewValidateCommand()
+	cmd.SetArgs([]string{"--offline", "--app", "app-slug"})
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	// Cobra rejects the combination while validating flag groups, before RunE
+	// runs — so this never reaches the os.Exit(1) inside validate().
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "none of the others can be")
+}
+
 func encode(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
@@ -167,6 +226,24 @@ func newValidateFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Ser
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+// newTestValidateCommand is newTestValidateCmd for the real command, so tests
+// can drive RunE through its actual flag set. It returns the command's stderr
+// buffer, which carries the online-validation note.
+func newTestValidateCommand(t *testing.T, handler http.HandlerFunc) (*cobra.Command, *bytes.Buffer) {
+	t.Helper()
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
+
+	apiBaseURL := newValidateFakeServer(t, handler).URL
+
+	cmd := NewValidateCommand()
+	var stderr bytes.Buffer
+	cmd.SetErr(&stderr)
+	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
+	cmd.SetContext(config.WithResolved(t.Context(), resolved))
+	return cmd, &stderr
 }
 
 // newTestValidateCmd builds a bare *cobra.Command with a real token

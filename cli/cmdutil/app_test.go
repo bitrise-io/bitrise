@@ -47,6 +47,19 @@ func TestResolveAppSlug_FlagTakesPrecedenceOverEnv(t *testing.T) {
 	assert.Equal(t, "flag-app-slug", slug)
 }
 
+func TestLookupAppSlug_EmptyInsteadOfError(t *testing.T) {
+	cmd := &cobra.Command{}
+	AddAppFlag(cmd.Flags(), "app slug")
+
+	assert.Empty(t, LookupAppSlug(cmd))
+
+	t.Setenv(EnvAppID, "env-app-slug")
+	assert.Equal(t, "env-app-slug", LookupAppSlug(cmd))
+
+	require.NoError(t, cmd.Flags().Set(FlagApp, "flag-app-slug"))
+	assert.Equal(t, "flag-app-slug", LookupAppSlug(cmd))
+}
+
 func TestResolveAppSlug_LegacyAppSlugEnvNotHonored(t *testing.T) {
 	// BITRISE_APP_SLUG is auto-injected by Bitrise into every build to
 	// identify the app the build is running for — it must never be read

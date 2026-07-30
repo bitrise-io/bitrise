@@ -2,6 +2,7 @@ package yml
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -48,7 +49,11 @@ instead of the app's current stored configuration.`,
 			}
 
 			if output.Format == output.FormatRaw {
-				_, err = fmt.Fprint(cmd.OutOrStdout(), result.Content)
+				content := result.Content
+				if content != "" && !strings.HasSuffix(content, "\n") {
+					content += "\n"
+				}
+				_, err = fmt.Fprint(cmd.OutOrStdout(), content)
 				return err
 			}
 			return output.Print(result, output.Format)

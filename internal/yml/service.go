@@ -89,7 +89,14 @@ func (s *Service) Validate(ctx context.Context, rawYAML, appSlug string) (Valida
 	if err != nil {
 		var apiErr *bitriseapi.APIError
 		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusUnprocessableEntity {
-			return ValidateResult{Valid: false, Errors: []string{apiErr.Message}, Warnings: []string{}}, nil
+			// Message is empty when the body carried none of the recognized
+			// JSON error fields; Error() falls back to the raw body, so the
+			// result never reports an invalid config without saying why.
+			msg := apiErr.Message
+			if msg == "" {
+				msg = apiErr.Error()
+			}
+			return ValidateResult{Valid: false, Errors: []string{msg}, Warnings: []string{}}, nil
 		}
 		return ValidateResult{}, err
 	}

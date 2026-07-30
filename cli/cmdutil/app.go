@@ -32,13 +32,20 @@ func AddAppFlag(fs *pflag.FlagSet, help string) {
 // BITRISE_APP_ID. There is no config-file fallback yet — add one when a
 // command needs it.
 func ResolveAppSlug(cmd *cobra.Command) (string, error) {
-	if v, _ := cmd.Flags().GetString(FlagApp); v != "" {
-		return v, nil
-	}
-	if v := os.Getenv(EnvAppID); v != "" {
-		return v, nil
+	if slug := LookupAppSlug(cmd); slug != "" {
+		return slug, nil
 	}
 	return "", AppSlugRequiredErr()
+}
+
+// LookupAppSlug resolves the app slug the same way as ResolveAppSlug but
+// returns an empty string instead of an error when neither source is set —
+// for commands where the app is optional (e.g. `yml validate --app`).
+func LookupAppSlug(cmd *cobra.Command) string {
+	if v, _ := cmd.Flags().GetString(FlagApp); v != "" {
+		return v
+	}
+	return os.Getenv(EnvAppID)
 }
 
 // AppSlugRequiredErr returns the standard missing-app-slug error.

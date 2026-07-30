@@ -151,6 +151,23 @@ func TestValidate_422TreatedAsInvalid(t *testing.T) {
 	assert.Equal(t, []string{}, result.Warnings)
 }
 
+func TestValidate_422WithUnrecognizedBodyStillExplainsWhy(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_, _ = w.Write([]byte(`<html>Bad Request</html>`))
+	})
+
+	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "not: valid: yaml:", "")
+	require.NoError(t, err)
+	assert.False(t, result.Valid)
+	require.Len(t, result.Errors, 1)
+	// No recognized JSON error field, so APIError.Message is empty — the
+	// result must fall back to something rather than report an invalid
+	// config with a blank reason.
+	assert.NotEmpty(t, result.Errors[0])
+	assert.Contains(t, result.Errors[0], "Bad Request")
+}
+
 func TestValidate_PropagatesOtherErrors(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)

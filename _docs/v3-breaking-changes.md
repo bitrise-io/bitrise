@@ -134,9 +134,13 @@ under `step`, to manage cloud-side resources without leaving the CLI.
   the local check and reports the reason as a warning. Because the old top-level
   `bitrise validate` is an alias of this command, existing invocations change behavior
   as soon as a token is present — including picking up any difference between the
-  server's messages and the local ones. Two flags control it: the new `--offline`
-  forces the local-only check, and the optional `--app` enables app-specific checks
-  (stacks, machine types, license pools).
+  server's messages and the local ones. When validation happens online the command
+  says so on stderr and names the escape hatch, and the result gains a `source`
+  field under `--format json`; a local result carries no marker and its output on
+  stdout is unchanged from v2. Two flags control it, and they cannot be combined:
+  the new `--offline` forces the local-only check, and the optional `--app` (or
+  `BITRISE_APP_ID`) enables app-specific checks (stacks, machine types, license
+  pools).
   *Migrate:* pass `--offline` anywhere you depend on local validation or on its exact
   output — in particular scripts and tests that assert on validation messages.
 

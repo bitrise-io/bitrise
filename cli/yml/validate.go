@@ -31,18 +31,30 @@ func NewValidateCommand() *cobra.Command {
 	}
 
 	cmdutil.AddConfigAndInventoryFlags(validateCommand.Flags())
-	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: json, yml.")
+	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json.")
 	validateCommand.Flags().Bool(offlineKey, false, "Skip online validation even if authenticated; use only the local schema check.")
 	cmdutil.AddAppFlag(validateCommand.Flags(), "app ID to validate against (enables app-specific checks: stacks, machine types, license pools)")
 
+	// --offline skips the online path entirely, so accepting it together with
+	// --app would silently ignore the app-specific checks --app asks for. An
+	// ambient BITRISE_APP_ID isn't covered (cobra only sees flags) and stays
+	// silently ignored under --offline, since it isn't an explicit request.
+	validateCommand.MarkFlagsMutuallyExclusive(offlineKey, cmdutil.FlagApp)
+
 	return validateCommand
 }
+
+// sourceOnline marks a result produced by the API instead of the local
+// schema check. Local results leave Source empty rather than naming
+// themselves, so --offline output stays byte-identical to v2.
+const sourceOnline = "online"
 
 // ValidationItemModel ...
 type ValidationItemModel struct {
 	IsValid  bool     `json:"is_valid" yaml:"is_valid"`
 	Error    string   `json:"error,omitempty" yaml:"error,omitempty"`
 	Warnings []string `json:"warnings,omitempty" yaml:"warnings,omitempty"`
+	Source   string   `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 // ValidationModel ...
@@ -169,21 +181,15 @@ func formatWarnings(warnings []string) string {
 // no-op rather than a path-resolution failure.
 func hasConfigToValidate(bitriseConfigPath, bitriseConfigBase64Data string) (bool, error) {
 	pth, err := cmdutil.GetBitriseConfigFilePath(bitriseConfigPath)
-	if err != nil && !strings.Contains(err.Error(), "bitrise.yml path not defined and not found on it's default path:") {
+	if err != nil && !errors.Is(err, cmdutil.ErrNoBitriseConfigFound) {
 		return false, fmt.Errorf("failed to get config path, err: %s", err)
 	}
 	return pth != "" || bitriseConfigBase64Data != "", nil
 }
 
-func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string) (*ValidationItemModel, error) {
-	hasConfig, err := hasConfigToValidate(bitriseConfigPath, bitriseConfigBase64Data)
-	if err != nil {
-		return nil, err
-	}
-	if !hasConfig {
-		return nil, nil
-	}
-
+// validateBitriseYML runs the local schema check. Callers gate on
+// hasConfigToValidate first, so there is always a config to validate here.
+func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string) *ValidationItemModel {
 	_, warns, err := cmdutil.CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
 	configValidation := ValidationItemModel{
 		IsValid:  true,
@@ -194,7 +200,7 @@ func validateBitriseYML(bitriseConfigPath string, bitriseConfigBase64Data string
 		configValidation.Error = err.Error()
 	}
 
-	return &configValidation, nil
+	return &configValidation
 }
 
 func validateInventory(inventoryPath string, inventoryBase64Data string) (*ValidationItemModel, error) {
@@ -288,7 +294,7 @@ func tryOnlineValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase6
 		return nil, fmt.Sprintf("online validation unavailable: %s", err), false
 	}
 
-	item = &ValidationItemModel{IsValid: result.Valid, Warnings: result.Warnings}
+	item = &ValidationItemModel{IsValid: result.Valid, Warnings: result.Warnings, Source: sourceOnline}
 	if len(result.Errors) > 0 {
 		item.Error = strings.Join(result.Errors, "; ")
 	}
@@ -313,13 +319,11 @@ func validateConfig(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase64Da
 		if item, warning, ok := tryOnlineValidate(cmd, bitriseConfigPath, bitriseConfigBase64Data, appSlug); ok {
 			return item, "", nil
 		} else if warning != "" {
-			item, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
-			return item, warning, err
+			return validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data), warning, nil
 		}
 	}
 
-	item, err := validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data)
-	return item, "", err
+	return validateBitriseYML(bitriseConfigPath, bitriseConfigBase64Data), "", nil
 }
 
 func runValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data string, offline bool, appSlug string) (*ValidationModel, []string, error) {
@@ -359,7 +363,7 @@ func validate(cmd *cobra.Command, _ []string) error {
 	inventoryPath, _ := cmd.Flags().GetString(cmdutil.InventoryKey)
 
 	offline, _ := cmd.Flags().GetBool(offlineKey)
-	appSlug, _ := cmd.Flags().GetString(cmdutil.FlagApp)
+	appSlug := cmdutil.LookupAppSlug(cmd)
 
 	format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 	if format == "" {
@@ -375,6 +379,14 @@ func validate(cmd *cobra.Command, _ []string) error {
 	}
 
 	validation, warnings, err := runValidate(cmd, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, offline, appSlug)
+
+	// The ambient-token default means `validate` can validate online without
+	// the user asking for it, so say so — on stderr, to keep the result on
+	// stdout machine-readable.
+	if validation != nil && validation.Config != nil && validation.Config.Source == sourceOnline {
+		_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "Validated online. Use --%s to run the local check instead.\n", offlineKey)
+	}
+
 	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
 		os.Exit(1)

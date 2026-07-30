@@ -20,10 +20,15 @@ func NewUpdateCommand() *cobra.Command {
 		Short: "Upload a new bitrise.yml to Bitrise",
 		Long: `Upload a new bitrise.yml configuration to Bitrise for an app.
 
-Reads from --file if provided, otherwise reads from stdin.
+Reads from --file if provided, otherwise reads from stdin. Pass --file - to
+read from stdin explicitly.
 
 Note: if the app is configured to read its bitrise.yml from the repository,
-this command succeeds but the change will not affect builds.`,
+this command succeeds but the change will not affect builds.
+
+Bitrise stores the configuration as structured data rather than as the file
+you upload, so comments, key order and YAML anchors are not preserved: a
+later 'bitrise yml get' returns an equivalent, reformatted document.`,
 		Example: `  bitrise yml update --app my-app-id --file bitrise.yml
   cat bitrise.yml | bitrise yml update --app my-app-id
   bitrise yml update --app my-app-id < bitrise.yml`,
@@ -60,7 +65,7 @@ this command succeeds but the change will not affect builds.`,
 	// No -f shorthand: every other cloud command uses -f for --format, so
 	// binding it to --file here would make `yml update -f json` open a file
 	// named "json" while `yml get -f json` selects a format.
-	cmd.Flags().StringVar(&filePath, "file", "", "path to the bitrise.yml file (reads from stdin if omitted)")
+	cmd.Flags().StringVar(&filePath, "file", "", "path to the bitrise.yml file, or - for stdin (reads from stdin if omitted)")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID to update the bitrise.yml for (or set BITRISE_APP_ID)")
 
 	return cmd
