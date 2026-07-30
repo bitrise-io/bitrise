@@ -108,8 +108,8 @@ scripts keep running — only `trigger-check` was removed outright.
 
 ## Cloud resource-management commands
 
-New commands were added under `auth`, `stack`, and `yml`, plus new subcommands
-under `step`, to manage cloud-side resources without leaving the CLI.
+New commands were added under `auth`, `stack`, `user`, and `yml`, plus new
+subcommands under `step`, to manage cloud-side resources without leaving the CLI.
 
 ### `auth`
 
@@ -155,10 +155,10 @@ under `step`, to manage cloud-side resources without leaving the CLI.
   account by email and password; `me` shows the profile of the currently
   authenticated user.
 
-*Migrate:* no action required — all additive. These require a Bitrise access
-token (`bitrise auth login`, or `$BITRISE_TOKEN`), except `user create` which
-registers the account you'll then log into. The one existing command whose behavior changed is `validate`, covered
-above.
+All of these require a Bitrise access token (`bitrise auth login`, or
+`$BITRISE_TOKEN`) — except `user create`, which registers the account you then log
+into. *Migrate:* no action required for the new commands, since they are additive.
+The one existing command whose behavior changed is `validate`, covered above.
 
 ## Config handling
 
