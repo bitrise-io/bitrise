@@ -44,6 +44,7 @@ func TestActivatePathRefStep(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, ActivationTypePathRef, got.ActivationType)
+	require.Equal(t, ActivationInventorySourceNone, got.ActivationInventorySource)
 	require.Equal(t, filepath.Join(workDir, "current_step.yml"), got.StepYMLPath)
 	require.Equal(t, "path", got.StepInfo.Library)
 	require.Equal(t, absStepSrcDir, got.StepInfo.ID)
@@ -65,6 +66,7 @@ func TestActivateGitRefStep(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, ActivationTypeGitRef, got.ActivationType)
+	require.Equal(t, ActivationInventorySourceNone, got.ActivationInventorySource)
 	require.Equal(t, filepath.Join(workDir, "current_step.yml"), got.StepYMLPath)
 	require.Equal(t, "git", got.StepInfo.Library)
 	require.Equal(t, srcRepoDir, got.StepInfo.ID)

@@ -153,6 +153,8 @@ func TestActivateSteplibRefStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("BITRISE_STEPLIB_API_ENABLE", "false")
+
 			activatedStepDir := t.TempDir()
 			workDir := t.TempDir()
 
@@ -168,6 +170,7 @@ func TestActivateSteplibRefStep(t *testing.T) {
 			require.Equal(t, tt.id.IDorURI, got.StepInfo.ID)
 			require.Equal(t, tt.wantVersion, got.StepInfo.Version)
 			require.Equal(t, ActivationTypeSteplibSource, got.ActivationType)
+			require.Equal(t, ActivationInventorySourceSteplib, got.ActivationInventorySource)
 			require.Empty(t, got.ExecutablePath)
 			require.False(t, got.DidStepLibUpdate)
 
@@ -236,6 +239,7 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 					"resolved version %q should start with %q", got.StepInfo.Version, tt.wantPrefix)
 			}
 			require.Equal(t, ActivationTypeSteplibSource, got.ActivationType)
+			require.Equal(t, ActivationInventorySourceSteplibAPI, got.ActivationInventorySource)
 			require.Empty(t, got.ExecutablePath)
 			require.False(t, got.DidStepLibUpdate)
 

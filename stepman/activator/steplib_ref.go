@@ -39,7 +39,12 @@ func ActivateSteplibRefStep(
 		libraryAPI = steplibrary.New(log, bitriseSteplibAPIURL)
 	}
 
+	// The inventory source is set here, on the same branch that dispatches, and before
+	// any return: the caller keeps the partial result on error, so a failed activation
+	// is still attributable to the inventory that served it.
 	if libraryAPI == nil {
+		activationResult.ActivationInventorySource = ActivationInventorySourceSteplib
+
 		// Old stepman preparation codepath
 		stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
 		activationResult.StepInfo = stepInfo
@@ -47,6 +52,8 @@ func ActivateSteplibRefStep(
 		if err != nil {
 			return activationResult, err
 		}
+	} else {
+		activationResult.ActivationInventorySource = ActivationInventorySourceSteplibAPI
 	}
 
 	// ActivateStep dispatches to the v2 or legacy codepath.

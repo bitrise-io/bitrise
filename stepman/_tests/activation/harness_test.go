@@ -21,6 +21,7 @@ import (
 	"github.com/bitrise-io/stepman/activator"
 	"github.com/bitrise-io/stepman/stepid"
 	"github.com/bitrise-io/stepman/stepman"
+	"github.com/stretchr/testify/assert"
 )
 
 const bitriseSteplibURL = "https://github.com/bitrise-io/bitrise-steplib.git"
@@ -93,7 +94,20 @@ func activate(t *testing.T, v variant, id stepid.CanonicalID, offline, didStepLi
 	logger := &capturingLogger{}
 	start := time.Now()
 	activated, err := activator.ActivateSteplibRefStep(logger, id, t.TempDir(), t.TempDir(), didStepLibUpdate, offline)
-	return activationResult{activated: activated, err: err, logs: logger.entries, elapsed: time.Since(start)}
+	elapsed := time.Since(start)
+
+	// Asserted here so every case below covers it, including the failing ones:
+	// the inventory source is set before any early return, so a failed activation
+	// stays attributable to the path that served it. assert, not require: callers
+	// pair two activations and log both afterwards, and FailNow here would cut off
+	// the side-by-side diagnostics this harness exists to print.
+	wantInventorySource := activator.ActivationInventorySourceSteplib
+	if v.useAPI {
+		wantInventorySource = activator.ActivationInventorySourceSteplibAPI
+	}
+	assert.Equal(t, wantInventorySource, activated.ActivationInventorySource, "%s inventory source", v.name)
+
+	return activationResult{activated: activated, err: err, logs: logger.entries, elapsed: elapsed}
 }
 
 // logResult prints a case's verdict, key result fields, and raw captured logs.
@@ -105,8 +119,9 @@ func logResult(t *testing.T, header string, r activationResult) {
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "\n──────── %s ────────\n", header)
-	fmt.Fprintf(&b, "verdict=%s  elapsed=%s  activationType=%q  executable=%t  didStepLibUpdate=%t\n",
-		verdict, r.elapsed.Round(time.Millisecond), r.activated.ActivationType, r.activated.ExecutablePath != "", r.activated.DidStepLibUpdate)
+	fmt.Fprintf(&b, "verdict=%s  elapsed=%s  activationType=%q  inventorySource=%q  executable=%t  didStepLibUpdate=%t\n",
+		verdict, r.elapsed.Round(time.Millisecond), r.activated.ActivationType, r.activated.ActivationInventorySource,
+		r.activated.ExecutablePath != "", r.activated.DidStepLibUpdate)
 	if r.err != nil {
 		fmt.Fprintf(&b, "error: %s\n", r.err)
 	}

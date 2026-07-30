@@ -55,10 +55,11 @@ func ActivatePathRefStep(
 	}
 
 	return ActivatedStep{
-		StepInfo:         stepInfo,
-		StepYMLPath:      activatedStepYMLPath,
-		DidStepLibUpdate: false,
-		ActivationType:   ActivationTypePathRef,
-		ExecutablePath:   "",
+		StepInfo:                  stepInfo,
+		StepYMLPath:               activatedStepYMLPath,
+		DidStepLibUpdate:          false,
+		ActivationType:            ActivationTypePathRef,
+		ActivationInventorySource: ActivationInventorySourceNone,
+		ExecutablePath:            "",
 	}, nil
 }
