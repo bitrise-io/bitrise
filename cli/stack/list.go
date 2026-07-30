@@ -48,8 +48,7 @@ Without --workspace, returns globally available stacks.`,
 			if output.Format == output.FormatRaw {
 				return printStacksTable(cmd.OutOrStdout(), result.Items)
 			}
-			output.Print(result, output.Format)
-			return nil
+			return output.Print(result, output.Format)
 		},
 	}
 

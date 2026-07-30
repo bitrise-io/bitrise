@@ -50,10 +50,9 @@ Sources, in precedence order:
 
 			if output.Format == output.FormatRaw {
 				printStatusHuman(s)
-			} else {
-				output.Print(s, output.Format)
+				return nil
 			}
-			return nil
+			return output.Print(s, output.Format)
 		},
 	}
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")

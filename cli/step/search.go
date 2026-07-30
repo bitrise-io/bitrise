@@ -54,8 +54,8 @@ Valid maintainers:
 
 			if output.Format == output.FormatRaw {
 				printStepsTable(steps)
-			} else {
-				output.Print(steps, output.Format)
+			} else if err := output.Print(steps, output.Format); err != nil {
+				cmdutil.Failf("Failed to print output, error: %s", err)
 			}
 			return nil
 		},
