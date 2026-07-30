@@ -40,10 +40,9 @@ STEP_REF must include an exact version: step_id@version`,
 
 			if output.Format == output.FormatRaw {
 				printInputsTable(inputs)
-			} else if err := output.Print(inputs, output.Format); err != nil {
-				cmdutil.Failf("Failed to print output, error: %s", err)
+				return nil
 			}
-			return nil
+			return output.Print(inputs, output.Format)
 		},
 	}
 
