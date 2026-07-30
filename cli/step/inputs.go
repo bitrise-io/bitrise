@@ -40,10 +40,9 @@ STEP_REF must include an exact version: step_id@version`,
 
 			if output.Format == output.FormatRaw {
 				printInputsTable(inputs)
-			} else {
-				output.Print(inputs, output.Format)
+				return nil
 			}
-			return nil
+			return output.Print(inputs, output.Format)
 		},
 	}
 

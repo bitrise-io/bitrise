@@ -68,8 +68,8 @@ commit: %s
 		} else {
 			log.Print(versionOutput.Version)
 		}
-	} else {
-		output.Print(versionOutput, output.Format)
+	} else if err := output.Print(versionOutput, output.Format); err != nil {
+		cmdutil.Failf("Failed to print output, error: %s", err)
 	}
 
 	return nil

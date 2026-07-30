@@ -54,10 +54,9 @@ Valid maintainers:
 
 			if output.Format == output.FormatRaw {
 				printStepsTable(steps)
-			} else {
-				output.Print(steps, output.Format)
+				return nil
 			}
-			return nil
+			return output.Print(steps, output.Format)
 		},
 	}
 
