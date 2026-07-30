@@ -9,6 +9,10 @@ type ActivatedStep struct {
 
 	ActivationType ActivationType
 
+	// ActivationInventorySource is the StepLib inventory that served the step metadata.
+	// It is ActivationInventorySourceNone for git and path references.
+	ActivationInventorySource ActivationInventorySource
+
 	// ExecutablePath is a local path to the main entrypoint of the step, ready for execution.
 	// This can be an empty string if:
 	// - step was activated from a git reference (we checked out the source dir directly)
@@ -30,4 +34,17 @@ const (
 	ActivationTypeSteplibSource     ActivationType = "steplib_source"
 	ActivationTypePathRef           ActivationType = "path"
 	ActivationTypeGitRef            ActivationType = "git"
+)
+
+// ActivationInventorySource identifies which StepLib inventory served the step metadata.
+type ActivationInventorySource string
+
+const (
+	// ActivationInventorySourceNone means the step was not activated from a StepLib (git or path ref).
+	ActivationInventorySourceNone ActivationInventorySource = ""
+	// ActivationInventorySourceSteplibAPI means the metadata came from the StepLib API.
+	ActivationInventorySourceSteplibAPI ActivationInventorySource = "steplib_api"
+	// ActivationInventorySourceSteplib means the metadata came from the locally set up StepLib
+	// and its generated spec.json.
+	ActivationInventorySourceSteplib ActivationInventorySource = "steplib"
 )
