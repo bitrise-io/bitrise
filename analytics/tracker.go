@@ -399,14 +399,14 @@ func (t tracker) SendStepActivationEvent(stepExecutionID string, activationType 
 	isCI := t.envRepository.Get(configs.CIModeEnvKey) == "true"
 
 	props := analytics.Properties{
-		"step_execution_id": stepExecutionID,
-		"is_successful":     isSuccessful,
-		"step_ref":          ref,
-		"duration_ms":       duration.Milliseconds(),
-		"cli_version":       version.VERSION,
-		"is_ci":             isCI,
-		"build_slug":        buildSlug,
-		"activation_type":   activationType,
+		StepExecutionID:   stepExecutionID,
+		"is_successful":   isSuccessful,
+		"step_ref":        ref,
+		"duration_ms":     duration.Milliseconds(),
+		"cli_version":     version.VERSION,
+		"is_ci":           isCI,
+		"build_slug":      buildSlug,
+		"activation_type": activationType,
 	}
 
 	// Only steplib references have an inventory: it is empty for git and path refs.

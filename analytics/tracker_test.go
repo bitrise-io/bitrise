@@ -158,7 +158,7 @@ func Test_SendStepActivationEvent(t *testing.T) {
 		name                string
 		inventorySource     activator.ActivationInventorySource
 		isSuccessful        bool
-		wantInventorySource interface{} // nil means the key must be absent
+		wantInventorySource any // nil means the key must be absent
 		wantDidSteplibKey   bool
 	}{
 		{
