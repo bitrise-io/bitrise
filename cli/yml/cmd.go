@@ -10,10 +10,7 @@ func NewCmd() *cobra.Command {
 	ymlCommand := &cobra.Command{
 		Use:   "yml",
 		Short: "Work with bitrise.yml files.",
-		Long: `Work with bitrise.yml files.
-
-Running "bitrise yml" with no subcommand defaults to "yml get".`,
-		RunE: cmdutil.DelegateTo("get"),
+		RunE:  cmdutil.RequireKnownSubcommand,
 	}
 
 	ymlCommand.AddCommand(
