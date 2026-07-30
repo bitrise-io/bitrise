@@ -1,11 +1,9 @@
 // Package bitriseapi is a minimal client for the Bitrise API
-// (https://api.bitrise.io/v0.1). It currently covers only the step-search
-// and step-inputs endpoints; broader coverage (pagination, mutating
-// requests) gets added when a command group that actually needs it is
-// ported.
+// (https://api.bitrise.io/v0.1).
 package bitriseapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -110,6 +108,34 @@ func (c *Client) newRequest(ctx context.Context, path string, params url.Values)
 	req.Header.Set("Authorization", "token "+c.token)
 	req.Header.Set("Accept", "application/json")
 	return req, nil
+}
+
+// post builds and executes a JSON POST request, returning the raw response
+// body. params, when non-nil, are appended to the URL as a query string —
+// e.g. the validate endpoint's optional app_slug.
+func (c *Client) post(ctx context.Context, path string, params url.Values, body any) ([]byte, error) {
+	u, err := url.Parse(c.baseURL + path)
+	if err != nil {
+		return nil, fmt.Errorf("parse URL: %w", err)
+	}
+	if len(params) > 0 {
+		u.RawQuery = params.Encode()
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("Authorization", "token "+c.token)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	return c.do(req)
 }
 
 func (c *Client) do(req *http.Request) ([]byte, error) {

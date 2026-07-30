@@ -53,6 +53,11 @@ func GetBitriseConfigFromBase64Data(configBase64Str string, validation bitrise.V
 	return config, warnings, nil
 }
 
+// ErrNoBitriseConfigFound is returned when no config path was given and there
+// is no bitrise.yml on the default path. Callers that treat "nothing to
+// validate" as a no-op rather than a failure match on it with errors.Is.
+var ErrNoBitriseConfigFound = errors.New("bitrise.yml path not defined and not found on it's default path")
+
 // GetBitriseConfigFilePath ...
 func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 	if bitriseConfigPath == "" {
@@ -61,7 +66,7 @@ func GetBitriseConfigFilePath(bitriseConfigPath string) (string, error) {
 		if exist, err := pathutil.IsPathExists(bitriseConfigPath); err != nil {
 			return "", err
 		} else if !exist {
-			return "", fmt.Errorf("bitrise.yml path not defined and not found on it's default path: %s", bitriseConfigPath)
+			return "", fmt.Errorf("%w: %s", ErrNoBitriseConfigFound, bitriseConfigPath)
 		}
 	}
 

@@ -16,9 +16,9 @@ func NewCmd() *cobra.Command {
 	ymlCommand.AddCommand(
 		NewValidateCommand(),
 		NewMergeCommand(),
+		NewGetCommand(),
+		NewUpdateCommand(),
 	)
-
-	// v3 online subcommands mount here: NewGetCommand(), NewUpdateCommand()
 
 	return ymlCommand
 }

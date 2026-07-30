@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/analytics/analyticstest"
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
@@ -385,7 +386,7 @@ type toolkitPrepareCall struct {
 }
 
 type toolkitCapturingTracker struct {
-	noOpTracker
+	analyticstest.NoOpTracker
 	calls []toolkitPrepareCall
 }
 
