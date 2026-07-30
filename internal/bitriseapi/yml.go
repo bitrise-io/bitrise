@@ -10,7 +10,7 @@ import (
 // AppBitriseYML fetches the stored bitrise.yml for an app.
 // Endpoint: GET /apps/{app-slug}/bitrise.yml. The API returns plain text YAML.
 func (c *Client) AppBitriseYML(ctx context.Context, appSlug string) (string, error) {
-	req, err := c.newRequest(ctx, "/apps/"+appSlug+"/bitrise.yml", nil)
+	req, err := c.newRequest(ctx, "/apps/"+url.PathEscape(appSlug)+"/bitrise.yml", nil)
 	if err != nil {
 		return "", err
 	}
@@ -25,7 +25,7 @@ func (c *Client) AppBitriseYML(ctx context.Context, appSlug string) (string, err
 // BuildBitriseYML fetches the bitrise.yml that a specific build ran with.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/bitrise.yml.
 func (c *Client) BuildBitriseYML(ctx context.Context, appSlug, buildSlug string) (string, error) {
-	req, err := c.newRequest(ctx, "/apps/"+appSlug+"/builds/"+buildSlug+"/bitrise.yml", nil)
+	req, err := c.newRequest(ctx, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/bitrise.yml", nil)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +48,7 @@ type AppConfigUpdateRequest struct {
 // Endpoint: POST /apps/{app-slug}/bitrise.yml.
 // content must be the YAML already parsed into a Go value (e.g. map[string]any).
 func (c *Client) UpdateAppBitriseYML(ctx context.Context, appSlug string, content any) error {
-	_, err := c.post(ctx, "/apps/"+appSlug+"/bitrise.yml", nil, AppConfigUpdateRequest{AppConfigDatastoreYAML: content})
+	_, err := c.post(ctx, "/apps/"+url.PathEscape(appSlug)+"/bitrise.yml", nil, AppConfigUpdateRequest{AppConfigDatastoreYAML: content})
 	return err
 }
 
