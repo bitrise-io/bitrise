@@ -125,17 +125,30 @@ under `step`, to manage cloud-side resources without leaving the CLI.
 ### `yml`
 
 - **`bitrise yml get` and `update` are new.** Read/write the bitrise.yml stored
-  on Bitrise for a given app (`--app`, or set `BITRISE_APP_ID`). `validate`
-  gained an optional `--app` flag enabling app-specific checks (stacks, machine
-  types, license pools) alongside the existing schema validation.
+  on Bitrise for a given app (`--app`, or set `BITRISE_APP_ID`).
+- **`validate` now validates online when you're authenticated, instead of locally.**
+  When an access token resolves (from `bitrise auth login` or `$BITRISE_TOKEN`), the
+  config is submitted to Bitrise and the local schema check is skipped entirely — the
+  API runs the same schema checks plus app-specific ones. With no token, or when the
+  online attempt can't be completed (network, 5xx, timeout), validation falls back to
+  the local check and reports the reason as a warning. Because the old top-level
+  `bitrise validate` is an alias of this command, existing invocations change behavior
+  as soon as a token is present — including picking up any difference between the
+  server's messages and the local ones. Two flags control it: the new `--offline`
+  forces the local-only check, and the optional `--app` enables app-specific checks
+  (stacks, machine types, license pools).
+  *Migrate:* pass `--offline` anywhere you depend on local validation or on its exact
+  output — in particular scripts and tests that assert on validation messages.
 
 ### `step`
 
 - **`bitrise step search` and `inputs` are new.** Search the steplib and
   inspect a step's declared inputs.
 
-*Migrate:* no action required — all additive. These require a Bitrise access
-token (`bitrise auth login`, or `$BITRISE_TOKEN`).
+All of these require a Bitrise access token (`bitrise auth login`, or
+`$BITRISE_TOKEN`). *Migrate:* no action required for the new commands — they are
+additive. The one existing command whose behavior changed is `validate`, covered
+above.
 
 ## Config handling
 

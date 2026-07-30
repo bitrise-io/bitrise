@@ -57,7 +57,10 @@ this command succeeds but the change will not affect builds.`,
 		},
 	}
 
-	cmd.Flags().StringVarP(&filePath, "file", "f", "", "path to the bitrise.yml file (reads from stdin if omitted)")
+	// No -f shorthand: every other cloud command uses -f for --format, so
+	// binding it to --file here would make `yml update -f json` open a file
+	// named "json" while `yml get -f json` selects a format.
+	cmd.Flags().StringVar(&filePath, "file", "", "path to the bitrise.yml file (reads from stdin if omitted)")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID to update the bitrise.yml for (or set BITRISE_APP_ID)")
 
 	return cmd
