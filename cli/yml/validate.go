@@ -3,6 +3,7 @@ package yml
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -271,7 +272,10 @@ func getYmlStringForOnlineValidation(bitriseConfigPath, bitriseConfigBase64Data 
 func tryOnlineValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase64Data, appSlug string) (item *ValidationItemModel, warning string, ok bool) {
 	client, err := cmdutil.NewAPIClient(cmd)
 	if err != nil {
-		return nil, "", false
+		if errors.Is(err, cmdutil.ErrNoToken) {
+			return nil, "", false
+		}
+		return nil, fmt.Sprintf("online validation unavailable: %s", err), false
 	}
 
 	rawYAML, err := getYmlStringForOnlineValidation(bitriseConfigPath, bitriseConfigBase64Data)

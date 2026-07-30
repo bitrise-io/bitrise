@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -40,6 +42,33 @@ func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 	assert.True(t, item.IsValid)
 	assert.Empty(t, warning)
 	assert.False(t, onlineCalled, "online validation must be skipped without a token")
+}
+
+func TestValidateConfig_CorruptAuthFile_FallsBackWithWarning(t *testing.T) {
+	// Distinct from the no-token case: NewAPIClient fails here for a reason
+	// other than "no token configured" (a corrupt auth.yaml), which must
+	// surface as a warning rather than being silently treated the same as
+	// the expected, unconfigured-token default.
+	var onlineCalled bool
+	srv := newValidateFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		onlineCalled = true
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	p, err := auth.Path()
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o700))
+	require.NoError(t, os.WriteFile(p, []byte("not: valid: yaml: ["), 0o600))
+
+	cmd := &cobra.Command{}
+	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: srv.URL})
+	cmd.SetContext(config.WithResolved(t.Context(), resolved))
+
+	item, warning, err := validateConfig(cmd, "", encode(validConfig), false, "")
+	require.NoError(t, err)
+	assert.True(t, item.IsValid, "local validation must run as the fallback")
+	assert.Contains(t, warning, "online validation unavailable")
+	assert.False(t, onlineCalled, "the online endpoint itself is never reached when the client can't be built")
 }
 
 func TestValidateConfig_Offline_UsesLocalEvenWithToken(t *testing.T) {

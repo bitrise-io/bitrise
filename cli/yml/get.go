@@ -51,8 +51,7 @@ instead of the app's current stored configuration.`,
 				_, err = fmt.Fprint(cmd.OutOrStdout(), result.Content)
 				return err
 			}
-			output.Print(result, output.Format)
-			return nil
+			return output.Print(result, output.Format)
 		},
 	}
 
