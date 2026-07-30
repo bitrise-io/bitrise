@@ -117,18 +117,6 @@ func TestAuthLogin_PasswordStdinWithoutEmailErrors(t *testing.T) {
 	assert.Contains(t, err.Error(), "--password-stdin requires --email")
 }
 
-func TestCheckPasswordStdinPiped_ErrorsWhenTerminal(t *testing.T) {
-	err := checkPasswordStdinPiped(true, true)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "--password-stdin requires piped stdin")
-}
-
-func TestCheckPasswordStdinPiped_OKCases(t *testing.T) {
-	assert.NoError(t, checkPasswordStdinPiped(true, false))  // --password-stdin + piped input: fine
-	assert.NoError(t, checkPasswordStdinPiped(false, true))  // no --password-stdin, terminal: interactive masked prompt, fine
-	assert.NoError(t, checkPasswordStdinPiped(false, false)) // no --password-stdin, non-terminal: fine
-}
-
 func TestRunOAuthLogin_SavesOAuthManagedToken(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/oauth2/token", func(w http.ResponseWriter, r *http.Request) {

@@ -149,9 +149,15 @@ under `step`, to manage cloud-side resources without leaving the CLI.
 - **`bitrise step search` and `inputs` are new.** Search the steplib and
   inspect a step's declared inputs.
 
-All of these require a Bitrise access token (`bitrise auth login`, or
-`$BITRISE_TOKEN`). *Migrate:* no action required for the new commands — they are
-additive. The one existing command whose behavior changed is `validate`, covered
+### `user`
+
+- **`bitrise user create` and `me` are new.** `create` registers a new Bitrise
+  account by email and password; `me` shows the profile of the currently
+  authenticated user.
+
+*Migrate:* no action required — all additive. These require a Bitrise access
+token (`bitrise auth login`, or `$BITRISE_TOKEN`), except `user create` which
+registers the account you'll then log into. The one existing command whose behavior changed is `validate`, covered
 above.
 
 ## Config handling

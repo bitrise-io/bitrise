@@ -97,3 +97,29 @@ func TestReadPasswordInput_NoTrailingNewline(t *testing.T) {
 		t.Fatalf("got %q, want %q", got, "hunter2")
 	}
 }
+
+func TestCheckPasswordStdinPiped_ErrorsWhenTerminal(t *testing.T) {
+	err := CheckPasswordStdinPiped(true, true, "bitrise auth login --email <email>")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "--password-stdin requires piped stdin") {
+		t.Fatalf("error %q does not mention piped stdin", err.Error())
+	}
+	if !strings.Contains(err.Error(), "bitrise auth login --email <email> --password-stdin") {
+		t.Fatalf("error %q does not include the example command", err.Error())
+	}
+}
+
+func TestCheckPasswordStdinPiped_OKCases(t *testing.T) {
+	const example = "bitrise user create --email <email>"
+	if err := CheckPasswordStdinPiped(true, false, example); err != nil {
+		t.Errorf("--password-stdin + piped input: %v", err)
+	}
+	if err := CheckPasswordStdinPiped(false, true, example); err != nil {
+		t.Errorf("no --password-stdin, terminal: %v", err)
+	}
+	if err := CheckPasswordStdinPiped(false, false, example); err != nil {
+		t.Errorf("no --password-stdin, non-terminal: %v", err)
+	}
+}
