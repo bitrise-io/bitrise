@@ -156,40 +156,50 @@ func (c *capturingAnalyticsTracker) IsTracking() bool { return true }
 func Test_SendStepActivationEvent(t *testing.T) {
 	tests := []struct {
 		name                string
+		activationType      activator.ActivationType
 		inventorySource     activator.ActivationInventorySource
 		isSuccessful        bool
 		wantInventorySource any // nil means the key must be absent
-		wantDidSteplibKey   bool
 	}{
 		{
 			name:                "StepLib API activation reports steplib_api",
+			activationType:      activator.ActivationTypeSteplibSource,
 			inventorySource:     activator.ActivationInventorySourceSteplibAPI,
 			isSuccessful:        true,
 			wantInventorySource: "steplib_api",
-			wantDidSteplibKey:   true,
 		},
 		{
 			name:                "Legacy activation reports steplib",
+			activationType:      activator.ActivationTypeSteplibSource,
 			inventorySource:     activator.ActivationInventorySourceSteplib,
 			isSuccessful:        true,
 			wantInventorySource: "steplib",
-			wantDidSteplibKey:   true,
 		},
 		{
-			// A failed activation is still attributable to a path, which is the
-			// point of reporting it: stepman sets it before any early return.
+			// The tracker must not gate the inventory source on success the way it
+			// gates did_steplib_update below: a failed activation is still
+			// attributable to a path, which is the point of reporting it. That
+			// stepman populates the field on its error paths is covered upstream,
+			// in activator.TestActivateSteplibRefStep.
 			name:                "Failed activation still reports the inventory source",
+			activationType:      activator.ActivationTypeSteplibSource,
 			inventorySource:     activator.ActivationInventorySourceSteplibAPI,
 			isSuccessful:        false,
 			wantInventorySource: "steplib_api",
-			wantDidSteplibKey:   false,
 		},
 		{
-			name:                "Path or git ref omits the inventory source",
+			name:                "Path ref omits the inventory source",
+			activationType:      activator.ActivationTypePathRef,
 			inventorySource:     activator.ActivationInventorySourceNone,
 			isSuccessful:        true,
 			wantInventorySource: nil,
-			wantDidSteplibKey:   true,
+		},
+		{
+			name:                "Git ref omits the inventory source",
+			activationType:      activator.ActivationTypeGitRef,
+			inventorySource:     activator.ActivationInventorySourceNone,
+			isSuccessful:        true,
+			wantInventorySource: nil,
 		},
 	}
 
@@ -204,7 +214,7 @@ func Test_SendStepActivationEvent(t *testing.T) {
 
 			subject.SendStepActivationEvent(
 				"step-execution-id",
-				activator.ActivationTypeSteplibSource,
+				tt.activationType,
 				tt.inventorySource,
 				"git-clone@8.5.0",
 				tt.isSuccessful,
@@ -218,7 +228,7 @@ func Test_SendStepActivationEvent(t *testing.T) {
 
 			// step_execution_id makes this event joinable with cli_toolkit_prepare.
 			require.Equal(t, "step-execution-id", event.props["step_execution_id"])
-			require.Equal(t, activator.ActivationTypeSteplibSource, event.props["activation_type"])
+			require.Equal(t, tt.activationType, event.props["activation_type"])
 			require.Equal(t, int64(2000), event.props["duration_ms"])
 			require.Equal(t, tt.isSuccessful, event.props["is_successful"])
 
@@ -228,7 +238,9 @@ func Test_SendStepActivationEvent(t *testing.T) {
 				require.Equal(t, tt.wantInventorySource, event.props["inventory_source"])
 			}
 
-			if tt.wantDidSteplibKey {
+			// did_steplib_update is reported only for successful activations, so the
+			// expectation follows isSuccessful rather than being a separate column.
+			if tt.isSuccessful {
 				require.Equal(t, true, event.props["did_steplib_update"])
 			} else {
 				require.NotContains(t, event.props, "did_steplib_update")
