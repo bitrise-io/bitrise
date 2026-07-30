@@ -42,8 +42,9 @@ type ActivationInventorySource string
 const (
 	// ActivationInventorySourceNone means the step was not activated from a StepLib (git or path ref).
 	ActivationInventorySourceNone ActivationInventorySource = ""
-	// ActivationInventorySourceSteplibAPI means the metadata came from the StepLib API, with no git clone.
+	// ActivationInventorySourceSteplibAPI means the metadata came from the StepLib API.
 	ActivationInventorySourceSteplibAPI ActivationInventorySource = "steplib_api"
-	// ActivationInventorySourceGitClone means the metadata came from the locally cloned StepLib and its spec.json.
-	ActivationInventorySourceGitClone ActivationInventorySource = "git_clone"
+	// ActivationInventorySourceSteplib means the metadata came from the locally set up StepLib
+	// and its generated spec.json.
+	ActivationInventorySourceSteplib ActivationInventorySource = "steplib"
 )

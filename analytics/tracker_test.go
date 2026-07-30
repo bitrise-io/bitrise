@@ -169,10 +169,10 @@ func Test_SendStepActivationEvent(t *testing.T) {
 			wantDidSteplibKey:   true,
 		},
 		{
-			name:                "Legacy activation reports git_clone",
-			inventorySource:     activator.ActivationInventorySourceGitClone,
+			name:                "Legacy activation reports steplib",
+			inventorySource:     activator.ActivationInventorySourceSteplib,
 			isSuccessful:        true,
-			wantInventorySource: "git_clone",
+			wantInventorySource: "steplib",
 			wantDidSteplibKey:   true,
 		},
 		{
