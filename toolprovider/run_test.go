@@ -40,7 +40,7 @@ func (c *capturingTracker) SendToolSetupEvent(providerID string, request provide
 		isSuccessful: isSuccessful,
 	})
 }
-func (c *capturingTracker) SendStepActivationEvent(activator.ActivationType, string, bool, time.Duration, bool) {
+func (c *capturingTracker) SendStepActivationEvent(string, activator.ActivationType, activator.ActivationInventorySource, string, bool, time.Duration, bool) {
 }
 func (c *capturingTracker) SendToolkitPrepareEvent(string, string, string, string, toolkits.PrepareForStepRunResult, error) {
 }
