@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/toolprovider"
 	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/envman/v2/envman"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
@@ -259,7 +261,12 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		targetWorkflow.Title = r.config.Workflow
 	}
 
+	// App level environment
+	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
+
 	// Envman setup
+	r.applyEnvVarLimitOverrides(environments)
+
 	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.EnvstorePathEnvKey, err)
 	}
@@ -271,9 +278,6 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	if err := tools.EnvmanInit(configs.OutputEnvstorePath, false); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to run envman init: %w", err)
 	}
-
-	// App level environment
-	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
 	if err := os.Setenv("BITRISE_TRIGGERED_WORKFLOW_ID", r.config.Workflow); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set BITRISE_TRIGGERED_WORKFLOW_ID env: %w", err)
@@ -365,6 +369,45 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	}
 
 	return buildRunResults, nil
+}
+
+// applyEnvVarLimitOverrides promotes an env size limit configured through a
+// build env (inventory secret or app env) into the process environment, where
+// envman reads it before the first `envman add`. This is the only point a build
+// can raise the limit from: a script step cannot, because the list-size check
+// runs while preparing that step's own environment, so a build already oversized
+// on its first step could never lift the limit from inside the run.
+//
+// Precedence is process env < secret < app env; an invalid value is skipped so
+// it falls back to whatever envman would otherwise use.
+func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) {
+	values := map[string]string{
+		envman.EnvBytesLimitInKBEnvKey:     os.Getenv(envman.EnvBytesLimitInKBEnvKey),
+		envman.EnvListBytesLimitInKBEnvKey: os.Getenv(envman.EnvListBytesLimitInKBEnvKey),
+	}
+
+	for _, env := range environments {
+		key, value, err := env.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+		if _, ok := values[key]; ok && value != "" {
+			values[key] = value
+		}
+	}
+
+	for key, value := range values {
+		if value == "" {
+			continue
+		}
+		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
+			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
+			continue
+		}
+		if err := os.Setenv(key, value); err != nil {
+			r.logger.Warnf("Failed to set %s: %s", key, err)
+		}
+	}
 }
 
 func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
