@@ -19,7 +19,7 @@ func TestAppBitriseYML(t *testing.T) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
 	})
 
-	content, err := New(srv.URL, "my-token").AppBitriseYML(context.Background(), "app-slug")
+	content, err := mustClient(t, srv.URL, "my-token").AppBitriseYML(context.Background(), "app-slug")
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/app-slug/bitrise.yml", gotPath)
 	assert.Equal(t, "token my-token", gotAuth)
@@ -34,7 +34,7 @@ func TestBuildBitriseYML(t *testing.T) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
 	})
 
-	_, err := New(srv.URL, "t").BuildBitriseYML(context.Background(), "app-slug", "build-slug")
+	_, err := mustClient(t, srv.URL, "t").BuildBitriseYML(context.Background(), "app-slug", "build-slug")
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/app-slug/builds/build-slug/bitrise.yml", gotPath)
 }
@@ -50,7 +50,7 @@ func TestUpdateAppBitriseYML(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	err := New(srv.URL, "t").UpdateAppBitriseYML(context.Background(), "app-slug", map[string]any{"format_version": "13"})
+	err := mustClient(t, srv.URL, "t").UpdateAppBitriseYML(context.Background(), "app-slug", map[string]any{"format_version": "13"})
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/app-slug/bitrise.yml", gotPath)
 	assert.Equal(t, http.MethodPost, gotMethod)
@@ -64,7 +64,7 @@ func TestUpdateAppBitriseYML_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"app not found"}`))
 	})
 
-	err := New(srv.URL, "t").UpdateAppBitriseYML(context.Background(), "app-slug", map[string]any{})
+	err := mustClient(t, srv.URL, "t").UpdateAppBitriseYML(context.Background(), "app-slug", map[string]any{})
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "expected *APIError, got %T", err)
@@ -78,7 +78,7 @@ func TestValidateBitriseYML_NoAppSlug(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
 
-	resp, err := New(srv.URL, "t").ValidateBitriseYML(context.Background(), "format_version: \"13\"\n", "")
+	resp, err := mustClient(t, srv.URL, "t").ValidateBitriseYML(context.Background(), "format_version: \"13\"\n", "")
 	require.NoError(t, err)
 	assert.Empty(t, gotQuery)
 	assert.Empty(t, resp.Errors)
@@ -94,7 +94,7 @@ func TestValidateBitriseYML_WithAppSlug(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":["missing format_version"],"warnings":["deprecated step used"]}`))
 	})
 
-	resp, err := New(srv.URL, "t").ValidateBitriseYML(context.Background(), "workflows: {}\n", "app-slug")
+	resp, err := mustClient(t, srv.URL, "t").ValidateBitriseYML(context.Background(), "workflows: {}\n", "app-slug")
 	require.NoError(t, err)
 	assert.Equal(t, "app_slug=app-slug", gotQuery)
 	assert.JSONEq(t, `{"bitrise_yml":"workflows: {}\n"}`, gotBody)
@@ -108,7 +108,7 @@ func TestValidateBitriseYML_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"could not parse YAML"}`))
 	})
 
-	_, err := New(srv.URL, "t").ValidateBitriseYML(context.Background(), "not: valid: yaml:", "")
+	_, err := mustClient(t, srv.URL, "t").ValidateBitriseYML(context.Background(), "not: valid: yaml:", "")
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "expected *APIError, got %T", err)

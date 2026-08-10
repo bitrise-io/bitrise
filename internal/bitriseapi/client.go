@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
 	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
 )
 
@@ -32,16 +33,23 @@ func WithHTTPClient(hc *http.Client) Option {
 	return func(c *Client) { c.httpClient = hc }
 }
 
-func New(baseURL, token string, opts ...Option) *Client {
+// New validates baseURL (via internal/baseurl: https, loopback exempted —
+// this client sends a bearer token on every request) before constructing a
+// Client against it.
+func New(rawBaseURL, token string, opts ...Option) (*Client, error) {
+	u, err := baseurl.Validate("API base URL", rawBaseURL)
+	if err != nil {
+		return nil, err
+	}
 	c := &Client{
-		baseURL:    baseURL,
+		baseURL:    u.String(),
 		token:      token,
 		httpClient: &http.Client{Timeout: defaultTimeout},
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
-	return c
+	return c, nil
 }
 
 // APIError represents an error response from the Bitrise API. Body is only

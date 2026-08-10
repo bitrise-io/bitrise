@@ -21,7 +21,7 @@ func NewGetCommand() *cobra.Command {
 Valid keys: %s`,
 			strings.Join(internalconfig.Keys, ", "),
 		),
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
 

@@ -58,6 +58,11 @@ Bitrise (OAuth) and stores a managed, auto-refreshing token. The modes:
          bitrise auth login --email alice@example.com
          printf '%s' "$PW" | bitrise auth login --email alice@example.com --password-stdin
 
+     The target is web_base_url (default app.bitrise.io), overridable via
+     $BITRISE_WEB_BASE_URL or 'bitrise config set web_base_url' — never by a
+     per-directory .bitrise-cli.yml, so a repo you merely clone can't
+     silently redirect where your password is sent.
+
 The resulting token is written to $XDG_CONFIG_HOME/bitrise/cli/auth.yaml with
 0600 permissions and is never echoed (use 'auth status' to verify, 'auth
 logout' to clear).`,

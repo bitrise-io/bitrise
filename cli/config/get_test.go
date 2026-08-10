@@ -52,3 +52,14 @@ func TestGetCmd_RequiresExactlyOneArg(t *testing.T) {
 	cmd.SetErr(&bytes.Buffer{})
 	assert.Error(t, cmd.Execute())
 }
+
+func TestGetCmd_ExecuteRejectsUnknownKeyBeforeRunE(t *testing.T) {
+	cmd := NewGetCommand()
+	cmd.SetArgs([]string{"nope"})
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `invalid argument "nope"`)
+}

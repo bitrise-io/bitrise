@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/spf13/cobra"
 
@@ -10,24 +11,25 @@ import (
 	"github.com/bitrise-io/bitrise/v2/output"
 )
 
-// configList is the JSON/YAML shape of `config list`.
+// configList is the JSON/YAML shape of `config list`. Neither URL field is
+// omitempty: this command's job is to enumerate every recognized key's
+// state, so an unset key must still appear (as "") rather than vanish from
+// the JSON/YAML output while still showing as "(unset)" in raw mode.
 type configList struct {
-	APIBaseURL string `json:"api_base_url,omitempty" yaml:"api_base_url,omitempty"`
-	WebBaseURL string `json:"web_base_url,omitempty" yaml:"web_base_url,omitempty"`
+	APIBaseURL string `json:"api_base_url" yaml:"api_base_url"`
+	WebBaseURL string `json:"web_base_url" yaml:"web_base_url"`
 	Path       string `json:"path" yaml:"path"`
 }
 
 // NewListCommand returns the `config list` subcommand.
 func NewListCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "List the values currently saved in the global config file",
+		Use:   "list",
+		Short: "List the values currently saved in the global config file",
 		Long: `List the values currently saved in the global config file.
 
-This does not show the BITRISE_WEB_BASE_URL environment override, or values
-set only in a per-dir .bitrise-cli.yml — those apply at runtime but aren't
-reflected here.`,
+This does not show the BITRISE_WEB_BASE_URL environment override, which
+takes precedence over it at runtime.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -48,7 +50,7 @@ reflected here.`,
 			v := configList{APIBaseURL: cfg.APIBaseURL, WebBaseURL: cfg.WebBaseURL, Path: p}
 
 			if output.Format == output.FormatRaw {
-				return printListHuman(cmd, v)
+				return printListHuman(cmd.OutOrStdout(), v)
 			}
 			return output.Print(v, output.Format)
 		},
@@ -58,8 +60,7 @@ reflected here.`,
 	return cmd
 }
 
-func printListHuman(cmd *cobra.Command, v configList) error {
-	w := cmd.OutOrStdout()
+func printListHuman(w io.Writer, v configList) error {
 	_, err := fmt.Fprintf(w, "Path: %s\n\n%s: %s\n%s: %s\n",
 		v.Path,
 		internalconfig.KeyAPIBaseURL, unsetLabel(v.APIBaseURL),

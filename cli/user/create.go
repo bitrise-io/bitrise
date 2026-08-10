@@ -62,7 +62,13 @@ Password input:
 Email verification:
   After signup the server emails a verification link. Click it before running
   'bitrise auth login --email <addr>' — sign-in is blocked on unverified
-  accounts.`,
+  accounts.
+
+Target host:
+  The signup request goes to web_base_url (default app.bitrise.io),
+  overridable via $BITRISE_WEB_BASE_URL or 'bitrise config set web_base_url'
+  — never by a per-directory .bitrise-cli.yml, so a repo you merely clone
+  can't silently redirect where your password is sent.`,
 		Example: `  bitrise user create --email alice@example.com --username alice --first-name Alice --last-name L
   printf '%s' "$NEW_PASSWORD" | bitrise user create \
       --email alice@example.com --username alice --first-name Alice --last-name L --password-stdin --format json`,

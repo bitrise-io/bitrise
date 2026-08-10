@@ -12,6 +12,9 @@ import (
 //  3. Global config file (~/.config/bitrise/cli/config.yml)
 //  4. Zero value
 //
+// APIBaseURL/WebBaseURL are the exception: they skip the per-directory layer
+// (see below) — everything else follows the order above.
+//
 // Resolved embeds Config (rather than being an identical, separately-typed
 // copy of its fields) so a new field only needs adding once — but it stays a
 // distinct type on purpose: Save takes a Config, and a Resolved carries
@@ -34,16 +37,25 @@ const DefaultWebBaseURL = "https://app.bitrise.io"
 // caller converts configs.ConfigModel into a Config for legacyCfg, keeping
 // this package independent of configs. dirCfg / legacyCfg are zero values
 // when their respective files were not found.
+//
+// APIBaseURL/WebBaseURL deliberately never consult dirCfg: both carry
+// credentials (a bearer token, a login password) to whatever host they name,
+// and .bitrise-cli.yml is read from the current directory and every
+// ancestor with no confirmation — a repo a user merely clones and runs
+// `bitrise` inside of could otherwise silently redirect either one to an
+// attacker-controlled host. The global file and the legacy file are both
+// user-owned (home directory), not repo-owned, so they don't have this
+// problem.
 func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 	return Resolved{Config: Config{
 		SetupVersion:           FirstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
 		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
-		// These fields are always empty in legacy (configs.ConfigModel predates
+		// legacy is always empty for these two (configs.ConfigModel predates
 		// the cloud API and has no such field), so this is effectively
-		// dir > global > default.
-		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, dirCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
-		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, dirCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
+		// global > default — no dirCfg, see the doc comment above.
+		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
+		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
 	}}
 }
 

@@ -17,7 +17,7 @@ func TestMe(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":{"username":"alice","email":"alice@example.com","avatar_url":"https://example.com/a.png"}}`))
 	})
 
-	user, err := New(srv.URL, "my-token").Me(context.Background())
+	user, err := mustClient(t, srv.URL, "my-token").Me(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "/me", gotPath)
 	assert.Equal(t, "token my-token", gotAuth)
@@ -30,7 +30,7 @@ func TestMe_APIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 	})
 
-	_, err := New(srv.URL, "bad-token").Me(context.Background())
+	_, err := mustClient(t, srv.URL, "bad-token").Me(context.Background())
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok)

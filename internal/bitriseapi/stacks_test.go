@@ -17,7 +17,7 @@ func TestAvailableStacks_GlobalPath(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := New(srv.URL, "my-token").AvailableStacks(context.Background(), "")
+	_, err := mustClient(t, srv.URL, "my-token").AvailableStacks(context.Background(), "")
 	require.NoError(t, err)
 	assert.Equal(t, "/available-stacks", gotPath)
 	assert.Equal(t, "token my-token", gotAuth)
@@ -30,7 +30,7 @@ func TestAvailableStacks_OrgScopedPath(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := New(srv.URL, "t").AvailableStacks(context.Background(), "my-workspace")
+	_, err := mustClient(t, srv.URL, "t").AvailableStacks(context.Background(), "my-workspace")
 	require.NoError(t, err)
 	assert.Equal(t, "/organizations/my-workspace/available-stacks", gotPath)
 }
@@ -52,7 +52,7 @@ func TestAvailableStacks_EscapesOrgSlug(t *testing.T) {
 				_, _ = w.Write([]byte(`{}`))
 			})
 
-			_, err := New(srv.URL, "t").AvailableStacks(context.Background(), slug)
+			_, err := mustClient(t, srv.URL, "t").AvailableStacks(context.Background(), slug)
 			require.NoError(t, err)
 			assert.Equal(t, wantURI, gotURI)
 		})
@@ -66,7 +66,7 @@ func TestAvailableStacks_ParsesResponse(t *testing.T) {
 		}`))
 	})
 
-	stacks, err := New(srv.URL, "t").AvailableStacks(context.Background(), "")
+	stacks, err := mustClient(t, srv.URL, "t").AvailableStacks(context.Background(), "")
 	require.NoError(t, err)
 	require.Len(t, stacks, 1)
 	got := stacks["linux-docker-android"]
@@ -83,7 +83,7 @@ func TestAvailableStacks_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"forbidden"}`))
 	})
 
-	_, err := New(srv.URL, "t").AvailableStacks(context.Background(), "")
+	_, err := mustClient(t, srv.URL, "t").AvailableStacks(context.Background(), "")
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "expected *APIError, got %T", err)

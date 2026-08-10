@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
+
+	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
 )
 
 const (
@@ -64,10 +65,11 @@ func unknownKeyErr(key string) error {
 	return fmt.Errorf("unknown config key %q (valid keys: %s)", key, strings.Join(Keys, ", "))
 }
 
+// validateURL rejects a value that the actual consumer
+// (webclient.New/bitriseapi.New, both backed by internal/baseurl) would
+// reject or, worse for api_base_url, silently send the bearer token over
+// plaintext http.
 func validateURL(key, value string) error {
-	u, err := url.Parse(value)
-	if err != nil || !u.IsAbs() || u.Host == "" {
-		return fmt.Errorf("%s %q must be an absolute URL", key, value)
-	}
-	return nil
+	_, err := baseurl.Validate(key, value)
+	return err
 }

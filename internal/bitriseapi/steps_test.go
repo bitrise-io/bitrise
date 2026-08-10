@@ -19,7 +19,7 @@ func TestSearchSteps_PassesAuthHeaderAndQuery(t *testing.T) {
 		_, _ = w.Write([]byte(`[]`))
 	})
 
-	_, err := New(srv.URL, "my-token").SearchSteps(context.Background(), StepSearchOptions{
+	_, err := mustClient(t, srv.URL, "my-token").SearchSteps(context.Background(), StepSearchOptions{
 		Query:       "clone",
 		Categories:  []string{"utility"},
 		Maintainers: []string{"bitrise"},
@@ -37,7 +37,7 @@ func TestSearchSteps_ParsesResponse(t *testing.T) {
 		_, _ = w.Write([]byte(`[{"id":"1","step_ref":"git-clone@8.3.1","title":"Git Clone","maintainer":"bitrise","is_deprecated":false}]`))
 	})
 
-	steps, err := New(srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{Query: "clone"})
+	steps, err := mustClient(t, srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{Query: "clone"})
 	require.NoError(t, err)
 	require.Len(t, steps, 1)
 	assert.Equal(t, "git-clone@8.3.1", steps[0].StepRef)
@@ -51,7 +51,7 @@ func TestSearchSteps_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 	})
 
-	_, err := New(srv.URL, "bad-token").SearchSteps(context.Background(), StepSearchOptions{})
+	_, err := mustClient(t, srv.URL, "bad-token").SearchSteps(context.Background(), StepSearchOptions{})
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "expected *APIError, got %T", err)
@@ -67,7 +67,7 @@ func TestStepInputs_PassesStepRef(t *testing.T) {
 		_, _ = w.Write([]byte(`[]`))
 	})
 
-	_, err := New(srv.URL, "t").StepInputs(context.Background(), "git-clone@8.3.1")
+	_, err := mustClient(t, srv.URL, "t").StepInputs(context.Background(), "git-clone@8.3.1")
 	require.NoError(t, err)
 	assert.Equal(t, "/step-inputs", gotPath)
 	assert.Equal(t, "git-clone@8.3.1", gotStepRef)
@@ -78,7 +78,7 @@ func TestStepInputs_ParsesResponse(t *testing.T) {
 		_, _ = w.Write([]byte(`[{"name":"branch","default_value":"main","is_required":true}]`))
 	})
 
-	inputs, err := New(srv.URL, "t").StepInputs(context.Background(), "git-clone@8.3.1")
+	inputs, err := mustClient(t, srv.URL, "t").StepInputs(context.Background(), "git-clone@8.3.1")
 	require.NoError(t, err)
 	require.Len(t, inputs, 1)
 	assert.Equal(t, "branch", inputs[0].Name)
@@ -92,7 +92,7 @@ func TestStepInputs_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"error":"step not found"}`))
 	})
 
-	_, err := New(srv.URL, "t").StepInputs(context.Background(), "does-not-exist@1.0.0")
+	_, err := mustClient(t, srv.URL, "t").StepInputs(context.Background(), "does-not-exist@1.0.0")
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok)

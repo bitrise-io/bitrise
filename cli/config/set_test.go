@@ -13,12 +13,10 @@ import (
 func TestSetCmd_SavesValue(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
-	cmd, _ := newTestCmd(t, NewSetCommand())
-	var errOut bytes.Buffer
-	cmd.SetErr(&errOut)
+	cmd, out := newTestCmd(t, NewSetCommand())
 	require.NoError(t, cmd.RunE(cmd, []string{internalconfig.KeyAPIBaseURL, "https://api.example.com"}))
 
-	assert.Equal(t, "Saved api_base_url\n", errOut.String())
+	assert.Equal(t, "Saved api_base_url\n", out.String())
 
 	cfg, err := internalconfig.Load()
 	require.NoError(t, err)
@@ -71,4 +69,29 @@ func TestSetCmd_RequiresExactlyTwoArgs(t *testing.T) {
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	assert.Error(t, cmd.Execute())
+}
+
+func TestSetCmd_ExecuteRejectsUnknownKeyBeforeRunE(t *testing.T) {
+	cmd := NewSetCommand()
+	cmd.SetArgs([]string{"nope", "value"})
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+
+	err := cmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `invalid argument "nope"`)
+}
+
+func TestSetCmd_ExecuteAllowsArbitraryValueArg(t *testing.T) {
+	// The VALUE positional must NOT be checked against ValidArgs (only KEY
+	// is) — cobra.OnlyValidArgs alone would wrongly reject any value that
+	// isn't itself a recognized key.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	cmd := NewSetCommand()
+	cmd.SetArgs([]string{internalconfig.KeyAPIBaseURL, "https://api.example.com"})
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+
+	require.NoError(t, cmd.Execute())
 }

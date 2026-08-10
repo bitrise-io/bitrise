@@ -22,7 +22,7 @@ func TestDo_GetFieldsBecomeQuery(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method: http.MethodGet,
 		Path:   "/apps",
 		Fields: []KeyValue{{Key: "sort_by", Value: "last_build_at"}},
@@ -40,7 +40,7 @@ func TestDo_NonGetFieldsBecomeJSONBodyWithDefaultContentType(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method: http.MethodPost,
 		Path:   "/apps",
 		Fields: []KeyValue{{Key: "title", Value: "My App"}},
@@ -57,7 +57,7 @@ func TestDo_CallerContentTypeWins(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:  http.MethodPost,
 		Path:    "/apps",
 		Fields:  []KeyValue{{Key: "title", Value: "My App"}},
@@ -75,7 +75,7 @@ func TestDo_BodyPassthrough(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method: http.MethodPost,
 		Path:   "/apps",
 		Body:   strings.NewReader(`{"raw":"body"}`),
@@ -91,7 +91,7 @@ func TestDo_InputBodyGetsDefaultContentType(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method: http.MethodPost,
 		Path:   "/apps",
 		Body:   strings.NewReader(`{"nested":{"a":1}}`),
@@ -101,7 +101,7 @@ func TestDo_InputBodyGetsDefaultContentType(t *testing.T) {
 }
 
 func TestDo_PaginateRejectedOnNonGet(t *testing.T) {
-	_, err := NewService(bitriseapi.New("http://unused.invalid", "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, "https://unused.invalid")).Do(context.Background(), Request{
 		Method:   http.MethodPost,
 		Path:     "/apps",
 		Paginate: true,
@@ -111,7 +111,7 @@ func TestDo_PaginateRejectedOnNonGet(t *testing.T) {
 }
 
 func TestDo_PaginateRejectedWithInputBody(t *testing.T) {
-	_, err := NewService(bitriseapi.New("http://unused.invalid", "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, "https://unused.invalid")).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Body:     strings.NewReader(`{"raw":"body"}`),
@@ -132,7 +132,7 @@ func TestDo_PaginateMergesPages(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[1,2],"paging":{"next":"cursor2"}}`))
 	})
 
-	resp, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	resp, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Paginate: true,
@@ -148,7 +148,7 @@ func TestDo_PaginateNoOpOnNonListResponse(t *testing.T) {
 		_, _ = w.Write([]byte(`{"foo":"bar"}`))
 	})
 
-	resp, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	resp, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/me",
 		Paginate: true,
@@ -170,7 +170,7 @@ func TestDo_PaginateStopsOnErrorPage(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"boom"}`))
 	})
 
-	resp, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	resp, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Paginate: true,
@@ -186,7 +186,7 @@ func TestDo_PaginateEmptyListStaysAnArray(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[],"paging":{"next":""}}`))
 	})
 
-	resp, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	resp, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Paginate: true,
@@ -206,7 +206,7 @@ func TestDo_PaginateKeepsFieldsAcrossPages(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[1],"paging":{"next":"cursor2"}}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Fields:   []KeyValue{{Key: "sort_by", Value: "last_build_at"}},
@@ -230,7 +230,7 @@ func TestDo_PaginateReportsLastPageHeaders(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[1],"paging":{"next":"cursor2"}}`))
 	})
 
-	resp, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	resp, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Paginate: true,
@@ -249,7 +249,7 @@ func TestDo_PaginateStopsOnRepeatedCursor(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[1],"paging":{"next":"stuck"}}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Do(context.Background(), Request{
+	_, err := NewService(mustClient(t, srv.URL)).Do(context.Background(), Request{
 		Method:   http.MethodGet,
 		Path:     "/apps",
 		Paginate: true,
@@ -264,4 +264,11 @@ func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+func mustClient(t *testing.T, baseURL string) *bitriseapi.Client {
+	t.Helper()
+	c, err := bitriseapi.New(baseURL, "t")
+	require.NoError(t, err)
+	return c
 }

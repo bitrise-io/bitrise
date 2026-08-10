@@ -11,14 +11,19 @@ import (
 )
 
 func TestNew_DefaultHTTPClientTimeout(t *testing.T) {
-	c := New("http://example.invalid", "t")
+	c := mustClient(t, "https://example.invalid", "t")
 	assert.Equal(t, defaultTimeout, c.httpClient.Timeout)
 }
 
 func TestWithHTTPClient_Overrides(t *testing.T) {
 	custom := &http.Client{}
-	c := New("http://example.invalid", "t", WithHTTPClient(custom))
+	c := mustClient(t, "https://example.invalid", "t", WithHTTPClient(custom))
 	assert.Same(t, custom, c.httpClient)
+}
+
+func TestNew_RejectsPlainHTTP(t *testing.T) {
+	_, err := New("http://example.invalid", "t")
+	assert.ErrorContains(t, err, "must use https")
 }
 
 func TestAPIError_NonJSONBody(t *testing.T) {
@@ -27,7 +32,7 @@ func TestAPIError_NonJSONBody(t *testing.T) {
 		_, _ = w.Write([]byte("upstream exploded"))
 	})
 
-	_, err := New(srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{})
+	_, err := mustClient(t, srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{})
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "expected *APIError, got %T", err)
@@ -50,7 +55,7 @@ func TestAPIError_AlternativeJSONFields(t *testing.T) {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				_, _ = w.Write([]byte(tc.body))
 			})
-			_, err := New(srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{})
+			_, err := mustClient(t, srv.URL, "t").SearchSteps(context.Background(), StepSearchOptions{})
 			apiErr, ok := err.(*APIError)
 			require.True(t, ok)
 			assert.Equal(t, tc.want, apiErr.Message)
@@ -64,7 +69,7 @@ func TestAPIError_RequestInfo(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 	})
 
-	_, err := New(srv.URL, "bad-token").SearchSteps(context.Background(), StepSearchOptions{Query: "clone"})
+	_, err := mustClient(t, srv.URL, "bad-token").SearchSteps(context.Background(), StepSearchOptions{Query: "clone"})
 	require.Error(t, err)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok)
@@ -78,4 +83,14 @@ func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+// mustClient builds a Client and fails the test immediately on a validation
+// error — every other test here is about behavior past construction, not
+// New's own validation (covered by TestNew_RejectsPlainHTTP).
+func mustClient(t *testing.T, baseURL, token string, opts ...Option) *Client {
+	t.Helper()
+	c, err := New(baseURL, token, opts...)
+	require.NoError(t, err)
+	return c
 }

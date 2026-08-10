@@ -50,3 +50,19 @@ func TestConfig_Set_WebBaseURL(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "https://app.example.com", c.WebBaseURL, "invalid Set must not mutate c")
 }
+
+func TestConfig_Set_RejectsPlainHTTP(t *testing.T) {
+	for _, key := range Keys {
+		var c Config
+		err := c.Set(key, "http://api.example.com")
+		require.Error(t, err, key)
+		assert.ErrorContains(t, err, `must use https (got "http")`)
+	}
+}
+
+func TestConfig_Set_AllowsPlainHTTPForLoopback(t *testing.T) {
+	for _, host := range []string{"http://localhost:1234", "http://127.0.0.1:1234", "http://[::1]:1234"} {
+		var c Config
+		require.NoError(t, c.Set(KeyAPIBaseURL, host), host)
+	}
+}
