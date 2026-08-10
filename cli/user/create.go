@@ -92,7 +92,7 @@ Email verification:
 				return fmt.Errorf("password is empty")
 			}
 
-			wc, err := webclient.New(cmdutil.ResolveWebBaseURL())
+			wc, err := webclient.New(cmdutil.ResolveWebBaseURL(cmd))
 			if err != nil {
 				return err
 			}

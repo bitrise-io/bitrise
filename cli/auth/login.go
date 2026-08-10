@@ -137,7 +137,7 @@ func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
 	if pw == "" {
 		return fmt.Errorf("password is empty")
 	}
-	wc, err := webclient.New(cmdutil.ResolveWebBaseURL())
+	wc, err := webclient.New(cmdutil.ResolveWebBaseURL(cmd))
 	if err != nil {
 		return err
 	}

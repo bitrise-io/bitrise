@@ -26,6 +26,10 @@ type Resolved struct {
 // layer sets api_base_url.
 const DefaultAPIBaseURL = "https://api.bitrise.io/v0.1"
 
+// DefaultWebBaseURL is the production Bitrise website base URL, used when no
+// layer sets web_base_url.
+const DefaultWebBaseURL = "https://app.bitrise.io"
+
 // Resolve merges the legacy, per-directory, and global config layers. The
 // caller converts configs.ConfigModel into a Config for legacyCfg, keeping
 // this package independent of configs. dirCfg / legacyCfg are zero values
@@ -35,10 +39,11 @@ func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 		SetupVersion:           FirstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
 		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
-		// legacyCfg.APIBaseURL is always empty (configs.ConfigModel predates
+		// These fields are always empty in legacy (configs.ConfigModel predates
 		// the cloud API and has no such field), so this is effectively
 		// dir > global > default.
 		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, dirCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
+		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, dirCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
 	}}
 }
 
