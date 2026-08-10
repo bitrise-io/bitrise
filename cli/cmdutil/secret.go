@@ -4,30 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"golang.org/x/term"
 )
-
-// terminalFd reports whether stream is an *os.File backed by a TTY. fd is
-// only meaningful when isTerminal is true.
-func terminalFd(stream any) (fd int, isTerminal bool) {
-	f, ok := stream.(*os.File)
-	if !ok {
-		return 0, false
-	}
-	fd = int(f.Fd()) // file descriptors are small ints, no overflow risk
-	return fd, term.IsTerminal(fd)
-}
-
-// IsTerminal reports whether r is an interactive terminal. Pipes and buffers
-// never are, so callers can pick an interactive default (e.g. browser login)
-// while keeping non-interactive stdin (CI, pipes) working.
-func IsTerminal(r io.Reader) bool {
-	_, ok := terminalFd(r)
-	return ok
-}
 
 // ReadTokenInput reads a token from in, trimming all surrounding whitespace
 // (tokens are forgiving of shell copy/paste artifacts). When fromStdin is
