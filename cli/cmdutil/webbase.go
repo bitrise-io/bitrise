@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/spf13/cobra"
 )
 
 // EnvWebBaseURL overrides the web base URL — rarely changed, mostly for
@@ -11,10 +12,17 @@ import (
 // directly.
 const EnvWebBaseURL = "BITRISE_WEB_BASE_URL"
 
-const defaultWebBaseURL = "https://app.bitrise.io"
-
-// ResolveWebBaseURL returns the resolved web base URL, overridable via
-// BITRISE_WEB_BASE_URL.
-func ResolveWebBaseURL() string {
-	return config.FirstNonEmptyString(os.Getenv(EnvWebBaseURL), defaultWebBaseURL)
+// ResolveWebBaseURL returns the resolved web base URL: BITRISE_WEB_BASE_URL,
+// then the web_base_url set via `bitrise config set`/a per-dir
+// .bitrise-cli.yml, then the built-in default.
+func ResolveWebBaseURL(cmd *cobra.Command) string {
+	if v := os.Getenv(EnvWebBaseURL); v != "" {
+		return v
+	}
+	if ctx := cmd.Context(); ctx != nil {
+		if v := config.FromContext(ctx).WebBaseURL; v != "" {
+			return v
+		}
+	}
+	return config.DefaultWebBaseURL
 }
