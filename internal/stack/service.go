@@ -11,19 +11,19 @@ import (
 // Stack is the CLI representation of a Bitrise stack. Field names are
 // normalized to snake_case from the wire format's hyphenated keys.
 type Stack struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	OS          string `json:"os"`
-	OSVersion   int    `json:"os_version,omitempty"`
-	Status      string `json:"status"`
-	Description string `json:"description,omitempty"`
-	StackReport string `json:"stack_report,omitempty"`
-	RemovalDate string `json:"removal_date,omitempty"`
+	ID          string `json:"id" yaml:"id"`
+	Title       string `json:"title" yaml:"title"`
+	OS          string `json:"os" yaml:"os"`
+	OSVersion   int    `json:"os_version,omitempty" yaml:"os_version,omitempty"`
+	Status      string `json:"status" yaml:"status"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+	StackReport string `json:"stack_report,omitempty" yaml:"stack_report,omitempty"`
+	RemovalDate string `json:"removal_date,omitempty" yaml:"removal_date,omitempty"`
 }
 
 // StacksResult holds all available stacks.
 type StacksResult struct {
-	Items []Stack `json:"items"`
+	Items []Stack `json:"items" yaml:"items"`
 }
 
 // Service exposes stack operations to the cmd layer.

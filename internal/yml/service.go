@@ -14,9 +14,9 @@ import (
 
 // GetResult holds the retrieved bitrise.yml content.
 type GetResult struct {
-	AppSlug   string `json:"app_id"`
-	BuildSlug string `json:"build_id,omitempty"`
-	Content   string `json:"content"`
+	AppSlug   string `json:"app_id" yaml:"app_id"`
+	BuildSlug string `json:"build_id,omitempty" yaml:"build_id,omitempty"`
+	Content   string `json:"content" yaml:"content"`
 }
 
 // ValidateResult holds the outcome of an online bitrise.yml validation.

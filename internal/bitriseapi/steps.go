@@ -8,29 +8,29 @@ import (
 )
 
 type StepResponse struct {
-	ID                  string                    `json:"id"`
-	StepRef             string                    `json:"step_ref"`
-	Title               string                    `json:"title"`
-	Summary             string                    `json:"summary,omitempty"`
-	Description         string                    `json:"description,omitempty"`
-	Version             string                    `json:"version,omitempty"`
-	LatestVersionNumber string                    `json:"latest_version_number,omitempty"`
-	Maintainer          string                    `json:"maintainer,omitempty"`
-	IsDeprecated        bool                      `json:"is_deprecated,omitempty"`
-	IsLatest            bool                      `json:"is_latest,omitempty"`
-	Inputs              []StepInputOutputResponse `json:"inputs,omitempty"`
-	Outputs             []StepInputOutputResponse `json:"outputs,omitempty"`
+	ID                  string                    `json:"id" yaml:"id"`
+	StepRef             string                    `json:"step_ref" yaml:"step_ref"`
+	Title               string                    `json:"title" yaml:"title"`
+	Summary             string                    `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description         string                    `json:"description,omitempty" yaml:"description,omitempty"`
+	Version             string                    `json:"version,omitempty" yaml:"version,omitempty"`
+	LatestVersionNumber string                    `json:"latest_version_number,omitempty" yaml:"latest_version_number,omitempty"`
+	Maintainer          string                    `json:"maintainer,omitempty" yaml:"maintainer,omitempty"`
+	IsDeprecated        bool                      `json:"is_deprecated,omitempty" yaml:"is_deprecated,omitempty"`
+	IsLatest            bool                      `json:"is_latest,omitempty" yaml:"is_latest,omitempty"`
+	Inputs              []StepInputOutputResponse `json:"inputs,omitempty" yaml:"inputs,omitempty"`
+	Outputs             []StepInputOutputResponse `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 }
 
 type StepInputOutputResponse struct {
-	Name         string   `json:"name,omitempty"`
-	Title        string   `json:"title,omitempty"`
-	Summary      string   `json:"summary,omitempty"`
-	Description  string   `json:"description,omitempty"`
-	DefaultValue string   `json:"default_value,omitempty"`
-	IsRequired   bool     `json:"is_required,omitempty"`
-	IsSensitive  bool     `json:"is_sensitive,omitempty"`
-	ValueOptions []string `json:"value_options,omitempty"`
+	Name         string   `json:"name,omitempty" yaml:"name,omitempty"`
+	Title        string   `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string   `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string   `json:"description,omitempty" yaml:"description,omitempty"`
+	DefaultValue string   `json:"default_value,omitempty" yaml:"default_value,omitempty"`
+	IsRequired   bool     `json:"is_required,omitempty" yaml:"is_required,omitempty"`
+	IsSensitive  bool     `json:"is_sensitive,omitempty" yaml:"is_sensitive,omitempty"`
+	ValueOptions []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
 }
 
 type StepSearchOptions struct {
