@@ -19,7 +19,7 @@ func TestGet_App(t *testing.T) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Get(context.Background(), "app-slug", "")
+	result, err := NewService(newAPIClient(t, srv.URL)).Get(context.Background(), "app-slug", "")
 	require.NoError(t, err)
 	assert.Equal(t, "app-slug", result.AppSlug)
 	assert.Empty(t, result.BuildSlug)
@@ -32,7 +32,7 @@ func TestGet_Build(t *testing.T) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Get(context.Background(), "app-slug", "build-slug")
+	result, err := NewService(newAPIClient(t, srv.URL)).Get(context.Background(), "app-slug", "build-slug")
 	require.NoError(t, err)
 	assert.Equal(t, "build-slug", result.BuildSlug)
 }
@@ -43,7 +43,7 @@ func TestGet_AppNotFound(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Get(context.Background(), "app-slug", "")
+	_, err := NewService(newAPIClient(t, srv.URL)).Get(context.Background(), "app-slug", "")
 	require.EqualError(t, err, `app "app-slug" not found`)
 }
 
@@ -53,7 +53,7 @@ func TestGet_BuildNotFound(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Get(context.Background(), "app-slug", "build-slug")
+	_, err := NewService(newAPIClient(t, srv.URL)).Get(context.Background(), "app-slug", "build-slug")
 	require.EqualError(t, err, `build "build-slug" not found`)
 }
 
@@ -63,7 +63,7 @@ func TestGet_PropagatesOtherErrors(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"unauthorized"}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Get(context.Background(), "app-slug", "")
+	_, err := NewService(newAPIClient(t, srv.URL)).Get(context.Background(), "app-slug", "")
 	require.Error(t, err)
 	apiErr, ok := err.(*bitriseapi.APIError)
 	require.True(t, ok, "expected *bitriseapi.APIError, got %T", err)
@@ -79,13 +79,13 @@ func TestUpdate_ParsesAndSendsYAML(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	err := NewService(bitriseapi.New(srv.URL, "t")).Update(context.Background(), "app-slug", "format_version: \"13\"\n")
+	err := NewService(newAPIClient(t, srv.URL)).Update(context.Background(), "app-slug", "format_version: \"13\"\n")
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"app_config_datastore_yaml":{"format_version":"13"}}`, gotBody)
 }
 
 func TestUpdate_InvalidYAML(t *testing.T) {
-	err := NewService(bitriseapi.New("http://unused.test", "t")).Update(context.Background(), "app-slug", "not: valid: yaml:")
+	err := NewService(newAPIClient(t, "https://unused.test")).Update(context.Background(), "app-slug", "not: valid: yaml:")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parse bitrise.yml")
 }
@@ -96,7 +96,7 @@ func TestUpdate_AppNotFound(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})
 
-	err := NewService(bitriseapi.New(srv.URL, "t")).Update(context.Background(), "app-slug", "format_version: \"13\"\n")
+	err := NewService(newAPIClient(t, srv.URL)).Update(context.Background(), "app-slug", "format_version: \"13\"\n")
 	require.EqualError(t, err, `app "app-slug" not found`)
 }
 
@@ -105,7 +105,7 @@ func TestValidate_Valid(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "")
+	result, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "format_version: \"13\"\n", "")
 	require.NoError(t, err)
 	assert.True(t, result.Valid)
 	assert.Equal(t, []string{}, result.Errors)
@@ -117,7 +117,7 @@ func TestValidate_OmittedSlicesAreNormalized(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "")
+	result, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "format_version: \"13\"\n", "")
 	require.NoError(t, err)
 	assert.True(t, result.Valid)
 	assert.Equal(t, []string{}, result.Errors)
@@ -129,7 +129,7 @@ func TestValidate_WithWarnings(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":["deprecated step used"]}`))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "app-slug")
+	result, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "format_version: \"13\"\n", "app-slug")
 	require.NoError(t, err)
 	assert.True(t, result.Valid)
 	assert.Equal(t, []string{"deprecated step used"}, result.Warnings)
@@ -141,7 +141,7 @@ func TestValidate_422TreatedAsInvalid(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"could not parse YAML"}`))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "not: valid: yaml:", "")
+	result, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "not: valid: yaml:", "")
 	require.NoError(t, err)
 	assert.False(t, result.Valid)
 	assert.Equal(t, []string{"could not parse YAML"}, result.Errors)
@@ -157,7 +157,7 @@ func TestValidate_422WithUnrecognizedBodyStillExplainsWhy(t *testing.T) {
 		_, _ = w.Write([]byte(`<html>Bad Request</html>`))
 	})
 
-	result, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "not: valid: yaml:", "")
+	result, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "not: valid: yaml:", "")
 	require.NoError(t, err)
 	assert.False(t, result.Valid)
 	require.Len(t, result.Errors, 1)
@@ -174,7 +174,7 @@ func TestValidate_PropagatesOtherErrors(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"upstream exploded"}`))
 	})
 
-	_, err := NewService(bitriseapi.New(srv.URL, "t")).Validate(context.Background(), "format_version: \"13\"\n", "")
+	_, err := NewService(newAPIClient(t, srv.URL)).Validate(context.Background(), "format_version: \"13\"\n", "")
 	require.Error(t, err)
 	apiErr, ok := err.(*bitriseapi.APIError)
 	require.True(t, ok, "expected *bitriseapi.APIError, got %T", err)
@@ -186,4 +186,11 @@ func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+func newAPIClient(t *testing.T, baseURL string) *bitriseapi.Client {
+	t.Helper()
+	c, err := bitriseapi.New(baseURL, "t")
+	require.NoError(t, err)
+	return c
 }

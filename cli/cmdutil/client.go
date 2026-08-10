@@ -20,7 +20,7 @@ func NewAPIClient(cmd *cobra.Command) (*bitriseapi.Client, error) {
 		return nil, err
 	}
 	r := config.FromContext(cmd.Context())
-	return bitriseapi.New(r.APIBaseURL, tok), nil
+	return bitriseapi.New(r.APIBaseURL, tok)
 }
 
 // ResolveToken returns the configured token and whether it came from the
