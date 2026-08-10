@@ -12,9 +12,9 @@ import (
 
 // configList is the JSON/YAML shape of `config list`.
 type configList struct {
-	APIBaseURL string `json:"api_base_url,omitempty"`
-	WebBaseURL string `json:"web_base_url,omitempty"`
-	Path       string `json:"path"`
+	APIBaseURL string `json:"api_base_url,omitempty" yaml:"api_base_url,omitempty"`
+	WebBaseURL string `json:"web_base_url,omitempty" yaml:"web_base_url,omitempty"`
+	Path       string `json:"path" yaml:"path"`
 }
 
 // NewListCommand returns the `config list` subcommand.
