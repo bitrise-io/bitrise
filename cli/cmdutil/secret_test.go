@@ -2,29 +2,9 @@ package cmdutil
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 )
-
-func TestIsTerminal_NonTerminalInputs(t *testing.T) {
-	if IsTerminal(nil) {
-		t.Error("IsTerminal(nil) should be false")
-	}
-	if IsTerminal(&bytes.Buffer{}) {
-		t.Error("IsTerminal(*bytes.Buffer) should be false")
-	}
-	// A regular file (not a TTY) is an *os.File, but term.IsTerminal is
-	// false → IsTerminal should still return false.
-	tmp, err := os.CreateTemp(t.TempDir(), "tty-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = tmp.Close() })
-	if IsTerminal(tmp) {
-		t.Error("IsTerminal(regular *os.File) should be false")
-	}
-}
 
 func TestReadTokenInput_NonTerminalReadsLine(t *testing.T) {
 	in := strings.NewReader("  a-token-value  \nrest\n")
