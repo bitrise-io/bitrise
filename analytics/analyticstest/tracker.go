@@ -27,7 +27,7 @@ func (NoOpTracker) SendWorkflowFinished(extanalytics.Properties, bool)          
 func (NoOpTracker) SendCommandInfo(string, string, []string)                            {}
 func (NoOpTracker) SendToolSetupEvent(string, provider.ToolRequest, provider.ToolInstallResult, bool, time.Duration) {
 }
-func (NoOpTracker) SendStepActivationEvent(activator.ActivationType, string, bool, time.Duration, bool) {
+func (NoOpTracker) SendStepActivationEvent(string, activator.ActivationType, activator.ActivationInventorySource, string, bool, time.Duration, bool) {
 }
 func (NoOpTracker) SendToolkitPrepareEvent(string, string, string, string, toolkits.PrepareForStepRunResult, error) {
 }
