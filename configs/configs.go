@@ -233,6 +233,16 @@ func SetAppID(appID string) error {
 	})
 }
 
+// SetAppID persists appID as the default app for cloud commands (e.g. `bitrise
+// app create`), so later commands can resolve it without --app/BITRISE_APP_ID.
+// Unlike SetupVersion/LastCLIUpdateCheck/LastPluginUpdateChecks, app_id has no
+// ~/.bitrise/config.json counterpart, so it never touches the legacy file.
+func SetAppID(appID string) error {
+	return saveGlobalConfig(func(c *internalconfig.Config) {
+		c.AppID = appID
+	})
+}
+
 func (m ConfigModel) ToConfig() internalconfig.Config {
 	return internalconfig.Config{
 		SetupVersion:           m.SetupVersion,
