@@ -11,14 +11,16 @@ import (
 	"github.com/bitrise-io/bitrise/v2/output"
 )
 
-// configList is the JSON/YAML shape of `config list`. Neither URL field is
-// omitempty: this command's job is to enumerate every recognized key's
-// state, so an unset key must still appear (as "") rather than vanish from
-// the JSON/YAML output while still showing as "(unset)" in raw mode.
+// configList is the JSON/YAML shape of `config list`. No field is omitempty:
+// this command's job is to enumerate every recognized key's state, so an
+// unset key must still appear (as "") rather than vanish from the JSON/YAML
+// output while still showing as "(unset)" in raw mode.
 type configList struct {
-	APIBaseURL string `json:"api_base_url" yaml:"api_base_url"`
-	WebBaseURL string `json:"web_base_url" yaml:"web_base_url"`
-	Path       string `json:"path" yaml:"path"`
+	APIBaseURL         string `json:"api_base_url" yaml:"api_base_url"`
+	WebBaseURL         string `json:"web_base_url" yaml:"web_base_url"`
+	AppID              string `json:"app_id" yaml:"app_id"`
+	DefaultWorkspaceID string `json:"default_workspace_id" yaml:"default_workspace_id"`
+	Path               string `json:"path" yaml:"path"`
 }
 
 // NewListCommand returns the `config list` subcommand.
@@ -28,8 +30,9 @@ func NewListCommand() *cobra.Command {
 		Short: "List the values currently saved in the global config file",
 		Long: `List the values currently saved in the global config file.
 
-This does not show the BITRISE_WEB_BASE_URL environment override, which
-takes precedence over it at runtime.`,
+This shows what is stored, not what every command will resolve: the
+BITRISE_WEB_BASE_URL and BITRISE_APP_ID environment variables, and an app_id
+pinned by a per-directory .bitrise-cli.yml, all take precedence at runtime.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -47,7 +50,7 @@ takes precedence over it at runtime.`,
 			if err != nil {
 				return err
 			}
-			v := configList{APIBaseURL: cfg.APIBaseURL, WebBaseURL: cfg.WebBaseURL, Path: p}
+			v := configList{APIBaseURL: cfg.APIBaseURL, WebBaseURL: cfg.WebBaseURL, AppID: cfg.AppID, DefaultWorkspaceID: cfg.DefaultWorkspaceID, Path: p}
 
 			if output.Format == output.FormatRaw {
 				return printListHuman(cmd.OutOrStdout(), v)
@@ -61,10 +64,12 @@ takes precedence over it at runtime.`,
 }
 
 func printListHuman(w io.Writer, v configList) error {
-	_, err := fmt.Fprintf(w, "Path: %s\n\n%s: %s\n%s: %s\n",
+	_, err := fmt.Fprintf(w, "Path: %s\n\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n",
 		v.Path,
 		internalconfig.KeyAPIBaseURL, unsetLabel(v.APIBaseURL),
 		internalconfig.KeyWebBaseURL, unsetLabel(v.WebBaseURL),
+		internalconfig.KeyAppID, unsetLabel(v.AppID),
+		internalconfig.KeyDefaultWorkspaceID, unsetLabel(v.DefaultWorkspaceID),
 	)
 	return err
 }

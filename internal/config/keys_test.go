@@ -52,12 +52,27 @@ func TestConfig_Set_WebBaseURL(t *testing.T) {
 }
 
 func TestConfig_Set_RejectsPlainHTTP(t *testing.T) {
-	for _, key := range Keys {
+	for _, key := range []string{KeyAPIBaseURL, KeyWebBaseURL} {
 		var c Config
 		err := c.Set(key, "http://api.example.com")
 		require.Error(t, err, key)
 		assert.ErrorContains(t, err, `must use https (got "http")`)
 	}
+}
+
+func TestConfig_SetGetUnset_AppID(t *testing.T) {
+	var c Config
+
+	// not a URL — no scheme validation applies to this key
+	require.NoError(t, c.Set(KeyAppID, "my-app-slug"))
+	assert.Equal(t, "my-app-slug", c.AppID)
+
+	v, err := c.Get(KeyAppID)
+	require.NoError(t, err)
+	assert.Equal(t, "my-app-slug", v)
+
+	require.NoError(t, c.Unset(KeyAppID))
+	assert.Equal(t, "", c.AppID)
 }
 
 func TestConfig_Set_AllowsPlainHTTPForLoopback(t *testing.T) {

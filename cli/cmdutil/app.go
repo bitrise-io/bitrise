@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
 // FlagApp is the app slug a command acts on.
@@ -29,13 +31,23 @@ func AddAppFlag(fs *pflag.FlagSet, help string) {
 }
 
 // ResolveAppSlug returns the app slug from --app, falling back to
-// BITRISE_APP_ID. There is no config-file fallback yet — add one when a
-// command needs it.
+// BITRISE_APP_ID, then the app_id set by `bitrise app create` or
+// `bitrise config set app_id`.
 func ResolveAppSlug(cmd *cobra.Command) (string, error) {
 	if slug := LookupAppSlug(cmd); slug != "" {
 		return slug, nil
 	}
 	return "", AppSlugRequiredErr()
+}
+
+// ResolveAppSlugArg is ResolveAppSlug for commands that also accept the app
+// slug as a positional argument (e.g. `app view [APP_ID]`), which takes
+// precedence over --app/BITRISE_APP_ID/config when given.
+func ResolveAppSlugArg(cmd *cobra.Command, args []string) (string, error) {
+	if len(args) > 0 && args[0] != "" {
+		return args[0], nil
+	}
+	return ResolveAppSlug(cmd)
 }
 
 // LookupAppSlug resolves the app slug the same way as ResolveAppSlug but
@@ -45,7 +57,10 @@ func LookupAppSlug(cmd *cobra.Command) string {
 	if v, _ := cmd.Flags().GetString(FlagApp); v != "" {
 		return v
 	}
-	return os.Getenv(EnvAppID)
+	if v := os.Getenv(EnvAppID); v != "" {
+		return v
+	}
+	return config.FromContext(cmd.Context()).AppID
 }
 
 // AppSlugRequiredErr returns the standard missing-app-slug error.

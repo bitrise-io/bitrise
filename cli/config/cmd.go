@@ -20,21 +20,28 @@ func NewCmd() *cobra.Command {
 Storage:
   Global file: ~/.config/bitrise/cli/config.yml
                (honors $XDG_CONFIG_HOME instead of ~/.config)
-
-Precedence, highest to lowest: global file > built-in default.
-web_base_url is additionally overridable via $%s, which takes precedence
-over the global file.
+  Per-dir:     .bitrise-cli.yml in the current directory or any ancestor
 
 Recognized keys: %s
 
-These two keys deliberately ignore the per-directory .bitrise-cli.yml file
-(unlike every other setting) and the legacy ~/.bitrise/config.json — both
-carry credentials to whatever host they name, and a repo you merely clone
+api_base_url and web_base_url resolve as: global file > built-in default.
+web_base_url is additionally overridable via $%s, which
+wins over both. They deliberately ignore the per-directory .bitrise-cli.yml
+— each names a host that receives credentials, and a repo you merely clone
 and run 'bitrise' inside of must not be able to silently redirect them.
-'get'/'set'/'unset'/'list' only read and write the global file.
+
+app_id resolves as: --app flag > $BITRISE_APP_ID > per-directory file >
+global file. default_workspace_id resolves the same way, via --workspace and
+$BITRISE_WORKSPACE_ID. Both honor the per-directory file precisely so a repo
+can pin which app and workspace its checkout belongs to; they're identifiers,
+not credentials. 'bitrise app create' writes app_id to the global file, and
+falls back to default_workspace_id when --workspace is omitted.
+
+'get'/'set'/'unset'/'list' only read and write the global file — per-dir
+files must be edited by hand.
 
 To manage your access token, use 'bitrise auth login/logout/status'.`,
-			cmdutil.EnvWebBaseURL, strings.Join(internalconfig.Keys, ", "),
+			strings.Join(internalconfig.Keys, ", "), cmdutil.EnvWebBaseURL,
 		),
 		RunE: cmdutil.RequireKnownSubcommand,
 	}

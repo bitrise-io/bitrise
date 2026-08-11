@@ -175,6 +175,34 @@ func TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureFailsSave(t *testin
 	require.Equal(t, false, exists)
 }
 
+// TestSetAppID_SavesToGlobalConfig asserts app_id is written to the new
+// global config.yml and never touches the legacy file, since it has no
+// counterpart there.
+func TestSetAppID_SavesToGlobalConfig(t *testing.T) {
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	require.Equal(t, nil, err)
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+	t.Setenv("HOME", fakeHomePth)
+	t.Setenv("XDG_CONFIG_HOME", "")
+	t.Chdir(t.TempDir())
+
+	require.Equal(t, nil, SetAppID("app-slug"))
+
+	globalCfg, err := internalconfig.Load()
+	require.Equal(t, nil, err)
+	require.Equal(t, "app-slug", globalCfg.AppID)
+
+	_, exists, err := LoadLegacyConfig()
+	require.Equal(t, nil, err)
+	require.Equal(t, false, exists)
+
+	resolved, err := ResolveConfig()
+	require.Equal(t, nil, err)
+	require.Equal(t, "app-slug", resolved.AppID)
+}
+
 // TestCheckIsSetupWasDoneForVersion_FallsBackToPerDirConfig asserts a value
 // living only in the per-directory .bitrise-cli.yml (no legacy, no global
 // file) is still observed on read.
