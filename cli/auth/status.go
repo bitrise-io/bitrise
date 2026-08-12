@@ -14,12 +14,12 @@ import (
 
 // authStatus is the JSON/YML shape of `bitrise auth status`.
 type authStatus struct {
-	HasToken  bool   `json:"has_token"`
-	TokenType string `json:"token_type,omitempty"`
-	Source    string `json:"source"`
+	HasToken  bool   `json:"has_token" yaml:"has_token"`
+	TokenType string `json:"token_type,omitempty" yaml:"token_type,omitempty"`
+	Source    string `json:"source" yaml:"source"`
 	// TokenExpiry is set (RFC 3339) only for OAuth-managed tokens.
-	TokenExpiry string `json:"token_expiry,omitempty"`
-	Path        string `json:"path"`
+	TokenExpiry string `json:"token_expiry,omitempty" yaml:"token_expiry,omitempty"`
+	Path        string `json:"path" yaml:"path"`
 }
 
 func NewStatusCommand() *cobra.Command {

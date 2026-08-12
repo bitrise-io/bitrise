@@ -14,12 +14,12 @@ import (
 
 // VersionOutputModel ...
 type VersionOutputModel struct {
-	Version       string `json:"version"`
-	FormatVersion string `json:"format_version"`
-	OS            string `json:"os"`
-	GO            string `json:"go"`
-	BuildNumber   string `json:"build_number"`
-	Commit        string `json:"commit"`
+	Version       string `json:"version" yaml:"version"`
+	FormatVersion string `json:"format_version" yaml:"format_version"`
+	OS            string `json:"os" yaml:"os"`
+	GO            string `json:"go" yaml:"go"`
+	BuildNumber   string `json:"build_number" yaml:"build_number"`
+	Commit        string `json:"commit" yaml:"commit"`
 }
 
 var versionCommand = &cobra.Command{
