@@ -13,8 +13,9 @@ import (
 const EnvWebBaseURL = "BITRISE_WEB_BASE_URL"
 
 // ResolveWebBaseURL returns the resolved web base URL: BITRISE_WEB_BASE_URL,
-// then the web_base_url set via `bitrise config set`/a per-dir
-// .bitrise-cli.yml, then the built-in default.
+// then the web_base_url set via `bitrise config set` (global config file only
+// — never a per-dir .bitrise-cli.yml, see internal/config.Resolve), then the
+// built-in default.
 func ResolveWebBaseURL(cmd *cobra.Command) string {
 	if v := os.Getenv(EnvWebBaseURL); v != "" {
 		return v
