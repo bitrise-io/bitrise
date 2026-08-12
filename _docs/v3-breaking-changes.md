@@ -70,7 +70,8 @@ default**. A non-bool env value is now an error.
 
 The commands were regrouped by use case under `local`, `yml`, and `step` parent
 commands. The old top-level names continue to work as hidden aliases, so existing
-scripts keep running — only `trigger-check` was removed outright.
+scripts keep running: `trigger-check` was the only command removed outright, and
+`validate` the only one whose behavior changed.
 
 ### `trigger-check` removed
 
@@ -106,36 +107,18 @@ scripts keep running — only `trigger-check` was removed outright.
   *Migrate:* no action required for existing scripts. New usage and documentation
   should prefer the grouped paths.
 
-## Cloud resource-management commands
+### `yml validate` updated
 
-New commands were added under `auth`, `stack`, `user`, and `yml`, plus new
-subcommands under `step`, to manage cloud-side resources without leaving the CLI.
-
-### `auth`
-
-- **`bitrise auth login`, `logout`, and `status` are new.** Authenticate with a
-  personal access token, OAuth (browser flow), or email/password. Credentials
-  are stored at `~/.config/bitrise/cli/auth.yaml`.
-
-### `stack`
-
-- **`bitrise stack list` is new.** Lists the build stacks available to your
-  account/workspace.
-
-### `yml`
-
-- **`bitrise yml get` and `update` are new.** Read/write the bitrise.yml stored
-  on Bitrise for a given app (`--app`, or set `BITRISE_APP_ID`).
 - **`validate` now validates online when you're authenticated, instead of locally.**
-  When an access token resolves (from `bitrise auth login` or `$BITRISE_TOKEN`), the
-  config is submitted to Bitrise and the local schema check is skipped entirely — the
-  API runs the same schema checks plus app-specific ones. With no token, or when the
-  online attempt can't be completed (network, 5xx, timeout), validation falls back to
-  the local check and reports the reason as a warning. Because the old top-level
-  `bitrise validate` is an alias of this command, existing invocations change behavior
-  as soon as a token is present — including picking up any difference between the
-  server's messages and the local ones. When validation happens online the command
-  says so on stderr and names the escape hatch, and the result gains a `source`
+  When an access token resolves (from the new `bitrise auth login` command or
+  `$BITRISE_TOKEN`), the config is submitted to Bitrise and the local schema check is
+  skipped entirely — the API runs the same schema checks plus app-specific ones. With
+  no token, or when the online attempt can't be completed (network, 5xx, timeout),
+  validation falls back to the local check and reports the reason as a warning. Because
+  the old top-level `bitrise validate` is an alias of this command, existing invocations
+  change behavior as soon as a token is present — including picking up any difference
+  between the server's messages and the local ones. When validation happens online the
+  command says so on stderr and names the escape hatch, and the result gains a `source`
   field under `--format json`; a local result carries no marker and its output on
   stdout is unchanged from v2. Two flags control it, and they cannot be combined:
   the new `--offline` forces the local-only check, and the optional `--app` (or
@@ -143,22 +126,6 @@ subcommands under `step`, to manage cloud-side resources without leaving the CLI
   pools).
   *Migrate:* pass `--offline` anywhere you depend on local validation or on its exact
   output — in particular scripts and tests that assert on validation messages.
-
-### `step`
-
-- **`bitrise step search` and `inputs` are new.** Search the steplib and
-  inspect a step's declared inputs.
-
-### `user`
-
-- **`bitrise user create` and `me` are new.** `create` registers a new Bitrise
-  account by email and password; `me` shows the profile of the currently
-  authenticated user.
-
-All of these require a Bitrise access token (`bitrise auth login`, or
-`$BITRISE_TOKEN`) — except `user create`, which registers the account you then log
-into. *Migrate:* no action required for the new commands, since they are additive.
-The one existing command whose behavior changed is `validate`, covered above.
 
 ## Config handling
 
