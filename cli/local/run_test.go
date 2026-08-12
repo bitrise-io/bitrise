@@ -2003,6 +2003,9 @@ workflows:
 }
 
 func TestInvalidStepID(t *testing.T) {
+	// StepmanUpdates is only recorded by the git-based steplib activation path, the API path never updates a local steplib.
+	t.Setenv("BITRISE_STEPLIB_API_ENABLE", "false")
+
 	configStr := `
 format_version: 1.3.0
 default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
