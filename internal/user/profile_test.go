@@ -20,7 +20,7 @@ func TestProfileService_Me(t *testing.T) {
 		}
 		_, _ = w.Write([]byte(`{"data":{"username":"alice","email":"alice@example.com","avatar_url":"https://example.com/a.png"}}`))
 	})
-	client := bitriseapi.New(srv.URL, "t")
+	client := newAPIClient(t, srv.URL)
 
 	profile, err := NewProfileService(client).Me(context.Background())
 	require.NoError(t, err)
@@ -45,4 +45,11 @@ func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+func newAPIClient(t *testing.T, baseURL string) *bitriseapi.Client {
+	t.Helper()
+	c, err := bitriseapi.New(baseURL, "t")
+	require.NoError(t, err)
+	return c
 }

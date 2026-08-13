@@ -20,7 +20,7 @@ func TestList_SortsByIDAndNormalizesFields(t *testing.T) {
 			"a-stack": {"id":"a-stack","title":"A","os":"osx","status":"edge"}
 		}`))
 	})
-	client := bitriseapi.New(srv.URL, "t")
+	client := newAPIClient(t, srv.URL)
 
 	result, err := NewService(client).List(context.Background(), "")
 	require.NoError(t, err)
@@ -35,7 +35,7 @@ func TestList_FallsBackToMapKeyWhenInfoIDEmpty(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"linux-docker-android": {"title":"Linux Android","os":"linux","status":"stable"}}`))
 	})
-	client := bitriseapi.New(srv.URL, "t")
+	client := newAPIClient(t, srv.URL)
 
 	result, err := NewService(client).List(context.Background(), "")
 	require.NoError(t, err)
@@ -49,7 +49,7 @@ func TestList_PassesWorkspaceSlugAsOrgScopedPath(t *testing.T) {
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte(`{}`))
 	})
-	client := bitriseapi.New(srv.URL, "t")
+	client := newAPIClient(t, srv.URL)
 
 	_, err := NewService(client).List(context.Background(), "my-workspace")
 	require.NoError(t, err)
@@ -86,7 +86,7 @@ func TestList_PropagatesAPIError(t *testing.T) {
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 	})
-	client := bitriseapi.New(srv.URL, "t")
+	client := newAPIClient(t, srv.URL)
 
 	_, err := NewService(client).List(context.Background(), "")
 	require.Error(t, err)
@@ -100,4 +100,11 @@ func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+func newAPIClient(t *testing.T, baseURL string) *bitriseapi.Client {
+	t.Helper()
+	c, err := bitriseapi.New(baseURL, "t")
+	require.NoError(t, err)
+	return c
 }

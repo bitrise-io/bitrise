@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -20,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
 	"github.com/bitrise-io/bitrise/v2/version"
 )
 
@@ -161,28 +161,14 @@ func (c *Client) url(path string) (string, error) {
 }
 
 // normalizeBaseURL rejects a relative URL or a plaintext http:// URL against
-// a non-loopback host (this flow sends a password), and trims a trailing
-// slash so concatenating a leading-slash path in url() can't produce "//".
-// Loopback is allowed over http so tests can point at an httptest server.
+// a non-loopback host (this flow sends a password — see internal/baseurl),
+// and trims a trailing slash so concatenating a leading-slash path in url()
+// can't produce "//".
 func normalizeBaseURL(raw string) (string, error) {
-	u, err := url.Parse(raw)
+	u, err := baseurl.Validate("base URL", raw)
 	if err != nil {
-		return "", fmt.Errorf("parse base URL %q: %w", raw, err)
-	}
-	if !u.IsAbs() || u.Host == "" {
-		return "", fmt.Errorf("base URL %q must be an absolute URL", raw)
-	}
-	if u.Scheme != "https" && !isLoopbackHost(u.Hostname()) {
-		return "", fmt.Errorf("base URL %q must use https (got %q)", raw, u.Scheme)
+		return "", err
 	}
 	u.Path = strings.TrimSuffix(u.Path, "/")
 	return u.String(), nil
-}
-
-func isLoopbackHost(host string) bool {
-	if host == "localhost" {
-		return true
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && ip.IsLoopback()
 }
