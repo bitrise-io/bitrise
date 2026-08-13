@@ -47,6 +47,8 @@ func TestViewCmd_FlagFallback(t *testing.T) {
 }
 
 func TestViewCmd_RequiresAppSlug(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppIDLegacy, "")
+
 	cmd, _ := newTestViewCmd(t, "https://unused.test")
 	err := runView(cmd, nil, false, unusedBrowser(t))
 	require.EqualError(t, err, "--app is required")

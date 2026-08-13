@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"al.essio.dev/pkg/shellescape"
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
@@ -76,7 +77,8 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 
 			var res internalapp.AppsResult
 			if fetchAll {
-				var allItems []internalapp.App
+				allItems := []internalapp.App{}
+				seenCursors := map[string]bool{}
 				cur := ""
 				for {
 					page, pageErr := svc.List(cmd.Context(), makeOpts(cur))
@@ -87,6 +89,10 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 					if page.NextCursor == "" {
 						break
 					}
+					if seenCursors[page.NextCursor] {
+						return fmt.Errorf("pagination stalled: the API returned the cursor %q twice", page.NextCursor)
+					}
+					seenCursors[page.NextCursor] = true
 					cur = page.NextCursor
 				}
 				res = internalapp.AppsResult{Items: allItems}
@@ -130,10 +136,10 @@ func nextPageCmd(cmd *cobra.Command) func(nextCursor string) string {
 		parts := []string{"bitrise app list"}
 		for _, name := range []string{"title", "project-type", "sort-by", "limit"} {
 			if f := cmd.Flags().Lookup(name); f != nil && f.Changed {
-				parts = append(parts, "--"+name, f.Value.String())
+				parts = append(parts, "--"+name, shellescape.Quote(f.Value.String()))
 			}
 		}
-		parts = append(parts, "--cursor", nextCursor)
+		parts = append(parts, "--cursor", shellescape.Quote(nextCursor))
 		return strings.Join(parts, " ")
 	}
 }

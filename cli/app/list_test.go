@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 func TestListCmd_PrintsTable(t *testing.T) {
@@ -51,6 +53,18 @@ func TestListCmd_PrintsNextPageHint(t *testing.T) {
 	assert.Contains(t, out.String(), "bitrise app list --title my --cursor page-2")
 }
 
+func TestListCmd_NextPageHintQuotesValuesWithSpaces(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[{"slug":"my-app","title":"My App","provider":"github","owner":{}}],"paging":{"next":"page-2"}}`))
+	})
+
+	cmd, out := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("title", "My App"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Contains(t, out.String(), "bitrise app list --title 'My App' --cursor page-2")
+}
+
 func TestListCmd_AllFetchesEveryPage(t *testing.T) {
 	pages := 0
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +84,38 @@ func TestListCmd_AllFetchesEveryPage(t *testing.T) {
 	assert.Contains(t, out.String(), "First")
 	assert.Contains(t, out.String(), "Second")
 	assert.NotContains(t, out.String(), "More results available")
+}
+
+func TestListCmd_AllStopsOnRepeatedCursor(t *testing.T) {
+	requests := 0
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		requests++
+		_, _ = w.Write([]byte(`{"data":[{"slug":"app-1","title":"First","provider":"github","owner":{}}],"paging":{"next":"page-2"}}`))
+	})
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("all", "true"))
+
+	err := cmd.RunE(cmd, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `pagination stalled: the API returned the cursor "page-2" twice`)
+	assert.Equal(t, 2, requests, "must stop on the second repeat, not loop forever")
+}
+
+func TestListCmd_AllEmptyResultEmitsEmptyArray(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	var logBuf strings.Builder
+	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("all", "true"))
+	require.NoError(t, cmd.Flags().Set("format", "json"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Contains(t, logBuf.String(), `"items":[]`, "an empty --all result must match the single-page path's non-nil items array")
 }
 
 func TestListCmd_RejectsAllWithCursor(t *testing.T) {

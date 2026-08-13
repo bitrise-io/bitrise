@@ -20,9 +20,14 @@ func NewListCommand() *cobra.Command {
 		Short: "List available stacks and their machine configurations",
 		Long: `List all available stacks with their OS, status, and version information.
 
-When --workspace is provided, returns stacks available for that workspace,
-including any custom stacks configured for it.
-Without --workspace, returns globally available stacks.`,
+Workspace, highest to lowest:
+  --workspace WORKSPACE_ID
+  $BITRISE_WORKSPACE_ID (injected inside a Bitrise build)
+  the default_workspace_id config key ('bitrise config set')
+
+When a workspace resolves, returns stacks available for that workspace,
+including any custom stacks configured for it. Otherwise returns globally
+available stacks.`,
 		Example: `  bitrise stack list
   bitrise stack list --workspace my-workspace-id
   bitrise stack list --format json`,
@@ -35,12 +40,23 @@ Without --workspace, returns globally available stacks.`,
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
+			resolvedWorkspace := workspaceSlug
+			if resolvedWorkspace == "" {
+				resolvedWorkspace = cmdutil.DefaultWorkspaceSlug(cmd)
+				// Flagged so a build step doesn't silently switch from the
+				// global stack list to a workspace-scoped one without the
+				// user noticing.
+				if resolvedWorkspace != "" && output.Format == output.FormatRaw {
+					fmt.Fprintf(cmd.ErrOrStderr(), "Using default workspace: %s\n", resolvedWorkspace)
+				}
+			}
+
 			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
 				return err
 			}
 
-			result, err := internalstack.NewService(client).List(cmd.Context(), workspaceSlug)
+			result, err := internalstack.NewService(client).List(cmd.Context(), resolvedWorkspace)
 			if err != nil {
 				return fmt.Errorf("listing stacks failed: %w", err)
 			}
@@ -52,7 +68,7 @@ Without --workspace, returns globally available stacks.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&workspaceSlug, "workspace", "", "workspace ID for workspace-specific stacks (including custom stacks)")
+	cmd.Flags().StringVar(&workspaceSlug, cmdutil.FlagWorkspace, "", "workspace ID for workspace-specific stacks (including custom stacks), or set BITRISE_WORKSPACE_ID / default_workspace_id")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
 	return cmd

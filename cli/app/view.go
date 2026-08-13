@@ -21,8 +21,9 @@ func NewViewCommand() *cobra.Command {
 		Short: "Show details of a single app",
 		Long: `Show details for a single app identified by its ID.
 
-APP_ID falls back to --app, then BITRISE_APP_ID, then the app_id saved by
-'bitrise app create', when omitted.`,
+APP_ID falls back to --app, then $BITRISE_APP_ID, then $BITRISE_APP_SLUG
+(injected inside a Bitrise build), then the app_id saved by 'bitrise app
+create' or 'bitrise config set app_id', when omitted.`,
 		Example: `  bitrise app view stub-app-aaa
   bitrise app view stub-app-aaa --format json
   bitrise app view stub-app-aaa --web

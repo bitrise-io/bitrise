@@ -37,3 +37,13 @@ func TestResolveWebBaseURL_EmptyResolvedContextFallsBackToDefault(t *testing.T) 
 
 	assert.Equal(t, config.DefaultWebBaseURL, ResolveWebBaseURL(cmd))
 }
+
+func TestResolveWebBaseURL_TrimsTrailingSlash(t *testing.T) {
+	t.Setenv(EnvWebBaseURL, "https://env.example/")
+	cmd := &cobra.Command{}
+	assert.Equal(t, "https://env.example", ResolveWebBaseURL(cmd), "callers concatenate a path onto the result and must not get a double slash")
+
+	t.Setenv(EnvWebBaseURL, "")
+	cmd.SetContext(config.WithResolved(t.Context(), config.Resolved{Config: config.Config{WebBaseURL: "https://ctx.example/"}}))
+	assert.Equal(t, "https://ctx.example", ResolveWebBaseURL(cmd))
+}

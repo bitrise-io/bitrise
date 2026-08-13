@@ -40,11 +40,11 @@ func NewCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Register a new app on Bitrise",
-		Long: `Register a new app on Bitrise.
+		Long: fmt.Sprintf(`Register a new app on Bitrise.
 
 Auto-detection from the current git repo:
   --repo-url     git remote get-url origin
-  --branch       git symbolic-ref --short HEAD (else "master")
+  --branch       git symbolic-ref --short HEAD (else %q)
   --title        last path segment of the repo URL (".git" stripped)
 
 Workspace, highest to lowest:
@@ -63,7 +63,7 @@ bitrise.yml handling:
 
 The new app's ID is saved as the default app_id in
 ~/.config/bitrise/cli/config.yml, so later commands (e.g. 'bitrise yml get')
-target it without --app.`,
+target it without --app.`, internalapp.DefaultBranchFallback),
 		Example: `  bitrise app create
   bitrise app create --repo-url https://github.com/me/proj --workspace acme
   bitrise app create --bitrise-yml ./ci/bitrise.yml --stack osx-xcode-16.0.x
@@ -75,7 +75,7 @@ target it without --app.`,
 	}
 
 	cmd.Flags().StringVar(&flags.repoURL, "repo-url", "", "git repo URL (default: 'git remote get-url origin' in cwd)")
-	cmd.Flags().StringVar(&flags.branch, "branch", "", "default branch (default: 'git symbolic-ref --short HEAD', else 'master')")
+	cmd.Flags().StringVar(&flags.branch, "branch", "", fmt.Sprintf("default branch (default: 'git symbolic-ref --short HEAD', else %q)", internalapp.DefaultBranchFallback))
 	cmd.Flags().StringVar(&flags.title, "title", "", "app title (default: last path segment of repo URL)")
 	cmd.Flags().StringVar(&flags.provider, "provider", "auto", "git provider: auto, github, gitlab, bitbucket, custom")
 	cmd.Flags().StringVar(&flags.workspace, cmdutil.FlagWorkspace, "", "workspace ID to own the app (or set BITRISE_WORKSPACE_ID / default_workspace_id; auto-detected if you have exactly one)")
@@ -176,14 +176,22 @@ func runCreate(cmd *cobra.Command, detector internalapp.GitDetector, flags creat
 		return err
 	}
 
-	if err := persistAppSlug(stderr, res.Slug); err != nil {
+	// Print before persisting: the app is already created server-side at this
+	// point, so a failure to save app_id locally (read-only config dir, lock
+	// timeout) must not swallow the slug and build trigger token the user
+	// needs to recover manually.
+	if output.Format == output.FormatRaw {
+		if err := printCreateText(cmd.OutOrStdout(), res); err != nil {
+			return err
+		}
+	} else if err := output.Print(res, output.Format); err != nil {
 		return err
 	}
 
-	if output.Format == output.FormatRaw {
-		return printCreateText(cmd.OutOrStdout(), res)
+	if err := persistAppSlug(stderr, res.Slug); err != nil {
+		fmt.Fprintf(stderr, "Warning: failed to save app_id: %v\n", err)
 	}
-	return output.Print(res, output.Format)
+	return nil
 }
 
 // resolveRepoURL returns the explicit flag value or the cwd's git origin.
@@ -276,7 +284,7 @@ func printCreateText(w io.Writer, r internalapp.CreateResult) error {
 	// Masked like 'auth status' does, so the token doesn't land in a shell
 	// scrollback or CI log by default; --format json still carries the value.
 	if r.BuildTriggerToken != "" {
-		fmt.Fprintln(&b, "Build trigger token: ******** (set, use --format json to read it)")
+		fmt.Fprintln(&b, "Build trigger token: ******** (set, use --format json or yml to read it)")
 	}
 	_, err := io.WriteString(w, b.String())
 	return err

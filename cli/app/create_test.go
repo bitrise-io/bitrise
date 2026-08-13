@@ -53,6 +53,35 @@ func TestCreateCmd_HappyPath_PersistsAppID(t *testing.T) {
 	assert.Equal(t, "new-app", globalCfg.AppID)
 }
 
+func TestCreateCmd_PrintsResultEvenWhenPersistAppIDFails(t *testing.T) {
+	api := newStubAPI(t)
+	api.handle("/apps/register", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"slug":"new-app"}`)
+	})
+	api.handle("/apps/new-app/finish", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"build_trigger_token":"btt","branch_name":"main"}`)
+	})
+
+	cmd, out, errOut := newTestCreateCmd(t, api.baseURL)
+	// internalconfig.Save renames a temp file onto this path; making it an
+	// existing directory forces that rename to fail regardless of the
+	// process's privileges (unlike a read-only permission bit, which root
+	// ignores), without touching auth.yaml alongside it.
+	cfgPath, err := config.Path()
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(cfgPath, 0o700))
+
+	runErr := runCreate(cmd, noCallDetector{t: t}, createFlags{
+		repoURL:   "https://github.com/acme/widget.git",
+		branch:    "main",
+		workspace: "acme",
+	})
+	require.NoError(t, runErr, "the app was already created remotely; a local save failure must not turn into a command error")
+
+	assert.Contains(t, out.String(), "Created app new-app", "the result must still print despite the save failure")
+	assert.Contains(t, errOut.String(), "Warning: failed to save app_id")
+}
+
 func TestCreateCmd_DetectsRepoURLAndBranchFromGit(t *testing.T) {
 	api := newStubAPI(t)
 	api.handle("/apps/register", func(w http.ResponseWriter, _ *http.Request) {
@@ -148,6 +177,7 @@ func TestCreateCmd_WarnsWhenPerDirConfigOverridesAppID(t *testing.T) {
 }
 
 func TestCreateCmd_PropagatesAutoDetectWorkspaceError(t *testing.T) {
+	t.Setenv(cmdutil.EnvWorkspaceID, "")
 	api := newStubAPI(t)
 	api.handle("/organizations", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = io.WriteString(w, `{"data":[]}`)
