@@ -1,0 +1,75 @@
+package config
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
+)
+
+const (
+	KeyAPIBaseURL = "api_base_url"
+	KeyWebBaseURL = "web_base_url"
+)
+
+// Keys is the subset of Config's fields exposed to `bitrise config
+// get/set/unset` — SetupVersion/LastCLIUpdateCheck/LastPluginUpdateChecks are
+// deliberately excluded: the CLI writes those itself, they aren't user
+// settings.
+var Keys = []string{KeyAPIBaseURL, KeyWebBaseURL}
+
+// Get returns the stored value of a known key.
+func (c *Config) Get(key string) (string, error) {
+	switch key {
+	case KeyAPIBaseURL:
+		return c.APIBaseURL, nil
+	case KeyWebBaseURL:
+		return c.WebBaseURL, nil
+	default:
+		return "", unknownKeyErr(key)
+	}
+}
+
+// Set assigns value to key. If validation fails, c is left untouched —
+// callers can rely on Set being all-or-nothing.
+func (c *Config) Set(key, value string) error {
+	next := *c
+	switch key {
+	case KeyAPIBaseURL:
+		if value != "" {
+			if err := validateURL(KeyAPIBaseURL, value); err != nil {
+				return err
+			}
+		}
+		next.APIBaseURL = value
+	case KeyWebBaseURL:
+		if value != "" {
+			if err := validateURL(KeyWebBaseURL, value); err != nil {
+				return err
+			}
+		}
+		next.WebBaseURL = value
+	default:
+		return unknownKeyErr(key)
+	}
+	*c = next
+	return nil
+}
+
+// Unset clears the value of key (equivalent to Set with an empty string).
+func (c *Config) Unset(key string) error {
+	return c.Set(key, "")
+}
+
+func unknownKeyErr(key string) error {
+	return fmt.Errorf("unknown config key %q (valid keys: %s)", key, strings.Join(Keys, ", "))
+}
+
+// validateURL rejects a value that the actual consumer
+// (webclient.New/bitriseapi.New, both backed by internal/baseurl) would
+// reject or, worse for api_base_url, silently send the bearer token over
+// plaintext http.
+func validateURL(key, value string) error {
+	_, err := baseurl.Validate(key, value)
+	return err
+}

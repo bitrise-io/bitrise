@@ -21,8 +21,9 @@ import (
 // Config is the on-disk shape. SetupVersion, LastCLIUpdateCheck, and
 // LastPluginUpdateChecks mirror configs.ConfigModel exactly, so the legacy
 // ~/.bitrise/config.json can act as a layer in Resolve (see resolve.go) with
-// the same fields to compare against. Newer fields like APIBaseURL have no
-// legacy counterpart — the legacy layer simply leaves them zero.
+// the same fields to compare against. Newer fields like APIBaseURL and
+// WebBaseURL have no legacy counterpart — the legacy layer simply leaves
+// them zero.
 //
 // LastCLIUpdateCheck and LastPluginUpdateChecks are timestamps the CLI
 // itself writes during normal operation, not user preferences — unusual
@@ -33,6 +34,7 @@ type Config struct {
 	LastCLIUpdateCheck     time.Time            `yaml:"last_cli_update_check,omitempty"`
 	LastPluginUpdateChecks map[string]time.Time `yaml:"last_plugin_update_checks,omitempty"`
 	APIBaseURL             string               `yaml:"api_base_url,omitempty"`
+	WebBaseURL             string               `yaml:"web_base_url,omitempty"`
 }
 
 // DirFileName is the file looked up in the working directory and its

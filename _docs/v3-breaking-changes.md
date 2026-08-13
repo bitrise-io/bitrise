@@ -139,6 +139,17 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   one. *Migrate:* no action required. To have a value controlled by the new
   per-directory or global file instead, remove that value from
   `~/.bitrise/config.json`.
+- **`api_base_url` and `web_base_url` never come from the per-directory file.** These
+  two keys — new in v3, managed with `bitrise config get/set/unset/list` and stored in
+  the global `~/.config/bitrise/cli/config.yml` — are the one exception to the
+  precedence above: they are only ever read from the global file. Both carry
+  credentials (a bearer token, a login password) to whatever host they name, and
+  `.bitrise-cli.yml` is picked up from the working directory and its ancestors with no
+  confirmation, so a repo you merely clone and run `bitrise` inside of must not be able
+  to redirect them. `web_base_url` is additionally overridable via
+  `$BITRISE_WEB_BASE_URL`, which wins over the global file. *Migrate:* set these keys
+  with `bitrise config set` or the env var — either key in a `.bitrise-cli.yml` is
+  ignored.
 - **`setup`/CLI-update-check/plugin-update-check now also write `config.yml`.** If you
   already have `~/.bitrise/config.json`, it keeps being updated exactly as before (still
   authoritative for reads), and `~/.config/bitrise/cli/config.yml` is kept in sync
