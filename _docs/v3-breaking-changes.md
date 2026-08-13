@@ -142,9 +142,13 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   that previously ran only when `--app` was passed explicitly — a config that validated
   cleanly before can now report app-specific errors. `--offline` is unaffected: it skips
   the online path, and an ambient app ID stays ignored there. Note the env var also
-  outranks an `app_id` pinned in a `.bitrise-cli.yml`. *Migrate:* pass `--app` explicitly
-  in any build step that targets a different app than the one it runs in; unset
-  `BITRISE_APP_SLUG` for the invocation to restore the previous behavior.
+  outranks an `app_id` pinned in a `.bitrise-cli.yml`. `bitrise stack list` picks up
+  `$BITRISE_WORKSPACE_ID` the same way: without `--workspace`, a build step now returns
+  the host workspace's stacks, including any custom stacks configured for it, where it
+  previously always returned the global list. *Migrate:* pass `--app`/`--workspace`
+  explicitly in any build step that targets a different app or workspace than the one
+  it runs in; unset `BITRISE_APP_SLUG`/`BITRISE_WORKSPACE_ID` for the invocation to
+  restore the previous behavior.
 - **Two new config file locations are now read, layered under the existing one.**
   Besides the pre-existing `~/.bitrise/config.json`, the CLI now also reads a global
   `~/.config/bitrise/cli/config.yml` and a per-directory `.bitrise-cli.yml` (found by
