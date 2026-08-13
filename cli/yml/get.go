@@ -61,7 +61,7 @@ instead of the app's current stored configuration.`,
 	}
 
 	cmd.Flags().StringVar(&buildSlug, "build", "", "build ID to retrieve the yml for")
-	cmdutil.AddAppFlag(cmd.Flags(), "app ID to retrieve the bitrise.yml for (or set BITRISE_APP_ID)")
+	cmdutil.AddAppFlag(cmd.Flags(), "app ID to retrieve the bitrise.yml for (or set BITRISE_APP_ID; inside a build, defaults to the app the build runs for)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
 	return cmd

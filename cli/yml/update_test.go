@@ -12,11 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
 func TestUpdateCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppIDLegacy, "")
+
 	cmd, _ := newTestUpdateCmd(t, "http://unused.test", "")
 	err := cmd.RunE(cmd, nil)
 	require.EqualError(t, err, "--app is required")

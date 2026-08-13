@@ -17,7 +17,7 @@ import (
 // DefaultStackID is the stack used by Create when opts.StackID is empty. Any
 // valid stack ID for the org will do — this one is broadly available — and
 // callers can override it via --stack.
-const DefaultStackID = "linux-docker-android-22.04"
+const DefaultStackID = "ubuntu-resolute-26.04-bitrise-2026-android"
 
 // DefaultProjectType is the project_type sent to /finish when opts.ProjectType
 // is empty. "other" is a safe minimal preset.
@@ -36,7 +36,7 @@ const FlowTypeCLI = "cli"
 
 // DefaultBranchFallback is the branch name sent to /apps/register when none
 // can be detected from the local git checkout.
-const DefaultBranchFallback = "master"
+const DefaultBranchFallback = "main"
 
 // CreateOptions are the inputs for Service.Create. Empty fields trigger
 // auto-detection (git, single-workspace pick) where applicable; RepoURL

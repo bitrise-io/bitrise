@@ -31,8 +31,10 @@ func NewListCommand() *cobra.Command {
 		Long: `List the values currently saved in the global config file.
 
 This shows what is stored, not what every command will resolve: the
-BITRISE_WEB_BASE_URL and BITRISE_APP_ID environment variables, and an app_id
-pinned by a per-directory .bitrise-cli.yml, all take precedence at runtime.`,
+BITRISE_WEB_BASE_URL, BITRISE_APP_ID, BITRISE_APP_SLUG and BITRISE_WORKSPACE_ID
+environment variables, and an app_id or default_workspace_id pinned by a
+per-directory .bitrise-cli.yml, all take precedence at runtime. Inside a Bitrise
+build, BITRISE_APP_SLUG and BITRISE_WORKSPACE_ID are always set.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)

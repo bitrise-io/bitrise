@@ -11,10 +11,10 @@ import (
 // FlagWorkspace is the workspace a command acts on.
 const FlagWorkspace = "workspace"
 
-// EnvWorkspaceID supplies the workspace when --workspace isn't passed. Safe to
-// honor unconditionally, unlike BITRISE_APP_SLUG (see EnvAppID): Bitrise does
-// not inject a workspace ID into builds, so this can't make a bare command
-// silently act on whatever workspace a build happens to run in.
+// EnvWorkspaceID supplies the workspace when --workspace isn't passed. Bitrise
+// auto-injects it into every build, naming the workspace that owns the app the
+// build runs for, so a bare command inside a build acts on that workspace. Same
+// intentional ambient targeting as EnvAppIDLegacy.
 const EnvWorkspaceID = "BITRISE_WORKSPACE_ID"
 
 // DefaultWorkspaceSlug returns the workspace configured as the default —

@@ -21,6 +21,8 @@ func TestResolveAppSlug_FromFlag(t *testing.T) {
 }
 
 func TestResolveAppSlug_MissingFlag(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "")
+
 	cmd := &cobra.Command{}
 	AddAppFlag(cmd.Flags(), "app slug")
 
@@ -50,6 +52,8 @@ func TestResolveAppSlug_FlagTakesPrecedenceOverEnv(t *testing.T) {
 }
 
 func TestLookupAppSlug_EmptyInsteadOfError(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "")
+
 	cmd := &cobra.Command{}
 	AddAppFlag(cmd.Flags(), "app slug")
 
@@ -63,6 +67,8 @@ func TestLookupAppSlug_EmptyInsteadOfError(t *testing.T) {
 }
 
 func TestResolveAppSlug_FromConfig(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "")
+
 	cmd := &cobra.Command{}
 	AddAppFlag(cmd.Flags(), "app slug")
 	cmd.SetContext(config.WithResolved(t.Context(), config.Resolved{Config: config.Config{AppID: "config-app-slug"}}))
@@ -94,6 +100,8 @@ func TestResolveAppSlugArg_PositionalArgTakesPrecedence(t *testing.T) {
 }
 
 func TestResolveAppSlugArg_FallsBackToResolveAppSlug(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "")
+
 	cmd := &cobra.Command{}
 	AddAppFlag(cmd.Flags(), "app slug")
 	require.NoError(t, cmd.Flags().Set(FlagApp, "flag-app-slug"))
@@ -106,15 +114,39 @@ func TestResolveAppSlugArg_FallsBackToResolveAppSlug(t *testing.T) {
 	require.EqualError(t, err, "--app is required")
 }
 
-func TestResolveAppSlug_LegacyAppSlugEnvNotHonored(t *testing.T) {
-	// BITRISE_APP_SLUG is auto-injected by Bitrise into every build to
-	// identify the app the build is running for — it must never be read
-	// here, or a step running inside app X's build could silently target
-	// app X's own bitrise.yml. See EnvAppID's doc comment.
-	t.Setenv("BITRISE_APP_SLUG", "ci-injected-app-slug")
+// BITRISE_APP_SLUG is auto-injected by Bitrise into every build, so honoring it
+// is what lets a bare command inside a build target the app it runs for.
+func TestResolveAppSlug_LegacyAppSlugEnvHonored(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "ci-injected-app-slug")
+
 	cmd := &cobra.Command{}
 	AddAppFlag(cmd.Flags(), "app slug")
 
-	_, err := ResolveAppSlug(cmd)
-	require.EqualError(t, err, "--app is required")
+	slug, err := ResolveAppSlug(cmd)
+	require.NoError(t, err)
+	assert.Equal(t, "ci-injected-app-slug", slug)
+}
+
+func TestResolveAppSlug_EnvTakesPrecedenceOverLegacyEnv(t *testing.T) {
+	t.Setenv(EnvAppID, "env-app-slug")
+	t.Setenv(EnvAppIDLegacy, "ci-injected-app-slug")
+
+	cmd := &cobra.Command{}
+	AddAppFlag(cmd.Flags(), "app slug")
+
+	slug, err := ResolveAppSlug(cmd)
+	require.NoError(t, err)
+	assert.Equal(t, "env-app-slug", slug)
+}
+
+func TestResolveAppSlug_LegacyEnvTakesPrecedenceOverConfig(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "ci-injected-app-slug")
+
+	cmd := &cobra.Command{}
+	AddAppFlag(cmd.Flags(), "app slug")
+	cmd.SetContext(config.WithResolved(t.Context(), config.Resolved{Config: config.Config{AppID: "config-app-slug"}}))
+
+	slug, err := ResolveAppSlug(cmd)
+	require.NoError(t, err)
+	assert.Equal(t, "ci-injected-app-slug", slug)
 }

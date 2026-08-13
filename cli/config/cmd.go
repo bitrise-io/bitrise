@@ -30,12 +30,17 @@ wins over both. They deliberately ignore the per-directory .bitrise-cli.yml
 — each names a host that receives credentials, and a repo you merely clone
 and run 'bitrise' inside of must not be able to silently redirect them.
 
-app_id resolves as: --app flag > $BITRISE_APP_ID > per-directory file >
-global file. default_workspace_id resolves the same way, via --workspace and
-$BITRISE_WORKSPACE_ID. Both honor the per-directory file precisely so a repo
-can pin which app and workspace its checkout belongs to; they're identifiers,
-not credentials. 'bitrise app create' writes app_id to the global file, and
-falls back to default_workspace_id when --workspace is omitted.
+app_id resolves as: --app flag > $BITRISE_APP_ID > $BITRISE_APP_SLUG >
+per-directory file > global file. default_workspace_id resolves the same way,
+via --workspace and $BITRISE_WORKSPACE_ID. Both honor the per-directory file
+precisely so a repo can pin which app and workspace its checkout belongs to;
+they're identifiers, not credentials. 'bitrise app create' writes app_id to the
+global file, and falls back to default_workspace_id when --workspace is omitted.
+
+Bitrise sets $BITRISE_APP_SLUG and $BITRISE_WORKSPACE_ID in every build, so
+inside a build a command with no --app/--workspace acts on the app the build
+runs for and the workspace owning it. Pass the flag explicitly to target
+anything else.
 
 'get'/'set'/'unset'/'list' only read and write the global file — per-dir
 files must be edited by hand.

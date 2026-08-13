@@ -129,6 +129,18 @@ scripts keep running: `trigger-check` was the only command removed outright, and
 
 ## Config handling
 
+- **Inside a Bitrise build, cloud commands with no `--app` now target the app the build
+  runs for.** `$BITRISE_APP_SLUG` and `$BITRISE_WORKSPACE_ID` are injected into every
+  build, and both are now read as identity fallbacks: `app_id` resolves as `--app` >
+  `$BITRISE_APP_ID` > `$BITRISE_APP_SLUG` > per-directory file > global file, and
+  `default_workspace_id` the same way via `--workspace` and `$BITRISE_WORKSPACE_ID`.
+  So a build step running `bitrise yml get`, `bitrise yml update` or `bitrise yml
+  validate` without `--app` no longer fails with `--app is required` — it acts on the
+  host app, and for `yml update` that means overwriting that app's own stored
+  bitrise.yml. Note the env var also outranks an `app_id` pinned in a
+  `.bitrise-cli.yml`. *Migrate:* pass `--app` explicitly in any build step that targets
+  a different app than the one it runs in; unset `BITRISE_APP_SLUG` for the invocation
+  if you want the old "required" error back.
 - **Two new config file locations are now read, layered under the existing one.**
   Besides the pre-existing `~/.bitrise/config.json`, the CLI now also reads a global
   `~/.config/bitrise/cli/config.yml` and a per-directory `.bitrise-cli.yml` (found by
