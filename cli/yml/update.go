@@ -61,7 +61,7 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 				return err
 			}
 
-			_, err = fmt.Fprintln(cmd.ErrOrStderr(), "bitrise.yml updated successfully")
+			_, err = fmt.Fprintf(cmd.ErrOrStderr(), "bitrise.yml updated for app %s\n", appSlug)
 			return err
 		},
 	}

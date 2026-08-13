@@ -39,7 +39,7 @@ func TestUpdateCmd_FromStdin(t *testing.T) {
 	require.NoError(t, cmd.RunE(cmd, nil))
 
 	assert.JSONEq(t, `{"app_config_datastore_yaml":{"format_version":"13"}}`, gotBody)
-	assert.Equal(t, "bitrise.yml updated successfully\n", stderr.String())
+	assert.Equal(t, "bitrise.yml updated for app app-slug\n", stderr.String())
 }
 
 func TestUpdateCmd_EmptyContent(t *testing.T) {

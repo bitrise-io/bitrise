@@ -20,6 +20,12 @@ const (
 // settings.
 var Keys = []string{KeyAPIBaseURL, KeyWebBaseURL, KeyAppID, KeyDefaultWorkspaceID}
 
+// URLKeys is the subset of Keys whose value Set validates as an absolute
+// https URL (see validateURL) rather than accepting it as a plain
+// identifier. Exported so tests can assert that invariant over every such
+// key without hardcoding the list.
+var URLKeys = []string{KeyAPIBaseURL, KeyWebBaseURL}
+
 // Get returns the stored value of a known key.
 func (c *Config) Get(key string) (string, error) {
 	switch key {
