@@ -146,6 +146,18 @@ func (c *Client) post(ctx context.Context, path string, params url.Values, body 
 	return c.do(req)
 }
 
+// streamHTTPClient returns an http.Client sharing the configured client's
+// transport, but with no overall timeout — for downloading a build's
+// archived log, which can be large and legitimately slower than
+// defaultTimeout. Cancellation is left to the caller's context.
+func (c *Client) streamHTTPClient() *http.Client {
+	return &http.Client{
+		Transport:     c.httpClient.Transport,
+		CheckRedirect: c.httpClient.CheckRedirect,
+		Jar:           c.httpClient.Jar,
+	}
+}
+
 // get performs an authenticated GET against path and decodes the JSON
 // response body into T.
 func get[T any](ctx context.Context, c *Client, path string, params url.Values) (T, error) {
