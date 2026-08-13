@@ -8,6 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/api"
 	"github.com/bitrise-io/bitrise/v2/cli/app"
 	"github.com/bitrise-io/bitrise/v2/cli/auth"
+	"github.com/bitrise-io/bitrise/v2/cli/build"
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/cli/config"
 	"github.com/bitrise-io/bitrise/v2/cli/local"
@@ -57,6 +58,7 @@ func newRootCommand() *cobra.Command {
 		stack.NewCmd(),
 		user.NewCmd(),
 		app.NewCmd(),
+		build.NewCmd(),
 		api.NewCmd(),
 		config.NewCmd(),
 
