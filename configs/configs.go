@@ -237,9 +237,13 @@ func SetAppID(appID string) error {
 // app create`), so later commands can resolve it without --app/BITRISE_APP_ID.
 // Unlike SetupVersion/LastCLIUpdateCheck/LastPluginUpdateChecks, app_id has no
 // ~/.bitrise/config.json counterpart, so it never touches the legacy file.
+//
+// Routed through Config.Set rather than assigning c.AppID directly, so this
+// writer and `bitrise config set app_id` can't drift if validation is ever
+// added to that key.
 func SetAppID(appID string) error {
-	return saveGlobalConfig(func(c *internalconfig.Config) {
-		c.AppID = appID
+	return saveGlobalConfig(func(c *internalconfig.Config) error {
+		return c.Set(internalconfig.KeyAppID, appID)
 	})
 }
 
