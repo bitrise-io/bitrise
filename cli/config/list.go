@@ -49,10 +49,9 @@ build, BITRISE_APP_SLUG and BITRISE_WORKSPACE_ID are always set.`,
 			// rather than vanish from the JSON/YAML output.
 			values["path"] = p
 
-			if output.Format == output.FormatRaw {
-				return printListHuman(cmd.OutOrStdout(), p, values)
-			}
-			return output.Print(values, output.Format)
+			return output.Render(cmd.OutOrStdout(), output.Format, values, func(w io.Writer, values map[string]string) error {
+				return printListHuman(w, p, values)
+			})
 		},
 	}
 

@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/spf13/cobra"
 
@@ -41,11 +42,10 @@ source is active.`,
 				return fmt.Errorf("fetching user profile failed: %w", err)
 			}
 
-			if output.Format == output.FormatRaw {
-				_, err := fmt.Fprintf(cmd.OutOrStdout(), "Username: %s\nEmail:    %s\n", profile.Username, profile.Email)
+			return output.Render(cmd.OutOrStdout(), output.Format, profile, func(w io.Writer, profile internaluser.Profile) error {
+				_, err := fmt.Fprintf(w, "Username: %s\nEmail:    %s\n", profile.Username, profile.Email)
 				return err
-			}
-			return output.Print(profile, output.Format)
+			})
 		},
 	}
 

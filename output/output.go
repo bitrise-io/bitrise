@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"gopkg.in/yaml.v2"
 
@@ -37,6 +38,15 @@ func ConfigureOutputFormat(outFmt string) error {
 		return fmt.Errorf("invalid output format: %s", outFmt)
 	}
 	return nil
+}
+
+// Render writes result via renderRaw for FormatRaw, or via Print otherwise —
+// the "raw table/text vs. json/yml" branch every command needs, in one place.
+func Render[T any](w io.Writer, format string, result T, renderRaw func(io.Writer, T) error) error {
+	if format == FormatRaw {
+		return renderRaw(w, result)
+	}
+	return Print(result, format)
 }
 
 // Print marshals outModel per format and writes it via the logger. Returns an

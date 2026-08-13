@@ -61,10 +61,9 @@ available stacks.`,
 				return fmt.Errorf("listing stacks failed: %w", err)
 			}
 
-			if output.Format == output.FormatRaw {
-				return printStacksTable(cmd.OutOrStdout(), result.Items)
-			}
-			return output.Print(result, output.Format)
+			return output.Render(cmd.OutOrStdout(), output.Format, result, func(w io.Writer, result internalstack.StacksResult) error {
+				return printStacksTable(w, result.Items)
+			})
 		},
 	}
 
