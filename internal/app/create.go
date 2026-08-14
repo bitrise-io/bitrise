@@ -264,12 +264,11 @@ func deriveTitle(repoURL string) string {
 }
 
 // GitDetector detects the cwd's git remote URL and current branch. The
-// default implementation shells out to `git`. Tests inject a stub.
+// default implementation shells out to `git`; tests inject a stub.
 //
-// Deliberately unused inside this package: it is consumed by the `app create`
-// command layer, which resolves RepoURL and Branch from git before handing
-// CreateOptions to Create. That command isn't migrated yet, so this type
-// currently has no caller in-tree.
+// Unused inside this package by design: it's consumed by the `app create`
+// command layer (cli/app/create.go), which resolves RepoURL and Branch from
+// git before handing CreateOptions to Create.
 type GitDetector interface {
 	RemoteURL(ctx context.Context) (string, error)
 	CurrentBranch(ctx context.Context) (string, error)
