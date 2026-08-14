@@ -7,9 +7,9 @@ import (
 	"golang.org/x/term"
 )
 
-// terminalFd reports whether stream is an *os.File backed by a TTY. fd is
+// TerminalFd reports whether stream is an *os.File backed by a TTY. fd is
 // only meaningful when isTerminal is true.
-func terminalFd(stream any) (fd int, isTerminal bool) {
+func TerminalFd(stream any) (fd int, isTerminal bool) {
 	f, ok := stream.(*os.File)
 	if !ok {
 		return 0, false
@@ -22,13 +22,13 @@ func terminalFd(stream any) (fd int, isTerminal bool) {
 // never are, so callers can pick an interactive default (e.g. browser login)
 // while keeping non-interactive stdin (CI, pipes) working.
 func IsTerminal(r io.Reader) bool {
-	_, ok := terminalFd(r)
+	_, ok := TerminalFd(r)
 	return ok
 }
 
 // IsTerminalWriter reports whether w is an interactive terminal, e.g. for
 // gating pretty-printing so piped or redirected output isn't reformatted.
 func IsTerminalWriter(w io.Writer) bool {
-	_, ok := terminalFd(w)
+	_, ok := TerminalFd(w)
 	return ok
 }
