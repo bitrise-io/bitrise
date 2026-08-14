@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
@@ -18,6 +20,25 @@ func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
 		}
 		if got := s.Success.Render(in); got != in {
 			t.Errorf("Success.Render(%q) = %q, want plain", in, got)
+		}
+	}
+}
+
+func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	cases := map[string]lipgloss.Style{
+		"success":               s.Success,
+		"failed":                s.failed,
+		"in-progress":           s.running,
+		"aborted":               s.aborted,
+		"aborted-with-success":  s.aborted,
+		"some-unrecognized-str": s.Dim,
+	}
+	for status, want := range cases {
+		if got := s.BuildStatus(status); got.String() != want.String() {
+			t.Errorf("BuildStatus(%q) = %q, want %q", status, got.String(), want.String())
 		}
 	}
 }
