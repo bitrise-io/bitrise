@@ -114,10 +114,7 @@ Target host:
 				return err
 			}
 
-			if output.Format == output.FormatRaw {
-				return printCreateHuman(cmd.OutOrStdout(), acct)
-			}
-			return output.Print(acct, output.Format)
+			return output.Render(cmd.OutOrStdout(), output.Format, acct, printCreateHuman)
 		},
 	}
 

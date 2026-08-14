@@ -2,8 +2,6 @@ package bitriseapi
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/url"
 )
 
@@ -67,16 +65,7 @@ func (c *Client) ValidateBitriseYML(ctx context.Context, yamlContent, appSlug st
 		params = url.Values{"app_slug": {appSlug}}
 	}
 
-	body, err := c.post(ctx, "/validate-bitrise-yml", params, struct {
+	return postDecode[ValidateBitriseYMLResponse](ctx, c, "/validate-bitrise-yml", params, struct {
 		BitriseYML string `json:"bitrise_yml"`
 	}{BitriseYML: yamlContent})
-	if err != nil {
-		return ValidateBitriseYMLResponse{}, err
-	}
-
-	var resp ValidateBitriseYMLResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return ValidateBitriseYMLResponse{}, fmt.Errorf("decode response: %w", err)
-	}
-	return resp, nil
 }

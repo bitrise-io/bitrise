@@ -103,10 +103,9 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 				}
 			}
 
-			if output.Format == output.FormatRaw {
-				return printAppsTable(cmd.OutOrStdout(), res, nextPageCmd(cmd))
-			}
-			return output.Print(res, output.Format)
+			return output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalapp.AppsResult) error {
+				return printAppsTable(w, res, nextPageCmd(cmd))
+			})
 		},
 	}
 

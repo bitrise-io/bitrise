@@ -74,10 +74,7 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 		return err
 	}
 
-	if output.Format == output.FormatRaw {
-		return printAppText(cmd.OutOrStdout(), a)
-	}
-	return output.Print(a, output.Format)
+	return output.Render(cmd.OutOrStdout(), output.Format, a, printAppText)
 }
 
 func printAppText(w io.Writer, a internalapp.App) error {

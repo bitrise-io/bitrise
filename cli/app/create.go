@@ -180,11 +180,7 @@ func runCreate(cmd *cobra.Command, detector internalapp.GitDetector, flags creat
 	// point, so a failure to save app_id locally (read-only config dir, lock
 	// timeout) must not swallow the slug and build trigger token the user
 	// needs to recover manually.
-	if output.Format == output.FormatRaw {
-		if err := printCreateText(cmd.OutOrStdout(), res); err != nil {
-			return err
-		}
-	} else if err := output.Print(res, output.Format); err != nil {
+	if err := output.Render(cmd.OutOrStdout(), output.Format, res, printCreateText); err != nil {
 		return err
 	}
 
