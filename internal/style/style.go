@@ -31,9 +31,9 @@ var (
 	dimColor     = lipgloss.AdaptiveColor{Light: "240", Dark: "245"} // grey
 	successColor = lipgloss.AdaptiveColor{Light: "28", Dark: "42"}   // green
 	warnColor    = lipgloss.AdaptiveColor{Light: "136", Dark: "220"} // yellow / olive
-	failedColor  = lipgloss.AdaptiveColor{Light: "160", Dark: "203"} // red
-	runningColor = lipgloss.AdaptiveColor{Light: "25", Dark: "39"}   // blue
-	abortedColor = lipgloss.AdaptiveColor{Light: "166", Dark: "208"} // orange
+	failedColor  = lipgloss.AdaptiveColor{Light: "124", Dark: "196"} // red
+	runningColor = lipgloss.AdaptiveColor{Light: "27", Dark: "33"}   // blue
+	abortedColor = lipgloss.AdaptiveColor{Light: "166", Dark: "214"} // amber
 )
 
 // Styles bundles the semantic styles used across human renderers. It is
@@ -70,7 +70,7 @@ func New(w io.Writer) Styles {
 		Warn:    r.NewStyle().Foreground(warnColor),
 		Bold:    r.NewStyle().Bold(true),
 		Label:   r.NewStyle().Bold(true),
-		URL:     r.NewStyle().Foreground(runningColor).Underline(true),
+		URL:     r.NewStyle().Underline(true),
 		failed:  r.NewStyle().Foreground(failedColor),
 		running: r.NewStyle().Foreground(runningColor),
 		aborted: r.NewStyle().Foreground(abortedColor),
