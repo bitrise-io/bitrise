@@ -15,6 +15,6 @@ func NewCmd() *cobra.Command {
 		Short: "Trigger, list, and inspect builds.",
 		RunE:  cmdutil.RequireKnownSubcommand,
 	}
-	c.AddCommand(NewListCommand(), NewViewCommand(), NewLogCommand(), NewAbortCommand(), NewYMLCommand())
+	c.AddCommand(NewTriggerCommand(), NewListCommand(), NewViewCommand(), NewLogCommand(), NewWatchCommand(), NewAbortCommand(), NewYMLCommand())
 	return c
 }
