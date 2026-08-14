@@ -142,15 +142,17 @@ func (s *Service) Watch(ctx context.Context, appSlug, buildSlug string, w io.Wri
 		}
 	}
 
-	// One final call to flush any chunks buffered after the last poll.
-	if lastAfterTimestamp != "" {
-		final, err := s.client.BuildLogManifest(ctx, appSlug, buildSlug, lastAfterTimestamp)
-		if err != nil {
-			return Build{}, err
-		}
-		if _, err := flushContiguous(w, buffer, &nextEmit, final.LogChunks); err != nil {
-			return Build{}, err
-		}
+	// One final call to flush any chunks buffered after the last poll. Runs
+	// unconditionally, even if lastAfterTimestamp is still "" (a poll's
+	// NextAfterTimestamp can come back empty), so a stuck-empty cursor can't
+	// permanently skip this catch-up — worst case it's a full log refetch,
+	// and flushContiguous drops anything already emitted.
+	final, err := s.client.BuildLogManifest(ctx, appSlug, buildSlug, lastAfterTimestamp)
+	if err != nil {
+		return Build{}, err
+	}
+	if _, err := flushContiguous(w, buffer, &nextEmit, final.LogChunks); err != nil {
+		return Build{}, err
 	}
 
 	// Failsafe drain: any chunks still buffered (a position before them
