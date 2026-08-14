@@ -35,6 +35,8 @@ type Config struct {
 	LastPluginUpdateChecks map[string]time.Time `yaml:"last_plugin_update_checks,omitempty"`
 	APIBaseURL             string               `yaml:"api_base_url,omitempty"`
 	WebBaseURL             string               `yaml:"web_base_url,omitempty"`
+	AppID                  string               `yaml:"app_id,omitempty"`
+	DefaultWorkspaceID     string               `yaml:"default_workspace_id,omitempty"`
 }
 
 // DirFileName is the file looked up in the working directory and its

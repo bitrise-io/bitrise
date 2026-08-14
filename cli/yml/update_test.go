@@ -12,11 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
 func TestUpdateCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppIDLegacy, "")
+
 	cmd, _ := newTestUpdateCmd(t, "http://unused.test", "")
 	err := cmd.RunE(cmd, nil)
 	require.EqualError(t, err, "--app is required")
@@ -36,7 +39,7 @@ func TestUpdateCmd_FromStdin(t *testing.T) {
 	require.NoError(t, cmd.RunE(cmd, nil))
 
 	assert.JSONEq(t, `{"app_config_datastore_yaml":{"format_version":"13"}}`, gotBody)
-	assert.Equal(t, "bitrise.yml updated successfully\n", stderr.String())
+	assert.Equal(t, "bitrise.yml updated for app app-slug\n", stderr.String())
 }
 
 func TestUpdateCmd_EmptyContent(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 // DefaultStackID is the stack used by Create when opts.StackID is empty. Any
 // valid stack ID for the org will do — this one is broadly available — and
 // callers can override it via --stack.
-const DefaultStackID = "linux-docker-android-22.04"
+const DefaultStackID = "ubuntu-resolute-26.04-bitrise-2026-android"
 
 // DefaultProjectType is the project_type sent to /finish when opts.ProjectType
 // is empty. "other" is a safe minimal preset.
@@ -36,11 +36,12 @@ const FlowTypeCLI = "cli"
 
 // DefaultBranchFallback is the branch name sent to /apps/register when none
 // can be detected from the local git checkout.
-const DefaultBranchFallback = "master"
+const DefaultBranchFallback = "main"
 
-// CreateOptions are the inputs for Service.Create. Empty fields trigger
-// auto-detection (git, single-workspace pick) where applicable; RepoURL
-// produces an error if it can't be filled in.
+// CreateOptions are the inputs for Service.Create. RepoURL and Branch are
+// expected pre-filled by the caller, which is where git detection lives (see
+// GitDetector); an empty RepoURL is an error. The only auto-detection Create
+// performs is the single-workspace pick for an empty OrgSlug.
 type CreateOptions struct {
 	RepoURL     string
 	Branch      string
@@ -74,9 +75,9 @@ type CreateResult struct {
 // Create runs the register → finish → (optional) upload sequence on the
 // Bitrise API and returns the new app's identifying details.
 //
-// Required: opts.RepoURL (or a detectable git remote) and a workspace (via
-// opts.OrgSlug or single-workspace detection). Defaults are applied for
-// Branch, Provider, StackID, ProjectType.
+// Required: opts.RepoURL and a workspace (via opts.OrgSlug or
+// single-workspace detection). Defaults are applied for Branch, Provider,
+// StackID, ProjectType.
 func (s *Service) Create(ctx context.Context, opts CreateOptions) (CreateResult, error) {
 	if opts.RepoURL == "" {
 		return CreateResult{}, errors.New("repo URL is required (pass --repo-url or run inside a git repo with an 'origin' remote)")
@@ -264,6 +265,11 @@ func deriveTitle(repoURL string) string {
 
 // GitDetector detects the cwd's git remote URL and current branch. The
 // default implementation shells out to `git`. Tests inject a stub.
+//
+// Deliberately unused inside this package: it is consumed by the `app create`
+// command layer, which resolves RepoURL and Branch from git before handing
+// CreateOptions to Create. That command isn't migrated yet, so this type
+// currently has no caller in-tree.
 type GitDetector interface {
 	RemoteURL(ctx context.Context) (string, error)
 	CurrentBranch(ctx context.Context) (string, error)

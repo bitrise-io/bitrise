@@ -11,16 +11,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/output"
 )
 
-// configList is the JSON/YAML shape of `config list`. Neither URL field is
-// omitempty: this command's job is to enumerate every recognized key's
-// state, so an unset key must still appear (as "") rather than vanish from
-// the JSON/YAML output while still showing as "(unset)" in raw mode.
-type configList struct {
-	APIBaseURL string `json:"api_base_url" yaml:"api_base_url"`
-	WebBaseURL string `json:"web_base_url" yaml:"web_base_url"`
-	Path       string `json:"path" yaml:"path"`
-}
-
 // NewListCommand returns the `config list` subcommand.
 func NewListCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -28,8 +18,11 @@ func NewListCommand() *cobra.Command {
 		Short: "List the values currently saved in the global config file",
 		Long: `List the values currently saved in the global config file.
 
-This does not show the BITRISE_WEB_BASE_URL environment override, which
-takes precedence over it at runtime.`,
+This shows what is stored, not what every command will resolve: the
+BITRISE_WEB_BASE_URL, BITRISE_APP_ID, BITRISE_APP_SLUG and BITRISE_WORKSPACE_ID
+environment variables, and an app_id or default_workspace_id pinned by a
+per-directory .bitrise-cli.yml, all take precedence at runtime. Inside a Bitrise
+build, BITRISE_APP_SLUG and BITRISE_WORKSPACE_ID are always set.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -47,12 +40,19 @@ takes precedence over it at runtime.`,
 			if err != nil {
 				return err
 			}
-			v := configList{APIBaseURL: cfg.APIBaseURL, WebBaseURL: cfg.WebBaseURL, Path: p}
+			values, err := configValues(cfg)
+			if err != nil {
+				return err
+			}
+			// No omitempty on any key: this command's job is to enumerate every
+			// recognized key's state, so an unset key must still appear (as "")
+			// rather than vanish from the JSON/YAML output.
+			values["path"] = p
 
 			if output.Format == output.FormatRaw {
-				return printListHuman(cmd.OutOrStdout(), v)
+				return printListHuman(cmd.OutOrStdout(), p, values)
 			}
-			return output.Print(v, output.Format)
+			return output.Print(values, output.Format)
 		},
 	}
 
@@ -60,13 +60,31 @@ takes precedence over it at runtime.`,
 	return cmd
 }
 
-func printListHuman(w io.Writer, v configList) error {
-	_, err := fmt.Fprintf(w, "Path: %s\n\n%s: %s\n%s: %s\n",
-		v.Path,
-		internalconfig.KeyAPIBaseURL, unsetLabel(v.APIBaseURL),
-		internalconfig.KeyWebBaseURL, unsetLabel(v.WebBaseURL),
-	)
-	return err
+// configValues reads every key in internalconfig.Keys out of cfg, keyed by
+// its config-key name, so a key added to Keys shows up here with no matching
+// struct field to add.
+func configValues(cfg internalconfig.Config) (map[string]string, error) {
+	values := make(map[string]string, len(internalconfig.Keys))
+	for _, key := range internalconfig.Keys {
+		v, err := cfg.Get(key)
+		if err != nil {
+			return nil, err
+		}
+		values[key] = v
+	}
+	return values, nil
+}
+
+func printListHuman(w io.Writer, path string, values map[string]string) error {
+	if _, err := fmt.Fprintf(w, "Path: %s\n\n", path); err != nil {
+		return err
+	}
+	for _, key := range internalconfig.Keys {
+		if _, err := fmt.Fprintf(w, "%s: %s\n", key, unsetLabel(values[key])); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func unsetLabel(v string) string {

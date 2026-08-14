@@ -52,11 +52,29 @@ func TestConfig_Set_WebBaseURL(t *testing.T) {
 }
 
 func TestConfig_Set_RejectsPlainHTTP(t *testing.T) {
-	for _, key := range Keys {
+	for _, key := range URLKeys {
 		var c Config
 		err := c.Set(key, "http://api.example.com")
 		require.Error(t, err, key)
 		assert.ErrorContains(t, err, `must use https (got "http")`)
+	}
+}
+
+func TestConfig_SetGetUnset_IdentifierKeys(t *testing.T) {
+	for _, key := range []string{KeyAppID, KeyDefaultWorkspaceID} {
+		var c Config
+
+		// not a URL — no scheme validation applies to these keys
+		require.NoError(t, c.Set(key, "my-slug"), key)
+
+		v, err := c.Get(key)
+		require.NoError(t, err, key)
+		assert.Equal(t, "my-slug", v, key)
+
+		require.NoError(t, c.Unset(key), key)
+		v, err = c.Get(key)
+		require.NoError(t, err, key)
+		assert.Equal(t, "", v, key)
 	}
 }
 

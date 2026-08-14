@@ -33,12 +33,13 @@ func NewValidateCommand() *cobra.Command {
 	cmdutil.AddConfigAndInventoryFlags(validateCommand.Flags())
 	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json.")
 	validateCommand.Flags().Bool(offlineKey, false, "Skip online validation even if authenticated; use only the local schema check.")
-	cmdutil.AddAppFlag(validateCommand.Flags(), "app ID to validate against (enables app-specific checks: stacks, machine types, license pools)")
+	cmdutil.AddAppFlag(validateCommand.Flags(), "app ID to validate against (enables app-specific checks: stacks, machine types, license pools; inside a build, defaults to the app the build runs for)")
 
 	// --offline skips the online path entirely, so accepting it together with
 	// --app would silently ignore the app-specific checks --app asks for. An
-	// ambient BITRISE_APP_ID isn't covered (cobra only sees flags) and stays
-	// silently ignored under --offline, since it isn't an explicit request.
+	// ambient BITRISE_APP_ID/BITRISE_APP_SLUG isn't covered (cobra only sees
+	// flags) and stays silently ignored under --offline, since neither is an
+	// explicit request.
 	validateCommand.MarkFlagsMutuallyExclusive(offlineKey, cmdutil.FlagApp)
 
 	return validateCommand

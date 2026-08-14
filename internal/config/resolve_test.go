@@ -58,6 +58,40 @@ func TestResolve_WebBaseURLPrecedence(t *testing.T) {
 	assert.Equal(t, "https://global.example", r.WebBaseURL)
 }
 
+func TestResolve_AppIDPrecedence(t *testing.T) {
+	dir := Config{AppID: "dir-app"}
+	global := Config{AppID: "global-app"}
+
+	// no layer set: stays unset, unlike APIBaseURL there's no default
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, "", r.AppID)
+
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "global-app", r.AppID)
+
+	// dir overrides global (legacy has no concept of this field)
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "dir-app", r.AppID)
+}
+
+func TestResolve_DefaultWorkspaceIDPrecedence(t *testing.T) {
+	dir := Config{DefaultWorkspaceID: "dir-ws"}
+	global := Config{DefaultWorkspaceID: "global-ws"}
+
+	// no layer set: stays unset, there's no default workspace
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, "", r.DefaultWorkspaceID)
+
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "global-ws", r.DefaultWorkspaceID)
+
+	// dir overrides global — a repo may pin the workspace it belongs to
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "dir-ws", r.DefaultWorkspaceID)
+}
+
 // TestResolve_LayerPrecedence covers the three fields sharing the generic
 // legacy > dir > global precedence (SetupVersion, LastCLIUpdateCheck,
 // LastPluginUpdateChecks) in one pass, each via a different underlying

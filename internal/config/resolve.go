@@ -56,6 +56,13 @@ func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 		// global > default — no dirCfg, see the doc comment above.
 		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
 		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
+		// legacyCfg.AppID is likewise always empty, and there's no sensible
+		// default app — effectively dir > global > unset. Both of these DO
+		// honor dirCfg, unlike the two URLs above: they name which app and
+		// workspace a checkout belongs to, which is exactly what a repo-local
+		// file should be able to pin, and neither is a credential.
+		AppID:              FirstNonEmptyString(legacyCfg.AppID, dirCfg.AppID, globalCfg.AppID),
+		DefaultWorkspaceID: FirstNonEmptyString(legacyCfg.DefaultWorkspaceID, dirCfg.DefaultWorkspaceID, globalCfg.DefaultWorkspaceID),
 	}}
 }
 
@@ -96,8 +103,14 @@ func WithResolved(ctx context.Context, r Resolved) context.Context {
 	return context.WithValue(ctx, ctxKey{}, r)
 }
 
-// FromContext retrieves Resolved from ctx, or a zero value if absent.
+// FromContext retrieves Resolved from ctx, or a zero value if absent. A nil
+// ctx is treated as absent rather than panicking: cmd.Context() is nil for a
+// bare *cobra.Command that was never executed, which is how several tests
+// drive RunE directly.
 func FromContext(ctx context.Context) Resolved {
+	if ctx == nil {
+		return Resolved{}
+	}
 	if r, ok := ctx.Value(ctxKey{}).(Resolved); ok {
 		return r
 	}

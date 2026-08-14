@@ -22,6 +22,8 @@ func TestListCmd_Empty(t *testing.T) {
 	assert.Contains(t, got, "Path: ")
 	assert.Contains(t, got, "api_base_url: (unset)")
 	assert.Contains(t, got, "web_base_url: (unset)")
+	assert.Contains(t, got, "app_id: (unset)")
+	assert.Contains(t, got, "default_workspace_id: (unset)")
 }
 
 func TestListCmd_ShowsSavedValues(t *testing.T) {
@@ -33,6 +35,8 @@ func TestListCmd_ShowsSavedValues(t *testing.T) {
 
 	assert.Contains(t, out.String(), "api_base_url: https://api.example.com")
 	assert.Contains(t, out.String(), "web_base_url: (unset)")
+	assert.Contains(t, out.String(), "app_id: (unset)")
+	assert.Contains(t, out.String(), "default_workspace_id: (unset)")
 }
 
 func TestListCmd_JSONFormat(t *testing.T) {
@@ -49,6 +53,8 @@ func TestListCmd_JSONFormat(t *testing.T) {
 	out := logBuf.String()
 	assert.Contains(t, out, `"api_base_url":"https://api.example.com"`)
 	assert.Contains(t, out, `"web_base_url":""`, "unset keys must still be enumerated, not omitted")
+	assert.Contains(t, out, `"app_id":""`)
+	assert.Contains(t, out, `"default_workspace_id":""`)
 }
 
 func TestListCmd_YMLFormat(t *testing.T) {
@@ -65,6 +71,8 @@ func TestListCmd_YMLFormat(t *testing.T) {
 	out := logBuf.String()
 	assert.Contains(t, out, "api_base_url: https://api.example.com", "yaml.v2 ignores json tags; this key name regresses to \"apibaseurl\" without a yaml tag")
 	assert.Contains(t, out, `web_base_url: ""`)
+	assert.Contains(t, out, `app_id: ""`)
+	assert.Contains(t, out, `default_workspace_id: ""`)
 }
 
 func TestListCmd_RejectsPositionalArgs(t *testing.T) {

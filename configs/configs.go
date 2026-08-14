@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -162,8 +163,9 @@ func SaveCLIUpdateCheck() error {
 	}
 	config.LastCLIUpdateCheck = time.Now()
 
-	return saveConfig(existed, config, func(c *internalconfig.Config) {
+	return saveConfig(existed, config, func(c *internalconfig.Config) error {
 		c.LastCLIUpdateCheck = config.LastCLIUpdateCheck
+		return nil
 	})
 }
 
@@ -187,11 +189,12 @@ func SavePluginUpdateCheck(plugin string) error {
 	}
 	config.LastPluginUpdateChecks[plugin] = time.Now()
 
-	return saveConfig(existed, config, func(c *internalconfig.Config) {
+	return saveConfig(existed, config, func(c *internalconfig.Config) error {
 		if c.LastPluginUpdateChecks == nil {
 			c.LastPluginUpdateChecks = map[string]time.Time{}
 		}
 		c.LastPluginUpdateChecks[plugin] = config.LastPluginUpdateChecks[plugin]
+		return nil
 	})
 }
 
@@ -210,8 +213,23 @@ func SaveSetupSuccessForVersion(ver string) error {
 	}
 	config.SetupVersion = ver
 
-	return saveConfig(existed, config, func(c *internalconfig.Config) {
+	return saveConfig(existed, config, func(c *internalconfig.Config) error {
 		c.SetupVersion = config.SetupVersion
+		return nil
+	})
+}
+
+// SetAppID persists appID as the default app for cloud commands (e.g. `bitrise
+// app create`), so later commands can resolve it without --app/BITRISE_APP_ID.
+// Unlike SetupVersion/LastCLIUpdateCheck/LastPluginUpdateChecks, app_id has no
+// ~/.bitrise/config.json counterpart, so it never touches the legacy file.
+//
+// Routed through Config.Set rather than assigning c.AppID directly, so this
+// writer and `bitrise config set app_id` can't drift if validation is ever
+// added to that key.
+func SetAppID(appID string) error {
+	return saveGlobalConfig(func(c *internalconfig.Config) error {
+		return c.Set(internalconfig.KeyAppID, appID)
 	})
 }
 
@@ -253,13 +271,31 @@ func ResolveConfig() (internalconfig.Resolved, error) {
 
 // saveGlobalConfig loads the current global config.yml
 // (~/.config/bitrise/cli/config.yml), applies mutate, and saves it back,
-// returning any load/save error.
-func saveGlobalConfig(mutate func(*internalconfig.Config)) error {
+// returning any load/save error. A failing mutate aborts before the save,
+// leaving the file untouched.
+//
+// The load-mutate-save sequence holds the same cross-process lock
+// `bitrise config set` takes, so a concurrent writer (another CLI invocation
+// setting a different key) can't have its write dropped by this one. None of
+// this function's callers have a cobra command to draw a request-scoped
+// context from, so the wait is bounded by internalconfig.LockStaleAfter
+// instead of blocking on context.Background() indefinitely.
+func saveGlobalConfig(mutate func(*internalconfig.Config) error) error {
+	ctx, cancel := context.WithTimeout(context.Background(), internalconfig.LockStaleAfter)
+	defer cancel()
+	unlock, err := internalconfig.Lock(ctx)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	globalCfg, err := internalconfig.Load()
 	if err != nil {
 		return err
 	}
-	mutate(&globalCfg)
+	if err := mutate(&globalCfg); err != nil {
+		return err
+	}
 	return internalconfig.Save(globalCfg)
 }
 
@@ -272,7 +308,12 @@ func saveGlobalConfig(mutate func(*internalconfig.Config)) error {
 // the one field being changed, so a value that only exists in the per-dir or
 // global layer never gets copied into a file that should stay a
 // self-contained snapshot of what was actually written to it.
-func saveConfig(existed bool, legacy ConfigModel, mutate func(*internalconfig.Config)) error {
+//
+// Only the config.yml half (saveGlobalConfig) is protected by
+// internalconfig.Lock. saveLegacyConfig's read-modify-write of the legacy
+// ~/.bitrise/config.json above is not — a second concurrent call here can
+// still drop this call's update to that file.
+func saveConfig(existed bool, legacy ConfigModel, mutate func(*internalconfig.Config) error) error {
 	if existed {
 		if err := saveLegacyConfig(legacy); err != nil {
 			return err

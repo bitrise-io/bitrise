@@ -20,10 +20,8 @@ func ResolveWebBaseURL(cmd *cobra.Command) string {
 	if v := os.Getenv(EnvWebBaseURL); v != "" {
 		return v
 	}
-	if ctx := cmd.Context(); ctx != nil {
-		if v := config.FromContext(ctx).WebBaseURL; v != "" {
-			return v
-		}
+	if v := config.FromContext(cmd.Context()).WebBaseURL; v != "" {
+		return v
 	}
 	return config.DefaultWebBaseURL
 }
