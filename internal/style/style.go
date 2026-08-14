@@ -3,18 +3,22 @@
 // must not leak into machine-readable output.
 //
 // This is a trimmed port of bitrise-cli's internal/output/style package:
-// only the styles and Table renderer actually consumed by a landed command
-// are included. Theme overrides, --no-color/--theme flags, and styles used
-// only by commands not yet ported (OAuth picker, etc.) are left out on
-// purpose — add them when a command that actually needs them lands, rather
-// than carrying dead code now.
+// only the styles, Table renderer, and Rainbow shimmer that ported commands
+// (`stack list`, `purr`) actually use are included. Theme overrides,
+// --no-color/--theme flags, and styles used only by commands not yet ported
+// (build status, OAuth picker, etc.) are left out on purpose — add them when
+// a command that actually needs them lands, rather than carrying dead code
+// now.
 package style
 
 import (
 	"io"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasb-eyer/go-colorful"
+	"github.com/muesli/termenv"
 )
 
 // BrandColor is Bitrise's brand purple, used by the build-watch spinner.
@@ -27,15 +31,17 @@ var (
 	dimColor     = lipgloss.AdaptiveColor{Light: "240", Dark: "245"} // grey
 	successColor = lipgloss.AdaptiveColor{Light: "28", Dark: "42"}   // green
 	warnColor    = lipgloss.AdaptiveColor{Light: "136", Dark: "220"} // yellow / olive
-	failedColor  = lipgloss.AdaptiveColor{Light: "160", Dark: "203"} // red
-	runningColor = lipgloss.AdaptiveColor{Light: "25", Dark: "39"}   // blue
-	abortedColor = lipgloss.AdaptiveColor{Light: "166", Dark: "208"} // orange
+	failedColor  = lipgloss.AdaptiveColor{Light: "124", Dark: "196"} // red
+	runningColor = lipgloss.AdaptiveColor{Light: "27", Dark: "33"}   // blue
+	abortedColor = lipgloss.AdaptiveColor{Light: "166", Dark: "214"} // amber
 )
 
 // Styles bundles the semantic styles used across human renderers. It is
 // constructed per-writer so the writer's terminal capabilities (or lack
 // thereof) control whether ANSI is emitted.
 type Styles struct {
+	r *lipgloss.Renderer
+
 	Header  lipgloss.Style // table header rows
 	Dim     lipgloss.Style // de-emphasized text
 	Slug    lipgloss.Style // technical identifiers (dimmed)
@@ -56,6 +62,7 @@ type Styles struct {
 func New(w io.Writer) Styles {
 	r := lipgloss.NewRenderer(w)
 	return Styles{
+		r:       r,
 		Header:  r.NewStyle().Bold(true).Foreground(dimColor),
 		Dim:     r.NewStyle().Foreground(dimColor),
 		Slug:    r.NewStyle().Foreground(dimColor),
@@ -63,7 +70,7 @@ func New(w io.Writer) Styles {
 		Warn:    r.NewStyle().Foreground(warnColor),
 		Bold:    r.NewStyle().Bold(true),
 		Label:   r.NewStyle().Bold(true),
-		URL:     r.NewStyle().Foreground(runningColor).Underline(true),
+		URL:     r.NewStyle().Underline(true),
 		failed:  r.NewStyle().Foreground(failedColor),
 		running: r.NewStyle().Foreground(runningColor),
 		aborted: r.NewStyle().Foreground(abortedColor),
@@ -86,6 +93,65 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	default:
 		return s.Dim
 	}
+}
+
+// hasColor reports whether the styles will emit ANSI codes.
+func (s Styles) hasColor() bool {
+	return s.r.ColorProfile() != termenv.Ascii
+}
+
+// Rainbow returns msg with each visible rune colored along the HSV spectrum.
+// Whitespace stays unstyled. hueOffsetDeg shifts the start of the spectrum
+// (0-360); incrementing it across animation frames produces a smooth
+// shimmer. When color is disabled (NO_COLOR, or the writer isn't a TTY) the
+// plain string is returned unchanged.
+func (s Styles) Rainbow(msg string, hueOffsetDeg float64) string {
+	if !s.hasColor() {
+		return msg
+	}
+	runes := []rune(msg)
+	visibleCount := 0
+	for _, r := range runes {
+		if !isWhitespace(r) {
+			visibleCount++
+		}
+	}
+	if visibleCount == 0 {
+		return msg
+	}
+
+	// Each non-whitespace rune gets a slice of the spectrum. Saturation
+	// 0.85 / value 0.95 keeps the colors bright on dark terminals while
+	// staying just-barely-readable on light ones; the rainbow theme trades
+	// perfect contrast for visible variety.
+	const sat, val = 0.85, 0.95
+
+	var b strings.Builder
+	b.Grow(len(msg) * 12) // ANSI per-rune envelope is ~10-15 bytes
+
+	visible := 0
+	for _, r := range runes {
+		if isWhitespace(r) {
+			b.WriteRune(r)
+			continue
+		}
+		h := math.Mod(hueOffsetDeg+360.0*float64(visible)/float64(visibleCount), 360.0)
+		if h < 0 {
+			h += 360
+		}
+		hex := colorful.Hsv(h, sat, val).Hex()
+		b.WriteString(s.r.NewStyle().Foreground(lipgloss.Color(hex)).Render(string(r)))
+		visible++
+	}
+	return b.String()
+}
+
+func isWhitespace(r rune) bool {
+	switch r {
+	case ' ', '\t', '\n', '\r':
+		return true
+	}
+	return false
 }
 
 // CellStyler renders a single cell content string. Only called for data rows

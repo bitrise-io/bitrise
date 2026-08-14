@@ -40,7 +40,7 @@ func CheckPasswordStdinPiped(passwordStdin, isTerminal bool, exampleCmd string) 
 }
 
 func readSecretInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bool, trim func(string) string) (string, error) {
-	if fd, ok := terminalFd(in); ok && !fromStdin {
+	if fd, ok := TerminalFd(in); ok && !fromStdin {
 		if _, err := fmt.Fprint(stderr, prompt); err != nil {
 			return "", err
 		}

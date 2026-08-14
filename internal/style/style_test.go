@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/muesli/termenv"
 )
 
 func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
@@ -40,6 +42,33 @@ func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
 		if got := s.BuildStatus(status); got.String() != want.String() {
 			t.Errorf("BuildStatus(%q) = %q, want %q", status, got.String(), want.String())
 		}
+	}
+}
+
+func TestRainbow_NoColorReturnsPlain(t *testing.T) {
+	// On a non-TTY writer there's no color profile, so Rainbow must be a
+	// no-op: same string, no ANSI bytes.
+	var buf bytes.Buffer
+	s := New(&buf)
+	const msg = "Hello, world!"
+	got := s.Rainbow(msg, 0)
+	if got != msg {
+		t.Errorf("Rainbow on non-TTY = %q, want plain %q", got, msg)
+	}
+	if strings.Contains(got, "\x1b[") {
+		t.Errorf("Rainbow on non-TTY emitted ANSI: %q", got)
+	}
+}
+
+func TestRainbow_EmptyAndWhitespaceOnly(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+	s.r.SetColorProfile(termenv.ANSI256) // force a color profile for this test
+	if got := s.Rainbow("", 0); got != "" {
+		t.Errorf("empty: got %q, want empty", got)
+	}
+	if got := s.Rainbow("   ", 0); got != "   " {
+		t.Errorf("whitespace-only: got %q, want %q", got, "   ")
 	}
 }
 
