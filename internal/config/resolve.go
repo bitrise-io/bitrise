@@ -63,6 +63,11 @@ func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 		// file should be able to pin, and neither is a credential.
 		AppID:              FirstNonEmptyString(legacyCfg.AppID, dirCfg.AppID, globalCfg.AppID),
 		DefaultWorkspaceID: FirstNonEmptyString(legacyCfg.DefaultWorkspaceID, dirCfg.DefaultWorkspaceID, globalCfg.DefaultWorkspaceID),
+		// Output/Theme are neither credentials nor URLs, so — like AppID/
+		// DefaultWorkspaceID above — they honor dirCfg: a repo may reasonably
+		// pin its own output format or color theme.
+		Output: FirstNonEmptyString(legacyCfg.Output, dirCfg.Output, globalCfg.Output),
+		Theme:  FirstNonEmptyString(legacyCfg.Theme, dirCfg.Theme, globalCfg.Theme),
 	}}
 }
 

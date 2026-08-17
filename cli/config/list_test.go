@@ -22,6 +22,8 @@ func TestListCmd_Empty(t *testing.T) {
 	assert.Contains(t, got, "web_base_url: (unset)")
 	assert.Contains(t, got, "app_id: (unset)")
 	assert.Contains(t, got, "default_workspace_id: (unset)")
+	assert.Contains(t, got, "output: (unset)")
+	assert.Contains(t, got, "theme: (unset)")
 }
 
 func TestListCmd_ShowsSavedValues(t *testing.T) {
@@ -35,6 +37,8 @@ func TestListCmd_ShowsSavedValues(t *testing.T) {
 	assert.Contains(t, out.String(), "web_base_url: (unset)")
 	assert.Contains(t, out.String(), "app_id: (unset)")
 	assert.Contains(t, out.String(), "default_workspace_id: (unset)")
+	assert.Contains(t, out.String(), "output: (unset)")
+	assert.Contains(t, out.String(), "theme: (unset)")
 }
 
 func TestListCmd_JSONFormat(t *testing.T) {
@@ -50,6 +54,8 @@ func TestListCmd_JSONFormat(t *testing.T) {
 	assert.Contains(t, out, `"web_base_url": ""`, "unset keys must still be enumerated, not omitted")
 	assert.Contains(t, out, `"app_id": ""`)
 	assert.Contains(t, out, `"default_workspace_id": ""`)
+	assert.Contains(t, out, `"output": ""`)
+	assert.Contains(t, out, `"theme": ""`)
 }
 
 func TestListCmd_YMLFormat(t *testing.T) {
@@ -65,6 +71,8 @@ func TestListCmd_YMLFormat(t *testing.T) {
 	assert.Contains(t, out, `web_base_url: ""`)
 	assert.Contains(t, out, `app_id: ""`)
 	assert.Contains(t, out, `default_workspace_id: ""`)
+	assert.Contains(t, out, `output: ""`)
+	assert.Contains(t, out, `theme: ""`)
 }
 
 func TestListCmd_RejectsPositionalArgs(t *testing.T) {

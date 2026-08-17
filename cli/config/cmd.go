@@ -42,11 +42,20 @@ inside a build a command with no --app/--workspace acts on the app the build
 runs for and the workspace owning it. Pass the flag explicitly to target
 anything else.
 
+output resolves as: --output flag > $%s > output config key (per-directory
+file then global file) > built-in default (raw). theme resolves the same way,
+via --theme and $%s (default: auto). Both honor the per-directory file, like
+app_id/default_workspace_id above — neither is a credential or a URL. Note
+--output only affects commands that share the raw/json/yml format vocabulary:
+'yml validate', 'local workflow-list' and 'plugin list/info' keep their own
+--format flag.
+
 'get'/'set'/'unset'/'list' only read and write the global file — per-dir
 files must be edited by hand.
 
 To manage your access token, use 'bitrise auth login/logout/status'.`,
 			strings.Join(internalconfig.Keys, ", "), cmdutil.EnvWebBaseURL,
+			cmdutil.EnvOutput, cmdutil.EnvTheme,
 		),
 		RunE: cmdutil.RequireKnownSubcommand,
 	}

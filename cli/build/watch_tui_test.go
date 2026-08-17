@@ -1,12 +1,14 @@
 package build
 
 import (
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	internalbuild "github.com/bitrise-io/bitrise/v2/internal/build"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
 )
 
 // The TUI used to print each log line with tea.Batch, which bubbletea runs
@@ -16,7 +18,7 @@ import (
 // flight, and lines arriving during a print buffer until it completes.
 
 func TestWaitModel_SerializesLogOutputSingleFlight(t *testing.T) {
-	m := newWaitModel(internalbuild.Build{BuildNumber: 1})
+	m := newWaitModel(internalbuild.Build{BuildNumber: 1}, style.New(io.Discard))
 
 	// First chunk with two complete lines starts exactly one print and
 	// drains the lines into that in-flight block.
@@ -48,7 +50,7 @@ func TestWaitModel_SerializesLogOutputSingleFlight(t *testing.T) {
 }
 
 func TestWaitModel_HoldsPartialLineUntilNewline(t *testing.T) {
-	m := newWaitModel(internalbuild.Build{})
+	m := newWaitModel(internalbuild.Build{}, style.New(io.Discard))
 
 	// A chunk without a trailing newline isn't a complete line yet, so
 	// nothing prints.
@@ -67,7 +69,7 @@ func TestWaitModel_HoldsPartialLineUntilNewline(t *testing.T) {
 }
 
 func TestWaitModel_FinalFlushEmitsTrailingPartialAndQuits(t *testing.T) {
-	m := newWaitModel(internalbuild.Build{})
+	m := newWaitModel(internalbuild.Build{}, style.New(io.Discard))
 
 	// A trailing partial line (a build's last line often has no newline).
 	next, _ := m.Update(logChunkMsg("ExitCode: 0"))
@@ -82,7 +84,7 @@ func TestWaitModel_FinalFlushEmitsTrailingPartialAndQuits(t *testing.T) {
 }
 
 func TestWaitModel_WaitsForInFlightPrintBeforeQuitting(t *testing.T) {
-	m := newWaitModel(internalbuild.Build{})
+	m := newWaitModel(internalbuild.Build{}, style.New(io.Discard))
 
 	// Start a print.
 	next, _ := m.Update(logChunkMsg("line\n"))

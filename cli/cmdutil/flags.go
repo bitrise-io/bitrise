@@ -3,7 +3,7 @@ package cmdutil
 import (
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/spf13/pflag"
-) // Flags ...
+)
 
 const (
 	CollectionPathEnvKey = "STEPMAN_COLLECTION"
@@ -43,7 +43,7 @@ const (
 // GlobalFlagNames lists the persistent flags that configure bitrise itself.
 // They are recognised on the plugin/envman dispatch paths and reported to
 // analytics, so the list is shared rather than repeated at each use site.
-var GlobalFlagNames = []string{DebugModeKey, CIKey, PRKey}
+var GlobalFlagNames = []string{DebugModeKey, CIKey, PRKey, FlagQuiet, FlagNoColor, FlagOutput, FlagTheme}
 
 // AddConfigAndInventoryFlags ...
 func AddConfigAndInventoryFlags(fs *pflag.FlagSet) {
