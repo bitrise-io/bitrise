@@ -15,7 +15,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 // watchStubServer serves a finished+archived build so Service.Watch takes the
@@ -43,28 +42,22 @@ func watchStubServer(t *testing.T, status int) *httptest.Server {
 func TestWatchCmd_JSONWritesRecordToStdoutLogsToStderr(t *testing.T) {
 	srv := watchStubServer(t, 1) // success
 
-	var logBuf bytes.Buffer
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, stderr := newTestWatchCmd(t, srv.URL)
+	cmd, stdout, stderr := newTestWatchCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("format", "json"))
 	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
 
 	var rec map[string]any
-	require.NoError(t, json.Unmarshal(logBuf.Bytes(), &rec))
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &rec))
 	assert.Equal(t, "success", rec["status"])
 	assert.Contains(t, stderr.String(), "ARCHIVED LOG LINE")
-	assert.NotContains(t, logBuf.String(), "ARCHIVED LOG LINE", "log lines must not leak into the JSON record")
+	assert.NotContains(t, stdout.String(), "ARCHIVED LOG LINE", "log lines must not leak into the JSON record")
 }
 
 func TestWatchCmd_JSONFailedBuildExitsNonZero(t *testing.T) {
 	srv := watchStubServer(t, 2) // failed
 
-	var logBuf bytes.Buffer
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, _ := newTestWatchCmd(t, srv.URL)
+	cmd, stdout, _ := newTestWatchCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("format", "json"))
 
@@ -72,19 +65,19 @@ func TestWatchCmd_JSONFailedBuildExitsNonZero(t *testing.T) {
 	require.Error(t, err, "expected non-zero exit (error) for a failed build")
 
 	var rec map[string]any
-	require.NoError(t, json.Unmarshal(logBuf.Bytes(), &rec))
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &rec))
 	assert.Equal(t, "failed", rec["status"])
 }
 
 func TestWatchCmd_RequiresApp(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
-	cmd, _ := newTestWatchCmd(t, "https://unused.test")
+	cmd, _, _ := newTestWatchCmd(t, "https://unused.test")
 	err := cmd.RunE(cmd, []string{"b-1"})
 	require.EqualError(t, err, "--app is required")
 }
 
-func newTestWatchCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {
+func newTestWatchCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
@@ -95,5 +88,5 @@ func newTestWatchCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Bu
 	cmd.SetErr(&stderr)
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
-	return cmd, &stderr
+	return cmd, &stdout, &stderr
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 func TestTriggerCmd_HappyPath(t *testing.T) {
@@ -44,17 +42,14 @@ func TestTriggerCmd_JSONOutput(t *testing.T) {
 		_, _ = io.WriteString(w, `{"build_slug":"new-1","build_number":100,"build_url":"https://app.bitrise.io/build/new-1","triggered_workflow":"primary"}`)
 	})
 
-	var logBuf strings.Builder
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	cmd, out := newTestTriggerCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("workflow", "primary"))
 	require.NoError(t, cmd.Flags().Set("format", "json"))
 	require.NoError(t, cmd.RunE(cmd, nil))
 
 	var got map[string]any
-	require.NoError(t, json.Unmarshal([]byte(logBuf.String()), &got))
+	require.NoError(t, json.Unmarshal(out.Bytes(), &got))
 	assert.Equal(t, "new-1", got["id"])
 	assert.Equal(t, float64(100), got["build_number"])
 }
@@ -154,10 +149,9 @@ func TestTriggerCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 		}
 	})
 
-	var logBuf strings.Builder
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
 	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("workflow", "primary"))
 	require.NoError(t, cmd.Flags().Set("wait", "true"))
@@ -169,7 +163,7 @@ func TestTriggerCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed")
 
 	var rec map[string]any
-	require.NoError(t, json.Unmarshal([]byte(logBuf.String()), &rec))
+	require.NoError(t, json.Unmarshal(stdout.Bytes(), &rec))
 	assert.Equal(t, "b-1", rec["id"])
 }
 

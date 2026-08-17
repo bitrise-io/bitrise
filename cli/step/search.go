@@ -56,7 +56,7 @@ Valid maintainers:
 				printStepsTable(steps)
 				return nil
 			}
-			return output.Print(steps, output.Format)
+			return output.Print(cmd.OutOrStdout(), steps, output.Format)
 		},
 	}
 

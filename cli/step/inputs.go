@@ -42,7 +42,7 @@ STEP_REF must include an exact version: step_id@version`,
 				printInputsTable(inputs)
 				return nil
 			}
-			return output.Print(inputs, output.Format)
+			return output.Print(cmd.OutOrStdout(), inputs, output.Format)
 		},
 	}
 
