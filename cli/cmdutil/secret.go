@@ -9,15 +9,15 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadTokenInput reads a token from in, trimming all surrounding whitespace
+// ReadSecretInput reads a secret from in, trimming all surrounding whitespace
 // (tokens are forgiving of shell copy/paste artifacts). When fromStdin is
 // true, or in isn't a terminal, it reads a line directly; otherwise it
 // prompts and reads a masked line.
-func ReadTokenInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bool) (string, error) {
+func ReadSecretInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bool) (string, error) {
 	return readSecretInput(in, stderr, prompt, fromStdin, strings.TrimSpace)
 }
 
-// ReadPasswordInput reads a password from in the same way as ReadTokenInput,
+// ReadPasswordInput reads a password from in the same way as ReadSecretInput,
 // but trims only a trailing line terminator — a leading/trailing space can
 // be a deliberate part of a password and must not be silently stripped.
 func ReadPasswordInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bool) (string, error) {

@@ -2,16 +2,15 @@
 // renderers. JSON/YML output never goes through this package — ANSI codes
 // must not leak into machine-readable output.
 //
-// This is a trimmed port of bitrise-cli's internal/output/style package:
-// only the styles, Table renderer, and Rainbow shimmer that ported commands
-// (`stack list`, `purr`) actually use are included. Theme overrides,
-// --no-color/--theme flags, and styles used only by commands not yet ported
-// (build status, OAuth picker, etc.) are left out on purpose — add them when
-// a command that actually needs them lands, rather than carrying dead code
-// now.
+// Each renderer constructs Styles via New(writer), scoped to that writer's
+// color profile: non-TTY writers (pipes, *bytes.Buffer) automatically
+// produce ANSI-free output. NO_COLOR and FORCE_COLOR are honored
+// automatically by the underlying termenv detection; Configure adds
+// explicit overrides for a --no-color / --theme flag pair.
 package style
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"strings"
@@ -20,6 +19,55 @@ import (
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/termenv"
 )
+
+// Theme controls which side of an AdaptiveColor pair New picks. Auto leaves
+// the choice to lipgloss (which queries the terminal background via OSC 11).
+// Dark/Light force the corresponding side. None disables ANSI altogether.
+type Theme string
+
+const (
+	ThemeAuto  Theme = "auto"
+	ThemeDark  Theme = "dark"
+	ThemeLight Theme = "light"
+	ThemeNone  Theme = "none"
+)
+
+// Themes is the registered list of theme values, used for validation, help
+// text, and shell completion.
+var Themes = []string{string(ThemeAuto), string(ThemeDark), string(ThemeLight), string(ThemeNone)}
+
+// ParseTheme validates a user-supplied --theme value. Empty resolves to Auto
+// so callers can pass cmd flag values directly.
+func ParseTheme(s string) (Theme, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "", string(ThemeAuto):
+		return ThemeAuto, nil
+	case string(ThemeDark):
+		return ThemeDark, nil
+	case string(ThemeLight):
+		return ThemeLight, nil
+	case string(ThemeNone):
+		return ThemeNone, nil
+	default:
+		return "", fmt.Errorf("unknown theme %q (expected: %s)", s, strings.Join(Themes, ", "))
+	}
+}
+
+// forceNoColor and forcedTheme are set by Configure and override every
+// Styles bundle constructed by New afterward. Configure is called once from
+// persistentPreRun before any subcommand's RunE, so concurrent New calls
+// during a single command run see a stable value.
+var (
+	forceNoColor bool
+	forcedTheme  = ThemeAuto
+)
+
+// Configure applies process-wide style settings. Call once from the cmd
+// layer's persistentPreRun, after parsing the --no-color and --theme flags.
+func Configure(noColor bool, theme Theme) {
+	forceNoColor = noColor
+	forcedTheme = theme
+}
 
 // BrandColor is Bitrise's brand purple, used by the build-watch spinner.
 const BrandColor = lipgloss.Color("#7B61FF")
@@ -46,32 +94,46 @@ type Styles struct {
 	Dim     lipgloss.Style // de-emphasized text
 	Slug    lipgloss.Style // technical identifiers (dimmed)
 	Success lipgloss.Style // success indicators
+	Failure lipgloss.Style // failure indicators
 	Warn    lipgloss.Style // warnings
 	Bold    lipgloss.Style // emphasis
 	Label   lipgloss.Style // field labels in key/value dumps
 	URL     lipgloss.Style // links
+	Brand   lipgloss.Style // brand-purple accent (picker cursor, etc.)
 
-	failed  lipgloss.Style
 	running lipgloss.Style
 	aborted lipgloss.Style
 }
 
 // New returns a Styles bundle for the given writer. ANSI escape codes are
-// emitted only if w is detected as a color-capable TTY (NO_COLOR is honored
-// automatically by the underlying termenv detection).
+// emitted only if w is detected as a color-capable TTY, --no-color is not in
+// effect, and --theme is not "none". The theme (when not Auto) overrides the
+// renderer's auto-detected light/dark background, forcing AdaptiveColor
+// pairs to pick the requested side.
 func New(w io.Writer) Styles {
 	r := lipgloss.NewRenderer(w)
+	if forceNoColor || forcedTheme == ThemeNone {
+		r.SetColorProfile(termenv.Ascii)
+	} else {
+		switch forcedTheme {
+		case ThemeDark:
+			r.SetHasDarkBackground(true)
+		case ThemeLight:
+			r.SetHasDarkBackground(false)
+		}
+	}
 	return Styles{
 		r:       r,
 		Header:  r.NewStyle().Bold(true).Foreground(dimColor),
 		Dim:     r.NewStyle().Foreground(dimColor),
 		Slug:    r.NewStyle().Foreground(dimColor),
 		Success: r.NewStyle().Foreground(successColor),
+		Failure: r.NewStyle().Foreground(failedColor),
 		Warn:    r.NewStyle().Foreground(warnColor),
 		Bold:    r.NewStyle().Bold(true),
 		Label:   r.NewStyle().Bold(true),
 		URL:     r.NewStyle().Underline(true),
-		failed:  r.NewStyle().Foreground(failedColor),
+		Brand:   r.NewStyle().Foreground(BrandColor),
 		running: r.NewStyle().Foreground(runningColor),
 		aborted: r.NewStyle().Foreground(abortedColor),
 	}
@@ -85,7 +147,7 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	case "success":
 		return s.Success
 	case "failed":
-		return s.failed
+		return s.Failure
 	case "in-progress":
 		return s.running
 	case "aborted", "aborted-with-success":
@@ -95,8 +157,8 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	}
 }
 
-// hasColor reports whether the styles will emit ANSI codes.
-func (s Styles) hasColor() bool {
+// HasColor reports whether the styles will emit ANSI codes.
+func (s Styles) HasColor() bool {
 	return s.r.ColorProfile() != termenv.Ascii
 }
 
@@ -106,7 +168,7 @@ func (s Styles) hasColor() bool {
 // shimmer. When color is disabled (NO_COLOR, or the writer isn't a TTY) the
 // plain string is returned unchanged.
 func (s Styles) Rainbow(msg string, hueOffsetDeg float64) string {
-	if !s.hasColor() {
+	if !s.HasColor() {
 		return msg
 	}
 	runes := []rune(msg)
