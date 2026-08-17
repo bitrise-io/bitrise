@@ -70,6 +70,7 @@ func TestWatchCmd_JSONFailedBuildExitsNonZero(t *testing.T) {
 }
 
 func TestWatchCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _, _ := newTestWatchCmd(t, "https://unused.test")

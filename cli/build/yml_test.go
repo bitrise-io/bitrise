@@ -30,6 +30,7 @@ func TestYMLCmd_HappyPath(t *testing.T) {
 }
 
 func TestYMLCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestYMLCmd(t, "https://unused.test")

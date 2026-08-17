@@ -12,8 +12,8 @@ import (
 //  3. Global config file (~/.config/bitrise/cli/config.yml)
 //  4. Zero value
 //
-// APIBaseURL/WebBaseURL are the exception: they skip the per-directory layer
-// (see below) — everything else follows the order above.
+// APIBaseURL/WebBaseURL/RDEAPIBaseURL are the exception: they skip the
+// per-directory layer (see below) — everything else follows the order above.
 //
 // Resolved embeds Config (rather than being an identical, separately-typed
 // copy of its fields) so a new field only needs adding once — but it stays a
@@ -56,6 +56,10 @@ func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 		// global > default — no dirCfg, see the doc comment above.
 		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
 		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
+		// No default yet — the rde_api_base_url config key (and its default)
+		// land in a later PR; this merges the raw field so the test harness can
+		// route a value through Resolve today.
+		RDEAPIBaseURL: FirstNonEmptyString(legacyCfg.RDEAPIBaseURL, globalCfg.RDEAPIBaseURL),
 		// legacyCfg.AppID is likewise always empty, and there's no sensible
 		// default app — effectively dir > global > unset. Both of these DO
 		// honor dirCfg, unlike the two URLs above: they name which app and

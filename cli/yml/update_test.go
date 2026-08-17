@@ -18,6 +18,7 @@ import (
 )
 
 func TestUpdateCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestUpdateCmd(t, "http://unused.test", "")
@@ -53,6 +54,7 @@ func TestUpdateCmd_EmptyContent(t *testing.T) {
 func newTestUpdateCmd(t *testing.T, apiBaseURL, stdin string) (*cobra.Command, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
 	cmd := NewUpdateCommand()

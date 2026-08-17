@@ -14,6 +14,7 @@ import (
 
 func TestResolveTokenAndSource_NoToken(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would be a source, defeating the test
 
 	tok, source, err := resolveTokenAndSource()
 	require.NoError(t, err)
@@ -23,6 +24,7 @@ func TestResolveTokenAndSource_NoToken(t *testing.T) {
 
 func TestResolveTokenAndSource_EnvTakesPrecedence(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	require.NoError(t, auth.Save(auth.Auth{Token: "file-token"}))
 	t.Setenv(auth.EnvToken, "env-token")
 
@@ -34,6 +36,7 @@ func TestResolveTokenAndSource_EnvTakesPrecedence(t *testing.T) {
 
 func TestResolveTokenAndSource_FallsBackToAuthFile(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	require.NoError(t, auth.Save(auth.Auth{Token: "file-token"}))
 
 	tok, source, err := resolveTokenAndSource()
@@ -44,6 +47,7 @@ func TestResolveTokenAndSource_FallsBackToAuthFile(t *testing.T) {
 
 func TestResolveTokenAndSource_CorruptAuthFileReturnsError(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	p, err := auth.Path()
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o700))
@@ -57,6 +61,7 @@ func TestResolveTokenAndSource_CorruptAuthFileReturnsError(t *testing.T) {
 
 func TestCurrentStatus_NoToken(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 
 	s, err := currentStatus()
 	require.NoError(t, err)
@@ -67,6 +72,7 @@ func TestCurrentStatus_NoToken(t *testing.T) {
 
 func TestCurrentStatus_CorruptAuthFileReturnsError(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	p, err := auth.Path()
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o700))
@@ -78,6 +84,7 @@ func TestCurrentStatus_CorruptAuthFileReturnsError(t *testing.T) {
 
 func TestCurrentStatus_PastedToken(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	require.NoError(t, auth.Save(auth.Auth{Token: "bitpat_x"}))
 
 	s, err := currentStatus()
@@ -90,6 +97,7 @@ func TestCurrentStatus_PastedToken(t *testing.T) {
 
 func TestCurrentStatus_OAuthManagedShowsExpiry(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	expiry := time.Now().Add(time.Hour).Truncate(time.Second)
 	require.NoError(t, auth.Save(auth.Auth{
 		Token: "bitpat_x", TokenExpiry: expiry,
@@ -104,6 +112,7 @@ func TestCurrentStatus_OAuthManagedShowsExpiry(t *testing.T) {
 
 func TestCurrentStatus_EnvTokenSkipsOAuthDetails(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	require.NoError(t, auth.Save(auth.Auth{
 		Token: "bitpat_x", TokenExpiry: time.Now().Add(time.Hour),
 		JWT: "jwt", JWTExpiry: time.Now().Add(time.Hour), RefreshToken: "refresh",

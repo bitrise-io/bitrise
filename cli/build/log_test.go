@@ -111,6 +111,7 @@ func TestLogCmd_StreamsArchivedLog(t *testing.T) {
 }
 
 func TestLogCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestLogCmd(t, "https://unused.test")
