@@ -78,6 +78,11 @@ func (r WorkflowRunner) activateAndRunSteps(
 	currentStepBundleUUID := ""
 	var currentStepBundleEnvVars []envmanModels.EnvironmentItemModel
 
+	// Each Step Bundle's run_if is evaluated once, when the Bundle is entered, and the decision is
+	// cached here keyed by the Bundle's UUID. This keeps the Bundle's run_if encapsulated: a Step in
+	// the Bundle cannot change the run_if outcome for its sibling Steps by setting an output env var.
+	stepBundleRunIfResults := map[string]bool{}
+
 	// ------------------------------------------
 	// Main - Preparing & running the steps
 	for idx, stepPlan := range plan.Steps {
@@ -117,6 +122,7 @@ func (r WorkflowRunner) activateAndRunSteps(
 			stepStartTime,
 			stepStartedProperties,
 			stepPlan.StepBundleRunIfs,
+			stepBundleRunIfResults,
 		)
 
 		*environments = append(*environments, result.OutputEnvironments...)
@@ -184,7 +190,8 @@ func (r WorkflowRunner) activateAndRunStep(
 	isStepLibOfflineMode bool,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
-	stepBundleRunIfs []string,
+	stepBundleRunIfs []models.StepBundleRunIf,
+	stepBundleRunIfResults map[string]bool,
 ) activateAndRunStepResult {
 	stepInfoPtr, stepIDData, err := newStepInfoPtr(stepID, defaultStepLibSource, step)
 	if err != nil {
@@ -192,21 +199,29 @@ func (r WorkflowRunner) activateAndRunStep(
 	}
 
 	if len(stepBundleRunIfs) > 0 {
-		runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
-		if err != nil {
-			err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
-			return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
-		}
-
 		// To run the Step each of the including Step Bundles run_if statements must evaluate to true, from the top most to the bottom most.
+		// Each Bundle's run_if is evaluated only once, when the Bundle is entered (its first Step), and the cached decision is reused
+		// for the Bundle's remaining Steps. This keeps the run_if encapsulated: a Step in the Bundle cannot change the outcome for its
+		// sibling Steps by modifying an env var.
 		for _, stepBundleRunIf := range stepBundleRunIfs {
-			isRun, err := bitrise.EvaluateTemplateToBool(stepBundleRunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
-			if err != nil {
-				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+			isRun, evaluated := stepBundleRunIfResults[stepBundleRunIf.BundleUUID]
+			if !evaluated {
+				runIfEnvList, err := envman.ConvertToEnvsJSONModel(environments, true, false, &envmanEnv.DefaultEnvironmentSource{})
+				if err != nil {
+					err = fmt.Errorf("EnvmanReadEnvList failed, err: %s", err)
+					return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+				}
+
+				isRun, err = bitrise.EvaluateTemplateToBool(stepBundleRunIf.RunIf, configs.IsCIMode, configs.IsPullRequestMode, buildRunResults, runIfEnvList)
+				if err != nil {
+					return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, err, true, map[string]string{}, nil)
+				}
+				stepBundleRunIfResults[stepBundleRunIf.BundleUUID] = isRun
 			}
+
 			if !isRun {
 				// In the workflow run logs stepInfoPtr.Step.RunIf is used as a reason for skipping the step.
-				stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf)
+				stepInfoPtr.Step.RunIf = pointers.NewStringPtr(stepBundleRunIf.RunIf)
 				return newActivateAndRunStepResult(step, stepInfoPtr, models.StepRunStatusCodeSkippedWithRunIf, 0, nil, true, map[string]string{}, nil)
 			}
 		}
@@ -234,7 +249,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	//
 	// Activate step
 	activateStartTime := time.Now()
-	activateResult := r.activateStep(step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(stepExecutionID, step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
 	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
@@ -246,7 +261,7 @@ func (r WorkflowRunner) activateAndRunStep(
 
 	//
 	// Run step
-	logStepStarted(stepInfoPtr, stepIDx, stepExecutionID, stepStartTime)
+	logStepStarted(r.logger, stepInfoPtr, mergedStep, stepIDx, stepExecutionID, stepStartTime)
 
 	// Evaluate run_if from step.yml default (only reached when bitrise.yml didn't set run_if).
 	if mergedStep.RunIf != nil && *mergedStep.RunIf != "" {
@@ -355,6 +370,7 @@ func newStepInfoPtr(stepID, defaultStepLibSource string, step stepmanModels.Step
 }
 
 func (r WorkflowRunner) activateStep(
+	stepExecutionID string,
 	step stepmanModels.StepModel,
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIDData stepid.CanonicalID,
@@ -376,9 +392,11 @@ func (r WorkflowRunner) activateStep(
 
 	activationStartedAt := time.Now()
 	activator := newStepActivator()
-	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, &stepInfoPtr, isStepLibOfflineMode)
+	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, isStepLibOfflineMode)
 	r.tracker.SendStepActivationEvent(
+		stepExecutionID,
 		activatedStep.ActivationType,
+		activatedStep.ActivationInventorySource,
 		stepIDData.IDorURI,
 		err == nil,
 		time.Since(activationStartedAt),
@@ -390,6 +408,15 @@ func (r WorkflowRunner) activateStep(
 	if err != nil {
 		return newActivateStepResult(stepmanModels.StepModel{}, stepInfoPtr, stepDir, "", err)
 	}
+
+	// Fill the presentation step info (shown in the step header boxes) from stepman's result.
+	// Since stepman v0.21.3 this is populated for every activation type, so no guard is needed.
+	// ID and Title are left as newStepInfoPtr seeded them (the bitrise.yml reference, e.g. "./"
+	// for a path step) so we keep the relative ref rather than stepman's absolute path.
+	stepInfoPtr.Version = activatedStep.StepInfo.Version
+	stepInfoPtr.LatestVersion = activatedStep.StepInfo.LatestVersion
+	stepInfoPtr.OriginalVersion = activatedStep.StepInfo.OriginalVersion
+	stepInfoPtr.GroupInfo = activatedStep.StepInfo.GroupInfo
 
 	// Fill step info with default step info, if exist
 	mergedStep := step
@@ -482,8 +509,7 @@ func (r WorkflowRunner) prepareEnvsForStepRun(
 		analytics.StepExecutionIDEnvKey: stepExecutionID,
 	})
 
-	// add an extra env to allow the next step to access the current step's working directory
-	// (for source-built steps this is the source directory, for binary steps it may not contain source code)
+	// add an extra env for the next step run to be able to access the step's source location
 	additionalEnvironments = append(additionalEnvironments, envmanModels.EnvironmentItemModel{
 		"BITRISE_STEP_SOURCE_DIR": stepDir,
 	})
@@ -1118,7 +1144,7 @@ func checkAndInstallStepDependencies(step stepmanModels.StepModel, extraEnvs map
 	return nil
 }
 
-func logStepStarted(stepInfo stepmanModels.StepInfoModel, idx int, stepExcutionID string, stepStartTime time.Time) {
+func logStepStarted(logger log.Logger, stepInfo stepmanModels.StepInfoModel, step stepmanModels.StepModel, idx int, stepExcutionID string, stepStartTime time.Time) {
 	title := ""
 	if stepInfo.Step.Title != nil && *stepInfo.Step.Title != "" {
 		title = *stepInfo.Step.Title
@@ -1131,6 +1157,7 @@ func logStepStarted(stepInfo stepmanModels.StepInfoModel, idx int, stepExcutionI
 		ID:          stepInfo.ID,
 		Version:     stepInfo.Version,
 		Collection:  stepInfo.Library,
+		Toolkit:     toolkits.ToolkitForStep(step, logger).ToolkitName(),
 		StartTime:   stepStartTime.Format(time.RFC3339),
 	}
 	log.PrintStepStartedEvent(params)

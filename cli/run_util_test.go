@@ -399,7 +399,6 @@ func (c *toolkitCapturingTracker) SendToolkitPrepareEvent(stepExecutionID, toolk
 	})
 }
 
-
 func TestTrackToolkitPrepare(t *testing.T) {
 	tests := []struct {
 		name         string

@@ -2,13 +2,21 @@ package activator
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/stepman/activator/steplib"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
+)
+
+const (
+	bitriseSteplibURL    = "https://github.com/bitrise-io/bitrise-steplib.git"
+	bitriseSteplibAPIURL = "https://steplib.bitrise.io/api"
+	enableSteplibAPIEnv  = "BITRISE_STEPLIB_API_ENABLE"
 )
 
 func ActivateSteplibRefStep(
@@ -18,7 +26,6 @@ func ActivateSteplibRefStep(
 	workDir string,
 	didStepLibUpdateInWorkflow bool,
 	isOfflineMode bool,
-	stepInfoPtr *models.StepInfoModel,
 ) (ActivatedStep, error) {
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	//nolint:exhaustruct // missing fields are added down below based on activation result
@@ -27,15 +34,33 @@ func ActivateSteplibRefStep(
 		DidStepLibUpdate: false,
 	}
 
-	stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
-	activationResult.DidStepLibUpdate = didUpdate
-	if err != nil {
-		return activationResult, err
+	var libraryAPI *steplibrary.Client
+	if shouldUseSteplibAPI(id.SteplibSource) {
+		libraryAPI = steplibrary.New(log, bitriseSteplibAPIURL)
 	}
 
-	execPath, err := steplib.ActivateStep(id.SteplibSource, id.IDorURI, stepInfo.Version, activatedStepDir, stepYMLPath, log, isOfflineMode)
-	activationResult.ExecutablePath = execPath
-	if execPath != "" {
+	// The inventory source is set here, on the same branch that dispatches, and before
+	// any return: the caller keeps the partial result on error, so a failed activation
+	// is still attributable to the inventory that served it.
+	if libraryAPI == nil {
+		activationResult.ActivationInventorySource = ActivationInventorySourceSteplib
+
+		// Old stepman preparation codepath
+		stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
+		activationResult.StepInfo = stepInfo
+		activationResult.DidStepLibUpdate = didUpdate
+		if err != nil {
+			return activationResult, err
+		}
+	} else {
+		activationResult.ActivationInventorySource = ActivationInventorySourceSteplibAPI
+	}
+
+	// ActivateStep dispatches to the v2 or legacy codepath.
+	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, isOfflineMode, libraryAPI, httpfetch.NewClient(log))
+	activationResult.StepInfo = resolvedStep.StepInfo
+	activationResult.ExecutablePath = resolvedStep.ExecPath
+	if resolvedStep.ExecPath != "" {
 		activationResult.ActivationType = ActivationTypeSteplibExecutable
 	} else {
 		activationResult.ActivationType = ActivationTypeSteplibSource
@@ -44,17 +69,12 @@ func ActivateSteplibRefStep(
 		return activationResult, err
 	}
 
-	// TODO: this is sketchy, we should clean this up, but this pointer originates in the CLI codebase
-	stepInfoPtr.ID = stepInfo.ID
-	if stepInfoPtr.Step.Title == nil || *stepInfoPtr.Step.Title == "" {
-		stepInfoPtr.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-	}
-	stepInfoPtr.Version = stepInfo.Version
-	stepInfoPtr.LatestVersion = stepInfo.LatestVersion
-	stepInfoPtr.OriginalVersion = stepInfo.OriginalVersion
-	stepInfoPtr.GroupInfo = stepInfo.GroupInfo
-
 	return activationResult, nil
+}
+
+func shouldUseSteplibAPI(steplibURI string) bool {
+	enableAPI := os.Getenv(enableSteplibAPIEnv) == "true" || os.Getenv(enableSteplibAPIEnv) == "1"
+	return enableAPI && steplibURI == bitriseSteplibURL
 }
 
 func prepareStepLibForActivation(
@@ -105,11 +125,6 @@ func prepareStepLibForActivation(
 			return stepInfo, didUpdate, err
 		}
 	}
-
-	if stepInfo.Step.Title == nil || *stepInfo.Step.Title == "" {
-		stepInfo.Step.Title = pointers.NewStringPtr(stepInfo.ID)
-	}
-	stepInfo.OriginalVersion = id.Version
 
 	return stepInfo, didUpdate, nil
 }

@@ -317,28 +317,31 @@ func (collection StepCollectionModel) GetDownloadLocations(id, version string) (
 		return []DownloadLocationModel{}, errors.New("missing Source property")
 	}
 
-	locations := []DownloadLocationModel{}
-	for _, downloadLocation := range collection.DownloadLocations {
-		switch downloadLocation.Type {
-		case "zip":
-			url := downloadLocation.Src + id + "/" + version + "/step.zip"
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  url,
-			}
-			locations = append(locations, location)
-		case "git":
-			location := DownloadLocationModel{
-				Type: downloadLocation.Type,
-				Src:  step.Source.Git,
-			}
-			locations = append(locations, location)
-		default:
-			return []DownloadLocationModel{}, fmt.Errorf("invalid download location (%#v) for step (%#v)", downloadLocation, id)
-		}
+	locations, err := BuildStepSourceDownloadLocations(collection.DownloadLocations, id, version, step.Source.Git)
+	if err != nil {
+		return []DownloadLocationModel{}, err
 	}
 	if len(locations) < 1 {
 		return []DownloadLocationModel{}, fmt.Errorf("no download location found for step (%#v)", id)
+	}
+	return locations, nil
+}
+
+// BuildStepSourceDownloadLocations resolves a priority order of source download locations for
+// an exact step version.
+func BuildStepSourceDownloadLocations(baseLocations []DownloadLocationModel, id, version, repoURL string) ([]DownloadLocationModel, error) {
+	locations := []DownloadLocationModel{}
+	for _, base := range baseLocations {
+		switch base.Type {
+		case "zip":
+			locations = append(locations, DownloadLocationModel{Type: "zip", Src: base.Src + id + "/" + version + "/step.zip"})
+		case "git":
+			if repoURL != "" {
+				locations = append(locations, DownloadLocationModel{Type: "git", Src: repoURL})
+			}
+		default:
+			return nil, fmt.Errorf("invalid download location type %q for step %s", base.Type, id)
+		}
 	}
 	return locations, nil
 }

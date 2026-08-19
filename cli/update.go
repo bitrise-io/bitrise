@@ -19,7 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
 	ver "github.com/hashicorp/go-version"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -27,22 +27,23 @@ const (
 	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s/bitrise-%s-x86_64"
 )
 
-var updateCommand = cli.Command{
-	Name:  "update",
-	Usage: "Updates the Bitrise CLI.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+var updateCommand = &cobra.Command{
+	Use:   "update",
+	Short: "Updates the Bitrise CLI.",
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		logCommandParameters(cmd)
 
-		if err := update(c); err != nil {
+		if err := update(cmd); err != nil {
 			log.Errorf("Update Bitrise CLI failed, error: %s", err)
 			os.Exit(1)
 		}
 
 		return nil
 	},
-	Flags: []cli.Flag{
-		cli.StringFlag{Name: "version", Usage: "version to update - only for GitHub release page installations."},
-	},
+}
+
+func init() {
+	updateCommand.Flags().String("version", "", "version to update - only for GitHub release page installations.")
 }
 
 func checkUpdate() error {
@@ -220,11 +221,11 @@ func download(version string) error {
 	return nil
 }
 
-func update(c *cli.Context) error {
+func update(cmd *cobra.Command) error {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logger.Infof("Updating Bitrise CLI...")
 
-	versionFlag := c.String("version")
+	versionFlag, _ := cmd.Flags().GetString("version")
 	logger.Printf("Current version: %s", version.VERSION)
 
 	withBrew, err := installedWithBrew()

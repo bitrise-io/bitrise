@@ -6,39 +6,31 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
+	"github.com/bitrise-io/bitrise/v2/cli/legacy"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var triggerCommand = cli.Command{
-	Name:    "trigger",
+var triggerCommand = &cobra.Command{
+	Use:     "trigger",
 	Aliases: []string{"t"},
-	Usage:   "Triggers a specified Workflow.",
-	Action:  trigger,
-	Flags: []cli.Flag{
-		// cli params
-		cli.StringFlag{Name: PatternKey, Usage: "trigger pattern."},
-		cli.StringFlag{Name: ConfigKey + ", " + configShortKey, Usage: "Path where the workflow config file is located."},
-		cli.StringFlag{Name: InventoryKey + ", " + inventoryShortKey, Usage: "Path of the inventory file."},
-		cli.BoolFlag{Name: secretFilteringFlag, Usage: "Hide secret values from the log.", EnvVar: configs.IsSecretFilteringKey},
+	Short:   "Triggers a specified Workflow.",
+	RunE:    trigger,
+}
 
-		cli.StringFlag{Name: PushBranchKey, Usage: "Git push branch name."},
-		cli.StringFlag{Name: PRSourceBranchKey, Usage: "Git pull request source branch name."},
-		cli.StringFlag{Name: PRTargetBranchKey, Usage: "Git pull request target branch name."},
-		cli.StringFlag{Name: PRReadyStateKey, Usage: "Git pull request ready state. Options: ready_for_review draft converted_to_ready_for_review"},
-		cli.StringFlag{Name: TagKey, Usage: "Git tag name."},
-
-		// cli params used in CI mode
-		cli.StringFlag{Name: JSONParamsKey, Usage: "Specify command flags with json string-string hash."},
-		cli.StringFlag{Name: JSONParamsBase64Key, Usage: "Specify command flags with base64 encoded json string-string hash."},
-
-		// should deprecate
-		cli.StringFlag{Name: ConfigBase64Key, Usage: "base64 encoded config data."},
-		cli.StringFlag{Name: InventoryBase64Key, Usage: "base64 encoded inventory data."},
-	},
+func init() {
+	flags := triggerCommand.Flags()
+	addTriggerFilterFlags(flags)
+	addConfigAndInventoryFlags(flags)
+	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
+	// trigger's --secret-filtering was bound to BITRISE_SECRET_FILTERING (urfave
+	// EnvVar): a non-bool env value aborts. See legacy.SecretFilteringFlagOverride.
+	flags.Bool(secretFilteringFlag, false, "Hide secret values from the log.")
+	markEnvVar(flags, secretFilteringFlag, configs.IsSecretFilteringKey)
+	// END MIGRATION PERIOD COMPATIBILITY
+	addJSONParamsFlags(flags)
 }
 
 func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
@@ -65,55 +57,37 @@ func printAvailableTriggerFilters(triggerMap []models.TriggerMapItemModel) {
 	}
 }
 
-func trigger(c *cli.Context) error {
-	logCommandParameters(c)
+func trigger(cmd *cobra.Command, args []string) error {
+	logCommandParameters(cmd)
 
-	// Expand cli.Context
-	var prGlobalFlagPtr *bool
-	if c.GlobalIsSet(PRKey) {
-		prGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(PRKey))
+	prGlobalFlagPtr := legacy.PRModeFlagOverride(cmd, PRKey)
+	ciGlobalFlagPtr := legacy.CIModeFlagOverride(cmd, CIKey)
+	secretFiltering, err := legacy.SecretFilteringFlagOverride(cmd, secretFilteringFlag)
+	if err != nil {
+		failf("%s", err)
+	}
+	secretEnvsFiltering := legacy.SecretEnvsFilteringOverride()
+
+	triggerPattern, _ := cmd.Flags().GetString(PatternKey)
+	if triggerPattern == "" && len(args) > 0 {
+		triggerPattern = args[0]
 	}
 
-	var ciGlobalFlagPtr *bool
-	if c.GlobalIsSet(CIKey) {
-		ciGlobalFlagPtr = pointers.NewBoolPtr(c.GlobalBool(CIKey))
-	}
+	pushBranch, _ := cmd.Flags().GetString(PushBranchKey)
+	prSourceBranch, _ := cmd.Flags().GetString(PRSourceBranchKey)
+	prTargetBranch, _ := cmd.Flags().GetString(PRTargetBranchKey)
+	prReadyStateStr, _ := cmd.Flags().GetString(PRReadyStateKey)
+	prReadyState := models.PullRequestReadyState(prReadyStateStr)
+	tag, _ := cmd.Flags().GetString(TagKey)
 
-	var secretFiltering *bool
-	if c.IsSet(secretFilteringFlag) {
-		secretFiltering = pointers.NewBoolPtr(c.Bool(secretFilteringFlag))
-	} else if os.Getenv(configs.IsSecretFilteringKey) == "true" {
-		secretFiltering = pointers.NewBoolPtr(true)
-	} else if os.Getenv(configs.IsSecretFilteringKey) == "false" {
-		secretFiltering = pointers.NewBoolPtr(false)
-	}
+	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
+	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)
 
-	var secretEnvsFiltering *bool
-	if os.Getenv(configs.IsSecretEnvsFilteringKey) == "true" {
-		secretEnvsFiltering = pointers.NewBoolPtr(true)
-	} else if os.Getenv(configs.IsSecretEnvsFilteringKey) == "false" {
-		secretEnvsFiltering = pointers.NewBoolPtr(false)
-	}
+	inventoryBase64Data, _ := cmd.Flags().GetString(InventoryBase64Key)
+	inventoryPath, _ := cmd.Flags().GetString(InventoryKey)
 
-	triggerPattern := c.String(PatternKey)
-	if triggerPattern == "" && len(c.Args()) > 0 {
-		triggerPattern = c.Args()[0]
-	}
-
-	pushBranch := c.String(PushBranchKey)
-	prSourceBranch := c.String(PRSourceBranchKey)
-	prTargetBranch := c.String(PRTargetBranchKey)
-	prReadyState := models.PullRequestReadyState(c.String(PRReadyStateKey))
-	tag := c.String(TagKey)
-
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
-
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
-
-	jsonParams := c.String(JSONParamsKey)
-	jsonParamsBase64 := c.String(JSONParamsBase64Key)
+	jsonParams, _ := cmd.Flags().GetString(JSONParamsKey)
+	jsonParamsBase64, _ := cmd.Flags().GetString(JSONParamsBase64Key)
 
 	triggerParams, err := parseTriggerParams(
 		triggerPattern,

@@ -6,47 +6,41 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginInstallCommand = cli.Command{
-	Name:  "install",
-	Usage: "Install bitrise plugin.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+var pluginInstallCommand = &cobra.Command{
+	Use:   "install <plugin_source_remote_or_local_url>",
+	Short: "Install bitrise plugin.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		logCommandParameters(cmd)
 
-		if err := pluginInstall(c); err != nil {
+		if err := pluginInstall(cmd, args); err != nil {
 			log.Errorf("Plugin install failed, error: %s", err)
 			os.Exit(1)
 		}
 		return nil
 	},
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "version",
-			Usage: "Plugin version tag.",
-		},
-		cli.StringFlag{
-			Name:  "source",
-			Usage: "Deprecated!!! Specify as arg instead - Plugin source url (can be local path or remote url).",
-		},
-	},
-	ArgsUsage: "<plugin_source_remote_or_local_url>",
 }
 
-func pluginInstall(c *cli.Context) error {
+func init() {
+	pluginInstallCommand.Flags().String("version", "", "Plugin version tag.")
+	pluginInstallCommand.Flags().String("source", "", "Deprecated!!! Specify as arg instead - Plugin source url (can be local path or remote url).")
+}
+
+func pluginInstall(cmd *cobra.Command, args []string) error {
 	// Input validation
 	pluginSource := ""
-	if args := c.Args(); len(args) > 0 {
+	if len(args) > 0 {
 		pluginSource = args[0]
 	} else {
-		pluginSource = c.String("source")
+		pluginSource, _ = cmd.Flags().GetString("source")
 	}
 
-	pluginVersionTag := c.String("version")
+	pluginVersionTag, _ := cmd.Flags().GetString("version")
 
 	if pluginSource == "" {
-		showSubcommandHelp(c)
+		showSubcommandHelp(cmd)
 		return fmt.Errorf("plugin source not defined")
 	}
 	// ---

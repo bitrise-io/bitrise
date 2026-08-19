@@ -49,10 +49,17 @@ even if the repository is open source!`)
 		return ActivatedStep{}, err
 	}
 
+	stepInfo, err := stepman.QueryStepInfoFromGitStepDir(activatedStepDir, id.IDorURI, id.Version)
+	if err != nil {
+		return ActivatedStep{}, err
+	}
+
 	return ActivatedStep{
-		StepYMLPath:     stepYMLPath,
-		DidStepLibUpdate: false,
-		ActivationType: ActivationTypeGitRef,
-		ExecutablePath: "",
+		StepInfo:                  stepInfo,
+		StepYMLPath:               stepYMLPath,
+		DidStepLibUpdate:          false,
+		ActivationType:            ActivationTypeGitRef,
+		ActivationInventorySource: ActivationInventorySourceNone,
+		ExecutablePath:            "",
 	}, nil
 }

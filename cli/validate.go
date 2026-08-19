@@ -9,8 +9,19 @@ import (
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
+
+var validateCommand = &cobra.Command{
+	Use:   "validate",
+	Short: "Validates a specified bitrise config.",
+	RunE:  validate,
+}
+
+func init() {
+	addConfigAndInventoryFlags(validateCommand.Flags())
+	validateCommand.Flags().String(OuputFormatKey, "", "Output format. Accepted: json, yml.")
+}
 
 // ValidationItemModel ...
 type ValidationItemModel struct {
@@ -218,17 +229,16 @@ func runValidate(bitriseConfigPath string, bitriseConfigBase64Data string, inven
 	return &validation, warnings, nil
 }
 
-func validate(c *cli.Context) error {
-	logCommandParameters(c)
+func validate(cmd *cobra.Command, _ []string) error {
+	logCommandParameters(cmd)
 
-	// Expand cli.Context
-	bitriseConfigBase64Data := c.String(ConfigBase64Key)
-	bitriseConfigPath := c.String(ConfigKey)
+	bitriseConfigBase64Data, _ := cmd.Flags().GetString(ConfigBase64Key)
+	bitriseConfigPath, _ := cmd.Flags().GetString(ConfigKey)
 
-	inventoryBase64Data := c.String(InventoryBase64Key)
-	inventoryPath := c.String(InventoryKey)
+	inventoryBase64Data, _ := cmd.Flags().GetString(InventoryBase64Key)
+	inventoryPath, _ := cmd.Flags().GetString(InventoryKey)
 
-	format := c.String(OuputFormatKey)
+	format, _ := cmd.Flags().GetString(OuputFormatKey)
 	if format == "" {
 		format = output.FormatRaw
 	}

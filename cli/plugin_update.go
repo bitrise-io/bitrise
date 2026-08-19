@@ -7,29 +7,27 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-var pluginUpdateCommand = cli.Command{
-	Name:  "update",
-	Usage: "Update bitrise plugin. If <plugin_name> not specified, every plugin will be updated.",
-	Action: func(c *cli.Context) error {
-		logCommandParameters(c)
+var pluginUpdateCommand = &cobra.Command{
+	Use:   "update [<plugin_name>]",
+	Short: "Update bitrise plugin. If <plugin_name> not specified, every plugin will be updated.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		logCommandParameters(cmd)
 
-		if err := pluginUpdate(c); err != nil {
+		if err := pluginUpdate(args); err != nil {
 			log.Errorf("Plugin update failed, error: %s", err)
 			os.Exit(1)
 		}
 		return nil
 	},
-	ArgsUsage: "[<plugin_name>]",
 }
 
-func pluginUpdate(c *cli.Context) error {
+func pluginUpdate(args []string) error {
 	// Input validation
 	pluginNameToUpdate := ""
 
-	args := c.Args()
 	if len(args) != 0 {
 		pluginNameToUpdate = args[0]
 	}

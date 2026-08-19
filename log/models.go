@@ -10,6 +10,7 @@ type StepStartedParams struct {
 	ID          string `json:"id"`
 	Version     string `json:"version"`
 	Collection  string `json:"collection"`
+	Toolkit     string `json:"toolkit"`
 	StartTime   string `json:"start_time"`
 }
 

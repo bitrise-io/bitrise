@@ -67,6 +67,22 @@ func CmpSemver(a, b Semver) int {
 	return 0
 }
 
+// HighestForMajorMinor returns the highest-patch version in `versions` whose
+// major and minor match target. ok is false when none match. Callers own the
+// parsing of raw version strings (and thus how malformed entries are handled).
+func HighestForMajorMinor(versions []Semver, target Semver) (best Semver, ok bool) {
+	for _, v := range versions {
+		if v.Major != target.Major || v.Minor != target.Minor {
+			continue
+		}
+		if !ok || v.Patch > best.Patch {
+			best = v
+			ok = true
+		}
+	}
+	return best, ok
+}
+
 // VersionLockType is the type of version lock
 type VersionLockType int
 
@@ -178,6 +194,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 				Patch: 0,
 			}
 			latestStep := StepModel{}
+			versionFound := false
 
 			for fullVersion, step := range stepVersions.Versions {
 				stepVersion, err := ParseSemver(fullVersion)
@@ -189,10 +206,15 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 					continue
 				}
 
-				if stepVersion.Patch > latestVersion.Patch {
+				if !versionFound || stepVersion.Patch > latestVersion.Patch {
 					latestVersion = stepVersion
 					latestStep = step
+					versionFound = true
 				}
+			}
+
+			if !versionFound {
+				return StepVersionModel{}, false
 			}
 
 			return StepVersionModel{
@@ -209,6 +231,7 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 				Patch: 0,
 			}
 			latestStep := StepModel{}
+			versionFound := false
 
 			for fullVersion, step := range stepVersions.Versions {
 				stepVersion, err := ParseSemver(fullVersion)
@@ -219,11 +242,17 @@ func latestMatchingStepVersion(constraint VersionConstraint, stepVersions StepGr
 					continue
 				}
 
-				if stepVersion.Minor > latestStepVersion.Minor ||
+				if !versionFound ||
+					stepVersion.Minor > latestStepVersion.Minor ||
 					(stepVersion.Minor == latestStepVersion.Minor && stepVersion.Patch > latestStepVersion.Patch) {
 					latestStepVersion = stepVersion
 					latestStep = step
+					versionFound = true
 				}
+			}
+
+			if !versionFound {
+				return StepVersionModel{}, false
 			}
 
 			return StepVersionModel{

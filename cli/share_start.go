@@ -1,15 +1,31 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/bitrise-io/bitrise/v2/tools"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-func start(c *cli.Context) error {
-	logCommandParameters(c)
+var shareStartCommand = &cobra.Command{
+	Use:   "start",
+	Short: "Preparations for publishing.",
+	RunE:  start,
+}
+
+func init() {
+	shareStartCommand.Flags().StringP(CollectionKey, "c", "", "Collection of step.")
+	markEnvVar(shareStartCommand.Flags(), CollectionKey, CollectionPathEnvKey)
+}
+
+func start(cmd *cobra.Command, _ []string) error {
+	logCommandParameters(cmd)
 
 	// Input validation
-	collectionURI := c.String(CollectionKey)
+	collectionURI, _ := cmd.Flags().GetString(CollectionKey)
+	if collectionURI == "" {
+		collectionURI = os.Getenv(CollectionPathEnvKey)
+	}
 	if collectionURI == "" {
 		failf("No step collection specified")
 	}

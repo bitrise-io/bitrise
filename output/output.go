@@ -7,7 +7,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -25,8 +24,7 @@ const (
 var Format = FormatRaw
 
 // ConfigureOutputFormat ...
-func ConfigureOutputFormat(c *cli.Context) error {
-	outFmt := c.String(FormatKey)
+func ConfigureOutputFormat(outFmt string) error {
 	switch outFmt {
 	case FormatRaw, FormatJSON, FormatYML:
 		// valid

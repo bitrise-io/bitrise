@@ -124,11 +124,18 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 		return nil
 	}
 
+	return DownloadStepSourceArchive(stepPth, downloadLocations, id, version, commithash, log)
+}
+
+// DownloadStepSourceArchive fetches a step's source into destDir from the given
+// download locations in priority order.
+// commithash applies only to git source.
+func DownloadStepSourceArchive(destDir string, downloadLocations []models.DownloadLocationModel, id, version, commithash string, log Logger) error {
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return command.DownloadAndUnZIP(downloadLocation.Src, stepPth)
+				return command.DownloadAndUnZIP(downloadLocation.Src, destDir)
 			})
 
 			if err != nil {
@@ -138,7 +145,15 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 			}
 		case "git":
 			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				repo, err := git.New(stepPth)
+				// Clone into a clean target. git clone refuses a non-empty dir, so a
+				// retry after an attempt that already populated stepPth (e.g. a clone
+				// that succeeded but failed the commit-hash check) would otherwise
+				// fail with a misleading "already exists and is not empty" error,
+				// masking the real cause.
+				if err := os.RemoveAll(destDir); err != nil {
+					return fmt.Errorf("clean %s before clone: %s", destDir, err)
+				}
+				repo, err := git.New(destDir)
 				if err != nil {
 					return err
 				}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/stepman/models"
 )
@@ -32,7 +33,13 @@ func QueryStepInfoFromGit(gitURL, tagOrBranch string) (models.StepInfoModel, err
 		return models.StepInfoModel{}, fmt.Errorf("query git step info: clone %s: %s", gitURL, err)
 	}
 
-	stepDefinitionPth := filepath.Join(tmpStepDir, "step.yml")
+	return QueryStepInfoFromGitStepDir(tmpStepDir, gitURL, tagOrBranch)
+}
+
+// QueryStepInfoFromGitStepDir assembles step info from a git step that is already
+// cloned into stepDir, reading its step.yml definition.
+func QueryStepInfoFromGitStepDir(stepDir, gitURL, tagOrBranch string) (models.StepInfoModel, error) {
+	stepDefinitionPth := filepath.Join(stepDir, "step.yml")
 	if exist, err := pathutil.IsPathExists(stepDefinitionPth); err != nil {
 		return models.StepInfoModel{}, fmt.Errorf("query git step info: check if step.yml exist: %s", err)
 	} else if !exist {
@@ -113,14 +120,25 @@ func QueryStepInfoFromLibrary(library, id, version string, log Logger) (models.S
 		return models.StepInfoModel{}, err
 	}
 
-	return models.StepInfoModel{
+	stepInfo := models.StepInfoModel{
 		Library:         library,
 		ID:              id,
 		Version:         stepVersion.Version,
-		OriginalVersion: "",
+		OriginalVersion: version,
 		LatestVersion:   stepVersion.LatestAvailableVersion,
 		GroupInfo:       groupInfo,
 		Step:            stepVersion.Step,
 		DefinitionPth:   stepDefinitionPth,
-	}, nil
+	}
+
+	return defaultStepTitle(stepInfo), nil
+}
+
+// defaultStepTitle sets the step title to the step ID when the definition omits
+// one, so callers always have a non-empty display title.
+func defaultStepTitle(info models.StepInfoModel) models.StepInfoModel {
+	if info.Step.Title == nil || *info.Step.Title == "" {
+		info.Step.Title = pointers.NewStringPtr(info.ID)
+	}
+	return info
 }
