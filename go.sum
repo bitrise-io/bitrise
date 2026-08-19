@@ -18,8 +18,8 @@ github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPd
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 h1:vSHYT6kCL/iOT9BVuUPm0tVcbW57r5zldLWg0aB7qbQ=
 github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192/go.mod h1:CIHVcxZUvsG99XUJV6JlR7okNsMMGY81jMvPC20W+O0=
-github.com/bitrise-io/envman/v2 v2.6.3-0.20260805112420-14318fa14a78 h1:pRJuAIDypnGnFIggsVUCwtt2sjl7ikKHaytM1yA4A4s=
-github.com/bitrise-io/envman/v2 v2.6.3-0.20260805112420-14318fa14a78/go.mod h1:FuWPjEk053wT3POPxj8IuyeVv7chbh20o3s2zcIXLvw=
+github.com/bitrise-io/envman/v2 v2.7.0 h1:6C/a6jXAJ0RRPQ3sdxbdm417W86Y/74xUQ3ifE0C/D4=
+github.com/bitrise-io/envman/v2 v2.7.0/go.mod h1:FuWPjEk053wT3POPxj8IuyeVv7chbh20o3s2zcIXLvw=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 h1:EXclFI+XfxxcsRZlly3WsYJwph/6BwJdhF7JZ9bde2M=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44/go.mod h1:i72XgHIZPEZtPPQLWy2cP86MaImo37nlQRhX1HCKi7Q=
 github.com/bitrise-io/go-utils v1.0.15 h1:KRQjNiPrkxBRM6G5fQy05v0p0r8wycWfKVb+Ko+Vtg0=
