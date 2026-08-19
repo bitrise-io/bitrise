@@ -35,7 +35,7 @@ func Test_GivenOfflineMode_WhenStepNotCached_ThenFails(t *testing.T) {
 	preloadSteps(t)
 
 	cmd := command.New(testhelpers.BinPath(), "run", "not_cached", "--config", offlineModeConfigPath)
-	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true")
+	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true", "BITRISE_STEPLIB_API_ENABLE=false")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
 	require.Error(t, err, "Bitrise CLI failed, output: %s", out)
@@ -56,7 +56,7 @@ func Test_GivenOfflineMode_WhenStepCached_ThenSuceeds(t *testing.T) {
 	preloadSteps(t)
 
 	cmd := command.New(testhelpers.BinPath(), "run", "cached", "--config", offlineModeConfigPath)
-	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true")
+	cmd.AppendEnvs("BITRISE_OFFLINE_MODE=true", "BITRISE_STEPLIB_API_ENABLE=false")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
 	require.NoError(t, err, "Bitrise CLI failed, output: %s", out)
