@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -34,7 +33,11 @@ func TestRun(t *testing.T) {
 			err = ExportEnvironmentsList(envstore, tt.Envs)
 			require.NoError(t, err, "ExportEnvironmentsList()")
 
-			output, err := EnvmanRun(envstore, tmpDir, []string{"env"})
+			// -0 makes env NUL-terminate each entry instead of using newlines.
+			// A value that itself ends in or contains a newline is then still
+			// unambiguous, so a trailing newline survives the round-trip instead
+			// of being swallowed as if it were the separator to the next entry.
+			output, err := EnvmanRun(envstore, tmpDir, []string{"env", "-0"})
 			require.NoError(t, err, "EnvmanRun()")
 
 			gotOut, err := parseEnvRawOut(output)
@@ -72,50 +75,21 @@ func TestRun(t *testing.T) {
 
 }
 
-// Used for tests only, to parse env command output
+// Used for tests only, to parse the NUL-separated output of `env -0`.
+// Each record is a single KEY=VALUE pair whose value is verbatim, so a value
+// containing newlines needs no reassembly.
 func parseEnvRawOut(output string) (map[string]string, error) {
-	// matches a single line like MYENVKEY_1=myvalue
-	// Shell uses upperscore letters (plus numbers and underscore); Step inputs are lowerscore.
-	// https://pubs.opengroup.org/onlinepubs/9699919799/:
-	// > Environment variable names used by the utilities in the Shell and Utilities volume of POSIX.1-2017
-	// > consist solely of uppercase letters, digits, and the <underscore> ( '_' ) from the characters defined
-	// > in Portable Character Set and do not begin with a digit.
-	// > Other characters may be permitted by an implementation; applications shall tolerate the presence of such names.
-	r := regexp.MustCompile("^([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$")
-
-	lines := strings.Split(output, "\n")
-
 	envs := make(map[string]string)
-	lastKey := ""
-	for _, line := range lines {
-		match := r.FindStringSubmatch(line)
-
-		// If no env is mathced, treat the line as the continuation of the env in the previous line.
-		// `env` command output does not distinguish between a new env in a new line and
-		// and environment value containing newline character.
-		// Newline can be added for example: **  myenv=A$'\n'B env  ** (bash/zsh only)
-		// If called from a script step, the content of the script contains newlines:
-		/*
-			content=#!/usr/bin/env bash
-			set -ex
-			current_envman="..."
-			# ...
-			go test -v ./_tests/integration/..."
-		*/
-		if match == nil {
-			if lastKey != "" {
-				envs[lastKey] += "\n" + line
-			}
+	for _, record := range strings.Split(output, "\x00") {
+		if record == "" {
 			continue
 		}
 
-		// If match not nil, must have 3 mathces at this point (the matched string and its subexpressions)
-		if len(match) != 3 {
-			return nil, fmt.Errorf("parseEnvRawOut() failed, match (%s) length is not 3 for line (%s).", match, line)
+		key, value, found := strings.Cut(record, "=")
+		if !found {
+			return nil, fmt.Errorf("parseEnvRawOut() failed, no '=' in record (%q)", record)
 		}
-
-		lastKey = match[1]
-		envs[match[1]] = match[2]
+		envs[key] = value
 	}
 
 	return envs, nil
@@ -128,17 +102,21 @@ func Test_parseEnvRawOut(t *testing.T) {
 		want   map[string]string
 	}{
 		{
-			output: `RBENV_SHELL=zsh
-_=/usr/local/bin/go
-#!/bin/env bash
-echo "ff"
-A=`,
+			name:   "value with embedded newlines is preserved verbatim",
+			output: "RBENV_SHELL=zsh\x00_=/usr/local/bin/go\n#!/bin/env bash\necho \"ff\"\x00A=\x00",
 			want: map[string]string{
 				"RBENV_SHELL": "zsh",
 				"_": `/usr/local/bin/go
 #!/bin/env bash
 echo "ff"`,
 				"A": "",
+			},
+		},
+		{
+			name:   "trailing newline in a value is kept",
+			output: "KEY=-----END-----\n\x00",
+			want: map[string]string{
+				"KEY": "-----END-----\n",
 			},
 		},
 	}
