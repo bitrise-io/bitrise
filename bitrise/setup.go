@@ -22,8 +22,8 @@ const (
 )
 
 const (
-	minEnvmanVersion  = "2.7.0"
-	minStepmanVersion = "0.24.2"
+	minEnvmanVersion  = "2.5.5"
+	minStepmanVersion = "0.18.7"
 )
 
 type PluginDependency struct {
