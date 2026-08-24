@@ -265,7 +265,16 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 	environments := append(r.config.Secrets, r.config.Config.App.Environments...)
 
 	// Envman setup
-	r.applyEnvVarLimitOverrides(environments)
+	limitOverrides := r.applyEnvVarLimitOverrides(environments)
+	if restore, err := envman.SetConfigLimits(limitOverrides); err != nil {
+		r.logger.Warnf("Failed to write envman env size limit config, steps may still hit the default limit: %s", err)
+	} else {
+		defer func() {
+			if err := restore(); err != nil {
+				r.logger.Warnf("Failed to restore envman env size limit config: %s", err)
+			}
+		}()
+	}
 
 	if err := os.Setenv(configs.EnvstorePathEnvKey, configs.OutputEnvstorePath); err != nil {
 		return models.BuildRunResultsModel{}, fmt.Errorf("failed to set %s env: %w", configs.EnvstorePathEnvKey, err)
@@ -381,22 +390,27 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 // Precedence is process env < secret < app env; the highest-precedence valid
 // value wins. Invalid values are skipped as they are considered, so a malformed
 // higher-precedence value never discards a valid lower-precedence one.
-func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) {
+//
+// The resolved limits are returned so the caller can also write them to envman's
+// config file, which reaches an `envman` binary invoked by a step (to export
+// outputs) that cannot read the process env var overrides.
+func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) envman.ConfigLimitOverrides {
 	targets := map[string]struct{}{
 		envman.EnvBytesLimitInKBEnvKey:     {},
 		envman.EnvListBytesLimitInKBEnvKey: {},
 	}
-	resolved := map[string]string{}
+	resolved := map[string]int{}
 
 	consider := func(key, value string) {
 		if _, ok := targets[key]; !ok || value == "" {
 			return
 		}
-		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
+		limit, err := strconv.Atoi(value)
+		if err != nil || limit < 0 {
 			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
 			return
 		}
-		resolved[key] = value
+		resolved[key] = limit
 	}
 
 	for key := range targets {
@@ -410,11 +424,20 @@ func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.En
 		consider(key, value)
 	}
 
-	for key, value := range resolved {
-		if err := os.Setenv(key, value); err != nil {
+	overrides := envman.ConfigLimitOverrides{}
+	for key, limit := range resolved {
+		limit := limit
+		switch key {
+		case envman.EnvBytesLimitInKBEnvKey:
+			overrides.EnvBytesLimitInKB = &limit
+		case envman.EnvListBytesLimitInKBEnvKey:
+			overrides.EnvListBytesLimitInKB = &limit
+		}
+		if err := os.Setenv(key, strconv.Itoa(limit)); err != nil {
 			r.logger.Warnf("Failed to set %s: %s", key, err)
 		}
 	}
+	return overrides
 }
 
 func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
