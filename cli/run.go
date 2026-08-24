@@ -378,32 +378,39 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 // runs while preparing that step's own environment, so a build already oversized
 // on its first step could never lift the limit from inside the run.
 //
-// Precedence is process env < secret < app env; an invalid value is skipped so
-// it falls back to whatever envman would otherwise use.
+// Precedence is process env < secret < app env; the highest-precedence valid
+// value wins. Invalid values are skipped as they are considered, so a malformed
+// higher-precedence value never discards a valid lower-precedence one.
 func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) {
-	values := map[string]string{
-		envman.EnvBytesLimitInKBEnvKey:     os.Getenv(envman.EnvBytesLimitInKBEnvKey),
-		envman.EnvListBytesLimitInKBEnvKey: os.Getenv(envman.EnvListBytesLimitInKBEnvKey),
+	targets := map[string]struct{}{
+		envman.EnvBytesLimitInKBEnvKey:     {},
+		envman.EnvListBytesLimitInKBEnvKey: {},
+	}
+	resolved := map[string]string{}
+
+	consider := func(key, value string) {
+		if _, ok := targets[key]; !ok || value == "" {
+			return
+		}
+		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
+			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
+			return
+		}
+		resolved[key] = value
 	}
 
+	for key := range targets {
+		consider(key, os.Getenv(key))
+	}
 	for _, env := range environments {
 		key, value, err := env.GetKeyValuePair()
 		if err != nil {
 			continue
 		}
-		if _, ok := values[key]; ok && value != "" {
-			values[key] = value
-		}
+		consider(key, value)
 	}
 
-	for key, value := range values {
-		if value == "" {
-			continue
-		}
-		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
-			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
-			continue
-		}
+	for key, value := range resolved {
 		if err := os.Setenv(key, value); err != nil {
 			r.logger.Warnf("Failed to set %s: %s", key, err)
 		}

@@ -57,6 +57,48 @@ func TestApplyEnvVarLimitOverrides(t *testing.T) {
 			environments: []envmanModels.EnvironmentItemModel{{key: ""}},
 			want:         "512",
 		},
+		{
+			name: "valid app env overrides valid secret",
+			environments: []envmanModels.EnvironmentItemModel{
+				{key: "512"},
+				{key: "1024"},
+			},
+			want: "1024",
+		},
+		{
+			name: "invalid app env does not discard a valid secret",
+			environments: []envmanModels.EnvironmentItemModel{
+				{key: "512"},
+				{key: "not-a-number"},
+			},
+			want: "512",
+		},
+		{
+			name:       "invalid app env does not discard a valid secret, process env set",
+			processEnv: "256",
+			environments: []envmanModels.EnvironmentItemModel{
+				{key: "512"},
+				{key: "-1"},
+			},
+			want: "512",
+		},
+		{
+			name: "invalid secret is skipped in favor of a valid app env",
+			environments: []envmanModels.EnvironmentItemModel{
+				{key: "not-a-number"},
+				{key: "1024"},
+			},
+			want: "1024",
+		},
+		{
+			name:       "all overrides invalid, process env stands",
+			processEnv: "256",
+			environments: []envmanModels.EnvironmentItemModel{
+				{key: "not-a-number"},
+				{key: "-5"},
+			},
+			want: "256",
+		},
 	}
 
 	for _, tt := range tests {
