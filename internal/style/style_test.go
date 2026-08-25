@@ -16,6 +16,9 @@ func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
 	// invariant that keeps tests, pipes, and JSON output ANSI-free.
 	var buf bytes.Buffer
 	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Styles built for *bytes.Buffer should not emit color")
+	}
 	for _, in := range []string{"hello", "Build:", "success"} {
 		if got := s.Header.Render(in); got != in {
 			t.Errorf("Header.Render(%q) = %q, want plain", in, got)
@@ -23,6 +26,71 @@ func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
 		if got := s.Success.Render(in); got != in {
 			t.Errorf("Success.Render(%q) = %q, want plain", in, got)
 		}
+		if got := s.Brand.Render(in); got != in {
+			t.Errorf("Brand.Render(%q) = %q, want plain", in, got)
+		}
+		if got := s.Failure.Render(in); got != in {
+			t.Errorf("Failure.Render(%q) = %q, want plain", in, got)
+		}
+	}
+}
+
+func TestConfigure_NoColorForcesAscii(t *testing.T) {
+	t.Cleanup(func() { Configure(false, ThemeAuto) })
+	Configure(true, ThemeAuto)
+
+	var buf bytes.Buffer
+	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Configure(true, _) should force no color")
+	}
+	if got := s.Success.Render("✓"); strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI-free output, got %q", got)
+	}
+}
+
+func TestConfigure_ThemeNoneForcesAscii(t *testing.T) {
+	t.Cleanup(func() { Configure(false, ThemeAuto) })
+	Configure(false, ThemeNone)
+
+	var buf bytes.Buffer
+	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Configure(_, ThemeNone) should force no color")
+	}
+}
+
+func TestParseTheme(t *testing.T) {
+	cases := []struct {
+		in      string
+		want    Theme
+		wantErr bool
+	}{
+		{"", ThemeAuto, false},
+		{"auto", ThemeAuto, false},
+		{"AUTO", ThemeAuto, false},
+		{"  dark  ", ThemeDark, false},
+		{"light", ThemeLight, false},
+		{"none", ThemeNone, false},
+		{"neon", "", true},
+		{"system", "", true},
+	}
+	for _, c := range cases {
+		t.Run(c.in, func(t *testing.T) {
+			got, err := ParseTheme(c.in)
+			if c.wantErr {
+				if err == nil {
+					t.Fatalf("ParseTheme(%q): expected error, got %q", c.in, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseTheme(%q): unexpected error: %v", c.in, err)
+			}
+			if got != c.want {
+				t.Errorf("ParseTheme(%q) = %q, want %q", c.in, got, c.want)
+			}
+		})
 	}
 }
 
@@ -32,7 +100,7 @@ func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
 
 	cases := map[string]lipgloss.Style{
 		"success":               s.Success,
-		"failed":                s.failed,
+		"failed":                s.Failure,
 		"in-progress":           s.running,
 		"aborted":               s.aborted,
 		"aborted-with-success":  s.aborted,

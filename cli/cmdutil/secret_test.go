@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func TestReadTokenInput_NonTerminalReadsLine(t *testing.T) {
+func TestReadSecretInput_NonTerminalReadsLine(t *testing.T) {
 	in := strings.NewReader("  a-token-value  \nrest\n")
 	var stderr bytes.Buffer
 
-	got, err := ReadTokenInput(in, &stderr, "Token: ", false)
+	got, err := ReadSecretInput(in, &stderr, "Token: ", false)
 	if err != nil {
-		t.Fatalf("ReadTokenInput: %v", err)
+		t.Fatalf("ReadSecretInput: %v", err)
 	}
 	if got != "a-token-value" {
 		t.Fatalf("got %q, want %q", got, "a-token-value")
@@ -22,22 +22,22 @@ func TestReadTokenInput_NonTerminalReadsLine(t *testing.T) {
 	}
 }
 
-func TestReadTokenInput_EOFWithoutNewline(t *testing.T) {
+func TestReadSecretInput_EOFWithoutNewline(t *testing.T) {
 	in := strings.NewReader("no-trailing-newline")
-	got, err := ReadTokenInput(in, &bytes.Buffer{}, "", true)
+	got, err := ReadSecretInput(in, &bytes.Buffer{}, "", true)
 	if err != nil {
-		t.Fatalf("ReadTokenInput: %v", err)
+		t.Fatalf("ReadSecretInput: %v", err)
 	}
 	if got != "no-trailing-newline" {
 		t.Fatalf("got %q", got)
 	}
 }
 
-func TestReadTokenInput_StillFullyTrims(t *testing.T) {
+func TestReadSecretInput_StillFullyTrims(t *testing.T) {
 	in := strings.NewReader("  tok  \n")
-	got, err := ReadTokenInput(in, &bytes.Buffer{}, "", false)
+	got, err := ReadSecretInput(in, &bytes.Buffer{}, "", false)
 	if err != nil {
-		t.Fatalf("ReadTokenInput: %v", err)
+		t.Fatalf("ReadSecretInput: %v", err)
 	}
 	if got != "tok" {
 		t.Fatalf("got %q, want %q", got, "tok")

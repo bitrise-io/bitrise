@@ -117,7 +117,7 @@ logout' to clear).`,
 // stdin is a terminal. The prompt is only reachable via an explicit
 // --with-token, since a bare interactive `auth login` defaults to OAuth.
 func runTokenLogin(cmd *cobra.Command) error {
-	tok, err := cmdutil.ReadTokenInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
+	tok, err := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
 	if err != nil {
 		return err
 	}

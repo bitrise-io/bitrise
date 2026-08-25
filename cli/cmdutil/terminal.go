@@ -8,7 +8,8 @@ import (
 )
 
 // TerminalFd reports whether stream is an *os.File backed by a TTY. fd is
-// only meaningful when isTerminal is true.
+// only meaningful when isTerminal is true. A nil stream safely fails the
+// type assertion below and reports false.
 func TerminalFd(stream any) (fd int, isTerminal bool) {
 	f, ok := stream.(*os.File)
 	if !ok {
