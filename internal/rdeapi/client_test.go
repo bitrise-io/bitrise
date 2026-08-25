@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -182,9 +183,8 @@ func TestAPIError_BareStatusWhenNoMessageOrBody(t *testing.T) {
 	}
 }
 
-// doStream has no production caller in this package yet — it lands ahead of
-// its first consumer (session log streaming, a later PR) because the client
-// core needs to be complete on its own. Test it directly.
+// doStream's only production caller is session_logs.go's StreamSessionLogs;
+// it's tested directly here too since it's a shared client primitive.
 
 func TestDoStream_ReturnsLiveResponseOn2xx(t *testing.T) {
 	rs := newRecordingServer(t, "line one\nline two\n")
@@ -277,8 +277,8 @@ func TestUserPath(t *testing.T) {
 }
 
 // recordingServer spins up an httptest server, captures the last request
-// (method, path, headers, body), and replies with a canned status + body.
-// Shared by client_test.go and saved_inputs_test.go.
+// (method, path, query, headers, body), and replies with a canned status +
+// body. Shared by client_test.go and every other test file in this package.
 type recordingServer struct {
 	t          *testing.T
 	srv        *httptest.Server
@@ -286,6 +286,8 @@ type recordingServer struct {
 	response   string
 	lastMethod string
 	lastPath   string
+	lastURI    string // raw, still-escaped path + query
+	lastQuery  string
 	lastBody   []byte
 	lastHeader http.Header
 	hits       int
@@ -298,6 +300,8 @@ func newRecordingServer(t *testing.T, response string) *recordingServer {
 		rs.hits++
 		rs.lastMethod = r.Method
 		rs.lastPath = r.URL.Path
+		rs.lastURI = r.RequestURI
+		rs.lastQuery = r.URL.RawQuery
 		rs.lastHeader = r.Header.Clone()
 		rs.lastBody, _ = io.ReadAll(r.Body)
 		if rs.status != http.StatusOK {
@@ -307,6 +311,17 @@ func newRecordingServer(t *testing.T, response string) *recordingServer {
 	}))
 	t.Cleanup(rs.srv.Close)
 	return rs
+}
+
+// parseQuery decodes a recorded raw query string, failing the test on a
+// malformed value.
+func parseQuery(t *testing.T, raw string) url.Values {
+	t.Helper()
+	v, err := url.ParseQuery(raw)
+	if err != nil {
+		t.Fatalf("parse query %q: %v", raw, err)
+	}
+	return v
 }
 
 func (rs *recordingServer) client() *Client {
