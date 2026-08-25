@@ -52,7 +52,7 @@ Sources, in precedence order:
 				printStatusHuman(s)
 				return nil
 			}
-			return output.Print(s, output.Format)
+			return output.Print(cmd.OutOrStdout(), s, output.Format)
 		},
 	}
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")

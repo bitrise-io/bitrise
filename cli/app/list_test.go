@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 func TestListCmd_PrintsTable(t *testing.T) {
@@ -107,15 +105,12 @@ func TestListCmd_AllEmptyResultEmitsEmptyArray(t *testing.T) {
 		_, _ = w.Write([]byte(`{"data":[]}`))
 	})
 
-	var logBuf strings.Builder
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, _ := newTestListCmd(t, srv.URL)
+	cmd, out := newTestListCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("all", "true"))
 	require.NoError(t, cmd.Flags().Set("format", "json"))
 	require.NoError(t, cmd.RunE(cmd, nil))
 
-	assert.Contains(t, logBuf.String(), `"items":[]`, "an empty --all result must match the single-page path's non-nil items array")
+	assert.Contains(t, out.String(), `"items": []`, "an empty --all result must match the single-page path's non-nil items array")
 }
 
 func TestListCmd_RejectsAllWithCursor(t *testing.T) {

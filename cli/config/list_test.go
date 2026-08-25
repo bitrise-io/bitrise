@@ -2,14 +2,12 @@ package config
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 func TestListCmd_Empty(t *testing.T) {
@@ -43,32 +41,26 @@ func TestListCmd_JSONFormat(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	require.NoError(t, internalconfig.Save(internalconfig.Config{APIBaseURL: "https://api.example.com"}))
 
-	var logBuf strings.Builder
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, _ := newTestCmd(t, NewListCommand())
+	cmd, outBuf := newTestCmd(t, NewListCommand())
 	require.NoError(t, cmd.Flags().Set("format", "json"))
 	require.NoError(t, cmd.RunE(cmd, nil))
 
-	out := logBuf.String()
-	assert.Contains(t, out, `"api_base_url":"https://api.example.com"`)
-	assert.Contains(t, out, `"web_base_url":""`, "unset keys must still be enumerated, not omitted")
-	assert.Contains(t, out, `"app_id":""`)
-	assert.Contains(t, out, `"default_workspace_id":""`)
+	out := outBuf.String()
+	assert.Contains(t, out, `"api_base_url": "https://api.example.com"`)
+	assert.Contains(t, out, `"web_base_url": ""`, "unset keys must still be enumerated, not omitted")
+	assert.Contains(t, out, `"app_id": ""`)
+	assert.Contains(t, out, `"default_workspace_id": ""`)
 }
 
 func TestListCmd_YMLFormat(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	require.NoError(t, internalconfig.Save(internalconfig.Config{APIBaseURL: "https://api.example.com"}))
 
-	var logBuf strings.Builder
-	log.InitGlobalLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Producer: log.BitriseCLI, Writer: &logBuf})
-
-	cmd, _ := newTestCmd(t, NewListCommand())
+	cmd, outBuf := newTestCmd(t, NewListCommand())
 	require.NoError(t, cmd.Flags().Set("format", "yml"))
 	require.NoError(t, cmd.RunE(cmd, nil))
 
-	out := logBuf.String()
+	out := outBuf.String()
 	assert.Contains(t, out, "api_base_url: https://api.example.com", "yaml.v2 ignores json tags; this key name regresses to \"apibaseurl\" without a yaml tag")
 	assert.Contains(t, out, `web_base_url: ""`)
 	assert.Contains(t, out, `app_id: ""`)
