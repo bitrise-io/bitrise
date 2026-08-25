@@ -51,6 +51,16 @@ func TestConfig_Set_WebBaseURL(t *testing.T) {
 	assert.Equal(t, "https://app.example.com", c.WebBaseURL, "invalid Set must not mutate c")
 }
 
+func TestConfig_Set_RDEAPIBaseURL(t *testing.T) {
+	var c Config
+	require.NoError(t, c.Set(KeyRDEAPIBaseURL, "https://api.example.com/rde"))
+	assert.Equal(t, "https://api.example.com/rde", c.RDEAPIBaseURL)
+
+	err := c.Set(KeyRDEAPIBaseURL, "://bad")
+	assert.Error(t, err)
+	assert.Equal(t, "https://api.example.com/rde", c.RDEAPIBaseURL, "invalid Set must not mutate c")
+}
+
 func TestConfig_Set_RejectsPlainHTTP(t *testing.T) {
 	for _, key := range URLKeys {
 		var c Config

@@ -9,7 +9,7 @@ import (
 
 func TestResolve_DefaultsWhenNothingSet(t *testing.T) {
 	r := Resolve(Config{}, Config{}, Config{})
-	assert.Equal(t, Resolved{Config: Config{APIBaseURL: DefaultAPIBaseURL, WebBaseURL: DefaultWebBaseURL}}, r)
+	assert.Equal(t, Resolved{Config: Config{APIBaseURL: DefaultAPIBaseURL, WebBaseURL: DefaultWebBaseURL, RDEAPIBaseURL: DefaultRDEAPIBaseURL}}, r)
 }
 
 func TestResolve_APIBaseURLPrecedence(t *testing.T) {
@@ -56,6 +56,29 @@ func TestResolve_WebBaseURLPrecedence(t *testing.T) {
 	// dir also doesn't override global
 	r = Resolve(Config{}, dir, global)
 	assert.Equal(t, "https://global.example", r.WebBaseURL)
+}
+
+func TestResolve_RDEAPIBaseURLPrecedence(t *testing.T) {
+	dir := Config{RDEAPIBaseURL: "https://dir.example"}
+	global := Config{RDEAPIBaseURL: "https://global.example"}
+
+	// no layer set: falls back to the default
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, DefaultRDEAPIBaseURL, r.RDEAPIBaseURL)
+
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "https://global.example", r.RDEAPIBaseURL)
+
+	// dir is ignored, even when set and global isn't: this field carries a
+	// bearer token, and a repo's own .bitrise-cli.yml must not be able to
+	// redirect it (see Resolve's doc comment)
+	r = Resolve(Config{}, dir, Config{})
+	assert.Equal(t, DefaultRDEAPIBaseURL, r.RDEAPIBaseURL, "dirCfg must never win for RDEAPIBaseURL")
+
+	// dir also doesn't override global
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "https://global.example", r.RDEAPIBaseURL)
 }
 
 func TestResolve_AppIDPrecedence(t *testing.T) {

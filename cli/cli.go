@@ -11,10 +11,12 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
 	"github.com/bitrise-io/bitrise/v2/internal/style"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +35,11 @@ func Run() {
 	tracker := analytics.NewDefaultTracker()
 	cmdutil.SetTracker(tracker)
 	defer tracker.Wait()
+
+	// The backend attributes RDE API traffic by User-Agent, so keep the
+	// "bitrise-cli/" prefix from the reference implementation rather than
+	// switching to "bitrise/" — nothing server-side keying on it changes.
+	rdeapi.UserAgent = "bitrise-cli/" + version.VERSION
 
 	// Abort when a global bool flag's bound env var holds a non-bool value (an
 	// empty value is allowed and treated as unset).

@@ -33,17 +33,21 @@ const DefaultAPIBaseURL = "https://api.bitrise.io/v0.1"
 // layer sets web_base_url.
 const DefaultWebBaseURL = "https://app.bitrise.io"
 
+// DefaultRDEAPIBaseURL is the production RDE API base URL, used when no
+// layer sets rde_api_base_url.
+const DefaultRDEAPIBaseURL = "https://api.bitrise.io/rde"
+
 // Resolve merges the legacy, per-directory, and global config layers. The
 // caller converts configs.ConfigModel into a Config for legacyCfg, keeping
 // this package independent of configs. dirCfg / legacyCfg are zero values
 // when their respective files were not found.
 //
-// APIBaseURL/WebBaseURL deliberately never consult dirCfg: both carry
-// credentials (a bearer token, a login password) to whatever host they name,
-// and .bitrise-cli.yml is read from the current directory and every
-// ancestor with no confirmation — a repo a user merely clones and runs
-// `bitrise` inside of could otherwise silently redirect either one to an
-// attacker-controlled host. The global file and the legacy file are both
+// APIBaseURL/WebBaseURL/RDEAPIBaseURL deliberately never consult dirCfg: all
+// three carry credentials (a bearer token, a login password) to whatever
+// host they name, and .bitrise-cli.yml is read from the current directory
+// and every ancestor with no confirmation — a repo a user merely clones and
+// runs `bitrise` inside of could otherwise silently redirect any of them to
+// an attacker-controlled host. The global file and the legacy file are both
 // user-owned (home directory), not repo-owned, so they don't have this
 // problem.
 func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
@@ -51,15 +55,12 @@ func Resolve(legacyCfg, dirCfg, globalCfg Config) Resolved {
 		SetupVersion:           FirstNonEmptyString(legacyCfg.SetupVersion, dirCfg.SetupVersion, globalCfg.SetupVersion),
 		LastCLIUpdateCheck:     firstNonZeroTime(legacyCfg.LastCLIUpdateCheck, dirCfg.LastCLIUpdateCheck, globalCfg.LastCLIUpdateCheck),
 		LastPluginUpdateChecks: firstNonEmptyMap(legacyCfg.LastPluginUpdateChecks, dirCfg.LastPluginUpdateChecks, globalCfg.LastPluginUpdateChecks),
-		// legacy is always empty for these two (configs.ConfigModel predates
-		// the cloud API and has no such field), so this is effectively
+		// legacy is always empty for these three (configs.ConfigModel predates
+		// the cloud API and has no such fields), so this is effectively
 		// global > default — no dirCfg, see the doc comment above.
-		APIBaseURL: FirstNonEmptyString(legacyCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
-		WebBaseURL: FirstNonEmptyString(legacyCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
-		// No default yet — the rde_api_base_url config key (and its default)
-		// land in a later PR; this merges the raw field so the test harness can
-		// route a value through Resolve today.
-		RDEAPIBaseURL: FirstNonEmptyString(legacyCfg.RDEAPIBaseURL, globalCfg.RDEAPIBaseURL),
+		APIBaseURL:    FirstNonEmptyString(legacyCfg.APIBaseURL, globalCfg.APIBaseURL, DefaultAPIBaseURL),
+		WebBaseURL:    FirstNonEmptyString(legacyCfg.WebBaseURL, globalCfg.WebBaseURL, DefaultWebBaseURL),
+		RDEAPIBaseURL: FirstNonEmptyString(legacyCfg.RDEAPIBaseURL, globalCfg.RDEAPIBaseURL, DefaultRDEAPIBaseURL),
 		// legacyCfg.AppID is likewise always empty, and there's no sensible
 		// default app — effectively dir > global > unset. Both of these DO
 		// honor dirCfg, unlike the two URLs above: they name which app and

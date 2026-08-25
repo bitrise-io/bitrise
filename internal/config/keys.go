@@ -12,6 +12,7 @@ import (
 const (
 	KeyAPIBaseURL         = "api_base_url"
 	KeyWebBaseURL         = "web_base_url"
+	KeyRDEAPIBaseURL      = "rde_api_base_url"
 	KeyAppID              = "app_id"
 	KeyDefaultWorkspaceID = "default_workspace_id"
 	KeyOutput             = "output"
@@ -22,13 +23,13 @@ const (
 // get/set/unset` — SetupVersion/LastCLIUpdateCheck/LastPluginUpdateChecks are
 // deliberately excluded: the CLI writes those itself, they aren't user
 // settings.
-var Keys = []string{KeyAPIBaseURL, KeyWebBaseURL, KeyAppID, KeyDefaultWorkspaceID, KeyOutput, KeyTheme}
+var Keys = []string{KeyAPIBaseURL, KeyWebBaseURL, KeyRDEAPIBaseURL, KeyAppID, KeyDefaultWorkspaceID, KeyOutput, KeyTheme}
 
 // URLKeys is the subset of Keys whose value Set validates as an absolute
 // https URL (see validateURL) rather than accepting it as a plain
 // identifier. Exported so tests can assert that invariant over every such
 // key without hardcoding the list.
-var URLKeys = []string{KeyAPIBaseURL, KeyWebBaseURL}
+var URLKeys = []string{KeyAPIBaseURL, KeyWebBaseURL, KeyRDEAPIBaseURL}
 
 // Get returns the stored value of a known key.
 func (c *Config) Get(key string) (string, error) {
@@ -37,6 +38,8 @@ func (c *Config) Get(key string) (string, error) {
 		return c.APIBaseURL, nil
 	case KeyWebBaseURL:
 		return c.WebBaseURL, nil
+	case KeyRDEAPIBaseURL:
+		return c.RDEAPIBaseURL, nil
 	case KeyAppID:
 		return c.AppID, nil
 	case KeyDefaultWorkspaceID:
@@ -69,6 +72,13 @@ func (c *Config) Set(key, value string) error {
 			}
 		}
 		next.WebBaseURL = value
+	case KeyRDEAPIBaseURL:
+		if value != "" {
+			if err := validateURL(KeyRDEAPIBaseURL, value); err != nil {
+				return err
+			}
+		}
+		next.RDEAPIBaseURL = value
 	case KeyAppID:
 		// An app slug, not a URL — nothing to validate locally; a wrong value
 		// surfaces as a 404 from the API.

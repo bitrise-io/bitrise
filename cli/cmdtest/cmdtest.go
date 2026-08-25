@@ -51,6 +51,7 @@ func RunIsolated(m *testing.M) int {
 		cmdutil.EnvAppIDLegacy,
 		cmdutil.EnvOutput,
 		cmdutil.EnvTheme,
+		cmdutil.EnvRDEAPIBaseURL,
 	} {
 		if err := os.Unsetenv(key); err != nil {
 			panic(err)
