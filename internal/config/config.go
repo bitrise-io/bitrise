@@ -37,6 +37,8 @@ type Config struct {
 	WebBaseURL             string               `yaml:"web_base_url,omitempty"`
 	AppID                  string               `yaml:"app_id,omitempty"`
 	DefaultWorkspaceID     string               `yaml:"default_workspace_id,omitempty"`
+	Output                 string               `yaml:"output,omitempty"`
+	Theme                  string               `yaml:"theme,omitempty"`
 }
 
 // DirFileName is the file looked up in the working directory and its

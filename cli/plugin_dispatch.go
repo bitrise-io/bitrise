@@ -14,7 +14,7 @@ import (
 // non-global-flag token is not a known command (or "help"), so e.g.
 // `bitrise run a:b` stays a run invocation rather than being treated as a plugin.
 func detectPlugin(root *cobra.Command, rawArgs []string) (string, []string, bool) {
-	i := cmdutil.CommandTokenIndex(rawArgs, cmdutil.GlobalFlagNames)
+	i := cmdutil.CommandTokenIndex(root.PersistentFlags(), rawArgs, cmdutil.GlobalFlagNames)
 	if i == len(rawArgs) {
 		return "", nil, false
 	}

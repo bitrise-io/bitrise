@@ -2,8 +2,10 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/cli/api"
 	"github.com/bitrise-io/bitrise/v2/cli/app"
@@ -19,6 +21,8 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/user"
 	"github.com/bitrise-io/bitrise/v2/cli/yml"
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
+	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/spf13/cobra"
 )
@@ -50,6 +54,25 @@ func newRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().Bool(cmdutil.PRKey, false, "If true bitrise runs in pull request mode.")
 	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.DebugModeKey, configs.DebugModeEnvKey)
 	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.CIKey, configs.CIModeEnvKey)
+
+	// --output does not reach the local commands that predate this vocabulary
+	// (yml validate, local workflow-list, plugin list/info); they keep their
+	// own --format.
+	rootCmd.PersistentFlags().StringP(cmdutil.FlagOutput, "o", "",
+		fmt.Sprintf("Output format for commands that support it. Accepted: %s (default), %s, %s (alias %q).", output.FormatRaw, output.FormatJSON, output.FormatYML, "human"))
+	rootCmd.PersistentFlags().BoolP(cmdutil.FlagQuiet, "q", false, "Suppress non-error diagnostic messages.")
+	rootCmd.PersistentFlags().Bool(cmdutil.FlagNoColor, false, "Disable ANSI colors (the NO_COLOR env var is also honored).")
+	rootCmd.PersistentFlags().String(cmdutil.FlagTheme, "",
+		fmt.Sprintf("Color theme. Accepted: %s.", strings.Join(style.Themes, ", ")))
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.FlagOutput, cmdutil.EnvOutput)
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.FlagTheme, cmdutil.EnvTheme)
+
+	_ = rootCmd.RegisterFlagCompletionFunc(cmdutil.FlagOutput, func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{output.FormatRaw, output.FormatJSON, output.FormatYML, "human"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	_ = rootCmd.RegisterFlagCompletionFunc(cmdutil.FlagTheme, func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return style.Themes, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	rootCmd.AddCommand(
 		local.NewCmd(),

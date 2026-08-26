@@ -92,6 +92,38 @@ func TestResolve_DefaultWorkspaceIDPrecedence(t *testing.T) {
 	assert.Equal(t, "dir-ws", r.DefaultWorkspaceID)
 }
 
+func TestResolve_OutputPrecedence(t *testing.T) {
+	dir := Config{Output: "json"}
+	global := Config{Output: "yml"}
+
+	// no layer set: stays unset — the raw/auto default is applied downstream
+	// by output.ParseFormat/style.ParseTheme, not here
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, "", r.Output)
+
+	// global only
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "yml", r.Output)
+
+	// dir overrides global — not a credential or a URL, same treatment as AppID
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "json", r.Output)
+}
+
+func TestResolve_ThemePrecedence(t *testing.T) {
+	dir := Config{Theme: "dark"}
+	global := Config{Theme: "light"}
+
+	r := Resolve(Config{}, Config{}, Config{})
+	assert.Equal(t, "", r.Theme)
+
+	r = Resolve(Config{}, Config{}, global)
+	assert.Equal(t, "light", r.Theme)
+
+	r = Resolve(Config{}, dir, global)
+	assert.Equal(t, "dark", r.Theme)
+}
+
 // TestResolve_LayerPrecedence covers the three fields sharing the generic
 // legacy > dir > global precedence (SetupVersion, LastCLIUpdateCheck,
 // LastPluginUpdateChecks) in one pass, each via a different underlying

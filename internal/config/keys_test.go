@@ -84,3 +84,43 @@ func TestConfig_Set_AllowsPlainHTTPForLoopback(t *testing.T) {
 		require.NoError(t, c.Set(KeyAPIBaseURL, host), host)
 	}
 }
+
+func TestConfig_Set_Output(t *testing.T) {
+	var c Config
+	require.NoError(t, c.Set(KeyOutput, "json"))
+	v, err := c.Get(KeyOutput)
+	require.NoError(t, err)
+	assert.Equal(t, "json", v, "stored unnormalized — re-parsed downstream, not rewritten here")
+
+	require.NoError(t, c.Unset(KeyOutput))
+	v, err = c.Get(KeyOutput)
+	require.NoError(t, err)
+	assert.Equal(t, "", v)
+}
+
+func TestConfig_Set_Output_InvalidLeavesConfigUntouched(t *testing.T) {
+	c := Config{Output: "json"}
+	err := c.Set(KeyOutput, "not-a-format")
+	assert.ErrorContains(t, err, `invalid output format`)
+	assert.Equal(t, "json", c.Output)
+}
+
+func TestConfig_Set_Theme(t *testing.T) {
+	var c Config
+	require.NoError(t, c.Set(KeyTheme, "dark"))
+	v, err := c.Get(KeyTheme)
+	require.NoError(t, err)
+	assert.Equal(t, "dark", v)
+
+	require.NoError(t, c.Unset(KeyTheme))
+	v, err = c.Get(KeyTheme)
+	require.NoError(t, err)
+	assert.Equal(t, "", v)
+}
+
+func TestConfig_Set_Theme_InvalidLeavesConfigUntouched(t *testing.T) {
+	c := Config{Theme: "dark"}
+	err := c.Set(KeyTheme, "not-a-theme")
+	assert.ErrorContains(t, err, `unknown theme`)
+	assert.Equal(t, "dark", c.Theme)
+}

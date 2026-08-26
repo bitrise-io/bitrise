@@ -31,8 +31,8 @@ var envmanCommand = &cobra.Command{
 // envmanPassthrough reports whether the invocation targets the envman command
 // (the first non-global-flag token is "envman") and, if so, returns the args
 // that follow it, to be forwarded verbatim.
-func envmanPassthrough(rawArgs []string) ([]string, bool) {
-	i := cmdutil.CommandTokenIndex(rawArgs, cmdutil.GlobalFlagNames)
+func envmanPassthrough(root *cobra.Command, rawArgs []string) ([]string, bool) {
+	i := cmdutil.CommandTokenIndex(root.PersistentFlags(), rawArgs, cmdutil.GlobalFlagNames)
 	if i < len(rawArgs) && rawArgs[i] == envmanCommand.Name() {
 		return rawArgs[i+1:], true
 	}

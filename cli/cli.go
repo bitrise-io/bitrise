@@ -11,7 +11,9 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +52,7 @@ func Run() {
 	// envman is a passthrough command: it must receive its args verbatim, so it
 	// is dispatched before cobra to keep the global flags (which precede the
 	// command) from being forwarded into the passthrough.
-	if envmanArgs, isEnvman := envmanPassthrough(rawArgs); isEnvman {
+	if envmanArgs, isEnvman := envmanPassthrough(rootCmd, rawArgs); isEnvman {
 		runEnvman(rootCmd, rawArgs, envmanArgs)
 		return
 	}
@@ -217,6 +219,27 @@ func before(cmd *cobra.Command, _ []string) error {
 		ctx = context.Background()
 	}
 	cmd.SetContext(config.WithResolved(ctx, resolved))
+
+	// Seed the output-format and theme defaults once per invocation. Root
+	// flag beats the env var, which beats the config key — matching every
+	// other resolver in cli/cmdutil (webbase.go, app.go, workspace.go).
+	// resolved.Output/Theme already carry per-directory over global.
+	flagOutput, _ := root.PersistentFlags().GetString(cmdutil.FlagOutput)
+	rawOutput := config.FirstNonEmptyString(flagOutput, os.Getenv(cmdutil.EnvOutput), resolved.Output, output.FormatRaw)
+	format, err := output.ParseFormat(rawOutput)
+	if err != nil {
+		return err
+	}
+	output.SetDefault(format)
+
+	flagTheme, _ := root.PersistentFlags().GetString(cmdutil.FlagTheme)
+	rawTheme := config.FirstNonEmptyString(flagTheme, os.Getenv(cmdutil.EnvTheme), resolved.Theme)
+	theme, err := style.ParseTheme(rawTheme)
+	if err != nil {
+		return err
+	}
+	noColor, _ := root.PersistentFlags().GetBool(cmdutil.FlagNoColor)
+	style.Configure(noColor, theme)
 
 	return nil
 }

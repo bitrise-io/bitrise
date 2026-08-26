@@ -24,7 +24,7 @@ func runWatchTUI(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild
 	ctx, cancel := context.WithCancel(cmd.Context())
 	defer cancel()
 
-	m := newWaitModel(b)
+	m := newWaitModel(b, style.New(cmd.OutOrStdout()))
 	p := tea.NewProgram(m, tea.WithContext(ctx), tea.WithOutput(cmd.OutOrStdout()))
 
 	doneCh := make(chan struct{})
@@ -113,10 +113,12 @@ type waitModel struct {
 	urlStyle   lipgloss.Style
 }
 
-func newWaitModel(b internalbuild.Build) waitModel {
+// newWaitModel builds the TUI model from s, the Styles bundle scoped to the
+// program's output writer, so --no-color and --theme reach the status bar.
+func newWaitModel(b internalbuild.Build, s style.Styles) waitModel {
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot
-	sp.Style = lipgloss.NewStyle().Foreground(style.BrandColor)
+	sp.Style = s.Brand
 	started := b.TriggeredAt
 	if started.IsZero() {
 		started = time.Now()
@@ -126,9 +128,9 @@ func newWaitModel(b internalbuild.Build) waitModel {
 		spinner:    sp,
 		startedAt:  started,
 		width:      80,
-		labelStyle: lipgloss.NewStyle().Bold(true),
-		dimStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("245")),
-		urlStyle:   lipgloss.NewStyle().Foreground(style.BrandColor).Underline(true),
+		labelStyle: s.Bold,
+		dimStyle:   s.Dim,
+		urlStyle:   s.Brand.Underline(true),
 	}
 }
 
