@@ -187,6 +187,7 @@ func TestTriggerCmd_DefaultsBranchToMain(t *testing.T) {
 }
 
 func TestTriggerCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestTriggerCmd(t, "https://unused.test")

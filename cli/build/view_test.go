@@ -34,6 +34,7 @@ func TestViewCmd_HappyPath(t *testing.T) {
 }
 
 func TestViewCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd := newTestViewCmd(t, "https://unused.test")

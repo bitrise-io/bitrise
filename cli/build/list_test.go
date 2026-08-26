@@ -58,6 +58,7 @@ func TestListCmd_PrintsNextPageHint(t *testing.T) {
 }
 
 func TestListCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestListCmd(t, "https://unused.test")

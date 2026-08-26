@@ -41,6 +41,7 @@ func TestAbortCmd_HappyPath(t *testing.T) {
 }
 
 func TestAbortCmd_RequiresApp(t *testing.T) {
+	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
 	cmd, _ := newTestAbortCmd(t, "https://unused.test")

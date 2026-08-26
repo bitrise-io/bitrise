@@ -419,9 +419,7 @@ func Test_before_outputPrecedence(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-			if tt.env != "" {
-				t.Setenv(cmdutil.EnvOutput, tt.env)
-			}
+			t.Setenv(cmdutil.EnvOutput, tt.env) // "" clears an exported one
 			if tt.configured != "" {
 				require.NoError(t, internalconfig.Save(internalconfig.Config{Output: tt.configured}))
 			}

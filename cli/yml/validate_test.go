@@ -36,7 +36,9 @@ func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
 	cmd := &cobra.Command{}
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir()) // no auth.yaml written -> no token
+	// No auth.yaml written and no exported token, so no token resolves.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "")
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: srv.URL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 
@@ -59,6 +61,7 @@ func TestValidateConfig_CorruptAuthFile_FallsBackWithWarning(t *testing.T) {
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	p, err := auth.Path()
 	require.NoError(t, err)
 	require.NoError(t, os.MkdirAll(filepath.Dir(p), 0o700))
@@ -234,6 +237,7 @@ func newValidateFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Ser
 func newTestValidateCommand(t *testing.T, handler http.HandlerFunc) (*cobra.Command, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
 	apiBaseURL := newValidateFakeServer(t, handler).URL
@@ -252,6 +256,7 @@ func newTestValidateCommand(t *testing.T, handler http.HandlerFunc) (*cobra.Comm
 func newTestValidateCmd(t *testing.T, handler http.HandlerFunc) *cobra.Command {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
 	apiBaseURL := newValidateFakeServer(t, handler).URL

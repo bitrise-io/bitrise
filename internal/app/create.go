@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v2/internal/workspace"
 )
 
 // DefaultStackID is the stack used by Create when opts.StackID is empty. Any
@@ -169,24 +170,18 @@ func (s *Service) Create(ctx context.Context, opts CreateOptions) (CreateResult,
 }
 
 // autoDetectOrg fetches the user's workspaces and returns the slug when
-// there's exactly one. 0 or 2+ workspaces produce a friendly error.
+// there's exactly one. 0 or 2+ workspaces produce a friendly error — the same
+// one every other command gives, via internal/workspace.
 func (s *Service) autoDetectOrg(ctx context.Context) (string, error) {
 	orgs, err := s.client.Organizations(ctx)
 	if err != nil {
 		return "", fmt.Errorf("list workspaces: %w", err)
 	}
-	switch len(orgs) {
-	case 0:
-		return "", errors.New("no workspaces found for this account — create one in the Bitrise dashboard, or pass --workspace")
-	case 1:
-		return orgs[0].Slug, nil
-	default:
-		names := make([]string, 0, len(orgs))
-		for _, o := range orgs {
-			names = append(names, fmt.Sprintf("  %s (%s)", o.Slug, o.Name))
-		}
-		return "", fmt.Errorf("multiple workspaces available — pass --workspace. Available:\n%s", strings.Join(names, "\n"))
+	org, err := workspace.Sole(orgs)
+	if err != nil {
+		return "", err
 	}
+	return org.Slug, nil
 }
 
 // resolveProvider validates an explicit --provider value, or returns

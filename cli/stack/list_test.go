@@ -164,6 +164,7 @@ func TestListCmd_RejectsPositionalArgs(t *testing.T) {
 func newTestListCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
 	cmd := NewListCommand()
