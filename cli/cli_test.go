@@ -440,9 +440,11 @@ func Test_before_outputPrecedence(t *testing.T) {
 // Test_ymlMergeOutputFlag_ShadowsGlobalOutputFlag guards the shorthand
 // collision called out in the master rde-migration plan: yml merge's own
 // --output/-o (an output directory) must keep working unchanged once the
-// root gains a persistent --output/-o (an output format) — cobra's flag
-// merge order (local flags are registered before parent persistent flags are
-// merged in) makes the local one win, with no panic on the shared shorthand.
+// root gains a persistent --output/-o (an output format). pflag's AddFlagSet
+// dedups on the long name only, so the root's --output is skipped for this
+// command and its -o never reaches AddFlag. The shared long name is what makes
+// this safe: a local -o under a different long name would panic there on the
+// shorthand collision.
 func Test_ymlMergeOutputFlag_ShadowsGlobalOutputFlag(t *testing.T) {
 	root := newRootCommand()
 
@@ -468,4 +470,29 @@ func Test_ymlMergeOutputFlag_ShadowsGlobalOutputFlag(t *testing.T) {
 
 	rootOutput, _ := root.PersistentFlags().GetString(cmdutil.FlagOutput)
 	assert.Equal(t, "", rootOutput, "the global --output flag must be untouched by yml merge's local -o")
+}
+
+// Test_flagShorthands_doNotCollideAcrossTree walks every command and forces the
+// flag merge that would panic on a shorthand collision — pflag's AddFlagSet
+// skips a parent flag only when the long name matches, so a local -o/-q under a
+// different long name blows up. InitDefaultHelpFlag is included because it adds
+// --help/-h without checking whether -h is taken (unlike InitDefaultVersionFlag,
+// which falls back to no shorthand), and because cobra only inits it for the one
+// command being executed — a collision in a rarely-run subcommand would
+// otherwise surface as a runtime panic instead of a test failure.
+func Test_flagShorthands_doNotCollideAcrossTree(t *testing.T) {
+	visitCommands(newRootCommand(), func(cmd *cobra.Command) {
+		require.NotPanics(t, func() {
+			cmd.InitDefaultHelpFlag()
+			cmd.InitDefaultVersionFlag()
+			cmd.Flags()
+		}, "flag shorthand collision in %q", cmd.CommandPath())
+	})
+}
+
+func visitCommands(cmd *cobra.Command, fn func(*cobra.Command)) {
+	fn(cmd)
+	for _, sub := range cmd.Commands() {
+		visitCommands(sub, fn)
+	}
 }
