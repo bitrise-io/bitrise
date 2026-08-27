@@ -82,6 +82,49 @@ func TestListCmd_LabelSelectorsQuery(t *testing.T) {
 	}
 }
 
+func TestListCmd_ScopeQuery(t *testing.T) {
+	var gotScope string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotScope = r.URL.Query().Get("scope")
+		_, _ = io.WriteString(w, `{"sessions":[]}`)
+	}))
+	defer srv.Close()
+
+	// Default scope is mine, sent as the backend's enum name.
+	if _, _, err := cmdtest.Run(t, newListCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+	}); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotScope != "SESSION_LIST_SCOPE_MINE" {
+		t.Errorf("default scope = %q, want SESSION_LIST_SCOPE_MINE", gotScope)
+	}
+
+	if _, _, err := cmdtest.Run(t, newListCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"--scope", "workspace"},
+	}); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotScope != "SESSION_LIST_SCOPE_WORKSPACE" {
+		t.Errorf("scope = %q, want SESSION_LIST_SCOPE_WORKSPACE", gotScope)
+	}
+}
+
+func TestListCmd_InvalidScopeErrors(t *testing.T) {
+	// Validation happens before any HTTP call.
+	_, _, err := cmdtest.Run(t, newListCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      "http://unused",
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"--scope", "everyone"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "--scope") {
+		t.Errorf("error = %v, want scope validation error", err)
+	}
+}
+
 func TestListCmd_MalformedSelectorErrors(t *testing.T) {
 	_, _, err := cmdtest.Run(t, newListCmd(), cmdtest.Opts{
 		RDEAPIBaseURL:      "http://unused",
