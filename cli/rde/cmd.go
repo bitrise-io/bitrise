@@ -5,6 +5,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/machinetype"
+	"github.com/bitrise-io/bitrise/v2/cli/rde/session"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/stack"
 )
 
@@ -22,8 +23,9 @@ Workspace resolution (highest to lowest precedence):
   default_workspace_id      saved with 'bitrise config set'
   auto-detect               when none of the above is set: your only workspace is used,
                              or you're prompted to pick one interactively`,
-		Example: `  bitrise rde stack list --workspace WORKSPACE_ID
-  bitrise rde machine-type list --stack osx-xcode-16.0.x-edge --format json`,
+		Example: `  bitrise rde session list --workspace WORKSPACE_ID
+  bitrise rde session list --format json
+  bitrise rde machine-type list --stack osx-xcode-16.0.x-edge`,
 		RunE: cmdutil.RequireKnownSubcommand,
 	}
 	c.PersistentFlags().String(cmdutil.FlagWorkspace, "", "workspace ID (or set BITRISE_WORKSPACE_ID or default_workspace_id; auto-detected if you have exactly one workspace)")
@@ -31,6 +33,7 @@ Workspace resolution (highest to lowest precedence):
 	c.AddCommand(
 		stack.NewCmd(),
 		machinetype.NewCmd(),
+		session.NewCmd(),
 	)
 	return c
 }
