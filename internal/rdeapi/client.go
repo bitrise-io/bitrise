@@ -18,10 +18,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
 	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
 )
+
+const defaultTimeout = 30 * time.Second
 
 // UserAgent is sent on every RDE request. cli/cli.go overrides it at startup
 // to include the binary's version. The backend uses this to attribute
@@ -53,7 +56,9 @@ func WithHTTPClient(hc *http.Client) Option {
 // resource paths are appended verbatim. Validated via internal/baseurl
 // (https, loopback exempted): this client sends a bearer token on every
 // request, so a misconfigured rde_api_base_url must not be able to send it
-// over plaintext http.
+// over plaintext http. The default client has a defaultTimeout deadline;
+// doStream's caller gets streamHTTPClient() instead, for requests that must
+// outlive it.
 func New(rawBaseURL, token string, opts ...Option) (*Client, error) {
 	if _, err := baseurl.Validate("RDE API base URL", rawBaseURL); err != nil {
 		return nil, err
@@ -61,7 +66,7 @@ func New(rawBaseURL, token string, opts ...Option) (*Client, error) {
 	c := &Client{
 		baseURL:    strings.TrimRight(rawBaseURL, "/"),
 		token:      token,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Timeout: defaultTimeout},
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -93,12 +98,14 @@ func userPath(p string) string {
 // the gRPC error details (details[].fieldViolations[]), which carry the
 // actionable "why" for 400s (e.g. "missing required input: BUILD_TOKEN");
 // Body is the raw response body, surfaced only when no structured field was
-// found.
+// found; RequestInfo is "METHOD /path" so a failure names the endpoint,
+// mirroring bitriseapi.APIError.RequestInfo.
 type APIError struct {
-	StatusCode int
-	Message    string
-	Violations []string
-	Body       string
+	StatusCode  int
+	Message     string
+	Violations  []string
+	Body        string
+	RequestInfo string
 }
 
 func (e *APIError) Error() string {
@@ -113,10 +120,16 @@ func (e *APIError) Error() string {
 			msg = detail
 		}
 	}
+	var base string
 	if msg != "" {
-		return fmt.Sprintf("RDE API %d: %s", e.StatusCode, msg)
+		base = fmt.Sprintf("RDE API %d: %s", e.StatusCode, msg)
+	} else {
+		base = fmt.Sprintf("RDE API %d", e.StatusCode)
 	}
-	return fmt.Sprintf("RDE API %d", e.StatusCode)
+	if e.RequestInfo != "" {
+		return e.RequestInfo + ": " + base
+	}
+	return base
 }
 
 // do executes req and returns the response body on 2xx. Non-2xx responses
@@ -139,30 +152,45 @@ func (c *Client) do(req *http.Request) ([]byte, error) {
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, parseAPIError(resp.StatusCode, body)
+		return nil, parseAPIError(req, resp.StatusCode, body)
 	}
 	return body, nil
+}
+
+// streamHTTPClient returns an http.Client sharing the configured client's
+// transport, but with no overall timeout — for streaming endpoints (e.g.
+// session logs) that can legitimately run longer than defaultTimeout.
+// Cancellation is left to the caller's context. Mirrors
+// bitriseapi.Client.streamHTTPClient.
+func (c *Client) streamHTTPClient() *http.Client {
+	return &http.Client{
+		Transport:     c.httpClient.Transport,
+		CheckRedirect: c.httpClient.CheckRedirect,
+		Jar:           c.httpClient.Jar,
+	}
 }
 
 // doStream executes req and, on a 2xx response, returns the live
 // *http.Response without buffering the body — the caller owns it and MUST
 // close resp.Body. Used by streaming endpoints (e.g. session logs) where
-// do()'s ReadAll would defeat the point. Non-2xx responses are drained,
-// closed, and returned as an *APIError, matching do().
+// do()'s ReadAll would defeat the point, and where do()'s defaultTimeout
+// would kill a long-lived stream, hence streamHTTPClient(). Non-2xx
+// responses are drained, closed, and returned as an *APIError, matching
+// do().
 func (c *Client) doStream(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("X-Request-Source", requestSource)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.streamHTTPClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		return nil, parseAPIError(resp.StatusCode, body)
+		return nil, parseAPIError(req, resp.StatusCode, body)
 	}
 	return resp, nil
 }
@@ -251,16 +279,17 @@ type fieldViolation struct {
 	Description string `json:"description"`
 }
 
-// parseAPIError turns a non-2xx (statusCode, body) into an *APIError. Shared
-// by do and doStream so the buffering and streaming paths surface errors
-// identically.
-func parseAPIError(statusCode int, body []byte) *APIError {
+// parseAPIError turns a non-2xx (statusCode, body) into an *APIError, naming
+// the failing endpoint via req. Shared by do and doStream so the buffering
+// and streaming paths surface errors identically.
+func parseAPIError(req *http.Request, statusCode int, body []byte) *APIError {
 	var e errorBody
 	_ = json.Unmarshal(body, &e)
 	apiErr := &APIError{
-		StatusCode: statusCode,
-		Message:    e.Message,
-		Violations: violationsFromDetails(e.Details),
+		StatusCode:  statusCode,
+		Message:     e.Message,
+		Violations:  violationsFromDetails(e.Details),
+		RequestInfo: req.Method + " " + req.URL.RequestURI(),
 	}
 	// Fall back to the raw body only when neither a message nor any field
 	// violation gave us something human-readable.

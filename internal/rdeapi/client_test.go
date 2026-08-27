@@ -25,6 +25,16 @@ func TestNew_RejectsPlainHTTP(t *testing.T) {
 	}
 }
 
+func TestNew_DefaultHTTPClientTimeout(t *testing.T) {
+	c, err := New("https://api.bitrise.io/rde", "tok")
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if c.httpClient.Timeout != defaultTimeout {
+		t.Errorf("httpClient.Timeout = %v, want %v", c.httpClient.Timeout, defaultTimeout)
+	}
+}
+
 func TestDo_SetsRequiredHeaders(t *testing.T) {
 	rs := newRecordingServer(t, `{"savedInputs":[]}`)
 
@@ -88,7 +98,10 @@ func TestAPIError_ExtractsMessageFromEnvelope(t *testing.T) {
 	if apiErr.Body != "" {
 		t.Errorf("Body = %q, want empty when message was parsed", apiErr.Body)
 	}
-	if want := "RDE API 404: session not found"; apiErr.Error() != want {
+	if want := "GET /v1/saved-inputs"; apiErr.RequestInfo != want {
+		t.Errorf("RequestInfo = %q, want %q", apiErr.RequestInfo, want)
+	}
+	if want := "GET /v1/saved-inputs: RDE API 404: session not found"; apiErr.Error() != want {
 		t.Errorf("Error() = %q, want %q", apiErr.Error(), want)
 	}
 }
@@ -114,7 +127,7 @@ func TestAPIError_IncludesFieldViolations(t *testing.T) {
 	if apiErr.Body != "" {
 		t.Errorf("Body = %q, want empty when violations were parsed", apiErr.Body)
 	}
-	if want := "RDE API 400: Bad request.: missing required input: BUILD_TOKEN"; apiErr.Error() != want {
+	if want := "GET /v1/saved-inputs: RDE API 400: Bad request.: missing required input: BUILD_TOKEN"; apiErr.Error() != want {
 		t.Errorf("Error() = %q, want %q", apiErr.Error(), want)
 	}
 }
@@ -133,7 +146,7 @@ func TestAPIError_FieldViolationFallsBackToFieldName(t *testing.T) {
 	}
 	// No message, no description — the field name carries the only signal,
 	// so the raw body must not be used as a fallback.
-	if want := "RDE API 400: name"; apiErr.Error() != want {
+	if want := "GET /v1/saved-inputs: RDE API 400: name"; apiErr.Error() != want {
 		t.Errorf("Error() = %q, want %q", apiErr.Error(), want)
 	}
 }
@@ -157,7 +170,7 @@ func TestAPIError_FallsBackToRawBody(t *testing.T) {
 	if apiErr.Body != "upstream exploded" {
 		t.Errorf("Body = %q, want %q", apiErr.Body, "upstream exploded")
 	}
-	if want := "RDE API 500: upstream exploded"; apiErr.Error() != want {
+	if want := "GET /v1/saved-inputs: RDE API 500: upstream exploded"; apiErr.Error() != want {
 		t.Errorf("Error() = %q, want %q", apiErr.Error(), want)
 	}
 }
