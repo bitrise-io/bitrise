@@ -24,19 +24,10 @@ type toolSetupResult struct {
 	startTime time.Time
 }
 
-// knownGitHubTokenEnvVars lists the env var names that users possibly set as a valid GitHub API token.
-var knownGitHubTokenEnvVars = []string{
-	"GITHUB_TOKEN",
-	"GH_TOKEN",
-	"GITHUB_API_TOKEN",
-	"MISE_GITHUB_TOKEN",
-	"MISE_GITHUB_ENTERPRISE_TOKEN",
-}
-
 // findGitHubTokenEnv returns the first known GitHub token env var found in envs,
-// checked in priority order defined by knownGitHubTokenEnvVars.
+// checked in priority order defined by mise.KnownGitHubTokenEnvVars.
 func findGitHubTokenEnv(envs map[string]string) (name, value string, found bool) {
-	for _, n := range knownGitHubTokenEnvVars {
+	for _, n := range mise.KnownGitHubTokenEnvVars {
 		if v, ok := envs[n]; ok {
 			return n, v, true
 		}
