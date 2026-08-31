@@ -3,6 +3,7 @@ package mise
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 
@@ -40,6 +41,14 @@ var miseStableChecksums = map[string]string{
 	"linux-arm64": "6e0362723bddec3b25923a6c7c447c3f10eba4bf6e3db6973e175fa0a60ab974",
 	"macos-x64":   "a6f6f320b547dec3eff321e301fa05268dfc73a620d35ec3292603fbab1c4c29",
 	"macos-arm64": "9d6e2bfea3e00ffb566ad1a369914cb029c32a28eb4b699e8655cf3c3d4ef87e",
+}
+
+var KnownGitHubTokenEnvVars = []string{
+	"GITHUB_TOKEN",
+	"GH_TOKEN",
+	"GITHUB_API_TOKEN",
+	"MISE_GITHUB_TOKEN",
+	"MISE_GITHUB_ENTERPRISE_TOKEN",
 }
 
 type MiseToolProvider struct {
@@ -83,9 +92,7 @@ func NewToolProvider(installDir string, dataDir string, useFastInstall, silent b
 		// so verification fails for any such version (e.g. 3.11.4).
 		"MISE_PYTHON_GITHUB_ATTESTATIONS": "false",
 	}
-	for k, v := range extraEnvs {
-		miseEnvs[k] = v
-	}
+	maps.Copy(miseEnvs, extraEnvs)
 
 	return &MiseToolProvider{
 		ExecEnv:        execenv.NewMiseExecEnv(installDir, miseEnvs),
