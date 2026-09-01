@@ -132,11 +132,31 @@ func TestStreamSessionLogs_ValidationGuards(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 	ctx := context.Background()
-	if err := c.StreamSessionLogs(ctx, "", "s1", "2", 0, func(LogChunk) error { return nil }); err == nil {
+	if err := c.StreamSessionLogs(ctx, "", "s1", LogStageMain, 0, func(LogChunk) error { return nil }); err == nil {
 		t.Error("expected error for empty workspace ID")
 	}
-	if err := c.StreamSessionLogs(ctx, "ws", "", "2", 0, func(LogChunk) error { return nil }); err == nil {
+	if err := c.StreamSessionLogs(ctx, "ws", "", LogStageMain, 0, func(LogChunk) error { return nil }); err == nil {
 		t.Error("expected error for empty session ID")
+	}
+	if err := c.StreamSessionLogs(ctx, "ws", "s1", LogStage("3"), 0, func(LogChunk) error { return nil }); err == nil {
+		t.Error("expected error for invalid log stage")
+	}
+}
+
+func TestStreamSessionLogs_DeadlineExceededIsAnError(t *testing.T) {
+	block := make(chan struct{})
+	defer close(block)
+	c, _ := streamingServer(t, []string{`{"result":{"logContent":"first\n"}}`}, http.StatusOK, block)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	err := c.StreamSessionLogs(ctx, "ws-1", "s1", LogStageMain, 0, func(LogChunk) error { return nil })
+	if err == nil {
+		t.Fatal("expected an error when the context deadline is exceeded mid-stream, got nil")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("error = %v, want it to wrap context.DeadlineExceeded", err)
 	}
 }
 

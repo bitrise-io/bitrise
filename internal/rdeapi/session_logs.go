@@ -24,14 +24,22 @@ type LogChunk struct {
 // traces, base64 blobs); the default 64KiB is too small, so allow up to 1MiB.
 const maxLogLine = 1 << 20
 
+// LogStage selects which stage's log to stream.
+type LogStage string
+
+const (
+	LogStageWarmup LogStage = "1"
+	LogStageMain   LogStage = "2"
+)
+
 // StreamSessionLogs opens the server-streaming log endpoint for one stage of a
 // session and invokes fn for every non-empty content chunk, in order.
 //
 // Endpoint: GET /v1/workspaces/{workspaceId}/sessions/{sessionId}/logs/{stage}
-// where stage is the numeric LogStage enum ("1"=warmup, "2"=main). The stream
-// replays the stage log from the start, then continues live. The backend never
-// sends EOF when the stage's script finishes — it holds the connection open
-// with minute-interval heartbeats — so callers control how long to listen:
+// where stage is LogStageWarmup or LogStageMain. The stream replays the stage
+// log from the start, then continues live. The backend never sends EOF when
+// the stage's script finishes — it holds the connection open with
+// minute-interval heartbeats — so callers control how long to listen:
 //
 //   - idleTimeout <= 0: stream until the connection actually closes or ctx is
 //     cancelled (Ctrl-C). Use for a live "follow".
@@ -40,17 +48,25 @@ const maxLogLine = 1 << 20
 //     log-so-far and then exits ("print what's there, don't wait").
 //
 // Heartbeat/empty frames are skipped and do not count as content. A mid-stream
-// {"error":...} frame is surfaced as an error. A cancelled ctx is treated as a
-// clean end of stream and returns nil. Pre-stream failures come back as
-// *APIError (e.g. 404 = "logs not available yet").
-func (c *Client) StreamSessionLogs(ctx context.Context, workspaceID, sessionID, stage string, idleTimeout time.Duration, fn func(LogChunk) error) error {
+// {"error":...} frame is surfaced as an error. A ctx cancelled via
+// context.Canceled (Ctrl-C) is treated as a clean end of stream and returns
+// nil; a ctx that ends via context.DeadlineExceeded is surfaced as an error,
+// since silently returning nil would let a caller mistake a timeout for a
+// finished log. Pre-stream failures come back as *APIError (e.g. 404 = "logs
+// not available yet").
+func (c *Client) StreamSessionLogs(ctx context.Context, workspaceID, sessionID string, stage LogStage, idleTimeout time.Duration, fn func(LogChunk) error) error {
 	if workspaceID == "" {
 		return fmt.Errorf("workspace ID is required")
 	}
 	if sessionID == "" {
 		return fmt.Errorf("session ID is required")
 	}
-	p := wsPath(workspaceID, "/sessions/"+url.PathEscape(sessionID)+"/logs/"+url.PathEscape(stage))
+	switch stage {
+	case LogStageWarmup, LogStageMain:
+	default:
+		return fmt.Errorf("invalid log stage %q", stage)
+	}
+	p := wsPath(workspaceID, "/sessions/"+url.PathEscape(sessionID)+"/logs/"+url.PathEscape(string(stage)))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+p, nil)
 	if err != nil {
 		return fmt.Errorf("build request: %w", err)
@@ -138,13 +154,16 @@ func (c *Client) StreamSessionLogs(ctx context.Context, workspaceID, sessionID, 
 	for {
 		select {
 		case <-ctx.Done():
-			return nil // Ctrl-C / cancellation is a clean stop
+			if errors.Is(ctx.Err(), context.Canceled) {
+				return nil // Ctrl-C / cancellation is a clean stop
+			}
+			return fmt.Errorf("session log stream: %w", ctx.Err())
 		case <-idleC:
 			return nil // no new content within idleTimeout — backlog drained
 		case f := <-frames:
 			switch {
 			case f.err != nil:
-				if ctx.Err() != nil {
+				if errors.Is(ctx.Err(), context.Canceled) {
 					return nil
 				}
 				return f.err
