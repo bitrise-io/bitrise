@@ -116,3 +116,40 @@ func TestApplyEnvVarLimitOverrides(t *testing.T) {
 		})
 	}
 }
+
+// TestApplyEnvVarLimitOverridesReachesConfigFile proves the resolved limit is
+// written to envman's config file, so it reaches an envman binary that reads
+// only the file and ignores the process env var overrides.
+func TestApplyEnvVarLimitOverridesReachesConfigFile(t *testing.T) {
+	runner := WorkflowRunner{logger: log.NewLogger(log.GetGlobalLoggerOpts())}
+	key := envman.EnvListBytesLimitInKBEnvKey
+
+	origHome := os.Getenv("HOME")
+	t.Cleanup(func() { require.NoError(t, os.Setenv("HOME", origHome)) })
+	require.NoError(t, os.Setenv("HOME", t.TempDir()))
+	for _, k := range []string{key, envman.EnvBytesLimitInKBEnvKey} {
+		require.NoError(t, os.Unsetenv(k))
+		t.Cleanup(func() { require.NoError(t, os.Unsetenv(k)) })
+	}
+
+	overrides := runner.applyEnvVarLimitOverrides([]envmanModels.EnvironmentItemModel{{key: "1024"}})
+	require.NotNil(t, overrides.EnvListBytesLimitInKB)
+	require.Equal(t, 1024, *overrides.EnvListBytesLimitInKB)
+	require.Nil(t, overrides.EnvBytesLimitInKB)
+
+	restore, err := envman.SetConfigLimits(overrides)
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, restore()) })
+
+	// Clear the process env override so GetConfigs can only read the file.
+	require.NoError(t, os.Unsetenv(key))
+
+	configs, err := envman.GetConfigs()
+	require.NoError(t, err)
+	require.Equal(t, 1024, configs.EnvListBytesLimitInKB)
+
+	require.NoError(t, restore())
+	configs, err = envman.GetConfigs()
+	require.NoError(t, err)
+	require.Equal(t, 256, configs.EnvListBytesLimitInKB, "restore should revert the file to the default")
+}
