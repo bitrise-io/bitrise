@@ -87,25 +87,23 @@ func VNCCredentialsFromSession(sess Session) (VNCCredentials, error) {
 
 // parseVNCHostPort accepts the address shapes the backend has used:
 // "vnc://host:port", "host:port", or bare "host". A missing port defaults
-// to 5900 (standard VNC).
+// to 5900 (standard VNC). The host/port split is shared with the SSH address
+// parser (see splitHostPort), so an IPv6 endpoint survives it intact.
 func parseVNCHostPort(addr string) (string, int, error) {
 	s := strings.TrimSpace(addr)
 	s = strings.TrimPrefix(s, "vnc://")
 	if s == "" {
 		return "", 0, fmt.Errorf("empty VNC address")
 	}
-	host := s
-	port := 5900
-	if idx := strings.LastIndex(s, ":"); idx > 0 {
-		host = s[:idx]
-		p, err := parsePort(s[idx+1:])
-		if err != nil {
-			return "", 0, fmt.Errorf("VNC address %q: %w", addr, err)
-		}
-		port = p
+	host, port, err := splitHostPort(s)
+	if err != nil {
+		return "", 0, fmt.Errorf("VNC address %q: %w", addr, err)
 	}
 	if host == "" {
 		return "", 0, fmt.Errorf("VNC address %q has no host", addr)
+	}
+	if port == 0 {
+		port = 5900
 	}
 	return host, port, nil
 }
@@ -123,6 +121,9 @@ func parsePort(s string) (int, error) {
 		if n > 65535 {
 			return 0, fmt.Errorf("port %q out of range", s)
 		}
+	}
+	if n == 0 {
+		return 0, fmt.Errorf("invalid port %q", s)
 	}
 	return n, nil
 }
@@ -175,27 +176,34 @@ func (s *Service) ForwardVNC(ctx context.Context, workspaceID, sessionID string,
 
 	remoteAddr := net.JoinHostPort("127.0.0.1", strconv.Itoa(localScreenSharingPort))
 	return client.forwardLocal(ctx, localPort, remoteAddr, func(localAddr string) {
+		if onReady == nil {
+			return
+		}
 		onReady(localAddr, creds)
 	})
 }
 
-// FormatVNCURL emits a `vnc://[user[:pass]@]host:port` URL. URL-escapes
-// credentials so a `@` or `:` in the password doesn't desync the parser on the
-// receiving side. Exported so a caller that forwards the endpoint to a local
-// port (see ForwardVNC) can present a URL pointing at the local address.
+// FormatVNCURL emits a `vnc://[user[:pass]@]host:port` URL. Credentials are
+// percent-encoded for the userinfo component, so a `@` or `:` in the password
+// doesn't desync the parser on the receiving side. Exported so a caller that
+// forwards the endpoint to a local port (see ForwardVNC) can present a URL
+// pointing at the local address.
+//
+// url.Userinfo is what does the encoding: url.QueryEscape is form encoding,
+// which emits `+` for a space and `%2B` for a literal `+` — both of which a
+// receiving client decodes back to the wrong password.
 func FormatVNCURL(host string, port int, user, pass string) string {
-	var b strings.Builder
-	b.WriteString("vnc://")
-	if user != "" || pass != "" {
-		if user != "" {
-			b.WriteString(url.QueryEscape(user))
-		}
-		if pass != "" {
-			b.WriteByte(':')
-			b.WriteString(url.QueryEscape(pass))
-		}
-		b.WriteByte('@')
+	u := url.URL{
+		Scheme: "vnc",
+		Host:   net.JoinHostPort(host, strconv.Itoa(port)),
 	}
-	fmt.Fprintf(&b, "%s:%d", host, port)
-	return b.String()
+	switch {
+	case user != "" && pass != "":
+		u.User = url.UserPassword(user, pass)
+	case user != "":
+		u.User = url.User(user)
+	case pass != "":
+		u.User = url.UserPassword("", pass)
+	}
+	return u.String()
 }

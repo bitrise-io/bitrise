@@ -41,6 +41,19 @@ func TestStripInteractiveBashStartupNoise(t *testing.T) {
 			in:   "step 1\n" + noise2 + "\n",
 			want: "step 1\n" + noise2 + "\n",
 		},
+		{
+			// The reported process group isn't guaranteed to be -1, and the
+			// trailing strerror text is locale-dependent, so the line is
+			// matched by prefix rather than in full.
+			name: "process group other than -1 is still stripped",
+			in:   "bash: cannot set terminal process group (12345): Inappropriate ioctl for device\nreal error\n",
+			want: "real error\n",
+		},
+		{
+			name: "different strerror tail is still stripped",
+			in:   "bash: cannot set terminal process group (-1): Périphérique non adapté\nreal error\n",
+			want: "real error\n",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

@@ -23,10 +23,12 @@ const DefaultExecuteTimeout = 10 * time.Minute
 // ride in the remote command line, so values are visible in `ps` on the
 // session while the command runs.
 //
-// timeout caps the whole dial+run. A non-positive timeout disables the cap,
+// timeout caps the whole dial+run. A non-positive timeout disables that cap,
 // leaving the run bounded only by ctx and the SSH keepalive that tears the
 // connection down within ~10s if it drops (so a genuinely dead connection
-// still fails fast even when uncapped).
+// still fails fast even when uncapped). The dial keeps its own
+// sshDialReadyTimeout budget either way — uncapping the run does not mean
+// retrying an unreachable port forever.
 //
 // Errors fall into three categories:
 //   - "session not running" / "ssh not ready" — surfaced before the dial
@@ -60,7 +62,12 @@ func (s *Service) Execute(ctx context.Context, workspaceID, sessionID, command s
 		defer cancel()
 	}
 
-	client, err := dialSSH(execCtx, target)
+	// Retried for the same reason ExecuteInteractive and ForwardVNC retry: the
+	// backend reports SSH ready a moment before the port actually accepts
+	// connections, so the first attempts right after `session create --wait`
+	// can be refused. The budget comes from execCtx, so --timeout still bounds
+	// it.
+	client, err := dialSSHWithRetry(execCtx, target)
 	if err != nil {
 		return ExecResult{}, err
 	}

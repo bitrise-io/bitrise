@@ -78,6 +78,7 @@ func dialSSHWithRetry(ctx context.Context, t sshTarget) (*sshClient, error) {
 	dialCtx, cancel := context.WithTimeout(ctx, sshDialReadyTimeout)
 	defer cancel()
 
+	start := time.Now()
 	var lastErr error
 	for {
 		client, err := dialSSH(dialCtx, t)
@@ -90,7 +91,9 @@ func dialSSHWithRetry(ctx context.Context, t sshTarget) (*sshClient, error) {
 		lastErr = err
 		select {
 		case <-dialCtx.Done():
-			return nil, fmt.Errorf("ssh not reachable after %s: %w", sshDialReadyTimeout, lastErr)
+			// Elapsed, not sshDialReadyTimeout: dialCtx is the shorter of that
+			// budget and the caller's own deadline.
+			return nil, fmt.Errorf("ssh not reachable after %s: %w", time.Since(start).Round(time.Second), lastErr)
 		case <-time.After(sshDialRetryInterval):
 		}
 	}
@@ -222,9 +225,17 @@ func (c *sshClient) forwardLocal(ctx context.Context, localPort int, remoteAddr 
 	defer func() { _ = ln.Close() }()
 
 	// Close the listener when ctx is cancelled so the blocking Accept unblocks.
+	// stopped is what releases this goroutine when we return for any other
+	// reason (an Accept failure), instead of leaving it parked on ctx.Done()
+	// for the rest of the caller's context.
+	stopped := make(chan struct{})
+	defer close(stopped)
 	go func() {
-		<-ctx.Done()
-		_ = ln.Close()
+		select {
+		case <-ctx.Done():
+			_ = ln.Close()
+		case <-stopped:
+		}
 	}()
 
 	if onReady != nil {
@@ -301,7 +312,9 @@ func halfCloseWrite(conn net.Conn) {
 // when the shell is non-interactive.
 //
 // ExitCode is 0 on success, the command's exit status on a clean non-zero
-// exit, or -1 if the session was terminated by a signal or cancellation.
+// exit, 128+N when the remote command was killed by signal N (x/crypto/ssh
+// synthesises that status itself), or -1 on cancellation or a dropped
+// connection (which returns ErrConnectionLost).
 func (c *sshClient) run(ctx context.Context, userCmd string) (ExecResult, error) {
 	session, err := c.client.NewSession()
 	if err != nil {
@@ -367,8 +380,13 @@ func (c *sshClient) run(ctx context.Context, userCmd string) (ExecResult, error)
 		return result, nil
 	}
 
+	// Neither an exit status nor a signal came back. Usually the channel
+	// dropped under us, which is what callers retry on; sshd refusing the exec
+	// request outright (ForceCommand, session limits) also lands here and is
+	// permanent, so runErr stays wrapped for a caller that needs to tell the
+	// two apart. Same classification runInteractive applies.
 	result.ExitCode = -1
-	return result, fmt.Errorf("ssh run: %w", runErr)
+	return result, fmt.Errorf("%w: %w", ErrConnectionLost, runErr)
 }
 
 func buildLoginShellCmd(userCmd string) string {
@@ -412,6 +430,12 @@ func (c *sshClient) runInteractive(ctx context.Context, userCmd string, stdin io
 	// or CI context there's no TTY to mirror, so we run without one (the
 	// remote program then sees a non-interactive stdin, which is correct).
 	if fd, ok := ttyFd(stdin); ok {
+		// Resolved BEFORE raw mode: resolveRemoteTerm may run a local infocmp
+		// and a remote `tic` session, and raw mode disables ISIG — a stall
+		// there would leave the user at a terminal where Ctrl-C generates no
+		// signal and nothing cancels ctx.
+		termType := c.resolveRemoteTerm(ctx, os.Getenv("TERM"))
+
 		oldState, rawErr := term.MakeRaw(fd)
 		if rawErr != nil {
 			return -1, fmt.Errorf("set terminal raw mode: %w", rawErr)
@@ -425,7 +449,6 @@ func (c *sshClient) runInteractive(ctx context.Context, userCmd string, stdin io
 			w, h = 80, 24
 		}
 
-		termType := c.resolveRemoteTerm(ctx, os.Getenv("TERM"))
 		modes := ssh.TerminalModes{
 			ssh.ECHO:          1,
 			ssh.TTY_OP_ISPEED: 14400,
@@ -469,8 +492,9 @@ func (c *sshClient) runInteractive(ctx context.Context, userCmd string, stdin io
 	}
 
 	// No exit status/signal (e.g. *ssh.ExitMissingError) or any other non-exit
-	// failure means the channel dropped under us — the connection was lost.
-	return -1, fmt.Errorf("%w: %v", ErrConnectionLost, runErr)
+	// failure: usually a dropped channel, but a refused exec request lands
+	// here too, so runErr stays wrapped (see run).
+	return -1, fmt.Errorf("%w: %w", ErrConnectionLost, runErr)
 }
 
 // defaultTermType is the TERM requested for the remote PTY when the local
@@ -645,16 +669,22 @@ func ttyFd(r io.Reader) (int, bool) {
 	return fd, true
 }
 
-// interactiveBashStartupNoise are the diagnostics `bash -i` writes to stderr
-// when it has no controlling TTY — which is always the case here, since exec
-// dials without allocating a PTY. They are emitted at shell startup, before
-// the user's command runs, and carry no signal. We force interactive mode on
-// purpose (see buildLoginShellCmd) so ~/.bashrc is sourced, and these lines
-// are the unavoidable side effect. For a CLI a human reads, printing them on
-// every invocation is pure noise, so we strip them from captured stderr.
-var interactiveBashStartupNoise = map[string]bool{
-	"bash: cannot set terminal process group (-1): Inappropriate ioctl for device": true,
-	"bash: no job control in this shell":                                           true,
+// interactiveBashStartupNoise matches the diagnostics `bash -i` writes to
+// stderr when it has no controlling TTY — which is always the case here, since
+// exec dials without allocating a PTY. They are emitted at shell startup,
+// before the user's command runs, and carry no signal. We force interactive
+// mode on purpose (see buildLoginShellCmd) so ~/.bashrc is sourced, and these
+// lines are the unavoidable side effect. For a CLI a human reads, printing them
+// on every invocation is pure noise, so we strip them from captured stderr.
+//
+// Matched by prefix rather than whole line: the reported process group is not
+// guaranteed to be -1, and the trailing strerror text is locale-dependent. A
+// bash built with NLS can still translate the messages themselves, in which
+// case they fall through — the patterns reduce the leak, they don't eliminate
+// it.
+var interactiveBashStartupNoise = []*regexp.Regexp{
+	regexp.MustCompile(`^bash: cannot set terminal process group \(-?\d+\)`),
+	regexp.MustCompile(`^bash: no job control in this shell$`),
 }
 
 // stripInteractiveBashStartupNoise removes the leading run of bash interactive
@@ -668,13 +698,22 @@ func stripInteractiveBashStartupNoise(stderr string) string {
 	}
 	lines := strings.Split(stderr, "\n")
 	i := 0
-	for i < len(lines) && interactiveBashStartupNoise[lines[i]] {
+	for i < len(lines) && isInteractiveBashStartupNoise(lines[i]) {
 		i++
 	}
 	if i == 0 {
 		return stderr
 	}
 	return strings.Join(lines[i:], "\n")
+}
+
+func isInteractiveBashStartupNoise(line string) bool {
+	for _, re := range interactiveBashStartupNoise {
+		if re.MatchString(line) {
+			return true
+		}
+	}
+	return false
 }
 
 // sshAuthMethods builds the auth-method chain. Password is tried FIRST:
@@ -732,12 +771,6 @@ func defaultKeyFilesAuthMethod() ssh.AuthMethod {
 	return ssh.PublicKeys(signers...)
 }
 
-var (
-	userHostRegex     = regexp.MustCompile(`([\w.\-]+)@([\w.\-]+)`)
-	sshAddrPortRegex  = regexp.MustCompile(`-p\s+(\d+)`)
-	bareHostPortRegex = regexp.MustCompile(`^([\w.\-]+)(?::(\d+))?$`)
-)
-
 // sshTargetForSession runs the shared "reachable over SSH?" pre-flight and
 // returns the dial target. Execute, ExecuteInteractive, and the host bridge all
 // gate on the same conditions — session running and SSH credentials populated —
@@ -764,28 +797,134 @@ func sshTargetForSession(sess Session) (sshTarget, error) {
 }
 
 // parseSSHAddress extracts user, host, and port from a backend-provided
-// ssh_address (which may be a full ssh command or "host:port"). Returns
-// an error if no user is present — macOS sessions run as `vagrant` and
-// Linux as `ubuntu`, so a silent fallback would misroute half the
-// platforms.
+// ssh_address, which may be a full ssh command (`ssh [options] user@host`), a
+// bare `user@host[:port]`, or an `ssh://user@host[:port]` URI.
+//
+// The address is tokenized rather than pattern-matched across the whole string,
+// because regex scanning silently produced wrong targets: an unanchored
+// `-p\s+(\d+)` matched inside an unrelated option argument (`-L
+// 8080:localhost-p 80` yielded port 80), and a `\w+@\w+` search truncated an
+// IPv6 host at its first colon (`vagrant@2001:db8::1` yielded host "2001").
+//
+// A missing or malformed user is an error — macOS sessions run as `vagrant` and
+// Linux as `ubuntu`, so a silent fallback would misroute half the platforms.
 func parseSSHAddress(addr string) (sshTarget, error) {
-	if matches := userHostRegex.FindAllStringSubmatch(addr, -1); len(matches) > 0 {
-		// Take the LAST user@host match. In OpenSSH command syntax the
-		// target hostname comes after all options, so the rightmost match
-		// is the intended target.
-		m := matches[len(matches)-1]
-		t := sshTarget{User: m[1], Host: m[2], Port: 22}
-		if pm := sshAddrPortRegex.FindStringSubmatch(addr); pm != nil {
-			p, err := strconv.Atoi(pm[1])
-			if err != nil {
-				return sshTarget{}, fmt.Errorf("ssh address %q: invalid port %q: %w", addr, pm[1], err)
-			}
-			t.Port = p
-		}
-		return t, nil
+	fields := strings.Fields(addr)
+	if len(fields) == 0 {
+		return sshTarget{}, fmt.Errorf("unable to parse ssh address: %q", addr)
 	}
-	if bareHostPortRegex.MatchString(addr) {
+
+	target := ""
+	optPort := 0
+	for i := 0; i < len(fields); i++ {
+		f := fields[i]
+		if f == "ssh" {
+			continue
+		}
+		if !strings.HasPrefix(f, "-") {
+			// In OpenSSH syntax the destination is the FIRST operand and
+			// everything after it is the remote command, so scanning stops
+			// here — otherwise `ssh u@host -- echo user@evil` would retarget
+			// the dial at whatever the command mentions.
+			target = f
+			break
+		}
+
+		// Walk the option cluster so `-p 22`, `-p22` and `-tp 22` all resolve;
+		// the first letter that takes an argument consumes the rest of the
+		// token, or the next one.
+		cluster := f[1:]
+		for k := 0; k < len(cluster); k++ {
+			name := cluster[k : k+1]
+			if !sshOptionsWithArgument[name] {
+				continue
+			}
+			value := cluster[k+1:]
+			if value == "" {
+				i++
+				if i >= len(fields) {
+					return sshTarget{}, fmt.Errorf("ssh address %q: option -%s is missing its argument", addr, name)
+				}
+				value = fields[i]
+			}
+			if name == "p" {
+				p, err := parsePort(value)
+				if err != nil {
+					return sshTarget{}, fmt.Errorf("ssh address %q: %w", addr, err)
+				}
+				optPort = p
+			}
+			break
+		}
+	}
+
+	if target == "" {
+		return sshTarget{}, fmt.Errorf("unable to parse ssh address: %q", addr)
+	}
+	target = strings.TrimPrefix(target, "ssh://")
+
+	at := strings.LastIndex(target, "@")
+	if at < 0 {
 		return sshTarget{}, fmt.Errorf("ssh address %q has no user component; cannot determine remote account", addr)
 	}
-	return sshTarget{}, fmt.Errorf("unable to parse ssh address: %q", addr)
+	user, hostPort := target[:at], target[at+1:]
+	// A user carrying any of these means the token wasn't a plain destination
+	// (a leftover scheme, a second "@"), and dialing it would use a nonsense
+	// account name.
+	if user == "" || strings.ContainsAny(user, "@/:") {
+		return sshTarget{}, fmt.Errorf("ssh address %q has an invalid user component %q", addr, user)
+	}
+	host, port, err := splitHostPort(hostPort)
+	if err != nil {
+		return sshTarget{}, fmt.Errorf("ssh address %q: %w", addr, err)
+	}
+	if host == "" {
+		return sshTarget{}, fmt.Errorf("ssh address %q has no host", addr)
+	}
+
+	switch {
+	case optPort != 0 && port != 0 && optPort != port:
+		return sshTarget{}, fmt.Errorf("ssh address %q: conflicting ports (-p %d and :%d)", addr, optPort, port)
+	case optPort != 0:
+		port = optPort
+	case port == 0:
+		port = 22
+	}
+	return sshTarget{User: user, Host: host, Port: port}, nil
+}
+
+// sshOptionsWithArgument lists the ssh(1) short options that take a separate
+// argument. Needed so an argument is never mistaken for the destination —
+// `-o ProxyJump=jump@bastion` otherwise looks exactly like a target.
+var sshOptionsWithArgument = map[string]bool{
+	"B": true, "b": true, "c": true, "D": true, "E": true, "e": true,
+	"F": true, "I": true, "i": true, "J": true, "L": true, "l": true,
+	"m": true, "O": true, "o": true, "p": true, "Q": true, "R": true,
+	"S": true, "W": true, "w": true,
+}
+
+// splitHostPort splits "host", "host:port", "[::1]:port", or a bare IPv6
+// literal into its parts. A returned port of 0 means the address carried none,
+// leaving the default to the caller.
+func splitHostPort(s string) (string, int, error) {
+	if h, p, err := net.SplitHostPort(s); err == nil {
+		n, perr := parsePort(p)
+		if perr != nil {
+			return "", 0, perr
+		}
+		return h, n, nil
+	}
+	// net.SplitHostPort rejects both a bracketed literal with no port and a
+	// bare IPv6 literal ("too many colons"), so accept those explicitly; any
+	// other leftover colon means the address is malformed.
+	if h := strings.TrimSuffix(strings.TrimPrefix(s, "["), "]"); h != s {
+		if net.ParseIP(h) == nil {
+			return "", 0, fmt.Errorf("invalid bracketed host %q", s)
+		}
+		return h, 0, nil
+	}
+	if strings.Contains(s, ":") && net.ParseIP(s) == nil {
+		return "", 0, fmt.Errorf("invalid host:port %q", s)
+	}
+	return s, 0, nil
 }
