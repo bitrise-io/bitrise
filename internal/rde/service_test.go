@@ -445,6 +445,34 @@ func TestLegacyImageFallsBackToStackID(t *testing.T) {
 	}
 }
 
+func TestSecretMasking(t *testing.T) {
+	tmpl := templateFromAPI(rdeapi.Template{
+		TemplateVariables: []rdeapi.TemplateVariable{{Key: "k", Value: "cleartext", IsSecret: true}},
+	})
+	if got := tmpl.TemplateVariables[0].Value; got != "" {
+		t.Errorf("templateFromAPI: variable value = %q, want masked", got)
+	}
+
+	snap := snapshotFromAPI(rdeapi.SessionTemplateSnapshot{
+		SessionInputs: []rdeapi.SnapshotInput{{Key: "k", Value: "cleartext", IsSecret: true}},
+	})
+	if got := snap.SessionInputs[0].Value; got != "" {
+		t.Errorf("snapshotFromAPI: input value = %q, want masked", got)
+	}
+
+	cfg := templateConfigFromAPI(rdeapi.TemplateConfig{
+		SessionInputs: []rdeapi.TemplateConfigInput{{Key: "k", DefaultValue: "cleartext", IsSecret: true}},
+	})
+	if got := cfg.SessionInputs[0].DefaultValue; got != "" {
+		t.Errorf("templateConfigFromAPI: default value = %q, want masked", got)
+	}
+
+	saved := savedInputFromAPI(rdeapi.SavedInput{Key: "k", Value: "cleartext", IsSecret: true})
+	if saved.Value != "" {
+		t.Errorf("savedInputFromAPI: value = %q, want masked", saved.Value)
+	}
+}
+
 // recordingServer captures the method, path, query, auth header, and body
 // of the last request, and replies with a canned JSON body.
 type recordingServer struct {

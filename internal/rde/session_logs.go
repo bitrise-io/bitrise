@@ -52,7 +52,7 @@ func (s *Service) StreamSessionLogs(ctx context.Context, workspaceID, sessionID,
 	if err != nil {
 		return err
 	}
-	return s.client.StreamSessionLogs(ctx, workspaceID, sessionID, apiStage, idleTimeout, func(chunk rdeapi.LogChunk) error {
+	return s.client.StreamSessionLogs(ctx, workspaceID, sessionID, rdeapi.LogStage(apiStage), idleTimeout, func(chunk rdeapi.LogChunk) error {
 		return fn(chunk.LogContent)
 	})
 }
