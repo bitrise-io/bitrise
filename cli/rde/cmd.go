@@ -5,8 +5,10 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/machinetype"
+	"github.com/bitrise-io/bitrise/v2/cli/rde/savedinput"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/session"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/stack"
+	"github.com/bitrise-io/bitrise/v2/cli/rde/template"
 )
 
 // NewCmd returns the `bitrise rde` parent command.
@@ -22,7 +24,9 @@ Workspace resolution (highest to lowest precedence):
   BITRISE_WORKSPACE_ID      environment variable
   default_workspace_id      saved with 'bitrise config set'
   auto-detect               when none of the above is set: your only workspace is used,
-                             or you're prompted to pick one interactively`,
+                             or you're prompted to pick one interactively
+
+Saved inputs are user-scoped — they do not require --workspace.`,
 		Example: `  bitrise rde session list --workspace WORKSPACE_ID
   bitrise rde session list --format json
   bitrise rde machine-type list --stack osx-xcode-16.0.x-edge`,
@@ -34,6 +38,8 @@ Workspace resolution (highest to lowest precedence):
 		stack.NewCmd(),
 		machinetype.NewCmd(),
 		session.NewCmd(),
+		template.NewCmd(),
+		savedinput.NewCmd(),
 	)
 	return c
 }
