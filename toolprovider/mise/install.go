@@ -99,6 +99,9 @@ func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concrete
 	if key, value := workarounds.GetPythonPrecompiledFlavorEnv(toolName, concreteVersion, GetMiseVersion(), m.Silent); key != "" {
 		extraEnvs[key] = value
 	}
+	if key, value := workarounds.GetRubyPrecompiledEnv(toolName, GetMiseVersion(), m.Silent); key != "" {
+		extraEnvs[key] = value
+	}
 
 	output, err := m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
 	if !m.Silent && os.Getenv("MISE_LOG_LEVEL") != "" {
