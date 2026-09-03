@@ -210,6 +210,15 @@ func (c *sshClient) Close() error {
 	return errors.Join(errs...)
 }
 
+// listenRemote asks the remote sshd to open a listener on addr and returns a
+// net.Listener whose Accept yields connections initiated on the remote side and
+// tunneled back over this SSH connection (the equivalent of `ssh -R`). Pass an
+// explicit loopback bind address (e.g. "127.0.0.1:0") so the remote listener is
+// reachable only from the session itself, never the session's network.
+func (c *sshClient) listenRemote(addr string) (net.Listener, error) {
+	return c.client.Listen("tcp", addr)
+}
+
 // forwardLocal listens on 127.0.0.1:localPort and forwards every accepted
 // connection to remoteAddr, dialed from the session over this SSH connection —
 // the equivalent of `ssh -L localPort:remoteAddr`. It blocks until ctx is
