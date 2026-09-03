@@ -22,6 +22,7 @@ func NewCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "stack",
 		Short: "List machine stacks available to the workspace",
+		Args:  cobra.NoArgs,
 		RunE:  cmdutil.DelegateToList,
 	}
 	c.AddCommand(newListCmd())

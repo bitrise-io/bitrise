@@ -80,3 +80,25 @@ func TestListCmd_EmptyHuman(t *testing.T) {
 		t.Errorf("expected empty-state message, got: %q", stdout)
 	}
 }
+
+func TestParentCmd_DelegatesToList(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"stacks":[{"id":"osx-xcode-16.0.x-edge","title":"Xcode 16.0","os":"macos","osVersion":26,"status":"edge"}]}`)
+	}))
+	defer srv.Close()
+
+	stdout, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{RDEAPIBaseURL: srv.URL, DefaultWorkspaceID: "ws-1"})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if !strings.Contains(stdout, "osx-xcode-16.0.x-edge") {
+		t.Errorf("bare parent should print the stack list, got:\n%s", stdout)
+	}
+}
+
+func TestParentCmd_RejectsUnknownSubcommand(t *testing.T) {
+	_, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{Args: []string{"lst"}, RDEAPIBaseURL: "http://unused", DefaultWorkspaceID: "ws-1"})
+	if err == nil || !strings.Contains(err.Error(), `unknown command "lst"`) {
+		t.Fatalf("error = %v, want an unknown command error", err)
+	}
+}

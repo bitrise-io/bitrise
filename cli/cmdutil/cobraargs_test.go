@@ -2,6 +2,7 @@ package cmdutil
 
 import (
 	"context"
+	"io"
 	"strings"
 	"testing"
 
@@ -72,5 +73,54 @@ func TestDelegateToList_NoListSubcommandFallsBackToHelp(t *testing.T) {
 	parent := &cobra.Command{Use: "session"}
 	if err := DelegateToList(parent, nil); err != nil {
 		t.Errorf("expected no error falling back to Help, got %v", err)
+	}
+}
+
+func TestDelegateToList_MergesParentPersistentFlags(t *testing.T) {
+	var got string
+	list := &cobra.Command{
+		Use: "list",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			got, _ = cmd.Flags().GetString("workspace")
+			return nil
+		},
+	}
+	parent := &cobra.Command{Use: "stack", Args: cobra.NoArgs, RunE: DelegateToList}
+	parent.AddCommand(list)
+	root := &cobra.Command{Use: "rde"}
+	root.PersistentFlags().String("workspace", "", "")
+	root.AddCommand(parent)
+	root.SetOut(io.Discard)
+	root.SetErr(io.Discard)
+
+	root.SetArgs([]string{"stack", "--workspace", "ws-2"})
+	if err := root.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got != "ws-2" {
+		t.Errorf("workspace = %q, want %q", got, "ws-2")
+	}
+}
+
+func TestDelegateToList_ValidatesRequiredFlags(t *testing.T) {
+	ran := false
+	list := &cobra.Command{
+		Use: "list",
+		RunE: func(*cobra.Command, []string) error {
+			ran = true
+			return nil
+		},
+	}
+	list.Flags().String("stack", "", "")
+	_ = list.MarkFlagRequired("stack")
+	parent := &cobra.Command{Use: "machine-type"}
+	parent.AddCommand(list)
+
+	err := DelegateToList(parent, nil)
+	if err == nil || !strings.Contains(err.Error(), `required flag(s) "stack" not set`) {
+		t.Fatalf("error = %v, want a missing required flag error", err)
+	}
+	if ran {
+		t.Error("list body ran despite the missing required flag")
 	}
 }

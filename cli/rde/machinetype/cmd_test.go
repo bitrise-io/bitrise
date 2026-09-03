@@ -179,6 +179,20 @@ func TestListCmd_EmptyHuman(t *testing.T) {
 	}
 }
 
+func TestParentCmd_ReportsMissingStackFlag(t *testing.T) {
+	_, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{RDEAPIBaseURL: "http://unused", DefaultWorkspaceID: "ws-1"})
+	if err == nil || !strings.Contains(err.Error(), `required flag(s) "stack" not set`) {
+		t.Fatalf("error = %v, want a missing required flag error", err)
+	}
+}
+
+func TestParentCmd_RejectsUnknownSubcommand(t *testing.T) {
+	_, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{Args: []string{"lst"}, RDEAPIBaseURL: "http://unused", DefaultWorkspaceID: "ws-1"})
+	if err == nil || !strings.Contains(err.Error(), `unknown command "lst"`) {
+		t.Fatalf("error = %v, want an unknown command error", err)
+	}
+}
+
 // catalogServer returns a test server that serves the two upstream endpoints
 // (/stacks and /machine-types) the command joins on.
 func catalogServer(t *testing.T, stacksJSON, machineTypesJSON string) *httptest.Server {

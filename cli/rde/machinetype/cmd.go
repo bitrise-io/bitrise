@@ -22,6 +22,7 @@ func NewCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "machine-type",
 		Short: "List machine types compatible with a given stack",
+		Args:  cobra.NoArgs,
 		RunE:  cmdutil.DelegateToList,
 	}
 	c.AddCommand(newListCmd())
@@ -35,8 +36,8 @@ func newListCmd() *cobra.Command {
 		Short: "List machine types compatible with a given stack",
 		Long: `List machine types compatible with the stack given by --stack.
 
-Each machine type is offered by one or more clusters. The cluster name is
-shown only when a machine type is offered by more than one cluster for the
+Each machine type is offered by one or more clusters. A CLUSTER column is
+shown when any machine type is offered by more than one cluster for the
 selected stack — pass that name as --cluster to 'rde session create' to
 pin a target.`,
 		Example: `  bitrise rde machine-type list --stack osx-xcode-16.0.x-edge`,
