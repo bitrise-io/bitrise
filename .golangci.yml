@@ -19,9 +19,6 @@ linters:
       - linters:
           - staticcheck
         text: QF1003 # https://staticcheck.dev/docs/checks#QF1003
-      - linters:
-          - unused
-        path: ^cli/rde/claude/ # PR 15 pre-stages files with no caller yet; PR 16's cmd.go/resume.go wire them up — remove this rule then
     paths:
       - examples$
 formatters:
