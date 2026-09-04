@@ -24,6 +24,12 @@ the command errors and lists the candidate IDs to pick from.`,
 		newViewCmd(),
 		newNotificationsCmd(),
 		newDiffCmd(),
+		newCreateCmd(),
+		newUpdateCmd(),
+		newRestoreCmd(),
+		newTerminateCmd(),
+		newDeleteCmd(),
+		newDeleteTerminatedCmd(),
 	)
 	return c
 }

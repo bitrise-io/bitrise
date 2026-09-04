@@ -11,6 +11,26 @@ import (
 	"github.com/bitrise-io/bitrise/v2/internal/style"
 )
 
+// parseLabelFlags converts repeatable key=value flag values into a label
+// map; flagName names the flag in error messages. Only the shape is checked
+// here — key and value charset/length, entry count, and the reserved
+// "bitrise.io/" key prefix are enforced by the backend, whose field
+// violations surface through the API error.
+func parseLabelFlags(flagName string, kvs []string) (map[string]string, error) {
+	if len(kvs) == 0 {
+		return nil, nil
+	}
+	out := make(map[string]string, len(kvs))
+	for _, kv := range kvs {
+		k, v, ok := strings.Cut(kv, "=")
+		if !ok || k == "" || v == "" {
+			return nil, fmt.Errorf("%s %q: expected key=value", flagName, kv)
+		}
+		out[k] = v
+	}
+	return out, nil
+}
+
 // validateLabelSelectors rejects selector shapes that can never match (bare
 // keys, empty keys or values — label values are non-empty by contract). The
 // strings otherwise pass to the backend verbatim, which enforces the full
