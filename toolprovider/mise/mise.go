@@ -34,13 +34,13 @@ var misePreviewChecksums = map[string]string{
 	"macos-arm64": "bfea0ab417b48c1e8b99412fcaf20ce17424a3286a8766d7d2b0051fe321d565",
 }
 
-const miseStableVersion = "v2026.5.12"
+const miseStableVersion = "v2026.9.1"
 
 var miseStableChecksums = map[string]string{
-	"linux-x64":   "bd0930c0b619f51ddb60e32e5cce18a5533567b2f1ba9fc4875b9f39a2bb3ed8",
-	"linux-arm64": "67c2bd96da9c6da030db4174b2dd0f8e6636c25519b23a15f0b734556e6e5ee0",
-	"macos-x64":   "dcab53de40bbd42c10607d64081e9df328c4885db30b41c4421f27e18b8f7efa",
-	"macos-arm64": "5b883c868a0748dd0c595d30fd000ec5138dfabdeef2c30222866ebf34af1ae3",
+	"linux-x64":   "063dda9149ab6be53da877c2d176afe0eac68e64cf8ca295bd0528720701c65d",
+	"linux-arm64": "98d2ea7b82dd966afdb8a9f4e9edbca771acf2a30d2842bfc0efdb7b61c886a3",
+	"macos-x64":   "eed76838c68aa49b7bf07c468dd4993855bbb342a4442f67355b6ffbe746e4d4",
+	"macos-arm64": "bfea0ab417b48c1e8b99412fcaf20ce17424a3286a8766d7d2b0051fe321d565",
 }
 
 var KnownGitHubTokenEnvVars = []string{
