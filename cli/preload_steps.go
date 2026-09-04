@@ -107,7 +107,7 @@ func preloadSteps(cmd *cobra.Command) error {
 
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	log.Info("Preloading...")
-	log.Info("Steplib: %s", steplibURL)
+	log.Infof("Steplib: %s", steplibURL)
 	if maintaner != "" {
 		log.Infof("Filtering Steps by maintaner: %s", maintaner)
 	}

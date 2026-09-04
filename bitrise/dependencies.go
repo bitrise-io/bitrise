@@ -113,7 +113,7 @@ func CheckIsHomebrewInstalled() error {
 		log.Warnf("It seems that Homebrew is not installed on your system.")
 		log.Infof("Homebrew (short: brew) is required in order to be able to auto-install all the bitrise dependencies.")
 		log.Infof("You should be able to install brew by copying this command and running it in your Terminal:")
-		log.Infof(brewRubyInstallCmdString)
+		log.Infof("%s", brewRubyInstallCmdString)
 		log.Infof("You can find more information about Homebrew on its official site at: %s", officialSiteURL)
 		log.Warnf("Once the installation of brew is finished you should call the bitrise setup again.")
 		return err
