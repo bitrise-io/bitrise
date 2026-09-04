@@ -636,13 +636,17 @@ func buildClaudeCommand(repoDir, claudeSessionID string) string {
 // starts fresh under the SAME session ID — so the metadata monitor and any
 // later resume keep working. The transcript glob matches the file claude writes
 // on the first message (the same path readAITitleCommand reads).
+//
+// The ID comes from a stored record, so it is quoted like repoDir even though
+// localsession only ever loads UUIDs (see its readRecord). Quoting the
+// transcript's filename segment still leaves the leading * to expand.
 func buildResumeCommand(repoDir, claudeSessionID string) string {
-	id := claudeSessionID
+	id := cmdutil.ShellQuote(claudeSessionID)
 	inner := fmt.Sprintf(
-		"if ls ~/.claude/projects/*/%s.jsonl >/dev/null 2>&1; "+
+		"if ls ~/.claude/projects/*/%s >/dev/null 2>&1; "+
 			"then exec claude --resume %s; "+
 			"else exec claude --session-id %s; fi",
-		id, id, id)
+		cmdutil.ShellQuote(claudeSessionID+".jsonl"), id, id)
 	return buildTmuxClaudeCommand(repoDir, inner)
 }
 
@@ -684,6 +688,12 @@ func ensureClaudeAuth(ctx context.Context, svc *internalrde.Service, log *stepLo
 
 	cred, ok := existingLocalCredential()
 	if !ok {
+		// Minting needs a local `claude`; without it the generic "did not return
+		// one" message below would misdescribe the problem.
+		if _, err := exec.LookPath("claude"); err != nil {
+			return fmt.Errorf("no Claude Code token available and Claude Code is not installed locally, so one can't be minted; " +
+				"set $CLAUDE_CODE_OAUTH_TOKEN or $ANTHROPIC_API_KEY, install Claude Code, or configure a token on the control plane, then retry")
+		}
 		log.step("No token on the control plane or locally; minting one with 'claude setup-token'…")
 		cred, ok = mintSetupToken(ctx)
 	}
@@ -824,7 +834,9 @@ func chooseCloneURL(originURL string, haveSSHKey bool) (cloneURL string, viaHTTP
 // clone URL: the last path segment with any ".git" suffix removed (e.g.
 // git@github.com:org/repo.git → repo, https://host/org/repo → repo).
 func repoDirFromURL(raw string) string {
-	s := strings.TrimSuffix(raw, ".git")
+	// Trim slashes first so a trailing one doesn't hide the .git suffix, then
+	// again for a URL that had only the slash.
+	s := strings.TrimSuffix(strings.TrimRight(raw, "/"), ".git")
 	s = strings.TrimRight(s, "/")
 	if i := strings.LastIndexAny(s, "/:"); i >= 0 {
 		s = s[i+1:]

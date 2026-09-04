@@ -137,6 +137,20 @@ func TestBuildResumeCommand(t *testing.T) {
 	}
 }
 
+// The ID comes from a stored record. localsession rejects a non-UUID one at
+// load, so this is the second line of defence: it must not be able to close the
+// quoting and append a command of its own.
+func TestBuildResumeCommandQuotesSessionID(t *testing.T) {
+	got := buildResumeCommand("repo", "sid; touch /tmp/pwned; #")
+	if strings.Contains(got, "--resume sid; touch /tmp/pwned") {
+		t.Errorf("session ID spliced unquoted into the command: %q", got)
+	}
+	// The leading * must still be left outside the quotes to expand.
+	if !strings.Contains(got, "~/.claude/projects/*/'") {
+		t.Errorf("quoting swallowed the project glob: %q", got)
+	}
+}
+
 func TestBuildCloneCommand(t *testing.T) {
 	const url = "git@github.com:org/repo.git"
 	if got, want := buildCloneCommand(url, "repo", "main", false),
@@ -202,6 +216,8 @@ func TestRepoDirFromURL(t *testing.T) {
 		{"no git suffix", "https://github.com/org/repo", "repo"},
 		{"nested path", "https://gitlab.com/group/sub/repo.git", "repo"},
 		{"trailing slash", "https://github.com/org/repo/", "repo"},
+		{"trailing slash after .git", "https://github.com/org/repo.git/", "repo"},
+		{"ssh form, trailing slash after .git", "git@github.com:org/repo.git/", "repo"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := repoDirFromURL(tc.in); got != tc.want {
