@@ -9,11 +9,11 @@ import (
 
 func TestListSessions_PathAndParse(t *testing.T) {
 	rs := newRecordingServer(t, `{"sessions":[
-		{"id":"s1","name":"dev","status":"SESSION_STATUS_RUNNING","templateSnapshot":{"templateName":"tmpl","stackId":"osx-xcode-16.0.x-edge"},"labels":{"team":"mobile"}},
+		{"id":"s1","name":"dev","status":"SESSION_STATUS_RUNNING","templateSnapshot":{"templateName":"tmpl","stackId":"osx-xcode-16.0.x-edge"},"labels":{"team":"mobile"},"ownerType":"workspace","ownerId":"my-ws"},
 		{"id":"s2","name":"old","status":"SESSION_STATUS_TERMINATED"}
 	]}`)
 
-	sessions, err := rs.client().ListSessions(context.Background(), "ws-1", nil)
+	sessions, err := rs.client().ListSessions(context.Background(), "ws-1", nil, "")
 	if err != nil {
 		t.Fatalf("ListSessions: %v", err)
 	}
@@ -39,18 +39,49 @@ func TestListSessions_PathAndParse(t *testing.T) {
 	if sessions[0].Labels["team"] != "mobile" {
 		t.Errorf("labels = %v, want team=mobile", sessions[0].Labels)
 	}
+	if sessions[0].OwnerType != "workspace" || sessions[0].OwnerID != "my-ws" {
+		t.Errorf("owner = %q/%q, want workspace/my-ws", sessions[0].OwnerType, sessions[0].OwnerID)
+	}
 }
 
 func TestListSessions_LabelSelectorsQuery(t *testing.T) {
 	rs := newRecordingServer(t, `{"sessions":[]}`)
 
-	if _, err := rs.client().ListSessions(context.Background(), "ws-1", []string{"team=mobile", "branch=main"}); err != nil {
+	if _, err := rs.client().ListSessions(context.Background(), "ws-1", []string{"team=mobile", "branch=main"}, ""); err != nil {
 		t.Fatalf("ListSessions: %v", err)
 	}
 	// One repeated labelSelectors param per selector, "=" percent-encoded,
 	// order preserved (grpc-gateway maps them onto the repeated proto field).
 	if want := "labelSelectors=team%3Dmobile&labelSelectors=branch%3Dmain"; rs.lastQuery != want {
 		t.Errorf("query = %s, want %s", rs.lastQuery, want)
+	}
+}
+
+func TestListSessions_ScopeQuery(t *testing.T) {
+	rs := newRecordingServer(t, `{"sessions":[]}`)
+
+	// Scope is translated to the backend's enum name.
+	if _, err := rs.client().ListSessions(context.Background(), "ws-1", nil, "workspace"); err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if want := "scope=SESSION_LIST_SCOPE_WORKSPACE"; rs.lastQuery != want {
+		t.Errorf("query = %q, want %q", rs.lastQuery, want)
+	}
+
+	// Scope combines with label selectors (Encode sorts by key).
+	if _, err := rs.client().ListSessions(context.Background(), "ws-1", []string{"team=mobile"}, "mine"); err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if want := "labelSelectors=team%3Dmobile&scope=SESSION_LIST_SCOPE_MINE"; rs.lastQuery != want {
+		t.Errorf("query = %q, want %q", rs.lastQuery, want)
+	}
+
+	// Unknown scopes are omitted so the backend default applies.
+	if _, err := rs.client().ListSessions(context.Background(), "ws-1", nil, "everyone"); err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if rs.lastQuery != "" {
+		t.Errorf("query = %q, want none for unknown scope", rs.lastQuery)
 	}
 }
 
@@ -320,7 +351,7 @@ func TestSessions_ValidationGuards(t *testing.T) {
 	ctx := context.Background()
 
 	cases := map[string]func() error{
-		"ListSessions/no-ws":           func() error { _, err := c.ListSessions(ctx, "", nil); return err },
+		"ListSessions/no-ws":           func() error { _, err := c.ListSessions(ctx, "", nil, ""); return err },
 		"GetSession/no-ws":             func() error { _, err := c.GetSession(ctx, "", "s1"); return err },
 		"GetSession/no-session":        func() error { _, err := c.GetSession(ctx, "ws", ""); return err },
 		"CreateSession/no-ws":          func() error { _, _, err := c.CreateSession(ctx, "", CreateSessionRequest{}); return err },

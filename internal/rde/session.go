@@ -44,8 +44,16 @@ type Session struct {
 	VNCPassword          string            `json:"-" yaml:"-"`
 	PersistentDiskStatus string            `json:"persistent_disk_status,omitempty" yaml:"persistent_disk_status,omitempty"`
 	Labels               map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	CreatedAt            *time.Time        `json:"created_at,omitempty" yaml:"created_at,omitempty"`
-	UpdatedAt            *time.Time        `json:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+	// OwnerType says who owns the session: "user" (the creating user; the
+	// default) or "workspace" (the workspace itself — visible to every
+	// member of the workspace). Passed through verbatim so future owner
+	// kinds reach callers without a CLI change.
+	OwnerType string `json:"owner_type,omitempty" yaml:"owner_type,omitempty"`
+	// OwnerID is the owner's identifier, typed by OwnerType: the owning
+	// user's ID for "user", the workspace slug for "workspace".
+	OwnerID   string     `json:"owner_id,omitempty" yaml:"owner_id,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty" yaml:"updated_at,omitempty"`
 }
 
 // Resumable reports whether `rde claude` can resume this session: a running
@@ -149,14 +157,24 @@ type CreateSessionResult struct {
 	AutoMappedInputs []AutoMappedInput `json:"auto_mapped_inputs,omitempty" yaml:"auto_mapped_inputs,omitempty"`
 }
 
-// ListSessions returns the caller's sessions in the workspace, optionally
-// filtered by label selectors ("key=value" exact matches, ANDed). Pass nil
-// for the full list.
-func (s *Service) ListSessions(ctx context.Context, workspaceID string, labelSelectors []string) ([]Session, error) {
+// Session list scopes accepted by ListSessions' scope argument (and the
+// `session list --scope` flag). Empty means the backend default, which is
+// SessionScopeMine.
+const (
+	SessionScopeMine      = "mine"
+	SessionScopeWorkspace = "workspace"
+)
+
+// ListSessions returns sessions in the workspace, optionally filtered by
+// label selectors ("key=value" exact matches, ANDed) — pass nil for the full
+// list. scope selects whose sessions are listed: SessionScopeMine (the
+// caller's own; also the backend default when empty) or SessionScopeWorkspace
+// (sessions owned by the workspace itself, visible to every member).
+func (s *Service) ListSessions(ctx context.Context, workspaceID string, labelSelectors []string, scope string) ([]Session, error) {
 	if s.client == nil {
 		return nil, errClient()
 	}
-	wire, err := s.client.ListSessions(ctx, workspaceID, labelSelectors)
+	wire, err := s.client.ListSessions(ctx, workspaceID, labelSelectors, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +204,9 @@ func (s *Service) GetSession(ctx context.Context, workspaceID, sessionID string)
 // Session names aren't unique (unlike a UUID), so an ambiguous match is an
 // expected outcome — the error lists the candidate IDs so the user can re-run
 // with the exact one. Mirrors ResolveTemplateID.
+//
+// Names resolve against the default scope only (the caller's own sessions);
+// workspace-owned sessions are addressed by ID.
 func (s *Service) ResolveSessionID(ctx context.Context, workspaceID, value string) (string, error) {
 	if value == "" {
 		return "", fmt.Errorf("session is required")
@@ -193,7 +214,7 @@ func (s *Service) ResolveSessionID(ctx context.Context, workspaceID, value strin
 	if looksLikeUUID(value) {
 		return value, nil
 	}
-	sessions, err := s.ListSessions(ctx, workspaceID, nil)
+	sessions, err := s.ListSessions(ctx, workspaceID, nil, "")
 	if err != nil {
 		return "", fmt.Errorf("list sessions to resolve %q: %w", value, err)
 	}
@@ -574,6 +595,8 @@ func sessionFromAPI(w rdeapi.Session) Session {
 		VNCPassword:          w.VNCPassword,
 		PersistentDiskStatus: diskStatusFromAPI(w.PersistentDiskStatus),
 		Labels:               w.Labels,
+		OwnerType:            w.OwnerType,
+		OwnerID:              w.OwnerID,
 	}
 	out.AgentSessionStatusUpdatedAt = parseTime(w.AgentSessionStatusUpdatedAt)
 	out.AutoTerminateAt = parseTime(w.AutoTerminateAt)

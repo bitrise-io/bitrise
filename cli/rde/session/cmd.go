@@ -30,6 +30,12 @@ the command errors and lists the candidate IDs to pick from.`,
 		newTerminateCmd(),
 		newDeleteCmd(),
 		newDeleteTerminatedCmd(),
+		newExecCmd(),
+		newLogsCmd(),
+		newUploadCmd(),
+		newDownloadCmd(),
+		newVNCCmd(),
+		newOpenVNCCmd(),
 	)
 	return c
 }

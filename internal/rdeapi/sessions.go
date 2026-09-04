@@ -32,8 +32,16 @@ type Session struct {
 	VNCPassword                 string                   `json:"vncPassword,omitempty"`
 	PersistentDiskStatus        string                   `json:"persistentDiskStatus,omitempty"`
 	Labels                      map[string]string        `json:"labels,omitempty"`
-	CreatedAt                   string                   `json:"createdAt,omitempty"`
-	UpdatedAt                   string                   `json:"updatedAt,omitempty"`
+	// OwnerType says who owns the session: "user" (the creating user; the
+	// default) or "workspace" (the workspace itself — such sessions are
+	// visible to every member of the workspace). The backend may add more
+	// owner kinds over time, so treat unknown values as opaque.
+	OwnerType string `json:"ownerType,omitempty"`
+	// OwnerID is the owner's identifier, typed by OwnerType: the owning
+	// user's ID for "user", the workspace slug for "workspace".
+	OwnerID   string `json:"ownerId,omitempty"`
+	CreatedAt string `json:"createdAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
 }
 
 // SessionTemplateSnapshot is the template config snapshotted at session
@@ -205,23 +213,35 @@ func (c *Client) CompareSessionTemplate(ctx context.Context, workspaceID, sessio
 	return resp, nil
 }
 
-// ListSessions returns the caller's sessions in the workspace. Each
-// labelSelectors entry is a "key=value" exact-match label filter; multiple
-// selectors are ANDed and passed through verbatim as repeated query params
-// (the backend validates them: key=value form, at most 8, no duplicate
-// keys).
+// ListSessions returns sessions in the workspace. Each labelSelectors entry
+// is a "key=value" exact-match label filter; multiple selectors are ANDed and
+// passed through verbatim as repeated query params (the backend validates
+// them: key=value form, at most 8, no duplicate keys).
+//
+// scope selects whose sessions are listed: "mine" (sessions the caller
+// created; also the backend default when empty) or "workspace" (sessions
+// owned by the workspace itself, visible to every member of the workspace).
+// The value is translated to the backend's enum name; anything else is
+// omitted so the backend default applies — mirrors how
+// ListSessionNotifications handles order.
 // Endpoint: GET /v1/workspaces/{workspaceId}/sessions.
-func (c *Client) ListSessions(ctx context.Context, workspaceID string, labelSelectors []string) ([]Session, error) {
+func (c *Client) ListSessions(ctx context.Context, workspaceID string, labelSelectors []string, scope string) ([]Session, error) {
 	if workspaceID == "" {
 		return nil, fmt.Errorf("workspace ID is required")
 	}
 	p := wsPath(workspaceID, "/sessions")
-	if len(labelSelectors) > 0 {
-		q := url.Values{}
-		for _, sel := range labelSelectors {
-			q.Add("labelSelectors", sel)
-		}
-		p += "?" + q.Encode()
+	q := url.Values{}
+	for _, sel := range labelSelectors {
+		q.Add("labelSelectors", sel)
+	}
+	switch scope {
+	case "mine":
+		q.Set("scope", "SESSION_LIST_SCOPE_MINE")
+	case "workspace":
+		q.Set("scope", "SESSION_LIST_SCOPE_WORKSPACE")
+	}
+	if encoded := q.Encode(); encoded != "" {
+		p += "?" + encoded
 	}
 	var resp listSessionsResp
 	if err := c.getJSON(ctx, p, &resp); err != nil {

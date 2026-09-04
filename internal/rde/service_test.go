@@ -16,11 +16,11 @@ import (
 
 func TestListSessions_PathAuthAndStatusMapping(t *testing.T) {
 	rs := newRecordingServer(t, `{"sessions":[
-		{"id":"s1","name":"dev","status":"SESSION_STATUS_RUNNING","templateSnapshot":{"templateName":"tmpl"},"labels":{"team":"mobile"}},
+		{"id":"s1","name":"dev","status":"SESSION_STATUS_RUNNING","templateSnapshot":{"templateName":"tmpl"},"labels":{"team":"mobile"},"ownerType":"workspace","ownerId":"my-ws"},
 		{"id":"s2","name":"old","status":"SESSION_STATUS_TERMINATED"}
 	]}`)
 
-	sessions, err := rs.service().ListSessions(context.Background(), "ws-1", nil)
+	sessions, err := rs.service().ListSessions(context.Background(), "ws-1", nil, "")
 	if err != nil {
 		t.Fatalf("ListSessions: %v", err)
 	}
@@ -48,15 +48,33 @@ func TestListSessions_PathAuthAndStatusMapping(t *testing.T) {
 	if sessions[0].Labels["team"] != "mobile" {
 		t.Errorf("labels[0] = %v, want team=mobile", sessions[0].Labels)
 	}
+	// Owner fields pass through verbatim — no enum-prefix mapping.
+	if sessions[0].OwnerType != "workspace" || sessions[0].OwnerID != "my-ws" {
+		t.Errorf("owner[0] = %q/%q, want workspace/my-ws", sessions[0].OwnerType, sessions[0].OwnerID)
+	}
+	if sessions[1].OwnerType != "" || sessions[1].OwnerID != "" {
+		t.Errorf("owner[1] = %q/%q, want empty", sessions[1].OwnerType, sessions[1].OwnerID)
+	}
 }
 
 func TestListSessions_LabelSelectorsPassThrough(t *testing.T) {
 	rs := newRecordingServer(t, `{"sessions":[]}`)
 
-	if _, err := rs.service().ListSessions(context.Background(), "ws-1", []string{"team=mobile"}); err != nil {
+	if _, err := rs.service().ListSessions(context.Background(), "ws-1", []string{"team=mobile"}, ""); err != nil {
 		t.Fatalf("ListSessions: %v", err)
 	}
 	if want := "labelSelectors=team%3Dmobile"; rs.lastQuery != want {
+		t.Errorf("query = %q, want %q", rs.lastQuery, want)
+	}
+}
+
+func TestListSessions_ScopePassThrough(t *testing.T) {
+	rs := newRecordingServer(t, `{"sessions":[]}`)
+
+	if _, err := rs.service().ListSessions(context.Background(), "ws-1", nil, SessionScopeWorkspace); err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if want := "scope=SESSION_LIST_SCOPE_WORKSPACE"; rs.lastQuery != want {
 		t.Errorf("query = %q, want %q", rs.lastQuery, want)
 	}
 }
@@ -407,7 +425,7 @@ func TestResolveSessionID_NoMatchError(t *testing.T) {
 
 func TestNilClientGuards(t *testing.T) {
 	svc := NewService(nil)
-	if _, err := svc.ListSessions(context.Background(), "ws", nil); err == nil {
+	if _, err := svc.ListSessions(context.Background(), "ws", nil, ""); err == nil {
 		t.Error("ListSessions with nil client should error")
 	}
 	if _, err := svc.ListSavedInputs(context.Background()); err == nil {
