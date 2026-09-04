@@ -87,16 +87,17 @@ var (
 	ansiSeqRe = regexp.MustCompile(`\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07]*\x07`)
 	// tokenRe matches an Anthropic token by its stable prefix.
 	tokenRe = regexp.MustCompile(`sk-ant-[A-Za-z0-9._-]{10,}`)
-	// fallbackTokenRe accepts a lone token-shaped line if the prefix ever
-	// changes — strict enough to reject stray escape-sequence fragments.
-	fallbackTokenRe = regexp.MustCompile(`^[A-Za-z0-9._-]{20,}$`)
 )
 
 // extractToken pulls the OAuth token out of `claude setup-token` output, which
 // interleaves the token with terminal escape sequences (so the naive "last
 // line" is often a terminal-restore sequence like ESC[?2004l). It strips ANSI
-// and control sequences, then matches the token by its sk-ant- prefix, falling
-// back to a single token-shaped line.
+// and control sequences, then matches the token by its sk-ant- prefix.
+//
+// Matching only the known prefix is deliberate: a looser "last token-shaped
+// line" fallback would, on unexpected output, persist a diagnostic line as a
+// secret on the control plane and fail confusingly in-session. Returning ""
+// instead surfaces ensureClaudeAuth's actionable "no token available" error.
 func extractToken(out string) string {
 	clean := ansiSeqRe.ReplaceAllString(out, "")
 	clean = strings.Map(func(r rune) rune {
@@ -109,24 +110,7 @@ func extractToken(out string) string {
 		return r
 	}, clean)
 
-	if m := tokenRe.FindString(clean); m != "" {
-		return m
-	}
-	if line := lastNonEmptyLine(clean); fallbackTokenRe.MatchString(line) {
-		return line
-	}
-	return ""
-}
-
-// lastNonEmptyLine returns the last non-blank, trimmed line of s.
-func lastNonEmptyLine(s string) string {
-	lines := strings.Split(s, "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		if t := strings.TrimSpace(lines[i]); t != "" {
-			return t
-		}
-	}
-	return ""
+	return tokenRe.FindString(clean)
 }
 
 // credentialsFilePath returns the path to Claude Code's credentials file,

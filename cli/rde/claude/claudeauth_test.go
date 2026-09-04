@@ -45,8 +45,9 @@ func TestExtractToken(t *testing.T) {
 	if got := extractToken("\x1b[>4m\x1b[<u\x1b[?1004l\x1b[?2031l\x1b[?2004l"); got != "" {
 		t.Errorf("escape-only: got %q, want empty", got)
 	}
-	// Fallback: a clean token-shaped final line with no sk-ant prefix.
-	if got := extractToken("info\nABCDEF0123456789abcdefXYZ\n"); got != "ABCDEF0123456789abcdefXYZ" {
-		t.Errorf("fallback: got %q", got)
+	// Only the sk-ant- prefix counts. A token-shaped diagnostic line is
+	// rejected rather than persisted as a credential on the control plane.
+	if got := extractToken("info\nABCDEF0123456789abcdefXYZ\n"); got != "" {
+		t.Errorf("unprefixed line: got %q, want empty", got)
 	}
 }

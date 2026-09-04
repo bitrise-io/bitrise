@@ -116,26 +116,40 @@ func agentKeyCount(ctx context.Context) int {
 // terminates the agent. The agent must outlive both the clone and the
 // interactive claude session, so the caller defers cleanup to process exit.
 func startAgent(ctx context.Context) (func(), error) {
+	// `ssh-agent -s` forks a daemon and exits, so from here on every error path
+	// has an agent to clean up — killAgent, not a bare return.
 	out, err := exec.CommandContext(ctx, "ssh-agent", "-s").Output()
 	if err != nil {
 		return nil, err
 	}
 	sock := parseAgentVar(string(out), "SSH_AUTH_SOCK")
+	pid := parseAgentVar(string(out), "SSH_AGENT_PID")
 	if sock == "" {
+		killAgent(pid, sock)
 		return nil, errors.New("ssh-agent did not report a socket path")
 	}
 	if err := os.Setenv("SSH_AUTH_SOCK", sock); err != nil {
+		killAgent(pid, sock)
 		return nil, err
 	}
-	if pid := parseAgentVar(string(out), "SSH_AGENT_PID"); pid != "" {
+	if pid != "" {
 		_ = os.Setenv("SSH_AGENT_PID", pid)
 	}
-	return func() {
-		// `ssh-agent -k` reads SSH_AGENT_PID/SSH_AUTH_SOCK from the env we just
-		// set and kills the agent + removes its socket. Not ctx-bound: ctx is
-		// likely already cancelled by the time cleanup runs.
-		_ = exec.Command("ssh-agent", "-k").Run()
-	}, nil
+	return func() { killAgent(pid, sock) }, nil
+}
+
+// killAgent terminates the agent we started and removes its socket. The env is
+// passed explicitly rather than inherited: `ssh-agent -k` reads SSH_AGENT_PID/
+// SSH_AUTH_SOCK, and on the failure paths above we have not set them on the
+// process yet. Not ctx-bound — ctx is likely already cancelled by the time the
+// success path's cleanup runs.
+func killAgent(pid, sock string) {
+	if pid == "" && sock == "" {
+		return
+	}
+	c := exec.Command("ssh-agent", "-k")
+	c.Env = append(os.Environ(), "SSH_AGENT_PID="+pid, "SSH_AUTH_SOCK="+sock)
+	_ = c.Run()
 }
 
 // parseAgentVar extracts NAME's value from `ssh-agent -s` output, whose lines
