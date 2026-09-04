@@ -20,8 +20,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const precompiledStepsEnv = "BITRISE_EXPERIMENT_PRECOMPILED_STEPS"
-const precompiledStepsStorageURLsEnv = "BITRISE_PRECOMPILED_STEPS_STORAGE_URLS"
+const precompiledStepsEnv = "BITRISE_STEPLIB_USE_BINARY"
+const precompiledStepsStorageURLsEnv = "BITRISE_STEPLIB_STORAGE_URLS"
 
 var precompiledStepsDefaultStorageURLs = []string{
 	"https://steplib.bitrise.io",
@@ -91,7 +91,8 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 }
 
 func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.CanonicalID, destination string, fetcher httpfetch.Client) (string, error) {
-	if (os.Getenv(precompiledStepsEnv) == "true" || os.Getenv(precompiledStepsEnv) == "1") && step.Executables != nil {
+	precompiledDisabled := os.Getenv(precompiledStepsEnv) == "false" || os.Getenv(precompiledStepsEnv) == "0"
+	if !precompiledDisabled && step.Executables != nil {
 		platform := fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
 		executableForPlatform, ok := (*step.Executables)[platform]
 		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {

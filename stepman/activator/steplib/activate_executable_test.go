@@ -129,7 +129,7 @@ func TestActivateStepExecutable(t *testing.T) {
 		require.Equal(t, hash, fake.calledHash)
 	})
 
-	t.Run("BITRISE_PRECOMPILED_STEPS_STORAGE_URLS override wins", func(t *testing.T) {
+	t.Run("BITRISE_STEPLIB_STORAGE_URLS override wins", func(t *testing.T) {
 		t.Setenv(precompiledStepsStorageURLsEnv, "https://custom.example.com")
 		fake := newFakeExecutableFetcher(t)
 

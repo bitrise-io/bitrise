@@ -217,7 +217,7 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("HOME", t.TempDir()) // fresh: the git cloned steplib is not set up
 			t.Setenv("BITRISE_STEPLIB_API_ENABLE", "true")
-			t.Setenv("BITRISE_EXPERIMENT_PRECOMPILED_STEPS", "false")
+			t.Setenv("BITRISE_STEPLIB_USE_BINARY", "false")
 
 			activatedStepDir := t.TempDir()
 			workDir := t.TempDir()

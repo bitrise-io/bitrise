@@ -86,9 +86,9 @@ func activate(t *testing.T, v variant, id stepid.CanonicalID, offline, didStepLi
 		t.Setenv("BITRISE_STEPLIB_API_ENABLE", "false")
 	}
 	if v.precompiled {
-		t.Setenv("BITRISE_EXPERIMENT_PRECOMPILED_STEPS", "true")
+		t.Setenv("BITRISE_STEPLIB_USE_BINARY", "true")
 	} else {
-		t.Setenv("BITRISE_EXPERIMENT_PRECOMPILED_STEPS", "false")
+		t.Setenv("BITRISE_STEPLIB_USE_BINARY", "false")
 	}
 
 	logger := &capturingLogger{}
