@@ -61,8 +61,10 @@ func TestService_Watch_DeltaStreaming(t *testing.T) {
 		assert.Contains(t, got, want)
 	}
 
-	// Verify after_timestamp progression for log calls: "", ts1, ts2, ts2 (final flush).
-	wantTimestamps := []string{"", "ts1", "ts2", "ts2"}
+	// Verify after_timestamp progression for log calls: "", ts1, ts2, then "" once
+	// the manifest's next_after_timestamp comes back empty (still polled every
+	// iteration, not skipped).
+	wantTimestamps := []string{"", "ts1", "ts2", ""}
 	require.GreaterOrEqual(t, len(logTimestamps), len(wantTimestamps))
 	for i, want := range wantTimestamps {
 		assert.Equal(t, want, logTimestamps[i], "log call %d", i+1)

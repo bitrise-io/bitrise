@@ -126,17 +126,15 @@ func (s *Service) Watch(ctx context.Context, appSlug, buildSlug string, w io.Wri
 		if err != nil {
 			return Build{}, err
 		}
-		if afterTimestamp != "" {
-			manifest, err = s.client.BuildLogManifest(ctx, appSlug, buildSlug, afterTimestamp)
-			if err != nil {
-				return Build{}, err
-			}
-			if err := flush(manifest.LogChunks); err != nil {
-				return Build{}, err
-			}
-			lastAfterTimestamp = afterTimestamp
-			afterTimestamp = manifest.NextAfterTimestamp
+		manifest, err = s.client.BuildLogManifest(ctx, appSlug, buildSlug, afterTimestamp)
+		if err != nil {
+			return Build{}, err
 		}
+		if err := flush(manifest.LogChunks); err != nil {
+			return Build{}, err
+		}
+		lastAfterTimestamp = afterTimestamp
+		afterTimestamp = manifest.NextAfterTimestamp
 		if current.Status != 0 {
 			break
 		}

@@ -42,7 +42,7 @@ func New(rawBaseURL, token string, opts ...Option) (*Client, error) {
 		return nil, err
 	}
 	c := &Client{
-		baseURL:    u.String(),
+		baseURL:    strings.TrimSuffix(u.String(), "/"),
 		token:      token,
 		httpClient: &http.Client{Timeout: defaultTimeout},
 	}

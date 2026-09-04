@@ -70,12 +70,12 @@ viewer manually.`,
 			if err != nil {
 				return err
 			}
-			if err := urlOpener(cmd.Context(), creds.URL); err != nil {
-				return fmt.Errorf("open VNC URL: %w", err)
-			}
 			res := openVNCResult{Opened: true, Address: creds.Address, Username: creds.Username}
 			if output.Format != output.FormatRaw {
 				return output.Render(cmd.OutOrStdout(), output.Format, res, nil)
+			}
+			if err := urlOpener(cmd.Context(), creds.URL); err != nil {
+				return fmt.Errorf("open VNC URL: %w", err)
 			}
 			if !cmdutil.IsQuiet(cmd) {
 				_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened VNC viewer for %s\n", creds.Address)

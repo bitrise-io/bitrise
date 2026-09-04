@@ -48,8 +48,8 @@ type Config struct {
 const DirFileName = ".bitrise-cli.yml"
 
 // Dir returns the absolute path to the bitrise CLI config directory — the
-// parent of the global config file. Honors XDG_CONFIG_HOME, falling back to
-// ~/.config/bitrise/cli.
+// parent of the global config file (see the package doc for the XDG
+// fallback rule).
 func Dir() (string, error) {
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {

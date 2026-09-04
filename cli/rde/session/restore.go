@@ -81,6 +81,10 @@ and then immediately use the session without hand-rolling a poll loop.`,
 				}
 				ready, waitErr := svc.WaitForReady(waitCtx, workspaceID, restored.ID, 0, nil)
 				if waitErr != nil {
+					if renderErr := output.Render(cmd.OutOrStdout(), output.Format, restored, renderSessionDetail); renderErr != nil {
+						return renderErr
+					}
+					cmdutil.SilenceRootErrors(cmd)
 					return fmt.Errorf("waiting for session: %w", waitErr)
 				}
 				restored = ready

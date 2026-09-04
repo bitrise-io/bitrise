@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// items builds n simple rows titled a, b, c, … for navigation tests.
+// threeItems builds three simple rows for navigation tests.
 func threeItems() []Item {
 	return []Item{{Title: "alpha"}, {Title: "beta"}, {Title: "gamma"}}
 }
