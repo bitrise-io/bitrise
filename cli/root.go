@@ -16,6 +16,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/local"
 	"github.com/bitrise-io/bitrise/v2/cli/plugin"
 	"github.com/bitrise-io/bitrise/v2/cli/purr"
+	"github.com/bitrise-io/bitrise/v2/cli/rde"
 	"github.com/bitrise-io/bitrise/v2/cli/stack"
 	"github.com/bitrise-io/bitrise/v2/cli/step"
 	"github.com/bitrise-io/bitrise/v2/cli/user"
@@ -91,6 +92,7 @@ func newRootCommand() *cobra.Command {
 		plugin.NewCmd(),
 		envmanCommand,
 		purr.NewCmd(),
+		rde.NewCmd(),
 
 		// Deprecated, kept for backward compatibility but hidden (see local/trigger.go).
 		cmdutil.AsHidden(local.NewTriggerCommand()),

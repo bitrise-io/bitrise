@@ -27,12 +27,22 @@ func RequireArgs(names ...string) cobra.PositionalArgs {
 
 // DelegateToList forwards a bare parent invocation to its "list" subcommand,
 // propagating the parent's context so resolved config is available.
+//
+// Invoking RunE bypasses cobra's execute(), so the two things it would do for
+// the subcommand are done here instead: InheritedFlags is called for its side
+// effect of merging the parent chain's persistent flags (e.g. --workspace) into
+// the subcommand's flagset, and required flags are validated explicitly.
 func DelegateToList(cmd *cobra.Command, args []string) error {
 	for _, sub := range cmd.Commands() {
-		if sub.Name() == "list" {
-			sub.SetContext(cmd.Context())
-			return sub.RunE(sub, args)
+		if sub.Name() != "list" {
+			continue
 		}
+		sub.SetContext(cmd.Context())
+		_ = sub.InheritedFlags()
+		if err := sub.ValidateRequiredFlags(); err != nil {
+			return err
+		}
+		return sub.RunE(sub, args)
 	}
 	return cmd.Help()
 }
