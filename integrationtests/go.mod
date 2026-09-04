@@ -1,6 +1,6 @@
 module github.com/bitrise-io/bitrise/v2/integrationtests
 
-go 1.25.11
+go 1.26.0
 
 // Magic trick that allows us to exclude integration tests from the main Go package
 // (other repos consume the main package as a Go lib) and keep full Go LSP support for this package.
@@ -10,7 +10,7 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/bitrise/v2 v2.0.0
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/stepman v0.24.2
+	github.com/bitrise-io/stepman v0.24.3-0.20260904140847-481a4a9bb192
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.11.1
@@ -25,7 +25,7 @@ require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 // indirect
 	github.com/bitrise-io/envman/v2 v2.7.0 // indirect
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 // indirect
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.36 // indirect
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.39 // indirect
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cloudflare/circl v1.6.4 // indirect
@@ -80,12 +80,12 @@ require (
 	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
 	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.35.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/term v0.44.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

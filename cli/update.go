@@ -164,7 +164,7 @@ func latestTag() (*ver.Version, error) {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Warnf(err.Error())
+			log.Warnf("%s", err.Error())
 		}
 	}()
 
@@ -197,7 +197,7 @@ func download(version string) error {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Warnf(err.Error())
+			log.Warnf("%s", err.Error())
 		}
 	}()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -255,11 +255,11 @@ func update(cmd *cobra.Command) error {
 				return nil
 			}
 
-			logger.Printf(output)
+			logger.Printf("%s", output)
 			return err
 		}
 
-		logger.Printf(out.String())
+		logger.Printf("%s", out.String())
 		return nil
 	}
 
@@ -296,7 +296,7 @@ func CopyFile(src, dst string, remove bool) error {
 	}
 	defer func() {
 		if err := from.Close(); err != nil {
-			log.Warnf(err.Error())
+			log.Warnf("%s", err.Error())
 		}
 	}()
 
@@ -306,7 +306,7 @@ func CopyFile(src, dst string, remove bool) error {
 	}
 	defer func() {
 		if err := to.Close(); err != nil {
-			log.Warnf(err.Error())
+			log.Warnf("%s", err.Error())
 		}
 	}()
 

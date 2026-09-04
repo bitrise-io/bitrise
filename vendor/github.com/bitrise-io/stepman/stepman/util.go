@@ -1,6 +1,7 @@
 package stepman
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,12 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/go-utils/urlutil"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-io/go-utils/v2/ziputil"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	version "github.com/hashicorp/go-version"
 	"gopkg.in/yaml.v2"
@@ -24,7 +26,7 @@ import (
 
 // ParseStepGroupInfoModel ...
 func ParseStepGroupInfoModel(pth string) (models.StepGroupInfoModel, bool, error) {
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
+	if exist, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
 		return models.StepGroupInfoModel{}, false, err
 	} else if !exist {
 		return models.StepGroupInfoModel{}, false, nil
@@ -106,7 +108,7 @@ func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
 }
 
 // DownloadStep ...
-func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string, log Logger) error {
+func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string, log Logger, fetcher httpfetch.Client) error {
 	downloadLocations, err := collection.GetDownloadLocations(id, version)
 	if err != nil {
 		return err
@@ -118,27 +120,48 @@ func DownloadStep(collectionURI string, collection models.StepCollectionModel, i
 	}
 
 	stepPth := GetStepCacheDirPath(route, id, version)
-	if exist, err := pathutil.IsPathExists(stepPth); err != nil {
+	if exist, err := pathutil.NewPathChecker().IsPathExists(stepPth); err != nil {
 		return err
 	} else if exist {
 		return nil
 	}
 
-	return DownloadStepSourceArchive(stepPth, downloadLocations, id, version, commithash, log)
+	// Materialize into a staging dir next to the cache dir and move it into place
+	// only once it is complete: the cache is keyed by the existence of stepPth
+	// alone (see the check above and activateStepSource), so a half-written
+	// stepPth would be served as a valid cache hit on the next run.
+	if err := os.MkdirAll(filepath.Dir(stepPth), 0o755); err != nil {
+		return fmt.Errorf("create step cache dir: %w", err)
+	}
+	// Staging under the cache dir's parent keeps the rename on one filesystem.
+	stagingDir, err := os.MkdirTemp(filepath.Dir(stepPth), ".staging-")
+	if err != nil {
+		return fmt.Errorf("create staging dir: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(stagingDir); err != nil {
+			log.Warnf("Failed to remove staging dir %s: %s", stagingDir, err)
+		}
+	}()
+
+	if err := DownloadStepSourceArchive(stagingDir, downloadLocations, id, version, commithash, log, fetcher); err != nil {
+		return err
+	}
+
+	if err := os.Rename(stagingDir, stepPth); err != nil {
+		return fmt.Errorf("move staged step to %s: %w", stepPth, err)
+	}
+	return nil
 }
 
 // DownloadStepSourceArchive fetches a step's source into destDir from the given
 // download locations in priority order.
 // commithash applies only to git source.
-func DownloadStepSourceArchive(destDir string, downloadLocations []models.DownloadLocationModel, id, version, commithash string, log Logger) error {
+func DownloadStepSourceArchive(destDir string, downloadLocations []models.DownloadLocationModel, id, version, commithash string, log Logger, fetcher httpfetch.Client) error {
 	for _, downloadLocation := range downloadLocations {
 		switch downloadLocation.Type {
 		case "zip":
-			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
-				return command.DownloadAndUnZIP(downloadLocation.Src, destDir)
-			})
-
-			if err != nil {
+			if err := downloadStepZip(fetcher, downloadLocation.Src, destDir, log); err != nil {
 				log.Warnf("Failed to download step.zip: %s", err)
 			} else {
 				return nil
@@ -184,6 +207,29 @@ func DownloadStepSourceArchive(destDir string, downloadLocations []models.Downlo
 	}
 
 	return errors.New("failed to download step")
+}
+
+// downloadStepZip fetches the step source archive at url into a temp file and
+// extracts it into destDir. Callers own destDir's atomicity: DownloadStep stages
+// into a temp dir it renames into the cache, and the V2 API path passes a fresh
+// per-activation dir.
+func downloadStepZip(fetcher httpfetch.Client, url, destDir string, log Logger) error {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("stepman-step-zip")
+	if err != nil {
+		return fmt.Errorf("create temp dir: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			log.Warnf("Failed to remove temp dir %s: %s", tmpDir, err)
+		}
+	}()
+
+	zipPath := filepath.Join(tmpDir, "step.zip")
+	if err := fetcher.Download(context.Background(), zipPath, url); err != nil {
+		return fmt.Errorf("download step zip: %w", err)
+	}
+	zipManager := ziputil.NewZipManager(pathutil.NewPathChecker())
+	return zipManager.UnZip(zipPath, destDir)
 }
 
 func addStepVersionToStepGroup(step models.StepModel, stepVersionStr string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
@@ -240,7 +286,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 
 				// Check for step-info.yml - STEP_SPEC_DIR/steps/step-id/step-info.yml
 				stepGroupInfoPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "step-info.yml")
-				if exist, err := pathutil.IsPathExists(stepGroupInfoPth); err != nil {
+				if exist, err := pathutil.NewPathChecker().IsPathExists(stepGroupInfoPth); err != nil {
 					return err
 				} else if exist {
 					deprecationInfo, err := ParseStepGroupInfo(stepGroupInfoPth)
@@ -256,7 +302,7 @@ func parseStepCollection(route SteplibRoute, templateCollection models.StepColle
 				// Check for assets - STEP_SPEC_DIR/steps/step-id/assets
 				if collection.AssetsDownloadBaseURI != "" {
 					assetsFolderPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "assets")
-					exist, err := pathutil.IsPathExists(assetsFolderPth)
+					exist, err := pathutil.NewPathChecker().IsPathExists(assetsFolderPth)
 					if err != nil {
 						return err
 					}
@@ -337,7 +383,7 @@ func generateSlimStepModel(collection models.StepCollectionModel) models.StepCol
 func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route SteplibRoute) error {
 	pth := GetStepSpecPath(route)
 
-	if exist, err := pathutil.IsPathExists(pth); err != nil {
+	if exist, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
 		return err
 	} else if !exist {
 		dir, _ := path.Split(pth)
@@ -425,7 +471,7 @@ func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.St
 // ReGenerateLibrarySpec ...
 func ReGenerateLibrarySpec(route SteplibRoute) error {
 	pth := GetLibraryBaseDirPath(route)
-	if exists, err := pathutil.IsPathExists(pth); err != nil {
+	if exists, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
 		return err
 	} else if !exists {
 		return errors.New("not initialized")

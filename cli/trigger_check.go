@@ -43,7 +43,7 @@ func registerFatal(errorMsg string, warnings []string, format string) {
 		for _, warning := range message.Warnings {
 			log.Warnf("warning: %s", warning)
 		}
-		failf(message.Error)
+		failf("%s", message.Error)
 	} else {
 		bytes, err := json.Marshal(message)
 		if err != nil {

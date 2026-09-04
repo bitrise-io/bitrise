@@ -76,11 +76,11 @@ func printOutputFiles(mergedConfigContent string, configFileTree models.ConfigFi
 	if err != nil {
 		return fmt.Errorf("failed to parse config tree: %s", err)
 	}
-	log.Printf(string(configTreeBytes))
+	log.Printf("%s", string(configTreeBytes))
 
 	log.Print()
 	log.Printf("merged config:")
-	log.Printf(mergedConfigContent)
+	log.Printf("%s", mergedConfigContent)
 
 	return nil
 }

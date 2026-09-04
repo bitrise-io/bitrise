@@ -180,7 +180,7 @@ func trigger(cmd *cobra.Command, args []string) error {
 			os.Exit(exitCode)
 		}
 
-		failf(err.Error())
+		failf("%s", err.Error())
 	}
 
 	msg := createWorkflowRunStatusMessage(0)

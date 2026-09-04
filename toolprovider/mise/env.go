@@ -3,13 +3,13 @@ package mise
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
-	"golang.org/x/exp/maps"
 )
 
 type envOutput map[string]string
