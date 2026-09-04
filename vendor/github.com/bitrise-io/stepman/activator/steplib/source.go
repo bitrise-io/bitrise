@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
@@ -12,7 +13,7 @@ import (
 
 // activateStepSourceWithAPI materializes id@version's source into destDir
 // without cloning a git steplib.
-func activateStepSourceWithAPI(libraryAPI *steplibrary.Client, id, version string, source *models.StepSourceModel, destDir string, log stepman.Logger, isOfflineMode bool) error {
+func activateStepSourceWithAPI(libraryAPI *steplibrary.Client, id, version string, source *models.StepSourceModel, destDir string, log stepman.Logger, isOfflineMode bool, fetcher httpfetch.Client) error {
 	if isOfflineMode {
 		return errors.New("offline mode is not supported with Steplib API")
 	}
@@ -29,7 +30,7 @@ func activateStepSourceWithAPI(libraryAPI *steplibrary.Client, id, version strin
 		return fmt.Errorf("step %s@%s has no download location", id, version)
 	}
 
-	if err := stepman.DownloadStepSourceArchive(destDir, locations, id, version, source.Commit, log); err != nil {
+	if err := stepman.DownloadStepSourceArchive(destDir, locations, id, version, source.Commit, log, fetcher); err != nil {
 		return fmt.Errorf("download step source %s@%s: %s", id, version, err)
 	}
 	return nil
