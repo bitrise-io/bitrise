@@ -48,8 +48,17 @@ func runResume(ctx context.Context, cmd *cobra.Command, opts resumeOptions) erro
 	}
 	svc := internalrde.NewService(client)
 
+	// A record found only through the legacy-path fallback (see
+	// internal/rde/localsession) can't actually be removed by handleUnresumable
+	// — that store's Remove only ever writes to the current location, so a
+	// legacy-only record would otherwise keep resurfacing as the same
+	// "unresumable" candidate forever. Tracking already-rejected IDs here, and
+	// excluding them when picking the next candidate, keeps the loop making
+	// progress regardless of where the stale record actually lives.
+	skip := make(map[string]bool)
+
 	for {
-		rec, err := resolveResumeRecord(ctx, cmd, svc, repoPath, opts)
+		rec, err := resolveResumeRecord(ctx, cmd, svc, repoPath, opts, skip)
 		if errors.Is(err, errResumeCancelled) {
 			_, _ = fmt.Fprintln(cmd.ErrOrStderr(), "Cancelled.")
 			return nil
@@ -66,6 +75,7 @@ func runResume(ctx context.Context, cmd *cobra.Command, opts resumeOptions) erro
 			if internalrde.IsNotFound(err) {
 				retry, herr := handleUnresumable(log, repoPath, rec, "no longer exists", opts)
 				if retry {
+					skip[rec.RDESessionID] = true
 					continue
 				}
 				return herr
@@ -75,6 +85,7 @@ func runResume(ctx context.Context, cmd *cobra.Command, opts resumeOptions) erro
 		if !sess.Resumable() {
 			retry, herr := handleUnresumable(log, repoPath, rec, "can't be restored (its persistent disk is no longer available)", opts)
 			if retry {
+				skip[rec.RDESessionID] = true
 				continue
 			}
 			return herr
@@ -182,26 +193,30 @@ func resumeSession(ctx context.Context, cmd *cobra.Command, svc *internalrde.Ser
 }
 
 // resolveResumeRecord picks the record to resume from the options: the latest
-// for --continue, an exact match for an explicit target, or an interactive
-// picker otherwise.
-func resolveResumeRecord(ctx context.Context, cmd *cobra.Command, getter sessionStatusGetter, repoPath string, opts resumeOptions) (localsession.Record, error) {
+// non-skipped record for --continue, an exact match for an explicit target, or
+// an interactive picker otherwise. skip holds session IDs already rejected as
+// unresumable earlier in the same run (see runResume) and is excluded from
+// consideration everywhere records are chosen automatically or listed.
+func resolveResumeRecord(ctx context.Context, cmd *cobra.Command, getter sessionStatusGetter, repoPath string, opts resumeOptions, skip map[string]bool) (localsession.Record, error) {
 	if opts.continueLatest && opts.target != "" {
 		return localsession.Record{}, fmt.Errorf("cannot combine --continue with a SESSION_ID")
 	}
 	switch {
 	case opts.continueLatest:
-		rec, ok, err := localsession.Latest(repoPath)
+		recs, err := localsession.ListByProject(repoPath)
 		if err != nil {
 			return localsession.Record{}, fmt.Errorf("read local sessions: %w", err)
 		}
-		if !ok {
-			return localsession.Record{}, errNoSessions
+		for _, r := range recs {
+			if !skip[r.RDESessionID] {
+				return r, nil
+			}
 		}
-		return rec, nil
+		return localsession.Record{}, errNoSessions
 	case opts.target != "":
 		return findRecord(repoPath, opts.target)
 	default:
-		return pickRecord(ctx, cmd, getter, repoPath)
+		return pickRecord(ctx, cmd, getter, repoPath, skip)
 	}
 }
 
@@ -331,10 +346,16 @@ func findRecord(repoPath, target string) (localsession.Record, error) {
 // the most recent (records are newest-first), so Enter resumes it; Esc, "q", or
 // Ctrl-C back out with errResumeCancelled. It errors (rather than hanging) when
 // stdin/stderr isn't a terminal.
-func pickRecord(ctx context.Context, cmd *cobra.Command, getter sessionStatusGetter, repoPath string) (localsession.Record, error) {
-	recs, err := localsession.ListByProject(repoPath)
+func pickRecord(ctx context.Context, cmd *cobra.Command, getter sessionStatusGetter, repoPath string, skip map[string]bool) (localsession.Record, error) {
+	allRecs, err := localsession.ListByProject(repoPath)
 	if err != nil {
 		return localsession.Record{}, fmt.Errorf("read local sessions: %w", err)
+	}
+	recs := make([]localsession.Record, 0, len(allRecs))
+	for _, r := range allRecs {
+		if !skip[r.RDESessionID] {
+			recs = append(recs, r)
+		}
 	}
 	if len(recs) == 0 {
 		return localsession.Record{}, errNoSessions

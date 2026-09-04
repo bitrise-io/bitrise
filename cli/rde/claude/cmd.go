@@ -503,7 +503,7 @@ func generateSessionName() (string, error) {
 // it isn't; any other outcome (network/auth error, git missing) leaves it
 // undetermined, in which case the caller keeps the requested branch.
 func remoteHasBranch(ctx context.Context, branch string) (found, determined bool) {
-	//nolint:gosec // G204: branch comes from the local repo's checked-out HEAD, passed as its own argv element — no shell, no injection
+	// branch comes from the local repo's checked-out HEAD, passed as its own argv element — no shell, no injection
 	err := exec.CommandContext(ctx, "git", "ls-remote", "--heads", "--exit-code", "origin", branch).Run()
 	if err == nil {
 		return true, true
@@ -570,7 +570,7 @@ func localGitIdentity(ctx context.Context) (name, email string) {
 // gitConfigValue returns the configured value for a git config key, or "" if
 // it isn't set (or git errors).
 func gitConfigValue(ctx context.Context, key string) string {
-	//nolint:gosec // G204: key is a hardcoded git config name, never user input
+	// key is a hardcoded git config name, never user input
 	out, err := exec.CommandContext(ctx, "git", "config", "--get", key).Output()
 	if err != nil {
 		return ""

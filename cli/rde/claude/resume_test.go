@@ -57,38 +57,65 @@ func TestResolveResumeRecord(t *testing.T) {
 	cmd := &cobra.Command{}
 
 	// --continue → most recent (b).
-	rec, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true})
+	rec, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true}, nil)
 	if err != nil || rec.RDESessionID != "b" {
 		t.Errorf("continue = %q err=%v, want b", rec.RDESessionID, err)
 	}
 
 	// target by exact ID.
-	rec, err = resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "a"})
+	rec, err = resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "a"}, nil)
 	if err != nil || rec.RDESessionID != "a" {
 		t.Errorf("target id = %q err=%v, want a", rec.RDESessionID, err)
 	}
 
 	// target by AI title (case-insensitive).
-	rec, err = resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "bee"})
+	rec, err = resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "bee"}, nil)
 	if err != nil || rec.RDESessionID != "b" {
 		t.Errorf("target title = %q err=%v, want b", rec.RDESessionID, err)
 	}
 
 	// continue + target is contradictory.
-	if _, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true, target: "a"}); err == nil {
+	if _, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true, target: "a"}, nil); err == nil {
 		t.Error("expected error combining --continue with a target")
 	}
 
 	// unknown target.
-	if _, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "nope"}); err == nil {
+	if _, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{target: "nope"}, nil); err == nil {
 		t.Error("expected error for unknown target")
 	}
 }
 
 func TestResolveResumeRecordNoSessions(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	if _, err := resolveResumeRecord(context.Background(), &cobra.Command{}, nil, "/empty/repo", resumeOptions{continueLatest: true}); !errors.Is(err, errNoSessions) {
+	if _, err := resolveResumeRecord(context.Background(), &cobra.Command{}, nil, "/empty/repo", resumeOptions{continueLatest: true}, nil); !errors.Is(err, errNoSessions) {
 		t.Errorf("continue with no sessions: err=%v, want errNoSessions", err)
+	}
+}
+
+// TestResolveResumeRecordSkipsRejectedCandidates covers the fix for a
+// legacy-path-only record: localsession.Remove never actually deletes it (it
+// only ever writes to the current location), so without skip, --continue would
+// keep resolving to the same record on every retry after handleUnresumable
+// reports it as gone. skip is how runResume's loop makes progress instead.
+func TestResolveResumeRecordSkipsRejectedCandidates(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	repoPath := "/work/repo"
+	mustSave(t, localsession.Record{RDESessionID: "a", WorkspaceID: "ws", Name: "claude-a", RepoPath: repoPath})
+	time.Sleep(5 * time.Millisecond)
+	mustSave(t, localsession.Record{RDESessionID: "b", WorkspaceID: "ws", Name: "claude-b", RepoPath: repoPath})
+
+	cmd := &cobra.Command{}
+
+	// b is newest, but already rejected this run → falls through to a.
+	rec, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true}, map[string]bool{"b": true})
+	if err != nil || rec.RDESessionID != "a" {
+		t.Errorf("continue skipping b = %q err=%v, want a", rec.RDESessionID, err)
+	}
+
+	// Every candidate rejected → a clean error, not the same record forever
+	// (what would otherwise happen if a stale record could never be removed).
+	if _, err := resolveResumeRecord(context.Background(), cmd, nil, repoPath, resumeOptions{continueLatest: true}, map[string]bool{"a": true, "b": true}); !errors.Is(err, errNoSessions) {
+		t.Errorf("continue with everything skipped: err=%v, want errNoSessions", err)
 	}
 }
 
