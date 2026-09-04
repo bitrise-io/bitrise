@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -226,6 +227,44 @@ func TestShellQuoteRoundTrip(t *testing.T) {
 		if string(got) != content {
 			t.Errorf("round-trip[%d] = %q, want %q", i, got, content)
 		}
+	}
+}
+
+// A private remote write must create the file already restricted, not create it
+// at the login shell's umask and fix it up afterwards — the control file carries
+// the bridge's bearer token. Runs the real command through bash under a
+// deliberately loose umask, with the trailing chmod stripped so the test fails
+// if only the chmod is doing the work.
+func TestRemoteWriteCommandCreatesPrivateFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("unix perms")
+	}
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("bash not available")
+	}
+	dir := t.TempDir()
+	path := filepath.Join(dir, "host-bridge.json")
+
+	cmd := remoteWriteCommand(dir, path, `{"token":"deadbeef"}`, true)
+	chmod := " && chmod 600 " + path
+	if !strings.HasSuffix(cmd, chmod) {
+		t.Fatalf("expected a trailing chmod to strip, got %q", cmd)
+	}
+	if out, err := exec.Command("bash", "-c", "umask 022; "+strings.TrimSuffix(cmd, chmod)).CombinedOutput(); err != nil {
+		t.Fatalf("bash: %v: %s", err, out)
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if fi.Mode().Perm() != 0o600 {
+		t.Errorf("file created with perm %v, want 0600 — the token is briefly readable by others", fi.Mode().Perm())
+	}
+
+	// A non-private write is left at the session's own umask.
+	if got := remoteWriteCommand(dir, path, "x", false); strings.Contains(got, "umask") || strings.Contains(got, "chmod") {
+		t.Errorf("non-private write should not restrict perms: %q", got)
 	}
 }
 

@@ -30,8 +30,9 @@ type ClaudeMetadataMonitor struct {
 	ClaudeSessionID string
 	Interval        time.Duration
 
-	// Record is the current local record; the monitor mutates and re-saves it
-	// as the title/description evolve.
+	// Record is the monitor's own copy of the local record, taken at
+	// construction: it updates and re-saves it as the title/description evolve.
+	// The launcher never reads it back, so no synchronization is needed.
 	Record localsession.Record
 
 	// Describe returns the current session description (e.g.
@@ -109,8 +110,12 @@ func (m *ClaudeMetadataMonitor) debugf(format string, args ...any) {
 // transcript is named <session-id>.jsonl and lives under one of the
 // ~/.claude/projects/<project>/ directories; the session ID is unique, so the
 // glob matches at most one file. grep|tail keeps it cheap — no full transfer.
+//
+// The ID is quoted even though localsession only ever loads UUIDs (see
+// readRecord): quoting the filename segment still leaves the leading * to
+// expand, so it costs nothing.
 func readAITitleCommand(claudeSessionID string) string {
-	return "f=$(ls -1 ~/.claude/projects/*/" + claudeSessionID + ".jsonl 2>/dev/null | head -n1); " +
+	return "f=$(ls -1 ~/.claude/projects/*/" + shellSingleQuote(claudeSessionID+".jsonl") + " 2>/dev/null | head -n1); " +
 		"test -n \"$f\" && grep '\"type\":\"ai-title\"' \"$f\" | tail -n1"
 }
 

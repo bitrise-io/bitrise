@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -175,10 +176,17 @@ func (b *HostBridge) Serve(ctx context.Context) {
 	}
 	// On cancellation, closing the server unblocks Serve with ErrServerClosed and
 	// closes the active listener; closing the SSH client stops its forwarded
-	// channel handlers.
+	// channel handlers. The stopped channel gives the watcher a second exit, so
+	// it doesn't outlive a Serve that returned on its own (failed reconnect, no
+	// connection, or an already-closed server).
+	stopped := make(chan struct{})
+	defer close(stopped)
 	go func() {
-		<-ctx.Done()
-		b.Close()
+		select {
+		case <-ctx.Done():
+			b.Close()
+		case <-stopped:
+		}
 	}()
 
 	for {
@@ -195,7 +203,12 @@ func (b *HostBridge) Serve(ctx context.Context) {
 		err := b.srv.Serve(ln)
 		close(done)
 
-		if ctx.Err() != nil {
+		// ErrServerClosed means the server itself was shut down, which no
+		// reconnect can undo — treat it as intentional even when ctx is still
+		// live, or the loop spins re-listening on a dead server. (A caller can
+		// legitimately Close() before cancelling: `rde claude` defers both, and
+		// LIFO runs Close first.)
+		if ctx.Err() != nil || errors.Is(err, http.ErrServerClosed) {
 			return // intentional shutdown
 		}
 		// The connection dropped. Close the dead client+listener (closing the
@@ -359,14 +372,9 @@ func writeControlFile(ctx context.Context, c *sshClient, url, credential string)
 }
 
 // remoteWriteFile writes content to path on the session, creating dir first and
-// optionally chmod'ing the file to 0600. dir and path are trusted constants and
-// are left unquoted so their leading ~ expands; only content is shell-quoted.
+// optionally restricting the file to 0600.
 func remoteWriteFile(ctx context.Context, c *sshClient, dir, path, content string, private bool) error {
-	cmd := fmt.Sprintf("mkdir -p %s && printf '%%s' %s > %s", dir, shellSingleQuote(content), path)
-	if private {
-		cmd += " && chmod 600 " + path
-	}
-	res, err := c.run(ctx, cmd)
+	res, err := c.run(ctx, remoteWriteCommand(dir, path, content, private))
 	if err != nil {
 		return fmt.Errorf("write %s on session: %w", path, err)
 	}
@@ -374,6 +382,23 @@ func remoteWriteFile(ctx context.Context, c *sshClient, dir, path, content strin
 		return fmt.Errorf("write %s on session (exit %d): %s", path, res.ExitCode, strings.TrimSpace(res.Stderr))
 	}
 	return nil
+}
+
+// remoteWriteCommand builds remoteWriteFile's shell command. dir and path are
+// trusted constants and are left unquoted so their leading ~ expands; only
+// content is shell-quoted.
+//
+// A private file is created under `umask 077` rather than only chmod'd after
+// the fact, so it is never briefly world-readable — the control file holds the
+// bridge's bearer token. The chmod stays as well: `>` truncation preserves an
+// existing file's mode, which umask cannot fix, and a reconnect rewrites that
+// same file.
+func remoteWriteCommand(dir, path, content string, private bool) string {
+	redirect := fmt.Sprintf("printf '%%s' %s > %s", shellSingleQuote(content), path)
+	if !private {
+		return "mkdir -p " + dir + " && " + redirect
+	}
+	return "mkdir -p " + dir + " && (umask 077 && " + redirect + ") && chmod 600 " + path
 }
 
 func listenerPort(ln net.Listener) (int, error) {

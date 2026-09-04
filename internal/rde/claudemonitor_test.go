@@ -47,6 +47,20 @@ func TestReadAITitleCommand(t *testing.T) {
 	}
 }
 
+// localsession rejects a non-UUID session ID at load, so this is belt-and-
+// braces: the ID still must not be able to break out of the glob and run a
+// second command.
+func TestReadAITitleCommandQuotesSessionID(t *testing.T) {
+	cmd := readAITitleCommand("x.jsonl; touch /tmp/pwned; #")
+	if strings.Contains(cmd, "; touch /tmp/pwned") && !strings.Contains(cmd, `'x.jsonl; touch /tmp/pwned; #.jsonl'`) {
+		t.Errorf("session ID not quoted, command is injectable: %q", cmd)
+	}
+	// The leading * must still be left outside the quotes to expand.
+	if !strings.Contains(cmd, "~/.claude/projects/*/'") {
+		t.Errorf("quoting swallowed the project glob: %q", cmd)
+	}
+}
+
 func TestMetadataUpdate(t *testing.T) {
 	base := localsession.Record{Name: "claude-x"}
 

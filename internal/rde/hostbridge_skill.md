@@ -13,10 +13,10 @@ there, call the host bridge.
 
 Before each call, read the bridge address and token. The port can change if the
 connection reconnects, so **read the file every time** rather than reusing an
-old value:
+old value. Use the Read tool (not `cat`) on:
 
-```bash
-cat ~/.config/rde/host-bridge.json
+```
+~/.config/rde/host-bridge.json
 ```
 
 It contains `{"url": "...", "token": "..."}`. If the file does not exist, the

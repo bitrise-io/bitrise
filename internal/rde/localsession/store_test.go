@@ -33,7 +33,7 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 		RDESessionID:    "sess-1",
 		WorkspaceID:     "ws-1",
 		Name:            "claude-abcd",
-		ClaudeSessionID: "uuid-1",
+		ClaudeSessionID: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
 		Repo:            "git@github.com:org/repo.git",
 		RepoPath:        repoPath,
 		Branch:          "feature",
@@ -63,6 +63,37 @@ func TestSaveValidation(t *testing.T) {
 	}
 	if err := Save(Record{RDESessionID: "s"}); err == nil {
 		t.Error("expected error for missing repo path")
+	}
+}
+
+// A record's ClaudeSessionID reaches remote shell commands, so a tampered or
+// corrupted one must not load. Load reports it; the listing skips the record
+// rather than hiding every other session behind one bad file.
+func TestLoadRejectsNonUUIDClaudeSessionID(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	repoPath := "/work/repo"
+
+	if err := Save(Record{RDESessionID: "good", RepoPath: repoPath, ClaudeSessionID: "3f2504e0-4f89-41d3-9a0c-0305e82c3301"}); err != nil {
+		t.Fatalf("Save good: %v", err)
+	}
+	dir, err := sessionsDir(repoPath)
+	if err != nil {
+		t.Fatalf("sessionsDir: %v", err)
+	}
+	bad := []byte(`{"rde_session_id":"bad","repo_path":"/work/repo","claude_session_id":"x.jsonl; touch /tmp/pwned; #"}`)
+	if err := os.WriteFile(filepath.Join(dir, "bad.json"), bad, 0o600); err != nil {
+		t.Fatalf("write bad record: %v", err)
+	}
+
+	if _, err := Load(repoPath, "bad"); err == nil {
+		t.Error("Load accepted a non-UUID claude_session_id")
+	}
+	recs, err := ListByProject(repoPath)
+	if err != nil {
+		t.Fatalf("ListByProject: %v", err)
+	}
+	if len(recs) != 1 || recs[0].RDESessionID != "good" {
+		t.Errorf("listing should skip the bad record and keep the good one, got %+v", recs)
 	}
 }
 

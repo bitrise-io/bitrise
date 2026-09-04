@@ -24,6 +24,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -323,5 +324,17 @@ func readRecord(path string) (Record, error) {
 	if err := json.Unmarshal(data, &rec); err != nil {
 		return Record{}, fmt.Errorf("parse %s: %w", path, err)
 	}
+	// ClaudeSessionID reaches remote shell commands (`claude --resume <id>`, the
+	// transcript glob), so it is validated here — the one place a record enters
+	// the process — rather than trusting every use site. Records are ours and
+	// 0600, so a non-UUID means the file was tampered with or corrupted.
+	if rec.ClaudeSessionID != "" && !uuidRe.MatchString(rec.ClaudeSessionID) {
+		return Record{}, fmt.Errorf("parse %s: claude_session_id is not a UUID", path)
+	}
 	return rec, nil
 }
+
+// uuidRe matches the canonical 8-4-4-4-12 hex form generateClaudeSessionID
+// writes. Deliberately stricter than RFC 4122 (no braces, no urn: prefix): it
+// only has to accept what we produce.
+var uuidRe = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
