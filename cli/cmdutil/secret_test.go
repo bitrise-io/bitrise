@@ -91,6 +91,25 @@ func TestCheckPasswordStdinPiped_ErrorsWhenTerminal(t *testing.T) {
 	}
 }
 
+func TestCheckValueStdinPiped(t *testing.T) {
+	err := CheckValueStdinPiped(true, true, "bitrise rde saved-input create --key <key>")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "--value-stdin requires piped stdin") {
+		t.Fatalf("error %q does not mention piped stdin", err.Error())
+	}
+	if !strings.Contains(err.Error(), "bitrise rde saved-input create --key <key> --value-stdin") {
+		t.Fatalf("error %q does not include the example command", err.Error())
+	}
+	if err := CheckValueStdinPiped(true, false, "x"); err != nil {
+		t.Errorf("--value-stdin + piped input: %v", err)
+	}
+	if err := CheckValueStdinPiped(false, true, "x"); err != nil {
+		t.Errorf("no --value-stdin, terminal: %v", err)
+	}
+}
+
 func TestCheckPasswordStdinPiped_OKCases(t *testing.T) {
 	const example = "bitrise user create --email <email>"
 	if err := CheckPasswordStdinPiped(true, false, example); err != nil {

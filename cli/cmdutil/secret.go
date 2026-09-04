@@ -39,6 +39,17 @@ func CheckPasswordStdinPiped(passwordStdin, isTerminal bool, exampleCmd string) 
 	return nil
 }
 
+// CheckValueStdinPiped is CheckPasswordStdinPiped's counterpart for commands
+// whose stdin secret arrives under --value-stdin (`rde saved-input`). Same
+// hazard, same shape — only the flag and the prose differ, so they stay as two
+// literal messages rather than one parameterized template.
+func CheckValueStdinPiped(valueStdin, isTerminal bool, exampleCmd string) error {
+	if valueStdin && isTerminal {
+		return fmt.Errorf("--value-stdin requires piped stdin (got an interactive terminal); pipe the value in, e.g.:\n  printf '%%s' \"$VALUE\" | %s --value-stdin", exampleCmd)
+	}
+	return nil
+}
+
 func readSecretInput(in io.Reader, stderr io.Writer, prompt string, fromStdin bool, trim func(string) string) (string, error) {
 	if fd, ok := TerminalFd(in); ok && !fromStdin {
 		if _, err := fmt.Fprint(stderr, prompt); err != nil {
