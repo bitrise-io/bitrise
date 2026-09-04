@@ -64,6 +64,43 @@ func TestUpdateCmd_ValueStdin(t *testing.T) {
 	}
 }
 
+// `--value-stdin < /dev/null` used to blank the stored value silently. Empty
+// piped input is a mistake (a missing file, a failed upstream command); --value
+// "" stays the deliberate way to clear.
+func TestUpdateCmd_ValueStdinRejectsEmpty(t *testing.T) {
+	_, _, err := cmdtest.Run(t, newUpdateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL: "http://unused",
+		Args:          []string{"sv-1", "--value-stdin"},
+		Stdin:         "",
+	})
+	if err == nil || !strings.Contains(err.Error(), "empty") {
+		t.Errorf("error = %v, want an empty-value error", err)
+	}
+}
+
+// A piped value is trimmed the same way --value is (not at all beyond the line
+// terminator), so leading/trailing spaces that are part of the secret survive.
+func TestUpdateCmd_ValueStdinPreservesSurroundingSpace(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = io.WriteString(w, `{"savedInput":{"id":"sv-1","key":"repo"}}`)
+	}))
+	defer srv.Close()
+
+	_, _, err := cmdtest.Run(t, newUpdateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL: srv.URL,
+		Args:          []string{"sv-1", "--value-stdin"},
+		Stdin:         "  pad ded  \n",
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotBody["value"] != "  pad ded  " {
+		t.Errorf("value = %q, want %q (only the newline trimmed)", gotBody["value"], "  pad ded  ")
+	}
+}
+
 func TestUpdateCmd_SecretFlagSendsBool(t *testing.T) {
 	var gotBody map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -85,11 +85,21 @@ The value can be supplied three ways:
 // provided=false so the caller can leave the value untouched.
 //
 // This mirrors the secret-input convention used by `bitrise auth login`
-// (--with-token / --password-stdin plus a masked interactive default).
+// (--with-token / --password-stdin plus a masked interactive default), down to
+// requiring --value-stdin to actually be piped: falling through to an unmasked
+// read on a terminal would echo the secret with no prompt to explain the wait.
+//
+// The stdin read uses ReadPasswordInput, which trims only the trailing line
+// terminator, so a piped value is treated the same as one passed to --value
+// (which is not trimmed at all). The interactive prompt keeps ReadSecretInput's
+// full trim, where stripping copy/paste whitespace is what the user wants.
 func resolveValue(cmd *cobra.Command, value string, valueChanged, valueStdin, promptIfMissing bool) (resolved string, provided bool, err error) {
 	switch {
 	case valueStdin:
-		v, rerr := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "", true)
+		if cerr := cmdutil.CheckValueStdinPiped(valueStdin, cmdutil.IsTerminal(cmd.InOrStdin()), "bitrise rde saved-input "+cmd.Name()); cerr != nil {
+			return "", false, cerr
+		}
+		v, rerr := cmdutil.ReadPasswordInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "", true)
 		return v, true, rerr
 	case valueChanged:
 		return value, true, nil

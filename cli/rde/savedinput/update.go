@@ -40,6 +40,13 @@ the --secret flag.`,
 			if err != nil {
 				return err
 			}
+			// Mirrors create's guard: empty piped stdin is a mistake (a missing
+			// file or a failed command upstream), and silently blanking a stored
+			// value is the worst reading of it. --value "" stays the explicit way
+			// to clear one.
+			if provided && v == "" && valueStdin {
+				return fmt.Errorf("value read from stdin is empty; pass --value \"\" to deliberately clear the value")
+			}
 			if provided {
 				req.Value = &v
 			}
