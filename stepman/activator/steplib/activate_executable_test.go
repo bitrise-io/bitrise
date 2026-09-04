@@ -116,7 +116,7 @@ func TestActivateStepExecutable(t *testing.T) {
 	const hash = "sha256-1111111111111111111111111111111111111111111111111111111111111111"
 
 	t.Run("default bases: first mirror + StorageURI, hash threaded through", func(t *testing.T) {
-		fake := &fakeExecutableFetcher{}
+		fake := newFakeExecutableFetcher(t)
 		destDir := t.TempDir()
 
 		path, err := activateStepExecutable(ctx, fake, "hello-step",
@@ -131,7 +131,7 @@ func TestActivateStepExecutable(t *testing.T) {
 
 	t.Run("BITRISE_PRECOMPILED_STEPS_STORAGE_URLS override wins", func(t *testing.T) {
 		t.Setenv(precompiledStepsStorageURLsEnv, "https://custom.example.com")
-		fake := &fakeExecutableFetcher{}
+		fake := newFakeExecutableFetcher(t)
 
 		_, err := activateStepExecutable(ctx, fake, "hello-step",
 			models.Executable{StorageURI: storageURI, Hash: hash}, t.TempDir(), logger)

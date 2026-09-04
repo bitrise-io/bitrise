@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
@@ -21,7 +22,7 @@ func TestActivateStepSourceWithAPI_OfflineFails(t *testing.T) {
 	client := steplibrary.New(log, "http://unused.invalid")
 
 	err := activateStepSourceWithAPI(client, "hello-step", "2.0.0",
-		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, true)
+		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, true, httpfetch.NewClient(log))
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "offline")
@@ -32,14 +33,14 @@ func TestActivateStepSourceWithAPI_MissingSourceGitFails(t *testing.T) {
 	client := steplibrary.New(log, "http://unused.invalid")
 
 	t.Run("nil source", func(t *testing.T) {
-		err := activateStepSourceWithAPI(client, "hello-step", "2.0.0", nil, t.TempDir(), log, false)
+		err := activateStepSourceWithAPI(client, "hello-step", "2.0.0", nil, t.TempDir(), log, false, httpfetch.NewClient(log))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "source git")
 	})
 
 	t.Run("empty git URL", func(t *testing.T) {
 		err := activateStepSourceWithAPI(client, "hello-step", "2.0.0",
-			&models.StepSourceModel{Git: ""}, t.TempDir(), log, false)
+			&models.StepSourceModel{Git: ""}, t.TempDir(), log, false, httpfetch.NewClient(log))
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "source git")
 	})
@@ -60,7 +61,7 @@ func TestActivateStepSourceWithAPI_NoDownloadLocationFails(t *testing.T) {
 	client := steplibrary.New(log, srv.URL)
 
 	err := activateStepSourceWithAPI(client, "hello-step", "2.0.0",
-		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, false)
+		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, false, httpfetch.NewClient(log))
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "no download location")

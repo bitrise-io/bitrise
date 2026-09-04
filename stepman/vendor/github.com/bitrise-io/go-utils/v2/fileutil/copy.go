@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -168,6 +169,9 @@ func (fm fileManager) copyOwner(srcInfo os.FileInfo, dstPath string) error {
 	}
 	// os.Lchown affects the link itself when given the link path
 	if err := fm.lchown(dstPath, int(stat.Uid), int(stat.Gid)); err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			return nil
+		}
 		return fmt.Errorf("lchown(symlink) %s: %w", dstPath, err)
 	}
 	return nil

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/bitrise-io/go-utils/log"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
 )
@@ -72,7 +73,8 @@ func download(c *cli.Context) error {
 		failf("Missing step's (%s) Source property", id)
 	}
 
-	if err := stepman.DownloadStep(collectionURI, collection, id, version, step.Source.Commit, log.NewDefaultLogger(false)); err != nil {
+	logger := log.NewDefaultLogger(false)
+	if err := stepman.DownloadStep(collectionURI, collection, id, version, step.Source.Commit, logger, httpfetch.NewClient(logger)); err != nil {
 		failf("Failed to download step, error: %s", err)
 	}
 

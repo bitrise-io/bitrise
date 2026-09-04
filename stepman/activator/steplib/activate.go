@@ -35,7 +35,7 @@ type ResolvedStep struct {
 	StepInfo models.StepInfoModel
 }
 
-func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool, libraryAPI *steplibrary.Client, precompiledFetcher httpfetch.Client) (ResolvedStep, error) {
+func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string, log stepman.Logger, isOfflineMode bool, libraryAPI *steplibrary.Client, fetcher httpfetch.Client) (ResolvedStep, error) {
 	var stepInfo models.StepInfoModel
 	var resolveErr error
 	if libraryAPI != nil {
@@ -64,7 +64,7 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 		}
 	}
 
-	execPath, err := downloadPrecompiled(log, stepModel, id, destination, precompiledFetcher)
+	execPath, err := downloadPrecompiled(log, stepModel, id, destination, fetcher)
 	if execPath != "" {
 		return ResolvedStep{ExecPath: execPath, StepInfo: stepInfo}, err
 	}
@@ -72,7 +72,7 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 	// Fall back to step source activation.
 	if libraryAPI != nil {
 		// activate the source over the API, without git clone
-		if err := activateStepSourceWithAPI(libraryAPI, id.IDorURI, version, stepModel.Source, destination, log, isOfflineMode); err != nil {
+		if err := activateStepSourceWithAPI(libraryAPI, id.IDorURI, version, stepModel.Source, destination, log, isOfflineMode, fetcher); err != nil {
 			return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, err
 		}
 		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, nil
@@ -83,7 +83,7 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 	if err != nil {
 		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, fmt.Errorf("failed to read %s steplib: %s", id.SteplibSource, err)
 	}
-	if err := activateStepSource(stepCollection, id.SteplibSource, id.IDorURI, version, stepModel, destination, log, isOfflineMode); err != nil {
+	if err := activateStepSource(stepCollection, id.SteplibSource, id.IDorURI, version, stepModel, destination, log, isOfflineMode, fetcher); err != nil {
 		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, err
 	}
 
