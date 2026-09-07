@@ -215,6 +215,75 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 	}
 }
 
+func TestInstallToolVersion(t *testing.T) {
+	tests := []struct {
+		name            string
+		toolName        provider.ToolID
+		concreteVersion string
+		mockErr         error
+		wantCause       string
+		wantRecommend   string
+		wantRawOutput   string
+	}{
+		{
+			name:            "success",
+			toolName:        "node",
+			concreteVersion: "18.20.0",
+			mockErr:         nil,
+		},
+		{
+			name:            "generic failure has no GitHub recommendation",
+			toolName:        "node",
+			concreteVersion: "18.20.0",
+			mockErr:         errors.New("exit status 1\nsome unrelated mise error"),
+			wantCause:       "mise install node@18.20.0: exit status 1\nsome unrelated mise error",
+			wantRecommend:   "",
+		},
+		{
+			name:            "GitHub rate limit error",
+			toolName:        "tuist",
+			concreteVersion: "4.70.0",
+			mockErr:         errors.New("exit status 1\nmise ERROR Failed to install aqua:tuist/tuist@4.70.0: HTTP status client error (403 rate limit exceeded) for url (https://api.github.com/repos/tuist/tuist/releases/tags/4.70.0)"),
+			wantCause:       "GitHub API rate limit exceeded while installing tuist",
+			wantRecommend:   "GITHUB_TOKEN, GH_TOKEN, GITHUB_API_TOKEN, MISE_GITHUB_TOKEN, MISE_GITHUB_ENTERPRISE_TOKEN",
+			wantRawOutput:   "exit status 1\nmise ERROR Failed to install aqua:tuist/tuist@4.70.0: HTTP status client error (403 rate limit exceeded) for url (https://api.github.com/repos/tuist/tuist/releases/tags/4.70.0)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := newFakeExecEnv()
+			versionString := miseVersionString(tt.toolName, tt.concreteVersion)
+			cmdKey := fmt.Sprintf("install --yes %s", versionString)
+			if tt.mockErr != nil {
+				fake.setError(cmdKey, tt.mockErr)
+			} else {
+				fake.setResponse(cmdKey, "")
+			}
+
+			p := &MiseToolProvider{ExecEnv: fake}
+			err := p.installToolVersion(tt.toolName, tt.concreteVersion)
+
+			if tt.mockErr == nil {
+				require.NoError(t, err)
+				return
+			}
+
+			var toolErr provider.ToolInstallError
+			require.ErrorAs(t, err, &toolErr)
+			require.Equal(t, tt.wantCause, toolErr.Cause)
+			if tt.wantRecommend == "" {
+				require.Empty(t, toolErr.Recommendation)
+			} else {
+				require.Contains(t, toolErr.Recommendation, tt.wantRecommend)
+			}
+			if tt.wantRawOutput != "" {
+				require.Equal(t, tt.wantRawOutput, toolErr.RawOutput)
+			}
+		})
+	}
+}
+
 func TestInstallRequest(t *testing.T) {
 	tests := []struct {
 		name   string

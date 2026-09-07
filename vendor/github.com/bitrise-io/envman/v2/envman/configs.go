@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -13,6 +14,14 @@ const (
 	envmanConfigFileName         = "configs.json"
 	defaultEnvBytesLimitInKB     = 256
 	defaultEnvListBytesLimitInKB = 256
+
+	// EnvBytesLimitInKBEnvKey and EnvListBytesLimitInKBEnvKey override the
+	// per-value and list-size limits at the process level, taking precedence
+	// over configs.json. This lets the limit be raised before the first
+	// `envman add`, which a script step cannot do because the check runs while
+	// preparing that step's own environment.
+	EnvBytesLimitInKBEnvKey     = "ENVMAN_ENV_BYTES_LIMIT_IN_KB"
+	EnvListBytesLimitInKBEnvKey = "ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB"
 )
 
 // ConfigsModel ...
@@ -47,44 +56,70 @@ func createDefaultConfigsModel() ConfigsModel {
 	}
 }
 
-// GetConfigs ...
+// GetConfigs resolves the env var limits with default < configs.json < process
+// env var precedence. A malformed or negative env override is ignored so a bad
+// value never breaks a build; the caller setting it is expected to validate.
 func GetConfigs() (ConfigsModel, error) {
 	configPth := getEnvmanConfigsFilePath()
-	defaultConfigs := createDefaultConfigsModel()
+	configs := createDefaultConfigsModel()
 
-	if isExist, err := pathutil.IsPathExists(configPth); err != nil {
-		return ConfigsModel{}, err
-	} else if !isExist {
-		return defaultConfigs, nil
-	}
-
-	bytes, err := fileutil.ReadBytesFromFile(configPth)
+	isExist, err := pathutil.IsPathExists(configPth)
 	if err != nil {
 		return ConfigsModel{}, err
 	}
 
-	type ConfigsFileMode struct {
-		EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty"`
-		EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty"`
+	if isExist {
+		bytes, err := fileutil.ReadBytesFromFile(configPth)
+		if err != nil {
+			return ConfigsModel{}, err
+		}
+
+		type ConfigsFileMode struct {
+			EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty"`
+			EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty"`
+		}
+
+		var userConfigs ConfigsFileMode
+		if err := json.Unmarshal(bytes, &userConfigs); err != nil {
+			return ConfigsModel{}, err
+		}
+
+		if userConfigs.EnvBytesLimitInKB != nil {
+			configs.EnvBytesLimitInKB = *userConfigs.EnvBytesLimitInKB
+		}
+		if userConfigs.EnvListBytesLimitInKB != nil {
+			configs.EnvListBytesLimitInKB = *userConfigs.EnvListBytesLimitInKB
+		}
 	}
 
-	var userConfigs ConfigsFileMode
-	if err := json.Unmarshal(bytes, &userConfigs); err != nil {
-		return ConfigsModel{}, err
+	if limit, ok := envLimitOverride(EnvBytesLimitInKBEnvKey); ok {
+		configs.EnvBytesLimitInKB = limit
+	}
+	if limit, ok := envLimitOverride(EnvListBytesLimitInKBEnvKey); ok {
+		configs.EnvListBytesLimitInKB = limit
 	}
 
-	if userConfigs.EnvBytesLimitInKB != nil {
-		defaultConfigs.EnvBytesLimitInKB = *userConfigs.EnvBytesLimitInKB
-	}
-	if userConfigs.EnvListBytesLimitInKB != nil {
-		defaultConfigs.EnvListBytesLimitInKB = *userConfigs.EnvListBytesLimitInKB
-	}
+	return configs, nil
+}
 
-	return defaultConfigs, nil
+// envLimitOverride reads a limit from a process env var, treating a value of 0
+// as "no limit" (matching validateEnv). Empty, non-integer, or negative values
+// return ok=false so the file/default value stands.
+func envLimitOverride(key string) (int, bool) {
+	value := os.Getenv(key)
+	if value == "" {
+		return 0, false
+	}
+	limit, err := strconv.Atoi(value)
+	if err != nil || limit < 0 {
+		return 0, false
+	}
+	return limit, true
 }
 
 // saveConfigs ...
-//  only used for unit testing at the moment
+//
+//	only used for unit testing at the moment
 func saveConfigs(configModel ConfigsModel) error {
 	if err := ensureEnvmanConfigDirExists(); err != nil {
 		return err

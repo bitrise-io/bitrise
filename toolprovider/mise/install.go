@@ -3,6 +3,7 @@ package mise
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
@@ -105,11 +106,29 @@ func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concrete
 		log.Printf("[TOOLPROVIDER] mise install output for %s:\n%s", versionString, output)
 	}
 	if err != nil {
+		cause := fmt.Sprintf("mise install %s: %s", versionString, err)
+		rawOutput := string(output)
+		var recommendation string
+
+		if strings.Contains(strings.ToLower(err.Error()), "rate limit exceeded") {
+			// The mise output (which is what makes this recognizable as a rate limit error) is embedded in err,
+			// not in output: RunMiseWithTimeoutAndEnvs() only returns command output separately on success.
+			cause = fmt.Sprintf("GitHub API rate limit exceeded while installing %s", toolName)
+			rawOutput = err.Error()
+			recommendation = fmt.Sprintf(
+				"GitHub's public API allows only a small number of requests per hour without a token. "+
+					"Add one of %s as a secret to raise the limit and avoid this error. "+
+					"See the raw output below for details.",
+				strings.Join(KnownGitHubTokenEnvVars, ", "),
+			)
+		}
+
 		return provider.ToolInstallError{
 			ToolName:         toolName,
 			RequestedVersion: concreteVersion,
-			Cause:            fmt.Sprintf("mise install %s: %s", versionString, err),
-			RawOutput:        string(output),
+			Cause:            cause,
+			RawOutput:        rawOutput,
+			Recommendation:   recommendation,
 		}
 	}
 	return nil

@@ -62,19 +62,19 @@ func TestCorepackWithNewNodeInstall(t *testing.T) {
 	}
 	request := provider.ToolRequest{
 		ToolName:        "nodejs",
-		UnparsedVersion: "22.17.0",
+		UnparsedVersion: "24.20.0",
 	}
 	result, err := asdfProvider.InstallTool(request)
 	require.NoError(t, err)
 	require.Equal(t, provider.ToolID("nodejs"), result.ToolName)
-	require.Equal(t, "22.17.0", result.ConcreteVersion)
+	require.Equal(t, "24.20.0", result.ConcreteVersion)
 	require.False(t, result.IsAlreadyInstalled)
 
 	extraEnvs := map[string]string{
 		// Simulate the activated environment
-		"ASDF_NODEJS_VERSION": "22.17.0",
+		"ASDF_NODEJS_VERSION": "24.20.0",
 	}
 	out, err := testEnv.runCommand(extraEnvs, "pnpm", "--help")
 	require.NoError(t, err)
-	require.Contains(t, out, "Usage: pnpm [command] [flags]")
+	require.Contains(t, out, "Usage: pnpm [OPTIONS] <COMMAND>")
 }
