@@ -10,7 +10,6 @@ require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/bitrise-io/bitrise/v2 v2.0.0
 	github.com/bitrise-io/go-utils v1.0.15
-	github.com/bitrise-io/stepman v0.24.2
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/ryanuber/go-glob v1.0.0
 	github.com/stretchr/testify v1.11.1
@@ -25,8 +24,9 @@ require (
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192 // indirect
 	github.com/bitrise-io/envman/v2 v2.7.0 // indirect
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 // indirect
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.36 // indirect
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.38 // indirect
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef // indirect
+	github.com/bitrise-io/stepman v0.25.1-0.20260907160025-dd3e96a0c736 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.4 // indirect

@@ -22,7 +22,6 @@ type WorkflowRunPlan struct {
 	CIMode                  bool `json:"ci_mode"`
 	PRMode                  bool `json:"pr_mode"`
 	DebugMode               bool `json:"debug_mode"`
-	IsSteplibOfflineMode    bool `json:"-"`
 	NoOutputTimeoutMode     bool `json:"no_output_timeout_mode"`
 	SecretFilteringMode     bool `json:"secret_filtering_mode"`
 	SecretEnvsFilteringMode bool `json:"secret_envs_filtering_mode"`
@@ -43,11 +42,10 @@ type WorkflowRunPlan struct {
 }
 
 type WorkflowExecutionPlan struct {
-	UUID                 string              `json:"uuid"`
-	WorkflowID           string              `json:"workflow_id"`
-	Steps                []StepExecutionPlan `json:"steps"`
-	WorkflowTitle        string              `json:"-"`
-	IsSteplibOfflineMode bool                `json:"-"`
+	UUID          string              `json:"uuid"`
+	WorkflowID    string              `json:"workflow_id"`
+	Steps         []StepExecutionPlan `json:"steps"`
+	WorkflowTitle string              `json:"-"`
 }
 
 // WithGroupPlan ...
@@ -102,7 +100,6 @@ type WorkflowRunModes struct {
 	SecretFilteringMode     bool
 	SecretEnvsFilteringMode bool
 	NoOutputTimeout         time.Duration
-	IsSteplibOfflineMode    bool
 }
 
 // StepBundleRunIf pairs a Step Bundle's run_if statement with the Bundle's UUID.
@@ -190,11 +187,10 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		}
 
 		executionPlan = append(executionPlan, WorkflowExecutionPlan{
-			UUID:                 builder.uuidProvider(),
-			WorkflowID:           workflowID,
-			Steps:                stepPlans,
-			WorkflowTitle:        workflowTitle,
-			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
+			UUID:          builder.uuidProvider(),
+			WorkflowID:    workflowID,
+			Steps:         stepPlans,
+			WorkflowTitle: workflowTitle,
 		})
 	}
 
@@ -209,7 +205,6 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		CIMode:                  modes.CIMode,
 		PRMode:                  modes.PRMode,
 		DebugMode:               modes.DebugMode,
-		IsSteplibOfflineMode:    modes.IsSteplibOfflineMode,
 		NoOutputTimeoutMode:     modes.NoOutputTimeout > 0,
 		SecretFilteringMode:     modes.SecretFilteringMode,
 		SecretEnvsFilteringMode: modes.SecretEnvsFilteringMode,

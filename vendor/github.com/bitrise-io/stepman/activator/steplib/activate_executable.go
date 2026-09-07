@@ -20,10 +20,11 @@ func activateStepExecutable(
 	executable models.Executable,
 	destinationDir string,
 	logger stepman.Logger,
+	storageURLs []string,
 ) (string, error) {
 	path := filepath.Join(destinationDir, stepID)
 
-	if err := downloadExecutable(ctx, fetcher, executable, path, logger); err != nil {
+	if err := downloadExecutable(ctx, fetcher, executable, path, logger, storageURLs); err != nil {
 		return "", err
 	}
 
@@ -55,13 +56,8 @@ func buildDownloadURLs(bases []string, executable models.Executable) ([]string, 
 	return urls, nil
 }
 
-func downloadExecutable(ctx context.Context, fetcher httpfetch.Client, executable models.Executable, destPath string, logger stepman.Logger) error {
-	bases := precompiledStepsDefaultStorageURLs
-	if override := os.Getenv(precompiledStepsStorageURLsEnv); override != "" {
-		bases = strings.Split(override, ",")
-	}
-
-	urls, err := buildDownloadURLs(bases, executable)
+func downloadExecutable(ctx context.Context, fetcher httpfetch.Client, executable models.Executable, destPath string, logger stepman.Logger, storageURLs []string) error {
+	urls, err := buildDownloadURLs(storageURLs, executable)
 	if err != nil {
 		return err
 	}

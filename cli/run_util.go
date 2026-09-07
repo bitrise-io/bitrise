@@ -118,7 +118,6 @@ func (r WorkflowRunner) activateAndRunSteps(
 			envsForStepRun,
 			secrets,
 			buildRunResults,
-			plan.IsSteplibOfflineMode,
 			stepStartTime,
 			stepStartedProperties,
 			stepPlan.StepBundleRunIfs,
@@ -187,7 +186,6 @@ func (r WorkflowRunner) activateAndRunStep(
 	environments []envmanModels.EnvironmentItemModel,
 	secrets []envmanModels.EnvironmentItemModel,
 	buildRunResults models.BuildRunResultsModel,
-	isStepLibOfflineMode bool,
 	stepStartTime time.Time,
 	stepStartedProperties coreanalytics.Properties,
 	stepBundleRunIfs []models.StepBundleRunIf,
@@ -249,7 +247,7 @@ func (r WorkflowRunner) activateAndRunStep(
 	//
 	// Activate step
 	activateStartTime := time.Now()
-	activateResult := r.activateStep(stepExecutionID, step, stepInfoPtr, stepIDData, buildRunResults, isStepLibOfflineMode)
+	activateResult := r.activateStep(stepExecutionID, step, stepInfoPtr, stepIDData, buildRunResults)
 	activateDuration := time.Since(activateStartTime)
 	if activateResult.Err != nil {
 		return newActivateAndRunStepResult(activateResult.Step, activateResult.StepInfoPtr, models.StepRunStatusCodePreparationFailed, 1, activateResult.Err, true, map[string]string{}, nil)
@@ -375,7 +373,6 @@ func (r WorkflowRunner) activateStep(
 	stepInfoPtr stepmanModels.StepInfoModel,
 	stepIDData stepid.CanonicalID,
 	buildRunResults models.BuildRunResultsModel,
-	isStepLibOfflineMode bool,
 ) activateStepResult {
 	//
 	// Activating the step
@@ -391,8 +388,7 @@ func (r WorkflowRunner) activateStep(
 	}
 
 	activationStartedAt := time.Now()
-	activator := newStepActivator()
-	activatedStep, err := activator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath, isStepLibOfflineMode)
+	activatedStep, err := r.stepActivator.activateStep(stepIDData, isStepLibUpdated, stepDir, configs.BitriseWorkDirPath)
 	r.tracker.SendStepActivationEvent(
 		stepExecutionID,
 		activatedStep.ActivationType,
@@ -884,17 +880,6 @@ func isSecretEnvsFiltering(filteringFlag *bool, inventoryEnvironments []envmanMo
 func registerSecretEnvsFiltering(filtering bool) error {
 	configs.IsSecretEnvsFiltering = filtering
 	return os.Setenv(configs.IsSecretEnvsFilteringKey, strconv.FormatBool(filtering))
-}
-
-func isSteplibOfflineMode() bool {
-	isSteplibOfflineMode := os.Getenv(configs.IsSteplibOfflineModeEnvKey)
-	return isSteplibOfflineMode == "true"
-}
-
-func registerSteplibOfflineMode(offlineMode bool) {
-	configs.IsSteplibOfflineMode = offlineMode
-	// Disable analytics if running in Offline mode
-	os.Setenv(analytics.DisabledEnvKey, strconv.FormatBool(offlineMode))
 }
 
 func isDirEmpty(path string) (bool, error) {

@@ -8,11 +8,18 @@ import (
 	"github.com/bitrise-io/stepman/stepid"
 )
 
+// stepActivator wraps the stepman activator. Both it and the activator it
+// holds are built once per run, so every step shares one HTTP client.
 type stepActivator struct {
+	activator *activator.Activator
+	logger    log.Logger
 }
 
-func newStepActivator() stepActivator {
-	return stepActivator{}
+func newStepActivator(logger log.Logger) stepActivator {
+	return stepActivator{
+		activator: activator.New(logger, activator.OptionsFromEnv()),
+		logger:    logger,
+	}
 }
 
 // Note: even when err != nil, the ActivatedStep struct will be returned with a valid DidStepLibUpdate value
@@ -21,47 +28,42 @@ func (a stepActivator) activateStep(
 	isStepLibUpdated bool,
 	stepDir string, // $TMPDIR/bitrise/step_src
 	workDir string, // $TMPDIR/bitrise
-	isSteplibOfflineMode bool,
 ) (activator.ActivatedStep, error) {
-	stepmanLogger := log.NewLogger(log.GetGlobalLoggerOpts())
-
 	if stepIDData.SteplibSource == "path" {
 		log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 
 		activatedStep, err := activator.ActivatePathRefStep(
-			stepmanLogger,
+			a.logger,
 			stepIDData,
 			stepDir,
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{ ActivationType: activator.ActivationTypePathRef }, fmt.Errorf("activate local step: %w", err)
+			return activator.ActivatedStep{ActivationType: activator.ActivationTypePathRef}, fmt.Errorf("activate local step: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource == "git" {
 		log.Debugf("[BITRISE_CLI] - Remote step, with direct git uri: (uri:%s) (tag-or-branch:%s)", stepIDData.IDorURI, stepIDData.Version)
 
 		activatedStep, err := activator.ActivateGitRefStep(
-			stepmanLogger,
+			a.logger,
 			stepIDData,
 			stepDir,
 			workDir,
 		)
 		if err != nil {
-			return activator.ActivatedStep{ ActivationType: activator.ActivationTypeGitRef }, fmt.Errorf("activate git step reference: %w", err)
+			return activator.ActivatedStep{ActivationType: activator.ActivationTypeGitRef}, fmt.Errorf("activate git step reference: %w", err)
 		}
 		return activatedStep, nil
 	} else if stepIDData.SteplibSource != "" {
-		activatedStep, err := activator.ActivateSteplibRefStep(
-			stepmanLogger,
+		activatedStep, err := a.activator.ActivateSteplibRefStep(
 			stepIDData,
 			stepDir,
 			workDir,
 			isStepLibUpdated,
-			isSteplibOfflineMode,
 		)
 		if err != nil {
-			// Note: we return the partial result on purpose because DidStepLibUpdate is important 
+			// Note: we return the partial result on purpose because DidStepLibUpdate is important
 			// even in case of an error
 			return activatedStep, fmt.Errorf("activate steplib step: %w", err)
 		}

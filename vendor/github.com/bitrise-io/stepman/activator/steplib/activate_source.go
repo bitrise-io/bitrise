@@ -6,6 +6,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 )
@@ -16,7 +17,7 @@ func activateStepSource(
 	step models.StepModel,
 	destination string,
 	log stepman.Logger,
-	isOfflineMode bool,
+	fetcher httpfetch.Client,
 ) error {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
@@ -30,12 +31,7 @@ func activateStepSource(
 	}
 
 	if !stepCacheDirExists {
-		if isOfflineMode {
-			errMsg := collectOfflineAvailableStepVersions(stepLib, stepLibURI, id, log)
-			return fmt.Errorf("download step: %s", errMsg)
-		}
-
-		err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log)
+		err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log, fetcher)
 		if err != nil {
 			return fmt.Errorf("download failed: %s", err)
 		}
@@ -61,15 +57,4 @@ func copyStep(src, dst string) error {
 		return fmt.Errorf("copy command failed: %s", err)
 	}
 	return nil
-}
-
-func collectOfflineAvailableStepVersions(stepLib models.StepCollectionModel, stepLibURI, id string, log stepman.Logger) string {
-	availableVersions := ListCachedStepVersions(log, stepLib, stepLibURI, id)
-	versionList := "Other versions available in the local cache:"
-	for _, version := range availableVersions {
-		versionList = versionList + fmt.Sprintf("\n- %s", version)
-	}
-
-	errMsg := fmt.Sprintf("version is not available in the local cache and $BITRISE_OFFLINE_MODE is set. %s", versionList)
-	return errMsg
 }

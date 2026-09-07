@@ -33,9 +33,6 @@ var (
 	IsSecretFiltering = false
 	// IsSecretEnvsFiltering ...
 	IsSecretEnvsFiltering = false
-
-	// IsSteplibOfflineMode should not be used, only for access from setup command
-	IsSteplibOfflineMode = false
 )
 
 // ---------------------------
@@ -56,12 +53,6 @@ const (
 	IsSecretEnvsFilteringKey = "BITRISE_SECRET_ENVS_FILTERING"
 	// NoOutputTimeoutEnvKey ...
 	NoOutputTimeoutEnvKey = "BITRISE_NO_OUTPUT_TIMEOUT"
-	// IsSteplibOfflineModeEnvKey when set to true:
-	// - StepLib update will be disabled when using non-exact step version (latest minor or major).
-	// - When a step or step version is not found in the cache, will not be downloaded. Instead will log
-	//  a error message (including what other Step versions are available).
-	// - Analytics will be disabled.
-	IsSteplibOfflineModeEnvKey = "BITRISE_OFFLINE_MODE"
 	// SetupNoUpdateEnvKey when set to "true", skips updating core tools (stepman/envman) and plugins
 	// during setup if they are already installed, even if their version is below the minimum required.
 	// Tools that are missing entirely are still installed. Intended for CI environments where GitHub
