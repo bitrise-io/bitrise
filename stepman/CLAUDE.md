@@ -14,11 +14,24 @@ Stepman is the tool behind Bitrise steps: it allows submitting new steps to the 
 
 Key entry point is `main.go` → `cli.Run()` which sets up the CLI application with commands defined in `cli/commands.go`.
 
+### Step activation paths
+
+`activator/` has two ways to resolve and download a step:
+
+- **Legacy git-clone path**: clones the steplib repo locally and reads spec.json. This is the codepath used for custom/self-hosted steplibs.
+- **StepLib V2 API path** (default): fetches static JSON over HTTPS (no git clone), implemented in `activator/steplib/` (`activate.go`, `source.go`) and `steplibrary/`. Used for the canonical Bitrise steplib source unless `BITRISE_STEPLIB_USE_API` is set to `false`/`0` — see `shouldUseSteplibAPI` and the `bitriseSteplibAPIURL` / `useSteplibAPIEnv` constants in `activator/steplib_ref.go`. The API base URL is passed to `steplibrary.New`. Offline mode is not supported on this path and fails explicitly: an offline run against the canonical steplib has to opt out via the env var to fall back to the git-clone path.
+
+Precompiled step executables (skip building from source) are on by default and disabled by setting `BITRISE_STEPLIB_USE_BINARY` to `false`/`0`, with storage URLs overridable via `BITRISE_STEPLIB_STORAGE_URLS` (see `activator/steplib/activate.go`).
+
 ## Development Commands
 
 This is a standard Go project, use standard Go tooling for development tasks.
 
 `bitrise.yml` contains the tasks and workflows that run in CI
+
+## Releasing
+
+Pushing a `vX.Y.Z` git tag on `master` triggers the release: the Tooling Control Center Bitrise project runs the `binary-tool-release` workflow (Goreleaser), builds binaries, and creates a GitHub release. Consumers (e.g. the Bitrise CLI) then bump the module version. Note: `v0.22.0` is a poisoned tag serving a stale API — never depend on it; use `v0.23.0+`.
 
 ## Coding preferences
 

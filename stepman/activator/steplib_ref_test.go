@@ -153,7 +153,7 @@ func TestActivateSteplibRefStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("BITRISE_STEPLIB_API_ENABLE", "false")
+			t.Setenv("BITRISE_STEPLIB_USE_API", "false")
 
 			activatedStepDir := t.TempDir()
 			workDir := t.TempDir()
@@ -216,7 +216,7 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("HOME", t.TempDir()) // fresh: the git cloned steplib is not set up
-			t.Setenv("BITRISE_STEPLIB_API_ENABLE", "true")
+			t.Setenv("BITRISE_STEPLIB_USE_API", "true")
 			t.Setenv("BITRISE_STEPLIB_USE_BINARY", "false")
 
 			activatedStepDir := t.TempDir()
@@ -251,6 +251,39 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 			// API route must not have set up the git cloned steplib.
 			_, found := stepman.ReadRoute(steplib)
 			require.False(t, found, "v2 activation must not set up the v1 steplib")
+		})
+	}
+}
+
+func TestShouldUseSteplibAPI(t *testing.T) {
+	const customSteplib = "https://github.com/acme/custom-steplib.git"
+
+	tests := []struct {
+		name     string
+		envValue string // empty means the env var is unset
+		steplib  string
+		want     bool
+	}{
+		{name: "Unset env enables the API for the Bitrise steplib", steplib: bitriseSteplibURL, want: true},
+		{name: "Explicit true keeps the API enabled", envValue: "true", steplib: bitriseSteplibURL, want: true},
+		{name: "Explicit 1 keeps the API enabled", envValue: "1", steplib: bitriseSteplibURL, want: true},
+		{name: "Unrecognized value keeps the API enabled", envValue: "maybe", steplib: bitriseSteplibURL, want: true},
+		{name: "false opts out", envValue: "false", steplib: bitriseSteplibURL, want: false},
+		{name: "0 opts out", envValue: "0", steplib: bitriseSteplibURL, want: false},
+		{name: "Custom steplib never uses the API", steplib: customSteplib, want: false},
+		{name: "Custom steplib is not enabled by an explicit true", envValue: "true", steplib: customSteplib, want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// t.Setenv registers the restore even when the value is then removed,
+			// so an unset case cannot leak into the rest of the suite.
+			t.Setenv(useSteplibAPIEnv, tt.envValue)
+			if tt.envValue == "" {
+				require.NoError(t, os.Unsetenv(useSteplibAPIEnv))
+			}
+
+			require.Equal(t, tt.want, shouldUseSteplibAPI(tt.steplib))
 		})
 	}
 }

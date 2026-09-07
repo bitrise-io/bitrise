@@ -16,7 +16,7 @@ import (
 const (
 	bitriseSteplibURL    = "https://github.com/bitrise-io/bitrise-steplib.git"
 	bitriseSteplibAPIURL = "https://steplib.bitrise.io/api"
-	enableSteplibAPIEnv  = "BITRISE_STEPLIB_API_ENABLE"
+	useSteplibAPIEnv     = "BITRISE_STEPLIB_USE_API"
 )
 
 func ActivateSteplibRefStep(
@@ -73,8 +73,12 @@ func ActivateSteplibRefStep(
 }
 
 func shouldUseSteplibAPI(steplibURI string) bool {
-	enableAPI := os.Getenv(enableSteplibAPIEnv) == "true" || os.Getenv(enableSteplibAPIEnv) == "1"
-	return enableAPI && steplibURI == bitriseSteplibURL
+	if steplibURI != bitriseSteplibURL {
+		return false
+	}
+
+	apiDisabled := os.Getenv(useSteplibAPIEnv) == "false" || os.Getenv(useSteplibAPIEnv) == "0"
+	return !apiDisabled
 }
 
 func prepareStepLibForActivation(

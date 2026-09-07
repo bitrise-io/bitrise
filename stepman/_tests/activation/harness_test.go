@@ -81,9 +81,9 @@ func activate(t *testing.T, v variant, id stepid.CanonicalID, offline, didStepLi
 	// The V2 API path targets the production inventory; there is no longer an
 	// override to redirect it at a dev/test inventory.
 	if v.useAPI {
-		t.Setenv("BITRISE_STEPLIB_API_ENABLE", "true")
+		t.Setenv("BITRISE_STEPLIB_USE_API", "true")
 	} else {
-		t.Setenv("BITRISE_STEPLIB_API_ENABLE", "false")
+		t.Setenv("BITRISE_STEPLIB_USE_API", "false")
 	}
 	if v.precompiled {
 		t.Setenv("BITRISE_STEPLIB_USE_BINARY", "true")

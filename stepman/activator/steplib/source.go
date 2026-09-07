@@ -15,7 +15,7 @@ import (
 // without cloning a git steplib.
 func activateStepSourceWithAPI(libraryAPI *steplibrary.Client, id, version string, source *models.StepSourceModel, destDir string, log stepman.Logger, isOfflineMode bool, fetcher httpfetch.Client) error {
 	if isOfflineMode {
-		return errors.New("offline mode is not supported with Steplib API")
+		return errors.New("offline mode is not supported with the Steplib API, set BITRISE_STEPLIB_USE_API=false to activate steps from the local StepLib cache")
 	}
 
 	if source == nil || source.Git == "" {
