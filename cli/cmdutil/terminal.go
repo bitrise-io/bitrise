@@ -22,7 +22,11 @@ func TerminalFd(stream any) (fd int, isTerminal bool) {
 // IsTerminal reports whether r is an interactive terminal. Pipes and buffers
 // never are, so callers can pick an interactive default (e.g. browser login)
 // while keeping non-interactive stdin (CI, pipes) working.
-func IsTerminal(r io.Reader) bool {
+//
+// It's a var, not a func, so tests can substitute it to exercise branches
+// that depend on an actual TTY (e.g. cli/auth/login.go's SSH-vs-browser
+// default) without one.
+var IsTerminal = func(r io.Reader) bool {
 	_, ok := TerminalFd(r)
 	return ok
 }
