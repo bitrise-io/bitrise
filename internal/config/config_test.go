@@ -124,3 +124,42 @@ func TestSaveYAML_ConcurrentWritesDontCorrupt(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, strings.Repeat("x", 100), got.Value)
 }
+
+// TestWriteAtomic_SweepsStaleTmpSiblings simulates a crash between a
+// previous writeAtomic's CreateTemp and Rename: a *.tmp file matching its
+// naming pattern, old enough to no longer be a plausible in-flight write, is
+// left on disk. The next write must clean it up rather than leaking it
+// forever.
+func TestWriteAtomic_SweepsStaleTmpSiblings(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	stale := path + ".deadbeef.tmp"
+	require.NoError(t, os.WriteFile(stale, []byte("leftover"), 0o600))
+	oldTime := time.Now().Add(-2 * staleTmpAge)
+	require.NoError(t, os.Chtimes(stale, oldTime, oldTime))
+
+	require.NoError(t, writeAtomic(path, []byte("value: 1\n")))
+
+	_, err := os.Stat(stale)
+	assert.True(t, os.IsNotExist(err), "stale tmp file should have been swept")
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "value: 1\n", string(got))
+}
+
+// TestWriteAtomic_KeepsFreshTmpSiblings guards against the sweep in
+// writeAtomic mistaking a concurrent writer's still-in-flight temp file
+// (same *.tmp glob pattern, just created) for a crash leftover and deleting
+// it out from under that writer.
+func TestWriteAtomic_KeepsFreshTmpSiblings(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	fresh := path + ".inflight.tmp"
+	require.NoError(t, os.WriteFile(fresh, []byte("still being written"), 0o600))
+
+	require.NoError(t, writeAtomic(path, []byte("value: 1\n")))
+
+	got, err := os.ReadFile(fresh)
+	require.NoError(t, err, "fresh tmp file should not have been swept")
+	assert.Equal(t, "still being written", string(got))
+}
