@@ -78,13 +78,18 @@ func (cs *callbackServer) close() {
 func (cs *callbackServer) handle(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 
+	// state is checked first, before even looking at error: deliver() keeps
+	// only the first result on the buffered channel, so if the error branch
+	// returned here first, any local process that finds the loopback port
+	// could abort an in-flight login with a forged ?error=... — bypassing
+	// the CSRF check entirely on the deny path.
+	if q.Get("state") != cs.state {
+		cs.deliver(w, callbackResult{err: errors.New("state mismatch on OAuth callback — possible CSRF, aborting")})
+		return
+	}
 	if errCode := q.Get("error"); errCode != "" {
 		desc := q.Get("error_description")
 		cs.deliver(w, callbackResult{err: fmt.Errorf("authorization denied: %s", joinNonEmpty(errCode, desc))})
-		return
-	}
-	if q.Get("state") != cs.state {
-		cs.deliver(w, callbackResult{err: errors.New("state mismatch on OAuth callback — possible CSRF, aborting")})
 		return
 	}
 	code := q.Get("code")
