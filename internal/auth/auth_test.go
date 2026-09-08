@@ -99,6 +99,42 @@ func TestLoad_PrefersNewAuthWhenPresent(t *testing.T) {
 	assert.Equal(t, "bitpat_new", got.Token, "the new file must win once it exists, regardless of the predecessor file")
 }
 
+func TestActivePath_PredecessorWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	predecessorFile := filepath.Join(dir, "bitrise", "auth.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("token: bitpat_predecessor\n"), 0o600))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	assert.Equal(t, predecessorFile, got)
+}
+
+func TestActivePath_NewPathOnceWritten(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "auth.yaml"), []byte("token: bitpat_predecessor\n"), 0o600))
+	require.NoError(t, Save(Auth{Token: "bitpat_new"}))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got, "once the new file has been written, ActivePath must name it even though the predecessor file still exists")
+}
+
+func TestActivePath_NewPathWhenNeitherExists(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got)
+}
+
 func TestClear_RemovesBothCurrentAndPredecessorFiles(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
