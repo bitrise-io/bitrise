@@ -124,6 +124,11 @@ func runTokenLogin(cmd *cobra.Command) error {
 	if tok == "" {
 		return fmt.Errorf("token is empty")
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
@@ -158,6 +163,11 @@ func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
 		}
 		return err
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
@@ -179,6 +189,11 @@ func doOAuthLogin(cmd *cobra.Command, openBrowser func(string) error) error {
 	if err != nil {
 		return err
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(a); err != nil {
 		return err
 	}

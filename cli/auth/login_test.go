@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +28,27 @@ func TestRunTokenLogin_SavesToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "bitpat_faketoken", saved.Token)
 	assert.False(t, saved.IsOAuthManaged())
+}
+
+// TestRunTokenLogin_BlocksWhileAuthLockHeld covers all three auth.Save call
+// sites at once, since runTokenLogin, runEmailLogin, and doOAuthLogin now
+// wrap the same auth.Lock — without it, a login racing a background token
+// refresh (internal/oauth.EnsureFreshPAT) could clobber the refreshed
+// credentials.
+func TestRunTokenLogin_BlocksWhileAuthLockHeld(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	unlock, err := auth.Lock(context.Background())
+	require.NoError(t, err)
+	defer unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	cmd := newTestCmd(t, "bitpat_faketoken\n")
+	cmd.SetContext(ctx)
+
+	err = runTokenLogin(cmd)
+	require.Error(t, err, "the save must wait for the auth lock, not race a concurrent refresh")
 }
 
 func TestRunTokenLogin_EmptyTokenErrors(t *testing.T) {
