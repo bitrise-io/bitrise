@@ -87,6 +87,29 @@ func predecessorPath() (string, error) {
 	return filepath.Join(dir, "auth.yaml"), nil
 }
 
+// ActivePath returns the auth file Load() actually reads from right now:
+// the predecessor CLI's auth.yaml while that fallback is live, or the
+// current path once anything has written it (or if neither exists yet).
+// Used by `bitrise auth status` so its reported path matches reality —
+// Path() alone would name a file that doesn't exist during the fallback
+// window.
+func ActivePath() (string, error) {
+	p, err := Path()
+	if err != nil {
+		return "", err
+	}
+	if _, statErr := os.Stat(p); errors.Is(statErr, fs.ErrNotExist) {
+		pp, err := predecessorPath()
+		if err != nil {
+			return "", err
+		}
+		if _, statErr := os.Stat(pp); statErr == nil {
+			return pp, nil
+		}
+	}
+	return p, nil
+}
+
 // Load reads the auth file. A missing file returns the zero Auth so
 // first-time users don't see failures. When it's absent, Load falls back to
 // reading the predecessor CLI's auth.yaml (see predecessorPath), never

@@ -95,6 +95,25 @@ func TestCurrentStatus_PastedToken(t *testing.T) {
 	assert.Empty(t, s.TokenExpiry)
 }
 
+// TestCurrentStatus_ReportsPredecessorPathWhileFallbackLive guards the same
+// class of bug fixed for `bitrise config path`: currentStatus used to call
+// auth.Path() directly, so during the fallback window it reported a file
+// that didn't exist instead of the predecessor auth.yaml actually in use.
+func TestCurrentStatus_ReportsPredecessorPathWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("BITRISE_TOKEN", "")
+	predecessorDir := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.MkdirAll(predecessorDir, 0o700))
+	predecessorFile := filepath.Join(predecessorDir, "auth.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("token: bitpat_predecessor\n"), 0o600))
+
+	s, err := currentStatus()
+	require.NoError(t, err)
+	assert.True(t, s.HasToken)
+	assert.Equal(t, predecessorFile, s.Path)
+}
+
 func TestCurrentStatus_OAuthManagedShowsExpiry(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("BITRISE_TOKEN", "")
