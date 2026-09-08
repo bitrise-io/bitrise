@@ -54,6 +54,32 @@ func TestNewAPIClient_FallsBackToAuthFile(t *testing.T) {
 	assert.Equal(t, "token file-token", gotAuth)
 }
 
+// TestNewAPIClient_EnvAPIBaseURLOverridesContext covers the item that fixed
+// "the only key with no env override": NewAPIClient used to read the
+// resolved config's APIBaseURL directly, with no BITRISE_API_BASE_URL layer
+// at all, unlike the web/RDE base URL resolvers.
+func TestNewAPIClient_EnvAPIBaseURLOverridesContext(t *testing.T) {
+	var hitEnvServer bool
+	envSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hitEnvServer = true
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(envSrv.Close)
+
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	require.NoError(t, auth.Save(auth.Auth{Token: "file-token"}))
+	t.Setenv(EnvAPIBaseURL, envSrv.URL)
+
+	// The context carries a different (unreachable) base URL — the env var
+	// must win.
+	client, err := NewAPIClient(newTestCmd(t, "http://127.0.0.1:1"))
+	require.NoError(t, err)
+
+	_, err = client.SearchSteps(context.Background(), bitriseapi.StepSearchOptions{})
+	require.NoError(t, err)
+	assert.True(t, hitEnvServer, "BITRISE_API_BASE_URL should override the context-resolved base URL")
+}
+
 func TestNewAPIClient_ErrNoToken(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
