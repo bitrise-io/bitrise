@@ -488,6 +488,68 @@ func Test_flagShorthands_doNotCollideAcrossTree(t *testing.T) {
 	})
 }
 
+// Test_rejectSingleDashLongFlags_realCommandTree exercises the guard against
+// the actual registered commands, not a synthetic tree, so it catches a
+// flag/shorthand that changes shape only in cli/root.go or cli/local/run.go.
+func Test_rejectSingleDashLongFlags_realCommandTree(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantFound    bool
+		wantFlagName string
+	}{
+		{
+			name:         "single-dash --config on run silently misparses without the guard",
+			args:         []string{"run", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "single-dash --inventory on run silently misparses without the guard",
+			args:         []string{"run", "-inventory", "secrets.yml"},
+			wantFound:    true,
+			wantFlagName: "inventory",
+		},
+		{
+			name:         "single-dash --workflow already errors via pflag, guard gives a clearer message",
+			args:         []string{"run", "-workflow", "primary"},
+			wantFound:    true,
+			wantFlagName: "workflow",
+		},
+		{name: "double-dash --config is untouched", args: []string{"run", "--config", "bitrise.yml"}},
+		{name: "-c shorthand with a space is untouched", args: []string{"run", "-c", "bitrise.yml"}},
+		{name: "-i shorthand with a space is untouched", args: []string{"run", "-i", "secrets.yml"}},
+		{name: "-qo shorthand cluster is untouched", args: []string{"stack", "list", "-qo", "json"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := newRootCommand()
+			target, _, err := root.Find(tt.args)
+			require.NoError(t, err)
+
+			_, flagName, found := cmdutil.DetectSingleDashLongFlag(target, tt.args)
+			assert.Equal(t, tt.wantFound, found)
+			if tt.wantFound {
+				assert.Equal(t, tt.wantFlagName, flagName)
+			}
+		})
+	}
+}
+
+// Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit relies on the fact that a
+// false positive here would call cmdutil.Failf and kill the test process —
+// completing at all is the assertion for the non-matching cases.
+func Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit(t *testing.T) {
+	for _, args := range [][]string{
+		{"run", "--config", "bitrise.yml"},
+		{"run", "-c", "bitrise.yml"},
+		{"run", "-i", "secrets.yml"},
+		{"stack", "list", "-qo", "json"},
+	} {
+		rejectSingleDashLongFlags(newRootCommand(), args)
+	}
+}
+
 func visitCommands(cmd *cobra.Command, fn func(*cobra.Command)) {
 	fn(cmd)
 	for _, sub := range cmd.Commands() {

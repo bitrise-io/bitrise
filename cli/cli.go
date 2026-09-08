@@ -64,6 +64,8 @@ func Run() {
 		return
 	}
 
+	rejectSingleDashLongFlags(rootCmd, rawArgs)
+
 	rootCmd.SetArgs(rawArgs)
 	if err := rootCmd.Execute(); err != nil {
 		cmdutil.Failf("%s", err)

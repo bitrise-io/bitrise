@@ -127,3 +127,42 @@ func assignOne(f *pflag.Flag, value string, hasValue bool, args []string) ([]glo
 func IsFlag(name, arg string) bool {
 	return arg == "--"+name || strings.HasPrefix(arg, "--"+name+"=")
 }
+
+// DetectSingleDashLongFlag reports the first argument in args that spells a
+// long flag name of cmd with a single dash instead of "--" (e.g. "-config").
+// Left to pflag, this either silently misparses as a shorthand cluster with
+// an attached value (when the leading character happens to be a registered
+// shorthand, e.g. "-config" becomes "-c" with value "onfig") or is rejected
+// with a cryptic "unknown shorthand flag" error — so callers should reject it
+// outright rather than let cobra parse it. cmd should be the resolved target
+// command (e.g. via (*cobra.Command).Find), since a flag name is only
+// meaningful relative to the command it is reachable on.
+func DetectSingleDashLongFlag(cmd *cobra.Command, args []string) (arg, flagName string, found bool) {
+	names := longFlagNames(cmd)
+	for _, a := range args {
+		if a == "--" {
+			break
+		}
+		if !strings.HasPrefix(a, "-") || strings.HasPrefix(a, "--") || a == "-" {
+			continue
+		}
+		name, _, _ := strings.Cut(strings.TrimPrefix(a, "-"), "=")
+		if names[name] {
+			return a, name, true
+		}
+	}
+	return "", "", false
+}
+
+// longFlagNames returns every long flag name reachable on cmd: its own flags
+// plus every ancestor's persistent flags, mirroring what pflag actually sees
+// once cobra merges them at parse time.
+func longFlagNames(cmd *cobra.Command) map[string]bool {
+	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultVersionFlag()
+
+	names := map[string]bool{}
+	cmd.Flags().VisitAll(func(f *pflag.Flag) { names[f.Name] = true })
+	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) { names[f.Name] = true })
+	return names
+}
