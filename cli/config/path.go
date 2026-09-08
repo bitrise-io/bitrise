@@ -18,7 +18,7 @@ func NewPathCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
-			p, err := internalconfig.Path()
+			p, err := internalconfig.ActivePath()
 			if err != nil {
 				return err
 			}
