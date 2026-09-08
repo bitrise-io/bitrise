@@ -3,16 +3,28 @@
 // pre-existing ~/.bitrise/config.json store, which stays authoritative when
 // present (see resolve.go).
 //
-// Storage: YAML at $XDG_CONFIG_HOME/bitrise/cli/config.yml, falling back to
-// ~/.config/bitrise/cli/config.yml. Written with 0600 permissions.
+// Storage: YAML at $XDG_CONFIG_HOME/bitrise/cli/config.yml, or
+// ~/.config/bitrise/cli/config.yml when XDG_CONFIG_HOME is unset.
+// Written with 0600 permissions.
+//
+// Load also has a read-only fallback to the predecessor standalone CLI's
+// config.yaml — one directory segment up (no "cli"), and a .yaml extension
+// — so an existing install of that CLI isn't silently logged out of its
+// settings by the merge. That file is never written to; see
+// PredecessorDir and LoadYAMLWithFallback. (This is a different fallback
+// from the ~/.bitrise/config.json layering above: that one is an
+// always-consulted, higher-precedence layer; this one only fires once the
+// new config.yml doesn't exist yet.)
 package config
 
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -72,6 +84,76 @@ func Path() (string, error) {
 	return filepath.Join(dir, "config.yml"), nil
 }
 
+// PredecessorDir returns the config directory of the predecessor standalone
+// CLI that this repo merged in — one path segment above Dir(), which this
+// repo added. Read-only fallback target; nothing here is ever written back
+// to it, since that CLI is still in use for a while after this merge.
+func PredecessorDir() (string, error) {
+	dir, err := Dir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Dir(dir), nil
+}
+
+func predecessorConfigPath() (string, error) {
+	dir, err := PredecessorDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.yaml"), nil // note: .yaml, not .yml
+}
+
+// predecessorConfig is a superset of Config: every current field (so
+// unmarshaling the current config.yml through it loses nothing), plus the
+// predecessor CLI's pre-rename key spellings (app_slug,
+// default_workspace_slug) as fallbacks, so a fallen-back-to file doesn't
+// silently drop those values either.
+type predecessorConfig struct {
+	SetupVersion           string               `yaml:"setup_version"`
+	LastCLIUpdateCheck     time.Time            `yaml:"last_cli_update_check"`
+	LastPluginUpdateChecks map[string]time.Time `yaml:"last_plugin_update_checks"`
+	Output                 string               `yaml:"output"`
+	AppID                  string               `yaml:"app_id"`
+	AppSlugLegacy          string               `yaml:"app_slug"`
+	DefaultWorkspaceID     string               `yaml:"default_workspace_id"`
+	DefaultWorkspaceSlug   string               `yaml:"default_workspace_slug"`
+	APIBaseURL             string               `yaml:"api_base_url"`
+	RDEAPIBaseURL          string               `yaml:"rde_api_base_url"`
+	WebBaseURL             string               `yaml:"web_base_url"`
+	Theme                  string               `yaml:"theme"`
+}
+
+func (p predecessorConfig) toConfig() Config {
+	return Config{
+		SetupVersion:           p.SetupVersion,
+		LastCLIUpdateCheck:     p.LastCLIUpdateCheck,
+		LastPluginUpdateChecks: p.LastPluginUpdateChecks,
+		Output:                 p.Output,
+		AppID:                  FirstNonEmptyString(p.AppID, p.AppSlugLegacy),
+		DefaultWorkspaceID:     FirstNonEmptyString(p.DefaultWorkspaceID, p.DefaultWorkspaceSlug),
+		APIBaseURL:             p.APIBaseURL,
+		RDEAPIBaseURL:          p.RDEAPIBaseURL,
+		WebBaseURL:             p.WebBaseURL,
+		Theme:                  p.Theme,
+	}
+}
+
+var fallbackAnnounceOnce sync.Once
+
+// fallbackWriter is a var, not a const os.Stderr use, so tests can capture
+// the one-time announcement.
+var fallbackWriter io.Writer = os.Stderr
+
+// announceFallback prints, once per process, that a predecessor-CLI file is
+// being read as a fallback. Shared by internal/config and internal/auth, so
+// falling back for both files announces both.
+func announceFallback(what, path string) {
+	fallbackAnnounceOnce.Do(func() {
+		fmt.Fprintf(fallbackWriter, "Using the previous bitrise-cli's %s at %s (read-only; save with this CLI to migrate it)\n", what, path)
+	})
+}
+
 // LoadYAML reads and unmarshals the YAML file at path into T. A missing
 // file is not an error — it returns the zero T, so callers can treat "not
 // yet configured" the same as "empty".
@@ -90,6 +172,33 @@ func LoadYAML[T any](path string) (T, error) {
 	return v, nil
 }
 
+// LoadYAMLWithFallback behaves like LoadYAML, but when path is absent it
+// reads fallbackPath instead — never writing to it. ok reports whether
+// fallbackPath supplied the value, so a caller can announce the fallback.
+func LoadYAMLWithFallback[T any](path, fallbackPath string) (v T, ok bool, err error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		data, err = os.ReadFile(fallbackPath)
+		if errors.Is(err, fs.ErrNotExist) {
+			return v, false, nil
+		}
+		if err != nil {
+			return v, false, fmt.Errorf("read %s: %w", fallbackPath, err)
+		}
+		if uerr := yaml.Unmarshal(data, &v); uerr != nil {
+			return v, false, fmt.Errorf("parse %s: %w", fallbackPath, uerr)
+		}
+		return v, true, nil
+	}
+	if err != nil {
+		return v, false, fmt.Errorf("read %s: %w", path, err)
+	}
+	if uerr := yaml.Unmarshal(data, &v); uerr != nil {
+		return v, false, fmt.Errorf("parse %s: %w", path, uerr)
+	}
+	return v, false, nil
+}
+
 // SaveYAML atomically marshals v to YAML and writes it to path with 0600
 // permissions, creating the parent directory (0700) if missing.
 func SaveYAML[T any](path string, v T) error {
@@ -103,14 +212,52 @@ func SaveYAML[T any](path string, v T) error {
 	return writeAtomic(path, data)
 }
 
-// Load reads the global config file. A missing file is not an error — it
-// returns the zero Config so first-time users don't see failures.
+// Load reads the global config file. When it's absent, Load falls back to
+// reading the predecessor standalone CLI's config.yaml (see PredecessorDir),
+// never writing to it, so an existing install of that CLI doesn't silently
+// lose app_id, default_workspace_id, theme, output and any base-URL
+// overrides to this merge. cli/config/{set,unset}.go are
+// Load-mutate-Save, so the fallback has to live here rather than only in
+// Resolve: the first `config set` reads the fallback content in full and
+// writes it all forward, completing the move on that first write, instead
+// of writing a file holding only the one just-set key and losing the rest.
 func Load() (Config, error) {
 	p, err := Path()
 	if err != nil {
 		return Config{}, err
 	}
-	return LoadYAML[Config](p)
+	pp, err := predecessorConfigPath()
+	if err != nil {
+		return Config{}, err
+	}
+	pc, usedFallback, err := LoadYAMLWithFallback[predecessorConfig](p, pp)
+	if err != nil {
+		return Config{}, err
+	}
+	if usedFallback {
+		announceFallback("config file", pp)
+	}
+	return pc.toConfig(), nil
+}
+
+// ActivePath returns the config file Load() actually reads from right now:
+// the predecessor CLI's config.yaml while that fallback is live, or the new
+// config.yml once anything has written it (or if neither exists yet).
+func ActivePath() (string, error) {
+	p, err := Path()
+	if err != nil {
+		return "", err
+	}
+	if _, statErr := os.Stat(p); errors.Is(statErr, fs.ErrNotExist) {
+		pp, err := predecessorConfigPath()
+		if err != nil {
+			return "", err
+		}
+		if _, statErr := os.Stat(pp); statErr == nil {
+			return pp, nil
+		}
+	}
+	return p, nil
 }
 
 // LoadDir searches the current working directory and its ancestors for a
