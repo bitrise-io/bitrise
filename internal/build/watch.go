@@ -134,17 +134,23 @@ func (s *Service) Watch(ctx context.Context, appSlug, buildSlug string, w io.Wri
 			return Build{}, err
 		}
 		lastAfterTimestamp = afterTimestamp
-		afterTimestamp = manifest.NextAfterTimestamp
+		if manifest.NextAfterTimestamp != "" {
+			// Keep the last known-good cursor on an empty response — "" means
+			// "full log fetch" (see BuildLogManifest), and the poll above
+			// already ran unconditionally this iteration regardless of the
+			// cursor, so skipping the update here can't stall streaming.
+			afterTimestamp = manifest.NextAfterTimestamp
+		}
 		if current.Status != 0 {
 			break
 		}
 	}
 
 	// One final call to flush any chunks buffered after the last poll. Runs
-	// unconditionally, even if lastAfterTimestamp is still "" (a poll's
-	// NextAfterTimestamp can come back empty), so a stuck-empty cursor can't
-	// permanently skip this catch-up — worst case it's a full log refetch,
-	// and flushContiguous drops anything already emitted.
+	// unconditionally — lastAfterTimestamp only stays "" here if every poll's
+	// NextAfterTimestamp came back empty (a full log refetch in that case;
+	// flushContiguous drops anything already emitted), otherwise it carries
+	// the last known-good cursor.
 	final, err := s.client.BuildLogManifest(ctx, appSlug, buildSlug, lastAfterTimestamp)
 	if err != nil {
 		return Build{}, err
