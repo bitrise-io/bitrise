@@ -73,7 +73,11 @@ Optional flags:
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			rawAppSlug, err := cmdutil.ResolveAppSlug(cmd)
 			if err != nil {
 				return err
 			}
@@ -94,7 +98,7 @@ Optional flags:
 				}
 			}
 
-			client, err := cmdutil.NewAPIClient(cmd)
+			appSlug, err := cmdutil.NewResolver(cmd, client).AppSlug(cmd.Context(), rawAppSlug)
 			if err != nil {
 				return err
 			}

@@ -17,6 +17,10 @@ import (
 func TestViewCmd_PositionalArg(t *testing.T) {
 	var gotPath string
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte(`{"data":{"slug":"my-app","title":"My App","provider":"github","repo_url":"https://github.com/x/y","owner":{"slug":"acme"}}}`))
 	})
@@ -35,6 +39,10 @@ func TestViewCmd_PositionalArg(t *testing.T) {
 func TestViewCmd_FlagFallback(t *testing.T) {
 	var gotPath string
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte(`{"data":{"slug":"my-app","title":"My App","provider":"github","owner":{}}}`))
 	})
@@ -56,7 +64,11 @@ func TestViewCmd_RequiresAppSlug(t *testing.T) {
 }
 
 func TestViewCmd_AppNotFound(t *testing.T) {
-	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})

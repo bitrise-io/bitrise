@@ -39,7 +39,11 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			rawAppSlug, err := cmdutil.ResolveAppSlug(cmd)
 			if err != nil {
 				return err
 			}
@@ -52,7 +56,7 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 				return fmt.Errorf("bitrise.yml content is empty")
 			}
 
-			client, err := cmdutil.NewAPIClient(cmd)
+			appSlug, err := cmdutil.NewResolver(cmd, client).AppSlug(cmd.Context(), rawAppSlug)
 			if err != nil {
 				return err
 			}

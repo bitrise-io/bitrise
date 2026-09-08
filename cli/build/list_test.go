@@ -177,9 +177,18 @@ func newTestListCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buf
 	return cmd, &out
 }
 
+// newFakeServer wires handler behind a server that transparently answers the
+// app name→slug resolver's GET /apps?title=... lookup with a passthrough (0
+// matches), so handler only ever sees the real request under test.
 func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	t.Helper()
-	srv := httptest.NewServer(handler)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
+		handler(w, r)
+	}))
 	t.Cleanup(srv.Close)
 	return srv
 }

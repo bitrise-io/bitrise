@@ -31,12 +31,11 @@ This is a shortcut for "bitrise yml get --app ID --build BUILD_ID".`,
 				return err
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
 				return err
 			}
-
-			client, err := cmdutil.NewAPIClient(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
