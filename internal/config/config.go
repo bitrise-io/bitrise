@@ -141,13 +141,15 @@ func (p predecessorConfig) toConfig() Config {
 
 var fallbackAnnounceOnce sync.Once
 
-// fallbackWriter is a var, not a const os.Stderr use, so tests can capture
+// fallbackWriter is a var, not a bare os.Stderr use, so tests can capture
 // the one-time announcement.
 var fallbackWriter io.Writer = os.Stderr
 
-// announceFallback prints, once per process, that a predecessor-CLI file is
-// being read as a fallback. Shared by internal/config and internal/auth, so
-// falling back for both files announces both.
+// announceFallback prints, once per process, that the predecessor CLI's
+// config file is being read as a fallback. internal/auth keeps its own
+// separate instance of this (own sync.Once) for its own file — sharing one
+// Once across both would mean whichever file falls back first silently
+// suppresses the announcement for the other.
 func announceFallback(what, path string) {
 	fallbackAnnounceOnce.Do(func() {
 		fmt.Fprintf(fallbackWriter, "Using the previous bitrise-cli's %s at %s (read-only; save with this CLI to migrate it)\n", what, path)
