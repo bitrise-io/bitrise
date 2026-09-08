@@ -16,6 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 // offlineKey skips online validation even when authenticated, forcing the
@@ -299,7 +300,29 @@ func tryOnlineValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase6
 	if len(result.Errors) > 0 {
 		item.Error = strings.Join(result.Errors, "; ")
 	}
+	if warning := formatVersionWarning(rawYAML); warning != "" {
+		item.Warnings = append(item.Warnings, warning)
+	}
 	return item, "", true
+}
+
+// formatVersionWarning checks rawYAML's format_version against this CLI's
+// supported version, for the online-validate path: the API only checks
+// schema validity, so the online result stays authoritative for IsValid and
+// this only adds a warning, never an error. A missing or unparsable
+// format_version is skipped silently rather than surfaced as a warning,
+// since that isn't what this check is about.
+func formatVersionWarning(rawYAML string) string {
+	var v struct {
+		FormatVersion string `yaml:"format_version"`
+	}
+	if err := yaml.Unmarshal([]byte(rawYAML), &v); err != nil || v.FormatVersion == "" {
+		return ""
+	}
+	if err := cmdutil.CheckFormatVersionSupported(v.FormatVersion); err != nil {
+		return err.Error()
+	}
+	return ""
 }
 
 // validateConfig prefers the online validate-bitrise-yml endpoint when a
