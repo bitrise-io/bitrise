@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,6 +59,61 @@ func TestSaveLoadClear_RoundTrip(t *testing.T) {
 
 	// Clear is idempotent.
 	require.NoError(t, Clear())
+}
+
+func TestLoad_FallsBackToPredecessorAuth(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	predecessorDir := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.MkdirAll(predecessorDir, 0o700))
+	predecessorFile := filepath.Join(predecessorDir, "auth.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("token: bitpat_predecessor\n"), 0o600))
+
+	fallbackAnnounceOnce = sync.Once{}
+	var announced strings.Builder
+	origWriter := fallbackWriter
+	fallbackWriter = &announced
+	t.Cleanup(func() { fallbackWriter = origWriter })
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_predecessor", got.Token)
+
+	_, err = os.ReadFile(predecessorFile)
+	require.NoError(t, err, "the predecessor auth file must survive Load — it's read-only")
+	_, statErr := os.Stat(filepath.Join(dir, "bitrise", "cli", "auth.yaml"))
+	assert.True(t, os.IsNotExist(statErr), "Load must not write the new auth file as a side effect")
+
+	assert.Contains(t, announced.String(), predecessorFile)
+}
+
+func TestLoad_PrefersNewAuthWhenPresent(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "auth.yaml"), []byte("token: bitpat_predecessor\n"), 0o600))
+	require.NoError(t, Save(Auth{Token: "bitpat_new"}))
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_new", got.Token, "the new file must win once it exists, regardless of the predecessor file")
+}
+
+func TestClear_RemovesBothCurrentAndPredecessorFiles(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	predecessorFile := filepath.Join(dir, "bitrise", "auth.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("token: bitpat_predecessor\n"), 0o600))
+	require.NoError(t, Save(Auth{Token: "bitpat_new"}))
+
+	require.NoError(t, Clear())
+
+	_, err := os.Stat(predecessorFile)
+	assert.True(t, os.IsNotExist(err), "Clear must remove the predecessor file too, or logout followed by status would fall back and report still logged in")
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, Auth{}, got)
 }
 
 func TestSave_RejectsEmptyToken(t *testing.T) {
