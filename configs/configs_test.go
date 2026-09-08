@@ -61,12 +61,32 @@ func TestLoadLegacyConfig(t *testing.T) {
 
 	// Once a legacy file exists, LoadLegacyConfig is a pure passthrough
 	// again: it sees whatever SaveSetupSuccessForVersion (and friends) write.
+	require.Equal(t, nil, EnsureBitriseConfigDirExists())
 	require.Equal(t, nil, saveLegacyConfig(ConfigModel{SetupVersion: "0.0.1"}))
 	require.Equal(t, nil, SaveSetupSuccessForVersion("1.2.3"))
 	got, exists, err = LoadLegacyConfig()
 	require.Equal(t, nil, err)
 	require.Equal(t, "1.2.3", got.SetupVersion)
 	require.Equal(t, true, exists)
+}
+
+// TestLoadLegacyConfig_DoesNotCreateBitriseDir asserts a pure read never
+// creates ~/.bitrise as a side effect -- only a write should.
+func TestLoadLegacyConfig_DoesNotCreateBitriseDir(t *testing.T) {
+	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
+	require.Equal(t, nil, err)
+	defer func() {
+		require.Equal(t, nil, os.RemoveAll(fakeHomePth))
+	}()
+	t.Setenv("HOME", fakeHomePth)
+	t.Setenv("XDG_CONFIG_HOME", "")
+
+	_, exists, err := LoadLegacyConfig()
+	require.Equal(t, nil, err)
+	require.Equal(t, false, exists)
+
+	_, statErr := os.Stat(GetBitriseHomeDirPath())
+	require.True(t, os.IsNotExist(statErr))
 }
 
 // TestSaveSetupSuccessForVersion_NewUser_OnlySavesToGlobalConfig asserts a
@@ -152,11 +172,11 @@ func TestSaveSetupSuccessForVersion_ExistingUser_GlobalSyncFailureDoesNotFailSav
 	require.Equal(t, "3.0.0", legacy.SetupVersion)
 }
 
-// TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureFailsSave is the
-// other half: with no legacy file, config.yml is the *only* place the value
-// gets persisted, so a broken new-location write must surface as an error
-// instead of being silently swallowed and reported as a successful save.
-func TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureFailsSave(t *testing.T) {
+// TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureDoesNotFailSave is
+// the other half: with no legacy file, config.yml is the only place the
+// value gets persisted, but a broken new-location write is still only a
+// warning -- a bookkeeping write must never fail the caller.
+func TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureDoesNotFailSave(t *testing.T) {
 	fakeHomePth, err := pathutil.NormalizedOSTempDirPath("_FAKE_HOME")
 	require.Equal(t, nil, err)
 	defer func() {
@@ -168,7 +188,7 @@ func TestSaveSetupSuccessForVersion_NewUser_GlobalSyncFailureFailsSave(t *testin
 	require.Equal(t, nil, os.WriteFile(blockingFile, []byte("x"), 0o600))
 	t.Setenv("XDG_CONFIG_HOME", blockingFile)
 
-	require.Error(t, SaveSetupSuccessForVersion("3.0.0"))
+	require.Equal(t, nil, SaveSetupSuccessForVersion("3.0.0"))
 
 	_, exists, err := LoadLegacyConfig()
 	require.Equal(t, nil, err)

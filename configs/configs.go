@@ -97,10 +97,6 @@ func IsDebugUseSystemTools() bool {
 // indistinguishable, and Save* below must not create the file for a
 // brand-new user (see saveConfig).
 func LoadLegacyConfig() (ConfigModel, bool, error) {
-	if err := EnsureBitriseConfigDirExists(); err != nil {
-		return ConfigModel{}, false, err
-	}
-
 	configPth := getLegacyConfigFilePath()
 	exist, err := pathutil.IsPathExists(configPth)
 	if err != nil {
@@ -301,7 +297,9 @@ func saveGlobalConfig(mutate func(*internalconfig.Config) error) error {
 
 // saveConfig writes legacy via saveLegacyConfig only when it existed —
 // a brand-new user should never get a legacy file created — and always syncs
-// mutate into the new global config.yml.
+// mutate into the new global config.yml. A config.yml sync failure only
+// warns and never fails the caller, regardless of whether the legacy file
+// existed — it's a bookkeeping mirror, not the load-bearing write.
 //
 // legacy is deliberately the raw on-disk legacy value (each caller loads it
 // via LoadLegacyConfig, not ResolveConfig): both writes below only ever touch
@@ -318,14 +316,9 @@ func saveConfig(existed bool, legacy ConfigModel, mutate func(*internalconfig.Co
 		if err := saveLegacyConfig(legacy); err != nil {
 			return err
 		}
-		if err := saveGlobalConfig(mutate); err != nil {
-			log.Warnf("Failed to sync config.yml, ignoring: %s", err)
-		}
-		return nil
 	}
-
 	if err := saveGlobalConfig(mutate); err != nil {
-		return fmt.Errorf("failed to save config.yml: %w", err)
+		log.Warnf("Failed to sync config.yml, ignoring: %s", err)
 	}
 	return nil
 }
