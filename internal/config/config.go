@@ -164,11 +164,34 @@ func Save(c Config) error {
 	return writeAtomic(p, data)
 }
 
+// staleTmpAge bounds how old a *.tmp sibling has to be before writeAtomic
+// sweeps it — comfortably longer than any real write, so a concurrent
+// writer's own in-flight temp file (same glob pattern, near-zero age) is
+// never mistaken for one stranded by a crash.
+const staleTmpAge = time.Minute
+
 // writeAtomic writes data to a uniquely-named temp file beside path and
 // renames it into place, so two processes writing the same path concurrently
-// never race the rename with a shared temp name.
+// never race the rename with a shared temp name. It fsyncs before the rename
+// so a crash right after can't leave a file that looks written but lost its
+// data on an unclean shutdown, and it sweeps *.tmp siblings older than
+// staleTmpAge, left behind by a previous call that crashed between create
+// and rename — otherwise those leak forever, and for auth.yaml/config.yml
+// that means a stranded credential-bearing file.
 func writeAtomic(path string, data []byte) error {
-	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".*.tmp")
+	dir := filepath.Dir(path)
+	base := filepath.Base(path)
+
+	if stale, err := filepath.Glob(filepath.Join(dir, base+".*.tmp")); err == nil {
+		now := time.Now()
+		for _, f := range stale {
+			if info, statErr := os.Stat(f); statErr == nil && now.Sub(info.ModTime()) > staleTmpAge {
+				_ = os.Remove(f)
+			}
+		}
+	}
+
+	f, err := os.CreateTemp(dir, base+".*.tmp")
 	if err != nil {
 		return fmt.Errorf("create temp file for %s: %w", path, err)
 	}
@@ -178,6 +201,10 @@ func writeAtomic(path string, data []byte) error {
 	if _, err := f.Write(data); err != nil {
 		_ = f.Close()
 		return fmt.Errorf("write %s: %w", tmp, err)
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("sync %s: %w", tmp, err)
 	}
 	if err := f.Close(); err != nil {
 		return fmt.Errorf("write %s: %w", tmp, err)
