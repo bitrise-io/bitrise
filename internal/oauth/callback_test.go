@@ -36,6 +36,20 @@ func TestCallbackServer_AuthorizationDenied(t *testing.T) {
 	assert.ErrorContains(t, err, "access_denied")
 }
 
+// TestCallbackServer_StateCheckedBeforeError guards the CSRF fix: state must
+// be validated before the error param is even inspected. deliver() keeps
+// only the first result, so if error were checked first, any local process
+// finding the loopback port could abort an in-flight login with a forged
+// ?error=... whose state doesn't match, without ever tripping the CSRF check.
+func TestCallbackServer_StateCheckedBeforeError(t *testing.T) {
+	cs := startCallbackServer(t, "right")
+	visitCallback(t, cs, "?error=access_denied&state=wrong")
+
+	_, err := cs.wait(waitCtx(t))
+	assert.ErrorContains(t, err, "state mismatch")
+	assert.NotContains(t, err.Error(), "authorization denied")
+}
+
 func TestCallbackServer_MissingCode(t *testing.T) {
 	cs := startCallbackServer(t, "st8")
 	visitCallback(t, cs, "?state=st8")
