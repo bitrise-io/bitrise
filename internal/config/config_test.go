@@ -70,6 +70,90 @@ func TestLoad_InvalidYAML(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestLoad_FallsBackToPredecessorConfig(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	predecessorDir := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.MkdirAll(predecessorDir, 0o700))
+	predecessorFile := filepath.Join(predecessorDir, "config.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte(""+
+		"app_slug: my-app-slug\n"+
+		"default_workspace_slug: my-workspace\n"+
+		"theme: dark\n"+
+		"output: json\n"+
+		"api_base_url: https://api.example.test\n"), 0o600))
+
+	fallbackAnnounceOnce = sync.Once{}
+	var announced strings.Builder
+	origWriter := fallbackWriter
+	fallbackWriter = &announced
+	t.Cleanup(func() { fallbackWriter = origWriter })
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "my-app-slug", got.AppID, "app_slug must alias to app_id")
+	assert.Equal(t, "my-workspace", got.DefaultWorkspaceID, "default_workspace_slug must alias to default_workspace_id")
+	assert.Equal(t, "dark", got.Theme)
+	assert.Equal(t, "json", got.Output)
+	assert.Equal(t, "https://api.example.test", got.APIBaseURL)
+
+	_, err = os.ReadFile(predecessorFile)
+	require.NoError(t, err, "the predecessor file must survive Load — it's read-only")
+	_, statErr := os.Stat(filepath.Join(dir, "bitrise", "cli", "config.yml"))
+	assert.True(t, os.IsNotExist(statErr), "Load must not write the new config file as a side effect")
+
+	assert.Contains(t, announced.String(), predecessorFile, "the fallback should be announced once")
+}
+
+func TestLoad_PrefersNewConfigWhenPresent(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "config.yaml"), []byte("theme: dark\n"), 0o600))
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise", "cli"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "cli", "config.yml"), []byte("theme: light\n"), 0o600))
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "light", got.Theme, "the new file must win once it exists, regardless of the predecessor file")
+}
+
+func TestActivePath_PredecessorWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	predecessorFile := filepath.Join(dir, "bitrise", "config.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("theme: dark\n"), 0o600))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	assert.Equal(t, predecessorFile, got)
+}
+
+func TestActivePath_NewPathOnceWritten(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "config.yaml"), []byte("theme: dark\n"), 0o600))
+	require.NoError(t, Save(Config{Theme: "light"}))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got, "once the new file has been written, ActivePath must name it even though the predecessor file still exists")
+}
+
+func TestActivePath_NewPathWhenNeitherExists(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got)
+}
+
 func TestLoadDir_FindsAncestorFile(t *testing.T) {
 	root := t.TempDir()
 	deep := filepath.Join(root, "a", "b", "c")
