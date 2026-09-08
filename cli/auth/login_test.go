@@ -194,6 +194,32 @@ func TestDoOAuthLogin_FailsFastOverSSH(t *testing.T) {
 	assert.False(t, browserCalled, "should fail before ever trying to open a browser")
 }
 
+// TestAuthLogin_SSHSessionDefaultsToTokenPrompt guards the regression: an
+// interactive terminal with no mode flag over SSH used to still pick browser
+// OAuth (which then hard-errors inside doOAuthLogin) instead of falling
+// through to the token prompt like a bare `auth login` used to before OAuth
+// existed.
+func TestAuthLogin_SSHSessionDefaultsToTokenPrompt(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("SSH_CONNECTION", "10.0.0.1 1234 10.0.0.2 22")
+
+	orig := cmdutil.IsTerminal
+	cmdutil.IsTerminal = func(io.Reader) bool { return true }
+	t.Cleanup(func() { cmdutil.IsTerminal = orig })
+
+	cmd := NewLoginCommand()
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetIn(strings.NewReader("bitpat_sshuser\n"))
+	cmd.SetArgs(nil)
+
+	require.NoError(t, cmd.Execute())
+
+	saved, err := auth.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_sshuser", saved.Token)
+}
+
 // The tests below exercise NewLoginCommand()'s actual cobra dispatch (flag
 // parsing, mutual exclusivity, and the interactive-vs-piped default) end to
 // end, rather than calling the run*Login functions directly.
