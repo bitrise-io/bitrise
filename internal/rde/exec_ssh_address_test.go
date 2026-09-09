@@ -60,6 +60,17 @@ func TestParseSSHAddress(t *testing.T) {
 		{name: "flags after -- are not ssh options", addr: "ssh u@h -- -p 80", wantUser: "u", wantHost: "h", wantPort: 22},
 		{name: "-p after the destination missing its argument", addr: "ssh u@h -p", wantError: true},
 
+		// Scanning past the destination means the literal "ssh" is only a
+		// no-op token before one is found; after it, it starts the remote
+		// command, so a -p belonging to that command must not set the port.
+		{name: "remote command named ssh does not reopen option scanning", addr: "ssh u@h ssh -p 9999", wantUser: "u", wantHost: "h", wantPort: 22},
+
+		// Post-destination equivalents of the pre-destination error cases, now
+		// that options are accepted on both sides.
+		{name: "conflicting ports with -p after the destination", addr: "ssh u@h:2223 -p 2222", wantError: true},
+		{name: "out of range port after the destination", addr: "ssh u@h -p 99999", wantError: true},
+		{name: "clustered flags after the destination", addr: "ssh u@h -tp 2222", wantUser: "u", wantHost: "h", wantPort: 2222},
+
 		// Clustered short flags: the first letter taking an argument consumes
 		// the remainder of the token, or the next one.
 		{name: "clustered flags with separate port", addr: "ssh -tp 2222 u@h", wantUser: "u", wantHost: "h", wantPort: 2222},
