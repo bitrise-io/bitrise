@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestPath_HonorsXDG(t *testing.T) {
@@ -204,8 +205,10 @@ func TestSaveYAML_ConcurrentWritesDontCorrupt(t *testing.T) {
 		require.NoError(t, err, "writer %d", i)
 	}
 
-	got, err := LoadYAML[payload](path)
+	data, err := os.ReadFile(path)
 	require.NoError(t, err)
+	var got payload
+	require.NoError(t, yaml.Unmarshal(data, &got))
 	assert.Equal(t, strings.Repeat("x", 100), got.Value)
 }
 

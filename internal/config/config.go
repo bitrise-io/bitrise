@@ -109,73 +109,21 @@ func predecessorConfigPath() (string, error) {
 // predecessor CLI's pre-rename key spellings (app_slug,
 // default_workspace_slug) as fallbacks, so a fallen-back-to file doesn't
 // silently drop those values either.
+//
+// Config is embedded rather than restated field by field: Load reads through
+// this type and cli/config/set.go is read-modify-write, so a field added to
+// Config but forgotten here would be silently dropped from the file on the
+// next `bitrise config set`.
 type predecessorConfig struct {
-	SetupVersion           string               `yaml:"setup_version"`
-	LastCLIUpdateCheck     time.Time            `yaml:"last_cli_update_check"`
-	LastPluginUpdateChecks map[string]time.Time `yaml:"last_plugin_update_checks"`
-	Output                 string               `yaml:"output"`
-	AppID                  string               `yaml:"app_id"`
-	AppSlugLegacy          string               `yaml:"app_slug"`
-	DefaultWorkspaceID     string               `yaml:"default_workspace_id"`
-	DefaultWorkspaceSlug   string               `yaml:"default_workspace_slug"`
-	APIBaseURL             string               `yaml:"api_base_url"`
-	RDEAPIBaseURL          string               `yaml:"rde_api_base_url"`
-	WebBaseURL             string               `yaml:"web_base_url"`
-	Theme                  string               `yaml:"theme"`
+	Config               `yaml:",inline"`
+	AppSlugLegacy        string `yaml:"app_slug"`
+	DefaultWorkspaceSlug string `yaml:"default_workspace_slug"`
 }
 
-func (p predecessorConfig) toConfig() Config {
-	return Config{
-		SetupVersion:           p.SetupVersion,
-		LastCLIUpdateCheck:     p.LastCLIUpdateCheck,
-		LastPluginUpdateChecks: p.LastPluginUpdateChecks,
-		Output:                 p.Output,
-		AppID:                  FirstNonEmptyString(p.AppID, p.AppSlugLegacy),
-		DefaultWorkspaceID:     FirstNonEmptyString(p.DefaultWorkspaceID, p.DefaultWorkspaceSlug),
-		APIBaseURL:             p.APIBaseURL,
-		RDEAPIBaseURL:          p.RDEAPIBaseURL,
-		WebBaseURL:             p.WebBaseURL,
-		Theme:                  p.Theme,
-	}
-}
-
-var fallbackAnnounceOnce sync.Once
-
-// fallbackWriter is a var, not a bare os.Stderr use, so tests can capture
-// the one-time announcement.
-var fallbackWriter io.Writer = os.Stderr
-
-// announceFallback prints, once per process, that the predecessor CLI's
-// config file is being read as a fallback. internal/auth keeps its own
-// separate instance of this (own sync.Once) for its own file — sharing one
-// Once across both would mean whichever file falls back first silently
-// suppresses the announcement for the other.
-func announceFallback(what, path string) {
-	fallbackAnnounceOnce.Do(func() {
-		fmt.Fprintf(fallbackWriter, "Using the previous bitrise-cli's %s at %s (read-only; save with this CLI to migrate it)\n", what, path)
-	})
-}
-
-// LoadYAML reads and unmarshals the YAML file at path into T. A missing
-// file is not an error — it returns the zero T, so callers can treat "not
-// yet configured" the same as "empty".
-func LoadYAML[T any](path string) (T, error) {
-	var v T
-	data, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return v, nil
-	}
-	if err != nil {
-		return v, fmt.Errorf("read %s: %w", path, err)
-	}
-	if err := yaml.Unmarshal(data, &v); err != nil {
-		return v, fmt.Errorf("parse %s: %w", path, err)
-	}
-	return v, nil
-}
-
-// LoadYAMLWithFallback behaves like LoadYAML, but when path is absent it
-// reads fallbackPath instead — never writing to it. ok reports whether
+// LoadYAMLWithFallback reads and unmarshals the YAML file at path into T,
+// falling back to fallbackPath when path is absent and never writing to it.
+// Neither file existing is not an error — it returns the zero T, so callers
+// can treat "not yet configured" the same as "empty". ok reports whether
 // fallbackPath supplied the value, so a caller can announce the fallback.
 func LoadYAMLWithFallback[T any](path, fallbackPath string) (v T, ok bool, err error) {
 	data, err := os.ReadFile(path)
@@ -240,6 +188,30 @@ func Load() (Config, error) {
 		announceFallback("config file", pp)
 	}
 	return pc.toConfig(), nil
+}
+
+func (p predecessorConfig) toConfig() Config {
+	c := p.Config
+	c.AppID = FirstNonEmptyString(c.AppID, p.AppSlugLegacy)
+	c.DefaultWorkspaceID = FirstNonEmptyString(c.DefaultWorkspaceID, p.DefaultWorkspaceSlug)
+	return c
+}
+
+var fallbackAnnounceOnce sync.Once
+
+// fallbackWriter is a var, not a bare os.Stderr use, so tests can capture
+// the one-time announcement.
+var fallbackWriter io.Writer = os.Stderr
+
+// announceFallback prints, once per process, that the predecessor CLI's
+// config file is being read as a fallback. internal/auth keeps its own
+// separate instance of this (own sync.Once) for its own file — sharing one
+// Once across both would mean whichever file falls back first silently
+// suppresses the announcement for the other.
+func announceFallback(what, path string) {
+	fallbackAnnounceOnce.Do(func() {
+		fmt.Fprintf(fallbackWriter, "Using the previous bitrise-cli's %s at %s (read-only; save with this CLI to migrate it)\n", what, path)
+	})
 }
 
 // ActivePath returns the config file Load() actually reads from right now:
@@ -323,7 +295,8 @@ const staleTmpAge = time.Minute
 // renames it into place, so two processes writing the same path concurrently
 // never race the rename with a shared temp name. It fsyncs before the rename
 // so a crash right after can't leave a file that looks written but lost its
-// data on an unclean shutdown, and it sweeps *.tmp siblings older than
+// data on an unclean shutdown, fsyncs the directory afterwards so the rename
+// itself survives the same crash, and it sweeps *.tmp siblings older than
 // staleTmpAge, left behind by a previous call that crashed between create
 // and rename — otherwise those leak forever, and for auth.yaml/config.yml
 // that means a stranded credential-bearing file.
@@ -360,6 +333,14 @@ func writeAtomic(path string, data []byte) error {
 	}
 	if err := os.Rename(tmp, path); err != nil {
 		return fmt.Errorf("install %s: %w", path, err)
+	}
+	// Syncing the file only guarantees its contents; the rename is a
+	// directory operation and needs the directory synced to survive a crash.
+	// A directory that can't be opened or synced (some filesystems refuse) is
+	// not worth failing a completed write over.
+	if d, err := os.Open(dir); err == nil {
+		_ = d.Sync()
+		_ = d.Close()
 	}
 	return nil
 }
