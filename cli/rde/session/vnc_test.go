@@ -192,7 +192,8 @@ func TestOpenVNCCmd_HandsURLToOpener(t *testing.T) {
 }
 
 func TestOpenVNCCmd_JSONOmitsPassword(t *testing.T) {
-	// JSON mode is the same: confirmation envelope only, no password.
+	// JSON mode returns a confirmation envelope with no password, but
+	// (unlike raw mode) never launches the VNC viewer, so Opened is false.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = io.WriteString(w, `{"session":{
 			"id":"s-1","name":"dev","status":"SESSION_STATUS_RUNNING",
@@ -216,7 +217,7 @@ func TestOpenVNCCmd_JSONOmitsPassword(t *testing.T) {
 	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
 		t.Fatalf("unmarshal JSON output: %v\n%s", err, stdout)
 	}
-	if !got.Opened || got.Address != "h:5900" || got.Username != "u" {
+	if got.Opened || got.Address != "h:5900" || got.Username != "u" {
 		t.Errorf("unexpected JSON: %+v", got)
 	}
 }

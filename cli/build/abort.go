@@ -63,7 +63,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&reason, "reason", "", "reason for aborting, recorded in the build log")
+	cmd.Flags().StringVar(&reason, "reason", "", "reason for aborting, recorded on the build and available via the UI/API")
 	cmd.Flags().BoolVar(&abortWithSuccess, "abort-with-success", false, "mark the aborted build as successful")
 	cmd.Flags().BoolVar(&skipGitStatusReport, "skip-git-status-report", false, "don't report the abort to the git provider's status API")
 	cmd.Flags().BoolVar(&skipNotifications, "skip-notifications", false, "don't send abort notifications")

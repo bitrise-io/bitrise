@@ -635,6 +635,45 @@ func TestRestoreCmd_WaitNonRunningExitsNonZero(t *testing.T) {
 	}
 }
 
+func TestRestoreCmd_WaitErrorStillRendersSession(t *testing.T) {
+	var getCount int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workspaces/ws-1/sessions/"+uuidSession:
+			getCount++
+			if getCount == 1 {
+				// Pre-flight disk-status check before the restore call.
+				_, _ = io.WriteString(w, `{"session":{"id":"`+uuidSession+`","name":"dev","status":"SESSION_STATUS_TERMINATED","persistentDiskStatus":"PERSISTENT_DISK_STATUS_AVAILABLE"}}`)
+				return
+			}
+			// A --wait-timeout expiry is the real-world trigger; a failing
+			// poll reaches the same path without depending on timing.
+			w.WriteHeader(http.StatusInternalServerError)
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workspaces/ws-1/sessions/"+uuidSession+"/restore":
+			_, _ = io.WriteString(w, `{"session":{"id":"`+uuidSession+`","name":"dev","status":"SESSION_STATUS_STARTING"}}`)
+		default:
+			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	stdout, _, err := cmdtest.Run(t, newRestoreCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{uuidSession, "--wait"},
+		Format:             output.FormatJSON,
+	})
+	if err == nil || !strings.Contains(err.Error(), "waiting for session") {
+		t.Errorf("error = %v, want a wait error", err)
+	}
+	// The session was restored and is billing: its ID must survive the failed
+	// wait, including in a machine-readable format where the stderr
+	// breadcrumb carrying it is suppressed.
+	if !strings.Contains(stdout, uuidSession) {
+		t.Errorf("stdout should carry the restored session despite the wait error:\n%s", stdout)
+	}
+}
+
 func TestDeleteCmd_HappyPath(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete || r.URL.Path != "/v1/workspaces/ws-1/sessions/"+uuidSession {

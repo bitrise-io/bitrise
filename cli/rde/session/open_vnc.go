@@ -12,7 +12,10 @@ import (
 
 // openVNCResult is the --format json/yml shape of `session open-vnc`. The
 // password is intentionally omitted — `open-vnc` hands the URL to the OS
-// handler, so there's no reason to also print it.
+// handler, so there's no reason to also print it. Opened is always false in
+// the json/yml output: the OS URL handler is only invoked for the raw
+// (default) format, to avoid launching a VNC viewer as a side effect of
+// scripted/automated use.
 type openVNCResult struct {
 	Opened   bool   `json:"opened" yaml:"opened"`
 	Address  string `json:"address" yaml:"address"`
@@ -70,15 +73,16 @@ viewer manually.`,
 			if err != nil {
 				return err
 			}
-			if err := urlOpener(cmd.Context(), creds.URL); err != nil {
-				return fmt.Errorf("open VNC URL: %w", err)
-			}
-			res := openVNCResult{Opened: true, Address: creds.Address, Username: creds.Username}
+			res := openVNCResult{Address: creds.Address, Username: creds.Username}
 			if output.Format != output.FormatRaw {
 				return output.Render(cmd.OutOrStdout(), output.Format, res, nil)
 			}
+			if err := urlOpener(cmd.Context(), creds.URL); err != nil {
+				return fmt.Errorf("open VNC URL: %w", err)
+			}
+			res.Opened = true
 			if !cmdutil.IsQuiet(cmd) {
-				_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened VNC viewer for %s\n", creds.Address)
+				_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened VNC viewer for %s\n", res.Address)
 				return err
 			}
 			return nil

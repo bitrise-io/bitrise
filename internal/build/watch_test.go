@@ -17,9 +17,12 @@ import (
 )
 
 func TestService_Watch_DeltaStreaming(t *testing.T) {
-	// Three log polls: chunk1 (ts1), chunk2 (ts2), chunk3 (empty next ts).
-	// Build status returns in-progress until the log stream ends naturally,
-	// then the final-flush call and a View call complete the sequence.
+	// Four log polls: chunk1 (ts1), chunk2 (ts2), chunk3 (empty next ts, so
+	// the cursor for the next poll carries over as ts2 instead of resetting),
+	// then one more in-loop poll (still using ts2) that hits the "final"
+	// default case. Build status flips to finished on the build call
+	// alongside that last poll, so the loop exits there — the dedicated
+	// post-loop final-flush call and a View call complete the sequence.
 	var logCalls, buildCalls atomic.Int32
 	var logTimestamps []string
 
@@ -34,7 +37,10 @@ func TestService_Watch_DeltaStreaming(t *testing.T) {
 			case 2:
 				_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"chunk2\n","position":1}],"next_after_timestamp":"ts2"}`))
 			case 3:
-				// Empty next_after_timestamp: loop exits after this poll.
+				// Empty next_after_timestamp: the cursor for the next poll
+				// carries over as ts2 instead of resetting to "" — the loop
+				// does not exit here, it polls once more before exiting on
+				// build status.
 				_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"chunk3\n","position":2}]}`))
 			default: // final flush
 				_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"final\n","position":3}]}`))
@@ -61,7 +67,11 @@ func TestService_Watch_DeltaStreaming(t *testing.T) {
 		assert.Contains(t, got, want)
 	}
 
-	// Verify after_timestamp progression for log calls: "", ts1, ts2, ts2 (final flush).
+	// Verify after_timestamp progression for log calls: "", ts1, ts2, then ts2
+	// again once the manifest's next_after_timestamp comes back empty — the
+	// poll still happens every iteration (not skipped), but the cursor
+	// carries over instead of resetting to "" (which would force a full log
+	// refetch).
 	wantTimestamps := []string{"", "ts1", "ts2", "ts2"}
 	require.GreaterOrEqual(t, len(logTimestamps), len(wantTimestamps))
 	for i, want := range wantTimestamps {

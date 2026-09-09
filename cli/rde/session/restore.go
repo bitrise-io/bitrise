@@ -81,6 +81,14 @@ and then immediately use the session without hand-rolling a poll loop.`,
 				}
 				ready, waitErr := svc.WaitForReady(waitCtx, workspaceID, restored.ID, 0, nil)
 				if waitErr != nil {
+					// The session exists and is billing even though the wait
+					// failed; render it so its ID isn't lost — the only other
+					// place it appears is the "Waiting for session …"
+					// breadcrumb, suppressed under --quiet and any non-raw
+					// format.
+					if renderErr := output.Render(cmd.OutOrStdout(), output.Format, restored, renderSessionDetail); renderErr != nil {
+						return renderErr
+					}
 					return fmt.Errorf("waiting for session: %w", waitErr)
 				}
 				restored = ready
