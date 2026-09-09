@@ -10,26 +10,34 @@ import (
 // TestActivatorOptions covers the env-var reads that used to live in stepman:
 // both feature flags default to on and only "false"/"0" opts out.
 func TestActivatorOptions(t *testing.T) {
+	// The two flags are set independently: with both keys always holding the
+	// same value, reading the wrong one for either option would still satisfy
+	// every assertion.
 	tests := []struct {
-		name                string
-		envValue            string // empty means the env var is unset
-		wantAPI, wantBinary bool
+		name                  string
+		apiValue, binaryValue string // empty means the env var is unset
+		wantAPI, wantBinary   bool
 	}{
 		{name: "Unset enables both", wantAPI: true, wantBinary: true},
-		{name: "true enables both", envValue: "true", wantAPI: true, wantBinary: true},
-		{name: "1 enables both", envValue: "1", wantAPI: true, wantBinary: true},
-		{name: "Unrecognized value enables both", envValue: "maybe", wantAPI: true, wantBinary: true},
-		{name: "false opts out of both", envValue: "false"},
-		{name: "0 opts out of both", envValue: "0"},
+		{name: "true enables both", apiValue: "true", binaryValue: "true", wantAPI: true, wantBinary: true},
+		{name: "1 enables both", apiValue: "1", binaryValue: "1", wantAPI: true, wantBinary: true},
+		{name: "Unrecognized value enables both", apiValue: "maybe", binaryValue: "maybe", wantAPI: true, wantBinary: true},
+		{name: "false opts out of both", apiValue: "false", binaryValue: "false"},
+		{name: "0 opts out of both", apiValue: "0", binaryValue: "0"},
+		{name: "API off alone leaves prebuilt executables on", apiValue: "false", wantBinary: true},
+		{name: "Prebuilt executables off alone leaves the API on", binaryValue: "false", wantAPI: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, key := range []string{"BITRISE_STEPLIB_USE_API", "BITRISE_STEPLIB_USE_BINARY"} {
+			for key, value := range map[string]string{
+				"BITRISE_STEPLIB_USE_API":    tt.apiValue,
+				"BITRISE_STEPLIB_USE_BINARY": tt.binaryValue,
+			} {
 				// t.Setenv registers the restore even when the value is then
 				// removed, so an unset case cannot leak into the rest of the suite.
-				t.Setenv(key, tt.envValue)
-				if tt.envValue == "" {
+				t.Setenv(key, value)
+				if value == "" {
 					require.NoError(t, os.Unsetenv(key))
 				}
 			}

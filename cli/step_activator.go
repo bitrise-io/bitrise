@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -64,6 +65,15 @@ func (a stepActivator) activateStep(
 	stepDir string, // $TMPDIR/bitrise/step_src
 	workDir string, // $TMPDIR/bitrise
 ) (activator.ActivatedStep, error) {
+	// A WorkflowRunner built as a struct literal rather than through
+	// NewWorkflowRunner leaves this zero, and the nil activator would otherwise
+	// surface as a nil dereference deep inside stepman. Lazily building one here
+	// would hide the mistake and hand back a per-step activator, which is the
+	// thing this field exists to avoid, so say so instead.
+	if a.activator == nil {
+		return activator.ActivatedStep{}, errors.New("step activator is not initialised: build the WorkflowRunner with NewWorkflowRunner")
+	}
+
 	if stepIDData.SteplibSource == "path" {
 		log.Debugf("[BITRISE_CLI] - Local step found: (path:%s)", stepIDData.IDorURI)
 
