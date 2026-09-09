@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -16,11 +17,7 @@ import (
 
 func TestViewCmd_PositionalArg(t *testing.T) {
 	var gotPath string
-	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/apps" {
-			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
-			return
-		}
+	srv := newViewFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte(`{"data":{"slug":"my-app","title":"My App","provider":"github","repo_url":"https://github.com/x/y","owner":{"slug":"acme"}}}`))
 	})
@@ -38,11 +35,7 @@ func TestViewCmd_PositionalArg(t *testing.T) {
 
 func TestViewCmd_FlagFallback(t *testing.T) {
 	var gotPath string
-	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/apps" {
-			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
-			return
-		}
+	srv := newViewFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte(`{"data":{"slug":"my-app","title":"My App","provider":"github","owner":{}}}`))
 	})
@@ -64,11 +57,7 @@ func TestViewCmd_RequiresAppSlug(t *testing.T) {
 }
 
 func TestViewCmd_AppNotFound(t *testing.T) {
-	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/apps" {
-			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
-			return
-		}
+	srv := newViewFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})
@@ -123,4 +112,19 @@ func newTestViewCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buf
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd, &out
+}
+
+// newViewFakeServer answers the app name→slug resolver's GET /apps lookup
+// with a passthrough (0 matches) before deferring to handler, so a view test
+// only ever sees the request it is about. The package's newFakeServer can't
+// do this itself: /apps is the endpoint under test in list_test.go.
+func newViewFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+	t.Helper()
+	return newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
+		handler(w, r)
+	})
 }
