@@ -488,6 +488,144 @@ func Test_flagShorthands_doNotCollideAcrossTree(t *testing.T) {
 	})
 }
 
+// Test_rejectSingleDashLongFlags_realCommandTree exercises the guard against
+// the actual registered commands, not a synthetic tree, so it catches a
+// flag/shorthand that changes shape only in cli/root.go or cli/local/run.go.
+func Test_rejectSingleDashLongFlags_realCommandTree(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantFound    bool
+		wantFlagName string
+	}{
+		{
+			name:         "single-dash --config on run silently misparses without the guard",
+			args:         []string{"run", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "single-dash --inventory on run silently misparses without the guard",
+			args:         []string{"run", "-inventory", "secrets.yml"},
+			wantFound:    true,
+			wantFlagName: "inventory",
+		},
+		{
+			name:         "single-dash --workflow already errors via pflag, guard gives a clearer message",
+			args:         []string{"run", "-workflow", "primary"},
+			wantFound:    true,
+			wantFlagName: "workflow",
+		},
+		{name: "double-dash --config is untouched", args: []string{"run", "--config", "bitrise.yml"}},
+		{name: "-c shorthand with a space is untouched", args: []string{"run", "-c", "bitrise.yml"}},
+		{name: "-i shorthand with a space is untouched", args: []string{"run", "-i", "secrets.yml"}},
+		{name: "-qo shorthand cluster is untouched", args: []string{"stack", "list", "-qo", "json"}},
+
+		// pflag takes the next argument verbatim as a flag's value, dash and
+		// all, so a value that happens to spell a sibling flag's name is a
+		// legitimate invocation. build trigger has both --commit-message and
+		// --tag, which makes this reachable rather than theoretical.
+		{name: "dash-leading value of --commit-message is not a flag", args: []string{"build", "trigger", "--commit-message", "-tag"}},
+		{name: "dash-leading value of the -c shorthand is not a flag", args: []string{"run", "-c", "-config"}},
+		{name: "negative number as a flag value is untouched", args: []string{"build", "trigger", "--priority", "-1"}},
+		{name: "value after a shorthand cluster is not a flag", args: []string{"stack", "list", "-qo", "-format"}},
+
+		// ...but a genuine single-dash long flag still has to be caught when
+		// it follows a flag that took its own value.
+		{
+			name:         "single-dash long flag after a satisfied flag is still caught",
+			args:         []string{"build", "trigger", "--commit-message", "msg", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// A value-taking shorthand that opens a cluster swallows the rest of
+		// the token, so the following argument is a fresh one, not its value.
+		{
+			name:         "cluster led by a value shorthand does not consume the next token",
+			args:         []string{"run", "-oq", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+
+		// pflag only treats "--" as a terminator when it reads it as a fresh
+		// token; as a flag's value it is literal, so scanning continues.
+		{
+			name:         "terminator as a flag value does not end the scan",
+			args:         []string{"build", "trigger", "--commit-message", "--", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// -ci parses as --config=i under pflag, which is exactly the silent
+		// misparse this guard exists to catch: nobody means a config file
+		// named "i", they mean --ci.
+		{
+			name:         "two-character global spelled with one dash is caught",
+			args:         []string{"run", "-ci"},
+			wantFound:    true,
+			wantFlagName: "ci",
+		},
+
+		// pflag walks a cluster character by character and a bool consumes
+		// nothing, so a long flag typed with one dash behind an incidental
+		// bool still reaches the value-taking shorthand and misparses
+		// silently. -h is registered on every command, so this is reachable
+		// everywhere.
+		{
+			name:         "long flag behind a bool shorthand is caught",
+			args:         []string{"run", "-qconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind the help shorthand is caught",
+			args:         []string{"run", "-hconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind two bool shorthands is caught",
+			args:         []string{"run", "-qqconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind a bool, with an attached value, is caught",
+			args:         []string{"run", "-qconfig=x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := newRootCommand()
+			target, _, err := root.Find(tt.args)
+			require.NoError(t, err)
+
+			_, flagName, found := cmdutil.DetectSingleDashLongFlag(target, tt.args)
+			assert.Equal(t, tt.wantFound, found)
+			if tt.wantFound {
+				assert.Equal(t, tt.wantFlagName, flagName)
+			}
+		})
+	}
+}
+
+// Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit relies on the fact that a
+// false positive here would call cmdutil.Failf and kill the test process —
+// completing at all is the assertion for the non-matching cases.
+func Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit(t *testing.T) {
+	for _, args := range [][]string{
+		{"run", "--config", "bitrise.yml"},
+		{"run", "-c", "bitrise.yml"},
+		{"run", "-i", "secrets.yml"},
+		{"stack", "list", "-qo", "json"},
+	} {
+		rejectSingleDashLongFlags(newRootCommand(), args)
+	}
+}
+
 func visitCommands(cmd *cobra.Command, fn func(*cobra.Command)) {
 	fn(cmd)
 	for _, sub := range cmd.Commands() {

@@ -29,6 +29,13 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 const locallyInvalidConfig = `workflows: {}
 `
 
+// newerFormatVersionConfig requests a format version above what this CLI
+// supports (models.FormatVersion), to exercise the online-path format-version
+// warning without touching schema validity.
+const newerFormatVersionConfig = `format_version: "99"
+default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
+`
+
 func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 	var onlineCalled bool
 	srv := newValidateFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -122,6 +129,25 @@ func TestValidateConfig_OnlineSucceeds_SkipsLocalEntirely(t *testing.T) {
 	assert.Empty(t, warning, "no top-level warning expected when the online call itself succeeds")
 	assert.Equal(t, sourceOnline, item.Source)
 	assert.Equal(t, "app_slug=app-slug", gotQuery)
+}
+
+func TestValidateConfig_OnlineSucceeds_NewerFormatVersion_AddsWarning(t *testing.T) {
+	cmd := newTestValidateCmd(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+
+	// The online endpoint reports it schema-valid regardless of format
+	// version; IsValid must stay true and the mismatch must only add a
+	// warning, never flip to an error, since the online result stays
+	// authoritative for schema validity.
+	item, warning, err := validateConfig(cmd, "", encode(newerFormatVersionConfig), false, "")
+	require.NoError(t, err)
+	assert.True(t, item.IsValid)
+	assert.Empty(t, item.Error)
+	require.Len(t, item.Warnings, 1)
+	assert.Contains(t, item.Warnings[0], "higher format version")
+	assert.Empty(t, warning, "the format-version mismatch is a Warnings entry, not a top-level warning")
+	assert.Equal(t, sourceOnline, item.Source)
 }
 
 func TestValidateConfig_Online422_UsesOnlyOnlineResult(t *testing.T) {

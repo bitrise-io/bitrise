@@ -126,21 +126,33 @@ func CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath
 		}
 	}
 
-	supportedVersion, err := ver.NewVersion(models.FormatVersion)
-	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise CLI supported format version (%s): %s", models.FormatVersion, err)
-	}
-
-	configVersion, err := ver.NewVersion(bitriseConfig.FormatVersion)
-	if err != nil {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("failed to parse bitrise.yml format version (%s): %s", bitriseConfig.FormatVersion, err)
-	}
-
-	if configVersion.GreaterThan(supportedVersion) {
-		return models.BitriseDataModel{}, warnings, fmt.Errorf("the bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", bitriseConfig.FormatVersion, models.FormatVersion)
+	if err := CheckFormatVersionSupported(bitriseConfig.FormatVersion); err != nil {
+		return models.BitriseDataModel{}, warnings, err
 	}
 
 	return *bitriseConfig, warnings, nil
+}
+
+// CheckFormatVersionSupported errors when configFormatVersion is newer than
+// the format version this CLI supports (models.FormatVersion). A bitrise.yml
+// requesting a newer format may use syntax this CLI version doesn't
+// understand yet, so this is checked separately from schema validity.
+func CheckFormatVersionSupported(configFormatVersion string) error {
+	supportedVersion, err := ver.NewVersion(models.FormatVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse bitrise CLI supported format version (%s): %s", models.FormatVersion, err)
+	}
+
+	configVersion, err := ver.NewVersion(configFormatVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse bitrise.yml format version (%s): %s", configFormatVersion, err)
+	}
+
+	if configVersion.GreaterThan(supportedVersion) {
+		return fmt.Errorf("the bitrise.yml has a higher format version (%s) than the bitrise CLI supported format version (%s), please upgrade your bitrise CLI to use this bitrise.yml", configFormatVersion, models.FormatVersion)
+	}
+
+	return nil
 }
 
 // GetInventoryFromBase64Data ...
