@@ -113,8 +113,11 @@ func ActivePath() (string, error) {
 // Load reads the auth file. A missing file returns the zero Auth so
 // first-time users don't see failures. When it's absent, Load falls back to
 // reading the predecessor CLI's auth.yaml (see predecessorPath), never
-// writing to it — the Auth shape is identical on both sides, so no key
-// aliasing is needed here (contrast internal/config.Load).
+// writing to it. No key aliasing is needed here, unlike internal/config.Load:
+// the shared keys are spelled the same on both sides. The predecessor also
+// writes refresh_token_expiry, which this Auth has no field for and so drops
+// on read — harmless, since the refresh ladder in internal/oauth tries the
+// refresh token and lets the server reject an expired one.
 func Load() (Auth, error) {
 	p, err := Path()
 	if err != nil {
