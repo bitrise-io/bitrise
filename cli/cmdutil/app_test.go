@@ -1,12 +1,15 @@
 package cmdutil
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
 
@@ -149,4 +152,95 @@ func TestResolveAppSlug_LegacyEnvTakesPrecedenceOverConfig(t *testing.T) {
 	slug, err := ResolveAppSlug(cmd)
 	require.NoError(t, err)
 	assert.Equal(t, "ci-injected-app-slug", slug)
+}
+
+func TestResolveAndLookupAppSlug_ResolvesNameToSlug(t *testing.T) {
+	client, calls := appsClient(t, `{"data":[{"slug":"app-123","title":"My iOS App"}],"paging":{}}`)
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(t.Context())
+	AddAppFlag(cmd.Flags(), "app slug")
+	require.NoError(t, cmd.Flags().Set(FlagApp, "My iOS App"))
+
+	slug, err := ResolveAndLookupAppSlug(cmd, client)
+	require.NoError(t, err)
+	assert.Equal(t, "app-123", slug)
+	assert.Equal(t, []string{"My iOS App"}, *calls)
+}
+
+// TestResolveAndLookupAppSlug_PassesSlugThrough covers the contract that keeps
+// every existing caller working: a value the API reports no title match for is
+// handed on as a literal slug rather than erroring here.
+func TestResolveAndLookupAppSlug_PassesSlugThrough(t *testing.T) {
+	client, _ := appsClient(t, `{"data":[],"paging":{}}`)
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(t.Context())
+	AddAppFlag(cmd.Flags(), "app slug")
+	require.NoError(t, cmd.Flags().Set(FlagApp, "3f8a91c02d4e"))
+
+	slug, err := ResolveAndLookupAppSlug(cmd, client)
+	require.NoError(t, err)
+	assert.Equal(t, "3f8a91c02d4e", slug)
+}
+
+// TestResolveAndLookupAppSlug_PrecedenceIsUnchanged pins that the resolver runs
+// after --app / env / config precedence, on whatever that produced, rather than
+// replacing it.
+func TestResolveAndLookupAppSlug_PrecedenceIsUnchanged(t *testing.T) {
+	t.Setenv(EnvAppID, "My iOS App")
+	client, calls := appsClient(t, `{"data":[{"slug":"app-123","title":"My iOS App"}],"paging":{}}`)
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(t.Context())
+	AddAppFlag(cmd.Flags(), "app slug")
+
+	slug, err := ResolveAndLookupAppSlug(cmd, client)
+	require.NoError(t, err)
+	assert.Equal(t, "app-123", slug)
+	assert.Equal(t, []string{"My iOS App"}, *calls)
+}
+
+func TestResolveAndLookupAppSlug_AmbiguousNameErrors(t *testing.T) {
+	client, _ := appsClient(t, `{"data":[{"slug":"a1","title":"Dup"},{"slug":"a2","title":"Dup"}],"paging":{}}`)
+
+	cmd := &cobra.Command{}
+	cmd.SetContext(t.Context())
+	AddAppFlag(cmd.Flags(), "app slug")
+	require.NoError(t, cmd.Flags().Set(FlagApp, "Dup"))
+
+	_, err := ResolveAndLookupAppSlug(cmd, client)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "ambiguous")
+}
+
+// TestNewResolver_CachesWithinOneInvocation pins the reason NewResolver builds
+// a cache at all: the same name resolved twice through one resolver costs one
+// API call, not two.
+func TestNewResolver_CachesWithinOneInvocation(t *testing.T) {
+	client, calls := appsClient(t, `{"data":[{"slug":"app-123","title":"My iOS App"}],"paging":{}}`)
+
+	r := NewResolver(client)
+	for range 2 {
+		slug, err := r.AppSlug(t.Context(), "My iOS App")
+		require.NoError(t, err)
+		assert.Equal(t, "app-123", slug)
+	}
+	assert.Equal(t, []string{"My iOS App"}, *calls)
+}
+
+// appsClient returns a client whose GET /apps answers with body, plus the
+// title= values it was queried with, so tests can assert on call count.
+func appsClient(t *testing.T, body string) (*bitriseapi.Client, *[]string) {
+	t.Helper()
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.URL.Query().Get("title"))
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+
+	client, err := bitriseapi.New(srv.URL, "token")
+	require.NoError(t, err)
+	return client, &calls
 }
