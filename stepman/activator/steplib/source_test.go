@@ -19,7 +19,7 @@ import (
 
 func TestActivateStepSourceWithAPI_OfflineFails(t *testing.T) {
 	log := apiTestLogger{t}
-	client := steplibrary.New(log, "http://unused.invalid")
+	client := steplibrary.New(log, "http://unused.invalid", httpfetch.NewClient(log))
 
 	err := activateStepSourceWithAPI(client, "hello-step", "2.0.0",
 		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, true, httpfetch.NewClient(log))
@@ -30,7 +30,7 @@ func TestActivateStepSourceWithAPI_OfflineFails(t *testing.T) {
 
 func TestActivateStepSourceWithAPI_MissingSourceGitFails(t *testing.T) {
 	log := apiTestLogger{t}
-	client := steplibrary.New(log, "http://unused.invalid")
+	client := steplibrary.New(log, "http://unused.invalid", httpfetch.NewClient(log))
 
 	t.Run("nil source", func(t *testing.T) {
 		err := activateStepSourceWithAPI(client, "hello-step", "2.0.0", nil, t.TempDir(), log, false, httpfetch.NewClient(log))
@@ -58,7 +58,7 @@ func TestActivateStepSourceWithAPI_NoDownloadLocationFails(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	log := apiTestLogger{t}
-	client := steplibrary.New(log, srv.URL)
+	client := steplibrary.New(log, srv.URL, httpfetch.NewWithClient(srv.Client()))
 
 	err := activateStepSourceWithAPI(client, "hello-step", "2.0.0",
 		&models.StepSourceModel{Git: "https://github.com/example/hello-step.git"}, t.TempDir(), log, false, httpfetch.NewClient(log))

@@ -153,14 +153,15 @@ func TestActivateSteplibRefStep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("BITRISE_STEPLIB_USE_API", "false")
-
 			activatedStepDir := t.TempDir()
 			workDir := t.TempDir()
 
+			//nolint:exhaustruct // the remaining options are irrelevant on the legacy path
+			a := New(logger, Options{DisableSteplibAPI: true})
+
 			// didStepLibUpdateInWorkflow=true keeps the StepLib update path off, so
 			// resolution is served from the local cache and DidStepLibUpdate is false.
-			got, err := ActivateSteplibRefStep(logger, tt.id, activatedStepDir, workDir, true, false)
+			got, err := a.ActivateSteplibRefStep(tt.id, activatedStepDir, workDir, true)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -216,13 +217,14 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("HOME", t.TempDir()) // fresh: the git cloned steplib is not set up
-			t.Setenv("BITRISE_STEPLIB_USE_API", "true")
-			t.Setenv("BITRISE_STEPLIB_USE_BINARY", "false")
 
 			activatedStepDir := t.TempDir()
 			workDir := t.TempDir()
 
-			got, err := ActivateSteplibRefStep(TestLogger[*testing.T]{t}, tt.id, activatedStepDir, workDir, false, false)
+			//nolint:exhaustruct // storage URLs and the API URL fall back to their defaults
+			a := New(TestLogger[*testing.T]{t}, Options{DisableSteplibAPI: false, DisablePrecompiled: true})
+
+			got, err := a.ActivateSteplibRefStep(tt.id, activatedStepDir, workDir, false)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -255,37 +257,46 @@ func TestActivateSteplibRefStep_APIEnabled(t *testing.T) {
 	}
 }
 
-func TestShouldUseSteplibAPI(t *testing.T) {
+func TestUseSteplibAPIFor(t *testing.T) {
 	const customSteplib = "https://github.com/acme/custom-steplib.git"
 
 	tests := []struct {
-		name     string
-		envValue string // empty means the env var is unset
-		steplib  string
-		want     bool
+		name          string
+		useSteplibAPI bool
+		steplib       string
+		want          bool
 	}{
-		{name: "Unset env enables the API for the Bitrise steplib", steplib: bitriseSteplibURL, want: true},
-		{name: "Explicit true keeps the API enabled", envValue: "true", steplib: bitriseSteplibURL, want: true},
-		{name: "Explicit 1 keeps the API enabled", envValue: "1", steplib: bitriseSteplibURL, want: true},
-		{name: "Unrecognized value keeps the API enabled", envValue: "maybe", steplib: bitriseSteplibURL, want: true},
-		{name: "false opts out", envValue: "false", steplib: bitriseSteplibURL, want: false},
-		{name: "0 opts out", envValue: "0", steplib: bitriseSteplibURL, want: false},
-		{name: "Custom steplib never uses the API", steplib: customSteplib, want: false},
-		{name: "Custom steplib is not enabled by an explicit true", envValue: "true", steplib: customSteplib, want: false},
+		{name: "Enabled for the Bitrise steplib", useSteplibAPI: true, steplib: bitriseSteplibURL, want: true},
+		{name: "Disabled for the Bitrise steplib", useSteplibAPI: false, steplib: bitriseSteplibURL, want: false},
+		{name: "Custom steplib never uses the API", useSteplibAPI: true, steplib: customSteplib, want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// t.Setenv registers the restore even when the value is then removed,
-			// so an unset case cannot leak into the rest of the suite.
-			t.Setenv(useSteplibAPIEnv, tt.envValue)
-			if tt.envValue == "" {
-				require.NoError(t, os.Unsetenv(useSteplibAPIEnv))
-			}
-
-			require.Equal(t, tt.want, shouldUseSteplibAPI(tt.steplib))
+			//nolint:exhaustruct // only the API flag decides this
+			a := New(TestLogger[*testing.T]{t}, Options{DisableSteplibAPI: !tt.useSteplibAPI})
+			require.Equal(t, tt.want, a.useSteplibAPIFor(tt.steplib))
 		})
 	}
+}
+
+// TestWithDefaults pins the values New fills in for a zero-value Options. The
+// storage URLs are deliberately absent: steplib owns that list and defaults it
+// itself, so a caller reaching steplib directly gets them too.
+func TestWithDefaults(t *testing.T) {
+	//nolint:exhaustruct // exercising exactly the unset fields
+	got := withDefaults(Options{})
+	require.Equal(t, bitriseSteplibAPIURL, got.SteplibAPIURL)
+	require.Nil(t, got.PrecompiledStorageURLs)
+}
+
+// TestZeroOptionsKeepProductionDefaults guards the opt-out shape of the flags:
+// a caller that sets neither must still get the API and prebuilt executables.
+func TestZeroOptionsKeepProductionDefaults(t *testing.T) {
+	//nolint:exhaustruct // the point is that the rest stays unset
+	a := New(TestLogger[*testing.T]{t}, Options{})
+	require.True(t, a.useSteplibAPIFor(bitriseSteplibURL))
+	require.False(t, a.opts.DisablePrecompiled)
 }
 
 type genericLogger interface {
@@ -368,7 +379,9 @@ func BenchmarkActivateSteplibRefStep(b *testing.B) {
 					b.Errorf("failed to create dir for step.yml: %s", err)
 				}
 
-				got, gotErr := ActivateSteplibRefStep(logger, tt.id, stepYMLCopyPth, tmpDir, tt.didStepLibUpdateInWorkflow, tt.isOfflineMode)
+				//nolint:exhaustruct // the benchmark drives the legacy git-clone path
+				a := New(logger, Options{DisableSteplibAPI: true, IsOfflineMode: tt.isOfflineMode})
+				got, gotErr := a.ActivateSteplibRefStep(tt.id, stepYMLCopyPth, tmpDir, tt.didStepLibUpdateInWorkflow)
 				if gotErr != nil {
 					if !tt.wantErr {
 						b.Errorf("ActivateSteplibRefStep() failed: %v", gotErr)

@@ -172,3 +172,14 @@ func (f *fakeExecutableFetcher) DownloadWithHash(_ context.Context, destPath, ur
 	}
 	return os.WriteFile(destPath, []byte("stub binary"), 0o644)
 }
+
+// sourceOnlyOpts configures activation to skip precompiled executables, so the
+// tests that assert source activation are not steered by a prebuilt binary.
+func sourceOnlyOpts() Options {
+	return Options{DisablePrecompiled: true, StorageURLs: nil, IsOfflineMode: false}
+}
+
+// precompiledOpts configures activation to prefer a prebuilt executable.
+func precompiledOpts() Options {
+	return Options{DisablePrecompiled: false, StorageURLs: DefaultPrecompiledStorageURLs, IsOfflineMode: false}
+}

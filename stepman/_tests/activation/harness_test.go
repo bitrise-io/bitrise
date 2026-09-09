@@ -80,20 +80,18 @@ func activate(t *testing.T, v variant, id stepid.CanonicalID, offline, didStepLi
 
 	// The V2 API path targets the production inventory; there is no longer an
 	// override to redirect it at a dev/test inventory.
-	if v.useAPI {
-		t.Setenv("BITRISE_STEPLIB_USE_API", "true")
-	} else {
-		t.Setenv("BITRISE_STEPLIB_USE_API", "false")
-	}
-	if v.precompiled {
-		t.Setenv("BITRISE_STEPLIB_USE_BINARY", "true")
-	} else {
-		t.Setenv("BITRISE_STEPLIB_USE_BINARY", "false")
+	//nolint:exhaustruct // the API URL and storage URLs fall back to their defaults
+	opts := activator.Options{
+		DisableSteplibAPI:  !v.useAPI,
+		DisablePrecompiled: !v.precompiled,
+		IsOfflineMode:      offline,
 	}
 
 	logger := &capturingLogger{}
 	start := time.Now()
-	activated, err := activator.ActivateSteplibRefStep(logger, id, t.TempDir(), t.TempDir(), didStepLibUpdate, offline)
+	// Built per activation here on purpose: each case is an independent
+	// measurement, so they must not share a warmed connection pool.
+	activated, err := activator.New(logger, opts).ActivateSteplibRefStep(id, t.TempDir(), t.TempDir(), didStepLibUpdate)
 	elapsed := time.Since(start)
 
 	// Asserted here so every case below covers it, including the failing ones:

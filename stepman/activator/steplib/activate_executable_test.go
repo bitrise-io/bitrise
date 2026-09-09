@@ -32,7 +32,7 @@ func TestBuildDownloadURLs(t *testing.T) {
 	}{
 		{
 			name:  "Default list: steplib.bitrise.io first, GCS second",
-			bases: precompiledStepsDefaultStorageURLs,
+			bases: DefaultPrecompiledStorageURLs,
 			executable: models.Executable{
 				StorageURI: "steps/step1.tar.gz",
 			},
@@ -120,21 +120,21 @@ func TestActivateStepExecutable(t *testing.T) {
 		destDir := t.TempDir()
 
 		path, err := activateStepExecutable(ctx, fake, "hello-step",
-			models.Executable{StorageURI: storageURI, Hash: hash}, destDir, logger)
+			models.Executable{StorageURI: storageURI, Hash: hash}, destDir, logger, DefaultPrecompiledStorageURLs)
 		require.NoError(t, err)
 
 		require.Equal(t, filepath.Join(destDir, "hello-step"), path)
 		require.FileExists(t, path)
-		require.Equal(t, precompiledStepsDefaultStorageURLs[0]+"/"+storageURI, fake.calledURL)
+		require.Equal(t, DefaultPrecompiledStorageURLs[0]+"/"+storageURI, fake.calledURL)
 		require.Equal(t, hash, fake.calledHash)
 	})
 
-	t.Run("BITRISE_STEPLIB_STORAGE_URLS override wins", func(t *testing.T) {
-		t.Setenv(precompiledStepsStorageURLsEnv, "https://custom.example.com")
+	t.Run("configured storage URLs win over the defaults", func(t *testing.T) {
 		fake := newFakeExecutableFetcher(t)
 
 		_, err := activateStepExecutable(ctx, fake, "hello-step",
-			models.Executable{StorageURI: storageURI, Hash: hash}, t.TempDir(), logger)
+			models.Executable{StorageURI: storageURI, Hash: hash}, t.TempDir(), logger,
+			[]string{"https://custom.example.com"})
 		require.NoError(t, err)
 
 		require.Equal(t, "https://custom.example.com/"+storageURI, fake.calledURL)
