@@ -25,8 +25,8 @@ Storage:
 Recognized keys: %s
 
 api_base_url, web_base_url, and rde_api_base_url resolve as: global file >
-built-in default. web_base_url and rde_api_base_url are additionally
-overridable via $%s and $%s, which win over the global file. They
+built-in default. All three are additionally overridable via $%s, $%s and
+$%s, which win over the global file. They
 deliberately ignore the per-directory .bitrise-cli.yml — each names a host
 that receives credentials, and a repo you merely clone and run 'bitrise'
 inside of must not be able to silently redirect them.
@@ -55,7 +55,8 @@ app_id/default_workspace_id above — neither is a credential or a URL. Note
 files must be edited by hand.
 
 To manage your access token, use 'bitrise auth login/logout/status'.`,
-			strings.Join(internalconfig.Keys, ", "), cmdutil.EnvWebBaseURL, cmdutil.EnvRDEAPIBaseURL,
+			strings.Join(internalconfig.Keys, ", "),
+			cmdutil.EnvAPIBaseURL, cmdutil.EnvWebBaseURL, cmdutil.EnvRDEAPIBaseURL,
 			cmdutil.EnvOutput, cmdutil.EnvTheme,
 		),
 		RunE: cmdutil.RequireKnownSubcommand,
