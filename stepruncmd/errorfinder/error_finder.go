@@ -42,10 +42,13 @@ func (e *ErrorFinder) Write(p []byte) (n int, err error) {
 	if e.writer != nil {
 		return e.writer.Write(p)
 	}
-	return n, nil
+	return len(p), nil
 }
 
 func (e *ErrorFinder) Close() error {
+	e.mux.Lock()
+	defer e.mux.Unlock()
+
 	if e.collecting && e.chunk != "" {
 		e.errorMessages = append(e.errorMessages, redRegexp.ReplaceAllString(e.chunk, ""))
 		e.chunk = ""
