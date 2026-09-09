@@ -520,6 +520,82 @@ func Test_rejectSingleDashLongFlags_realCommandTree(t *testing.T) {
 		{name: "-c shorthand with a space is untouched", args: []string{"run", "-c", "bitrise.yml"}},
 		{name: "-i shorthand with a space is untouched", args: []string{"run", "-i", "secrets.yml"}},
 		{name: "-qo shorthand cluster is untouched", args: []string{"stack", "list", "-qo", "json"}},
+
+		// pflag takes the next argument verbatim as a flag's value, dash and
+		// all, so a value that happens to spell a sibling flag's name is a
+		// legitimate invocation. build trigger has both --commit-message and
+		// --tag, which makes this reachable rather than theoretical.
+		{name: "dash-leading value of --commit-message is not a flag", args: []string{"build", "trigger", "--commit-message", "-tag"}},
+		{name: "dash-leading value of the -c shorthand is not a flag", args: []string{"run", "-c", "-config"}},
+		{name: "negative number as a flag value is untouched", args: []string{"build", "trigger", "--priority", "-1"}},
+		{name: "value after a shorthand cluster is not a flag", args: []string{"stack", "list", "-qo", "-format"}},
+
+		// ...but a genuine single-dash long flag still has to be caught when
+		// it follows a flag that took its own value.
+		{
+			name:         "single-dash long flag after a satisfied flag is still caught",
+			args:         []string{"build", "trigger", "--commit-message", "msg", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// A value-taking shorthand that opens a cluster swallows the rest of
+		// the token, so the following argument is a fresh one, not its value.
+		{
+			name:         "cluster led by a value shorthand does not consume the next token",
+			args:         []string{"run", "-oq", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+
+		// pflag only treats "--" as a terminator when it reads it as a fresh
+		// token; as a flag's value it is literal, so scanning continues.
+		{
+			name:         "terminator as a flag value does not end the scan",
+			args:         []string{"build", "trigger", "--commit-message", "--", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// -ci parses as --config=i under pflag, which is exactly the silent
+		// misparse this guard exists to catch: nobody means a config file
+		// named "i", they mean --ci.
+		{
+			name:         "two-character global spelled with one dash is caught",
+			args:         []string{"run", "-ci"},
+			wantFound:    true,
+			wantFlagName: "ci",
+		},
+
+		// pflag walks a cluster character by character and a bool consumes
+		// nothing, so a long flag typed with one dash behind an incidental
+		// bool still reaches the value-taking shorthand and misparses
+		// silently. -h is registered on every command, so this is reachable
+		// everywhere.
+		{
+			name:         "long flag behind a bool shorthand is caught",
+			args:         []string{"run", "-qconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind the help shorthand is caught",
+			args:         []string{"run", "-hconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind two bool shorthands is caught",
+			args:         []string{"run", "-qqconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind a bool, with an attached value, is caught",
+			args:         []string{"run", "-qconfig=x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

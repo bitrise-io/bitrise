@@ -78,31 +78,24 @@ func matchGlobalFlags(fs *pflag.FlagSet, args, globalFlagNames []string) ([]glob
 	// Shorthand form. Every character has to name a global flag, since a
 	// cluster is all-or-nothing: "-qx" is not two bitrise globals, so the
 	// whole token belongs to the command.
-	rest := strings.TrimPrefix(arg, "-")
-	var out []globalFlagAssignment
-	for i := 0; i < len(rest); i++ {
-		f := fs.ShorthandLookup(string(rest[i]))
+	out, wantsNextArg, ok := walkShorthands(arg[1:], func(c string) *pflag.Flag {
+		f := fs.ShorthandLookup(c)
 		if f == nil || !slices.Contains(globalFlagNames, f.Name) {
-			return nil, 0
+			return nil
 		}
-		tail := rest[i+1:]
-		if f.NoOptDefVal == "" {
-			// A value flag ends the cluster: it swallows the rest of the token
-			// ("-o=json", "-ojson") or, when the token ends here, the next
-			// argument.
-			value, hasValue := strings.CutPrefix(tail, "=")
-			if !hasValue {
-				value, hasValue = tail, tail != ""
-			}
-			assigned, consumed := assignOne(f, value, hasValue, args)
-			return append(out, assigned...), consumed
-		}
-		if value, hasValue := strings.CutPrefix(tail, "="); hasValue {
-			return append(out, globalFlagAssignment{f.Name, value}), 1
-		}
-		out = append(out, globalFlagAssignment{f.Name, f.NoOptDefVal})
+		return f
+	})
+	switch {
+	case !ok:
+		return nil, 0
+	case wantsNextArg && len(args) > 1:
+		out[len(out)-1].value = args[1]
+		return out, 2
+	default:
+		// A required value with nothing left to take it is pflag's error to
+		// report; the empty assignment keeps the boundary scan moving.
+		return out, 1
 	}
-	return out, 1
 }
 
 // assignOne resolves a single flag's value: an attached one when hasValue, the
@@ -137,32 +130,116 @@ func IsFlag(name, arg string) bool {
 // outright rather than let cobra parse it. cmd should be the resolved target
 // command (e.g. via (*cobra.Command).Find), since a flag name is only
 // meaningful relative to the command it is reachable on.
+//
+// Tokens that pflag would consume as a preceding flag's value are skipped:
+// pflag takes the next argument verbatim even when it starts with a dash, so
+// `--commit-message -tag` legitimately sets the message to "-tag" and must
+// not be mistaken for a misspelled --tag.
 func DetectSingleDashLongFlag(cmd *cobra.Command, args []string) (arg, flagName string, found bool) {
-	names := longFlagNames(cmd)
+	byName, byShorthand := reachableFlags(cmd)
+
+	skipValue := false
 	for _, a := range args {
+		if skipValue {
+			// Checked before the terminator: pflag only treats "--" as one
+			// when it reads it as a fresh token, so as a flag's value it is
+			// taken literally and scanning has to continue past it.
+			skipValue = false
+			continue
+		}
 		if a == "--" {
 			break
 		}
-		if !strings.HasPrefix(a, "-") || strings.HasPrefix(a, "--") || a == "-" {
-			continue
-		}
-		name, _, _ := strings.Cut(strings.TrimPrefix(a, "-"), "=")
-		if names[name] {
-			return a, name, true
+		switch {
+		case strings.HasPrefix(a, "--"):
+			name, _, attached := strings.Cut(a[2:], "=")
+			skipValue = !attached && takesValue(byName[name])
+		case a != "-" && strings.HasPrefix(a, "-"):
+			name, _, _ := strings.Cut(a[1:], "=")
+			if flagName, ok := singleDashLongFlag(name, byName, byShorthand); ok {
+				return a, flagName, true
+			}
+			_, wantsNextArg, ok := walkShorthands(a[1:], func(c string) *pflag.Flag { return byShorthand[c] })
+			skipValue = ok && wantsNextArg
 		}
 	}
 	return "", "", false
 }
 
-// longFlagNames returns every long flag name reachable on cmd: its own flags
-// plus every ancestor's persistent flags, mirroring what pflag actually sees
-// once cobra merges them at parse time.
-func longFlagNames(cmd *cobra.Command) map[string]bool {
+// singleDashLongFlag reports the long flag name token spells, after peeling any
+// leading bool shorthands. pflag walks a cluster one character at a time and a
+// bool consumes nothing, so "-qconfig" carries on to --config's shorthand and
+// silently becomes --config=onfig — the same misparse as the bare "-config"
+// this guard exists to catch, just behind an incidental bool. -h is registered
+// on every command, which makes that prefix reachable everywhere.
+func singleDashLongFlag(token string, byName, byShorthand map[string]*pflag.Flag) (string, bool) {
+	for i := 0; i < len(token); i++ {
+		if byName[token[i:]] != nil {
+			return token[i:], true
+		}
+		// Anything but a bool shorthand ends the peel: an unregistered
+		// character makes pflag reject the token, and a value-taking one
+		// swallows the rest as its value.
+		if f := byShorthand[token[i:i+1]]; f == nil || takesValue(f) {
+			break
+		}
+	}
+	return "", false
+}
+
+// reachableFlags indexes every flag reachable on cmd — its own plus every
+// ancestor's persistent flags — by long name and by shorthand, mirroring what
+// pflag actually sees once cobra merges them at parse time.
+func reachableFlags(cmd *cobra.Command) (byName, byShorthand map[string]*pflag.Flag) {
 	cmd.InitDefaultHelpFlag()
 	cmd.InitDefaultVersionFlag()
 
-	names := map[string]bool{}
-	cmd.Flags().VisitAll(func(f *pflag.Flag) { names[f.Name] = true })
-	cmd.InheritedFlags().VisitAll(func(f *pflag.Flag) { names[f.Name] = true })
-	return names
+	byName, byShorthand = map[string]*pflag.Flag{}, map[string]*pflag.Flag{}
+	index := func(f *pflag.Flag) {
+		byName[f.Name] = f
+		if f.Shorthand != "" {
+			byShorthand[f.Shorthand] = f
+		}
+	}
+	cmd.Flags().VisitAll(index)
+	cmd.InheritedFlags().VisitAll(index)
+	return byName, byShorthand
+}
+
+// walkShorthands decomposes the characters after a single dash exactly as
+// pflag's parseSingleShortArg does, so every caller here shares one model of
+// that grammar rather than each keeping its own. In order: "-f=arg" wins but
+// only when something follows the "=", then a flag with a NoOptDefVal takes
+// that and parsing continues on the next character, then "-farg" swallows the
+// remainder of the token, and finally a bare "-f" needs the next argument.
+//
+// ok is false as soon as a character names no flag, which is pflag's own hard
+// error — callers decide what that means for them. wantsNextArg reports the
+// last case, where the value is the following argument.
+func walkShorthands(cluster string, lookup func(string) *pflag.Flag) (out []globalFlagAssignment, wantsNextArg, ok bool) {
+	for cluster != "" {
+		f := lookup(cluster[:1])
+		if f == nil {
+			return nil, false, false
+		}
+		switch {
+		case len(cluster) > 2 && cluster[1] == '=':
+			return append(out, globalFlagAssignment{f.Name, cluster[2:]}), false, true
+		case f.NoOptDefVal != "":
+			out = append(out, globalFlagAssignment{f.Name, f.NoOptDefVal})
+			cluster = cluster[1:]
+		case len(cluster) > 1:
+			return append(out, globalFlagAssignment{f.Name, cluster[1:]}), false, true
+		default:
+			return append(out, globalFlagAssignment{f.Name, ""}), true, true
+		}
+	}
+	return out, false, true
+}
+
+// takesValue reports whether f needs a separate argument for its value. A
+// flag with a NoOptDefVal (every bool, and anything declared with one) can be
+// written bare, so it never consumes the next argument.
+func takesValue(f *pflag.Flag) bool {
+	return f != nil && f.NoOptDefVal == ""
 }

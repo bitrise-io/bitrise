@@ -1,10 +1,14 @@
 package cmdutil
 
 import (
+	"io"
+	"slices"
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDetectSingleDashLongFlag(t *testing.T) {
@@ -98,4 +102,65 @@ func TestDetectSingleDashLongFlag(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Test_walkShorthands_matchesPflag runs the shared grammar model and a real
+// pflag.FlagSet over the same token and asserts they agree on every count.
+// Three separate bugs in this file reached review because each hand-rolled
+// model was only checked by hand; this checks it against the parser it models.
+func Test_walkShorthands_matchesPflag(t *testing.T) {
+	const sentinel = "SENTINEL"
+
+	tokens := []string{
+		"-q", "-qq", "-qh", "-h",
+		"-o", "-ojson", "-o=json", "-o=", "-oq", "-oqjson",
+		"-q=", "-q=true", "-qo", "-qojson", "-qo=json",
+		"-c", "-cfile", "-c=file",
+		"-config", "-qconfig", "-hconfig", "-qqconfig", "-qconfig=x",
+		"-x", "-qx", "-=",
+	}
+
+	for _, token := range tokens {
+		t.Run(token, func(t *testing.T) {
+			fs := newPflagFixture()
+			predicted, wantsNextArg, ok := walkShorthands(token[1:], func(c string) *pflag.Flag {
+				return fs.ShorthandLookup(c)
+			})
+
+			actual := newPflagFixture()
+			parseErr := actual.Parse([]string{token, sentinel})
+
+			if !ok {
+				assert.Error(t, parseErr, "model rejected the token, pflag accepted it")
+				return
+			}
+			require.NoError(t, parseErr, "model accepted the token, pflag rejected it")
+
+			consumed := !slices.Contains(actual.Args(), sentinel)
+			assert.Equal(t, consumed, wantsNextArg, "disagreement on whether the next argument is the value")
+
+			for i, a := range predicted {
+				value := a.value
+				// Only the flag that ends the cluster can take the next
+				// argument; the bools before it are already satisfied.
+				if wantsNextArg && i == len(predicted)-1 {
+					value = sentinel
+				}
+				assert.Equal(t, actual.Lookup(a.name).Value.String(), value, "disagreement on %s's value", a.name)
+			}
+		})
+	}
+}
+
+// newPflagFixture mirrors the shorthands that actually collide in the real
+// tree: a bool, help, and two value flags whose shorthands lead long names
+// (-c/--config, -o/--output).
+func newPflagFixture() *pflag.FlagSet {
+	fs := pflag.NewFlagSet("fixture", pflag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	fs.BoolP(FlagQuiet, "q", false, "quiet")
+	fs.BoolP("help", "h", false, "help")
+	fs.StringP(FlagOutput, "o", "", "output")
+	fs.StringP("config", "c", "", "config")
+	return fs
 }
