@@ -37,7 +37,7 @@ BITRISE_WORKSPACE_ID are always set.`,
 			if err != nil {
 				return err
 			}
-			p, err := internalconfig.Path()
+			p, err := internalconfig.ActivePath()
 			if err != nil {
 				return err
 			}
