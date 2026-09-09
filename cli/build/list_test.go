@@ -130,7 +130,11 @@ func TestListCmd_RejectsAllWithCursor(t *testing.T) {
 }
 
 func TestListCmd_InvalidAfterValue(t *testing.T) {
-	cmd, _ := newTestListCmd(t, "https://unused.test")
+	srv := newFakeServer(t, func(_ http.ResponseWriter, _ *http.Request) {
+		t.Fatal("must not reach the builds endpoint when --after is invalid")
+	})
+
+	cmd, _ := newTestListCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("after", "not-a-date"))
 

@@ -77,7 +77,7 @@ Optional flags:
 			if err != nil {
 				return err
 			}
-			rawAppSlug, err := cmdutil.ResolveAppSlug(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
@@ -98,10 +98,6 @@ Optional flags:
 				}
 			}
 
-			appSlug, err := cmdutil.NewResolver(client).AppSlug(cmd.Context(), rawAppSlug)
-			if err != nil {
-				return err
-			}
 			svc := internalbuild.NewService(client)
 
 			b, err := svc.Trigger(cmd.Context(), internalbuild.TriggerRequest{

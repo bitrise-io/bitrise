@@ -43,7 +43,7 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 			if err != nil {
 				return err
 			}
-			rawAppSlug, err := cmdutil.ResolveAppSlug(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
@@ -54,11 +54,6 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 			}
 			if len(rawYAML) == 0 {
 				return fmt.Errorf("bitrise.yml content is empty")
-			}
-
-			appSlug, err := cmdutil.NewResolver(client).AppSlug(cmd.Context(), rawAppSlug)
-			if err != nil {
-				return err
 			}
 
 			if err := internalyml.NewService(client).Update(cmd.Context(), appSlug, string(rawYAML)); err != nil {

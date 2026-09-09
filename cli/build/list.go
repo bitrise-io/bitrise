@@ -66,7 +66,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 			if err != nil {
 				return err
 			}
-			rawAppSlug, err := cmdutil.ResolveAppSlug(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
@@ -87,10 +87,6 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 				beforeTime = &t
 			}
 
-			appSlug, err := cmdutil.NewResolver(client).AppSlug(cmd.Context(), rawAppSlug)
-			if err != nil {
-				return err
-			}
 			svc := internalbuild.NewService(client)
 
 			var isPipelineBuild *bool
