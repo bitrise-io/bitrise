@@ -24,6 +24,8 @@ import (
 func Run() {
 	rawArgs := os.Args[1:]
 
+	rootCmd := newRootCommand()
+	configureStyleFromArgs(rootCmd, rawArgs)
 	initLogger(rawArgs)
 
 	// This is needed for printInstalledPlugins in the root help output, which is
@@ -49,8 +51,6 @@ func Run() {
 		}
 	}
 
-	rootCmd := newRootCommand()
-
 	if pluginName, pluginArgs, isPlugin := detectPlugin(rootCmd, rawArgs); isPlugin {
 		runPlugin(rootCmd, rawArgs, pluginName, pluginArgs)
 		return
@@ -70,6 +70,29 @@ func Run() {
 	if err := rootCmd.Execute(); err != nil {
 		cmdutil.Failf("%s", err)
 	}
+}
+
+// configureStyleFromArgs applies --no-color and --theme before cobra parses, so
+// errors raised during parsing carry the styling the user asked for. before()
+// applies them again from the fully resolved config; this early pass exists
+// because cobra returns flag and argument errors from ParseFlags and
+// ValidateArgs, both of which run ahead of any PersistentPreRunE — for those
+// errors this is the only styling that ever applies.
+//
+// It reads only the leading global flags, so a value that happens to spell one
+// (bitrise build trigger --commit-message --no-color) and anything past the
+// command token are left alone. The config file's theme is not available this
+// early -- resolving it needs configs.ResolveConfig, which runs in before()
+// and can itself fail -- so only the flag and its env var are consulted.
+func configureStyleFromArgs(root *cobra.Command, arguments []string) {
+	values := cmdutil.GlobalFlagValuesFromArgs(root.PersistentFlags(), arguments, cmdutil.GlobalFlagNames)
+
+	noColor, _ := strconv.ParseBool(values[cmdutil.FlagNoColor])
+	theme, err := style.ParseTheme(config.FirstNonEmptyString(values[cmdutil.FlagTheme], os.Getenv(cmdutil.EnvTheme)))
+	if err != nil {
+		theme = style.ThemeAuto
+	}
+	style.Configure(noColor, theme)
 }
 
 // initLogger sets up the global logger up front, before cobra parses the args,

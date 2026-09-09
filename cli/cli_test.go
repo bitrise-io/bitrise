@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/output"
 )
@@ -491,6 +493,69 @@ func Test_flagShorthands_doNotCollideAcrossTree(t *testing.T) {
 // Test_rejectSingleDashLongFlags_realCommandTree exercises the guard against
 // the actual registered commands, not a synthetic tree, so it catches a
 // flag/shorthand that changes shape only in cli/root.go or cli/local/run.go.
+func Test_configureStyleFromArgs(t *testing.T) {
+	// Asserted on the values the pre-pass reads rather than on rendered
+	// output: style.New over a *bytes.Buffer is ANSI-free whatever Configure
+	// was given (see internal/style's TestNew_NonTTYWriterIsAnsiFree), so
+	// rendering here would pass no matter what these args parsed to.
+	tests := []struct {
+		name                               string
+		args                               []string
+		wantNoColor, wantTheme, wantOutput string
+	}{
+		{name: "no flags", args: []string{"run", "wf"}},
+		{name: "theme with a space", args: []string{"--theme", "none", "run"}, wantTheme: "none"},
+		{name: "theme attached", args: []string{"--theme=none", "run"}, wantTheme: "none"},
+		{name: "no-color bare", args: []string{"--no-color", "run"}, wantNoColor: "true"},
+		{name: "no-color explicitly false", args: []string{"--no-color=false", "run"}, wantNoColor: "false"},
+		{name: "both, clustered", args: []string{"-qo", "json", "run"}, wantOutput: "json"},
+
+		// An unparseable theme is still read here; configureStyleFromArgs
+		// falls back to auto when style.ParseTheme rejects it.
+		{name: "invalid theme value", args: []string{"--theme", "bogus", "run"}, wantTheme: "bogus"},
+
+		// Everything from the command token on belongs to the command, and a
+		// global's own value is consumed rather than rescanned.
+		{name: "value of another global is not a flag", args: []string{"--output", "--no-color", "run"}, wantOutput: "--no-color"},
+		{name: "trailing theme after the command token", args: []string{"run", "--theme"}},
+		{name: "flag value after the command token", args: []string{"build", "trigger", "--commit-message", "--no-color"}},
+		{name: "after the terminator", args: []string{"run", "--", "--no-color"}},
+		{name: "plugin passthrough args", args: []string{":myplugin", "--no-color"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(cmdutil.EnvTheme, "")
+			t.Cleanup(func() { style.Configure(false, style.ThemeAuto) })
+
+			values := cmdutil.GlobalFlagValuesFromArgs(newRootCommand().PersistentFlags(), tt.args, cmdutil.GlobalFlagNames)
+			assert.Equal(t, tt.wantNoColor, values[cmdutil.FlagNoColor])
+			assert.Equal(t, tt.wantTheme, values[cmdutil.FlagTheme])
+			assert.Equal(t, tt.wantOutput, values[cmdutil.FlagOutput])
+
+			configureStyleFromArgs(newRootCommand(), tt.args)
+		})
+	}
+}
+
+// Test_configureStyleFromArgs_envFallback pins the layer below the flag: the
+// three Failf calls inside before() fire before it re-applies style from the
+// resolved config, so an env-set theme has to reach the early pass or those
+// errors ignore it.
+func Test_configureStyleFromArgs_envFallback(t *testing.T) {
+	t.Setenv(cmdutil.EnvTheme, "none")
+	t.Cleanup(func() { style.Configure(false, style.ThemeAuto) })
+
+	// No --theme flag, so the env value is what the early pass must use.
+	values := cmdutil.GlobalFlagValuesFromArgs(newRootCommand().PersistentFlags(), []string{"run"}, cmdutil.GlobalFlagNames)
+	assert.Empty(t, values[cmdutil.FlagTheme])
+
+	theme, err := style.ParseTheme(internalconfig.FirstNonEmptyString(values[cmdutil.FlagTheme], os.Getenv(cmdutil.EnvTheme)))
+	require.NoError(t, err)
+	assert.Equal(t, style.ThemeNone, theme)
+
+	configureStyleFromArgs(newRootCommand(), []string{"run"})
+}
+
 func Test_rejectSingleDashLongFlags_realCommandTree(t *testing.T) {
 	tests := []struct {
 		name         string
