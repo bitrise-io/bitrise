@@ -62,7 +62,11 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
@@ -83,10 +87,6 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 				beforeTime = &t
 			}
 
-			client, err := cmdutil.NewAPIClient(cmd)
-			if err != nil {
-				return err
-			}
 			svc := internalbuild.NewService(client)
 
 			var isPipelineBuild *bool

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -21,19 +20,18 @@ func TestUpdateCmd_RequiresApp(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
-	cmd, _ := newTestUpdateCmd(t, "http://unused.test", "")
+	cmd, _ := newTestUpdateCmd(t, "https://unused.test", "")
 	err := cmd.RunE(cmd, nil)
 	require.EqualError(t, err, "--app is required")
 }
 
 func TestUpdateCmd_FromStdin(t *testing.T) {
 	var gotBody string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		gotBody = string(b)
 		_, _ = w.Write([]byte(`{}`))
-	}))
-	t.Cleanup(srv.Close)
+	})
 
 	cmd, stderr := newTestUpdateCmd(t, srv.URL, "format_version: \"13\"\n")
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
@@ -44,7 +42,7 @@ func TestUpdateCmd_FromStdin(t *testing.T) {
 }
 
 func TestUpdateCmd_EmptyContent(t *testing.T) {
-	cmd, _ := newTestUpdateCmd(t, "http://unused.test", "")
+	cmd, _ := newTestUpdateCmd(t, "https://unused.test", "")
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
 
 	err := cmd.RunE(cmd, nil)

@@ -19,18 +19,17 @@ func TestGetCmd_RequiresApp(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
 
-	cmd, _ := newTestGetCmd(t, "http://unused.test")
+	cmd, _ := newTestGetCmd(t, "https://unused.test")
 	err := cmd.RunE(cmd, nil)
 	require.EqualError(t, err, "--app is required")
 }
 
 func TestGetCmd_App(t *testing.T) {
 	var gotPath string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
-	}))
-	t.Cleanup(srv.Close)
+	})
 
 	cmd, out := newTestGetCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
@@ -42,11 +41,10 @@ func TestGetCmd_App(t *testing.T) {
 
 func TestGetCmd_Build(t *testing.T) {
 	var gotPath string
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
-	}))
-	t.Cleanup(srv.Close)
+	})
 
 	cmd, _ := newTestGetCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
@@ -57,10 +55,9 @@ func TestGetCmd_Build(t *testing.T) {
 }
 
 func TestGetCmd_AppendsMissingTrailingNewline(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("format_version: \"13\""))
-	}))
-	t.Cleanup(srv.Close)
+	})
 
 	cmd, out := newTestGetCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
@@ -70,10 +67,9 @@ func TestGetCmd_AppendsMissingTrailingNewline(t *testing.T) {
 }
 
 func TestGetCmd_JSONOutput(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("format_version: \"13\"\n"))
-	}))
-	t.Cleanup(srv.Close)
+	})
 
 	cmd, _ := newTestGetCmd(t, srv.URL)
 	require.NoError(t, cmd.Flags().Set("app", "app-slug"))
@@ -93,4 +89,20 @@ func newTestGetCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buff
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd, &out
+}
+
+// newFakeServer wires handler behind a server that transparently answers the
+// app name→slug resolver's GET /apps?title=... lookup with a passthrough (0
+// matches), so handler only ever sees the real request under test.
+func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
+		handler(w, r)
+	}))
+	t.Cleanup(srv.Close)
+	return srv
 }

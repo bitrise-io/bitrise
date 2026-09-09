@@ -40,13 +40,13 @@ written to stdout, so this stays pipeable.`,
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
-			if err != nil {
-				return err
-			}
 			buildSlug := args[0]
 
 			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}

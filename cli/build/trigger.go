@@ -73,7 +73,11 @@ Optional flags:
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}
@@ -94,10 +98,6 @@ Optional flags:
 				}
 			}
 
-			client, err := cmdutil.NewAPIClient(cmd)
-			if err != nil {
-				return err
-			}
 			svc := internalbuild.NewService(client)
 
 			b, err := svc.Trigger(cmd.Context(), internalbuild.TriggerRequest{

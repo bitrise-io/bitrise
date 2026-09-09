@@ -34,12 +34,11 @@ instead of the app's current stored configuration.`,
 				return err
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
 				return err
 			}
-
-			client, err := cmdutil.NewAPIClient(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}

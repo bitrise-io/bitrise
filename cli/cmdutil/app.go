@@ -7,7 +7,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v2/internal/cache"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/resolve"
 )
 
 // FlagApp is the app slug a command acts on.
@@ -71,4 +74,22 @@ func LookupAppSlug(cmd *cobra.Command) string {
 // AppSlugRequiredErr returns the standard missing-app-slug error.
 func AppSlugRequiredErr() error {
 	return errors.New("--app is required")
+}
+
+// NewResolver returns a Resolver wired to client and a fresh in-memory cache,
+// so repeated lookups within one command invocation hit the API once.
+func NewResolver(client *bitriseapi.Client) *resolve.Resolver {
+	return resolve.New(client, cache.New())
+}
+
+// ResolveAndLookupAppSlug reads the app slug from --app / env / config (same
+// precedence as ResolveAppSlug), then resolves a display name to an app slug
+// via a targeted GET /apps?title=<value> query if the value doesn't match any
+// slug directly.
+func ResolveAndLookupAppSlug(cmd *cobra.Command, client *bitriseapi.Client) (string, error) {
+	raw, err := ResolveAppSlug(cmd)
+	if err != nil {
+		return "", err
+	}
+	return NewResolver(client).AppSlug(cmd.Context(), raw)
 }

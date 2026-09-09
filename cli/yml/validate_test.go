@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +37,7 @@ default_step_lib_source: "https://github.com/bitrise-io/bitrise-steplib.git"
 
 func TestValidateConfig_NoToken_UsesLocal(t *testing.T) {
 	var onlineCalled bool
-	srv := newValidateFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		onlineCalled = true
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
@@ -63,7 +62,7 @@ func TestValidateConfig_CorruptAuthFile_FallsBackWithWarning(t *testing.T) {
 	// surface as a warning rather than being silently treated the same as
 	// the expected, unconfigured-token default.
 	var onlineCalled bool
-	srv := newValidateFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		onlineCalled = true
 		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
 	})
@@ -250,13 +249,6 @@ func encode(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
 
-func newValidateFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
-	t.Helper()
-	srv := httptest.NewServer(handler)
-	t.Cleanup(srv.Close)
-	return srv
-}
-
 // newTestValidateCommand is newTestValidateCmd for the real command, so tests
 // can drive RunE through its actual flag set. It returns the command's stderr
 // buffer, which carries the online-validation note.
@@ -266,7 +258,7 @@ func newTestValidateCommand(t *testing.T, handler http.HandlerFunc) (*cobra.Comm
 	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
-	apiBaseURL := newValidateFakeServer(t, handler).URL
+	apiBaseURL := newFakeServer(t, handler).URL
 
 	cmd := NewValidateCommand()
 	var stderr bytes.Buffer
@@ -285,7 +277,7 @@ func newTestValidateCmd(t *testing.T, handler http.HandlerFunc) *cobra.Command {
 	t.Setenv("BITRISE_TOKEN", "") // an exported token would outrank the fixture in cmdutil.ResolveToken
 	require.NoError(t, auth.Save(auth.Auth{Token: "test-token"}))
 
-	apiBaseURL := newValidateFakeServer(t, handler).URL
+	apiBaseURL := newFakeServer(t, handler).URL
 
 	cmd := &cobra.Command{}
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})

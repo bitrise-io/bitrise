@@ -37,12 +37,11 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.`,
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			appSlug, err := cmdutil.ResolveAppSlug(cmd)
+			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
 				return err
 			}
-
-			client, err := cmdutil.NewAPIClient(cmd)
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
 			if err != nil {
 				return err
 			}

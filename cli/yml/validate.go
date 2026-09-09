@@ -286,6 +286,11 @@ func tryOnlineValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase6
 		return nil, fmt.Sprintf("online validation unavailable: %s", err), false
 	}
 
+	appSlug, err = cmdutil.NewResolver(client).AppSlug(cmd.Context(), appSlug)
+	if err != nil {
+		return nil, fmt.Sprintf("online validation unavailable: %s", err), false
+	}
+
 	rawYAML, err := getYmlStringForOnlineValidation(bitriseConfigPath, bitriseConfigBase64Data)
 	if err != nil {
 		return nil, fmt.Sprintf("online validation unavailable: %s", err), false
