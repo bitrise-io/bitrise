@@ -43,11 +43,33 @@ func TestParseSSHAddress(t *testing.T) {
 		{name: "option argument is not the destination", addr: "ssh -o ProxyJump=jump@bastion ubuntu@h.example", wantUser: "ubuntu", wantHost: "h.example", wantPort: 22},
 		{name: "attached option argument is not the destination", addr: "ssh -oProxyJump=jump@bastion ubuntu@h.example", wantUser: "ubuntu", wantHost: "h.example", wantPort: 22},
 
-		// The destination is the first operand; the rest is the remote command,
-		// so an "@" appearing in it must not retarget the dial.
+		// The destination is the first operand; a second operand starts the
+		// remote command, so an "@" appearing in it must not retarget the dial.
 		{name: "remote command after the destination is ignored", addr: "ssh vagrant@host.example -- echo user@evil", wantUser: "vagrant", wantHost: "host.example", wantPort: 22},
 		{name: "trailing operand is not the destination", addr: "ssh -p 2222 vagrant@h extra@operand", wantUser: "vagrant", wantHost: "h", wantPort: 2222},
-		{name: "option-looking token after the destination is remote command, not an option", addr: "ssh u@h -p", wantUser: "u", wantHost: "h", wantPort: 22},
+
+		// The RDE backend emits the port after the destination; parsing only up
+		// to the destination dropped it and dialled 22, making every session
+		// unreachable.
+		{name: "backend format, -p after the destination", addr: "ssh ubuntu@vm-host.example -p 26238", wantUser: "ubuntu", wantHost: "vm-host.example", wantPort: 26238},
+		{name: "attached -p after the destination", addr: "ssh u@h -p2222", wantUser: "u", wantHost: "h", wantPort: 2222},
+
+		// ...but only up to the remote command, so a command's own flags are
+		// never mistaken for ssh options.
+		{name: "flags belonging to the remote command are not ssh options", addr: "ssh u@h somecmd -p 80", wantUser: "u", wantHost: "h", wantPort: 22},
+		{name: "flags after -- are not ssh options", addr: "ssh u@h -- -p 80", wantUser: "u", wantHost: "h", wantPort: 22},
+		{name: "-p after the destination missing its argument", addr: "ssh u@h -p", wantError: true},
+
+		// Scanning past the destination means the literal "ssh" is only a
+		// no-op token before one is found; after it, it starts the remote
+		// command, so a -p belonging to that command must not set the port.
+		{name: "remote command named ssh does not reopen option scanning", addr: "ssh u@h ssh -p 9999", wantUser: "u", wantHost: "h", wantPort: 22},
+
+		// Post-destination equivalents of the pre-destination error cases, now
+		// that options are accepted on both sides.
+		{name: "conflicting ports with -p after the destination", addr: "ssh u@h:2223 -p 2222", wantError: true},
+		{name: "out of range port after the destination", addr: "ssh u@h -p 99999", wantError: true},
+		{name: "clustered flags after the destination", addr: "ssh u@h -tp 2222", wantUser: "u", wantHost: "h", wantPort: 2222},
 
 		// Clustered short flags: the first letter taking an argument consumes
 		// the remainder of the token, or the next one.

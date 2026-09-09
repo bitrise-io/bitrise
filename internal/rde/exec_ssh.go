@@ -806,8 +806,13 @@ func sshTargetForSession(sess Session) (sshTarget, error) {
 }
 
 // parseSSHAddress extracts user, host, and port from a backend-provided
-// ssh_address, which may be a full ssh command (`ssh [options] user@host`), a
-// bare `user@host[:port]`, or an `ssh://user@host[:port]` URI.
+// ssh_address, which may be a full ssh command (`ssh [options] user@host
+// [options]`), a bare `user@host[:port]`, or an `ssh://user@host[:port]` URI.
+//
+// Options are accepted on both sides of the destination: the RDE backend emits
+// `ssh ubuntu@host -p 26238`, with the port after it. Scanning only up to the
+// destination dropped that `-p` and silently dialled 22, which made every
+// session unreachable.
 //
 // The address is tokenized rather than pattern-matched across the whole string,
 // because regex scanning silently produced wrong targets: an unanchored
@@ -827,16 +832,22 @@ func parseSSHAddress(addr string) (sshTarget, error) {
 	optPort := 0
 	for i := 0; i < len(fields); i++ {
 		f := fields[i]
-		if f == "ssh" {
+		if f == "ssh" && target == "" {
 			continue
 		}
-		if !strings.HasPrefix(f, "-") {
-			// In OpenSSH syntax the destination is the FIRST operand and
-			// everything after it is the remote command, so scanning stops
-			// here — otherwise `ssh u@host -- echo user@evil` would retarget
-			// the dial at whatever the command mentions.
-			target = f
+		if f == "--" {
 			break
+		}
+		if !strings.HasPrefix(f, "-") {
+			if target != "" {
+				// The destination is the FIRST operand; a second one starts
+				// the remote command, so scanning stops here — otherwise
+				// `ssh u@host echo user@evil` would retarget the dial at
+				// whatever the command mentions.
+				break
+			}
+			target = f
+			continue
 		}
 
 		// Walk the option cluster so `-p 22`, `-p22` and `-tp 22` all resolve;
