@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 func TestPath_HonorsXDG(t *testing.T) {
@@ -70,6 +71,90 @@ func TestLoad_InvalidYAML(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestLoad_FallsBackToPredecessorConfig(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	predecessorDir := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.MkdirAll(predecessorDir, 0o700))
+	predecessorFile := filepath.Join(predecessorDir, "config.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte(""+
+		"app_slug: my-app-slug\n"+
+		"default_workspace_slug: my-workspace\n"+
+		"theme: dark\n"+
+		"output: json\n"+
+		"api_base_url: https://api.example.test\n"), 0o600))
+
+	fallbackAnnounceOnce = sync.Once{}
+	var announced strings.Builder
+	origWriter := fallbackWriter
+	fallbackWriter = &announced
+	t.Cleanup(func() { fallbackWriter = origWriter })
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "my-app-slug", got.AppID, "app_slug must alias to app_id")
+	assert.Equal(t, "my-workspace", got.DefaultWorkspaceID, "default_workspace_slug must alias to default_workspace_id")
+	assert.Equal(t, "dark", got.Theme)
+	assert.Equal(t, "json", got.Output)
+	assert.Equal(t, "https://api.example.test", got.APIBaseURL)
+
+	_, err = os.ReadFile(predecessorFile)
+	require.NoError(t, err, "the predecessor file must survive Load — it's read-only")
+	_, statErr := os.Stat(filepath.Join(dir, "bitrise", "cli", "config.yml"))
+	assert.True(t, os.IsNotExist(statErr), "Load must not write the new config file as a side effect")
+
+	assert.Contains(t, announced.String(), predecessorFile, "the fallback should be announced once")
+}
+
+func TestLoad_PrefersNewConfigWhenPresent(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "config.yaml"), []byte("theme: dark\n"), 0o600))
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise", "cli"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "cli", "config.yml"), []byte("theme: light\n"), 0o600))
+
+	got, err := Load()
+	require.NoError(t, err)
+	assert.Equal(t, "light", got.Theme, "the new file must win once it exists, regardless of the predecessor file")
+}
+
+func TestActivePath_PredecessorWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	predecessorFile := filepath.Join(dir, "bitrise", "config.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("theme: dark\n"), 0o600))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	assert.Equal(t, predecessorFile, got)
+}
+
+func TestActivePath_NewPathOnceWritten(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bitrise", "config.yaml"), []byte("theme: dark\n"), 0o600))
+	require.NoError(t, Save(Config{Theme: "light"}))
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got, "once the new file has been written, ActivePath must name it even though the predecessor file still exists")
+}
+
+func TestActivePath_NewPathWhenNeitherExists(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	got, err := ActivePath()
+	require.NoError(t, err)
+	newPath, err := Path()
+	require.NoError(t, err)
+	assert.Equal(t, newPath, got)
+}
+
 func TestLoadDir_FindsAncestorFile(t *testing.T) {
 	root := t.TempDir()
 	deep := filepath.Join(root, "a", "b", "c")
@@ -120,7 +205,48 @@ func TestSaveYAML_ConcurrentWritesDontCorrupt(t *testing.T) {
 		require.NoError(t, err, "writer %d", i)
 	}
 
-	got, err := LoadYAML[payload](path)
+	data, err := os.ReadFile(path)
 	require.NoError(t, err)
+	var got payload
+	require.NoError(t, yaml.Unmarshal(data, &got))
 	assert.Equal(t, strings.Repeat("x", 100), got.Value)
+}
+
+// TestWriteAtomic_SweepsStaleTmpSiblings simulates a crash between a
+// previous writeAtomic's CreateTemp and Rename: a *.tmp file matching its
+// naming pattern, old enough to no longer be a plausible in-flight write, is
+// left on disk. The next write must clean it up rather than leaking it
+// forever.
+func TestWriteAtomic_SweepsStaleTmpSiblings(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	stale := path + ".deadbeef.tmp"
+	require.NoError(t, os.WriteFile(stale, []byte("leftover"), 0o600))
+	oldTime := time.Now().Add(-2 * staleTmpAge)
+	require.NoError(t, os.Chtimes(stale, oldTime, oldTime))
+
+	require.NoError(t, writeAtomic(path, []byte("value: 1\n")))
+
+	_, err := os.Stat(stale)
+	assert.True(t, os.IsNotExist(err), "stale tmp file should have been swept")
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "value: 1\n", string(got))
+}
+
+// TestWriteAtomic_KeepsFreshTmpSiblings guards against the sweep in
+// writeAtomic mistaking a concurrent writer's still-in-flight temp file
+// (same *.tmp glob pattern, just created) for a crash leftover and deleting
+// it out from under that writer.
+func TestWriteAtomic_KeepsFreshTmpSiblings(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yml")
+	fresh := path + ".inflight.tmp"
+	require.NoError(t, os.WriteFile(fresh, []byte("still being written"), 0o600))
+
+	require.NoError(t, writeAtomic(path, []byte("value: 1\n")))
+
+	got, err := os.ReadFile(fresh)
+	require.NoError(t, err, "fresh tmp file should not have been swept")
+	assert.Equal(t, "still being written", string(got))
 }

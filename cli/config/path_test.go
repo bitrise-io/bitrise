@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -18,6 +19,24 @@ func TestPathCmd_PrintsGlobalConfigPath(t *testing.T) {
 	require.NoError(t, cmd.RunE(cmd, nil))
 
 	assert.Equal(t, filepath.Join(dir, "bitrise", "cli", "config.yml")+"\n", out.String())
+}
+
+// TestPathCmd_PrintsPredecessorPathWhileFallbackLive covers the trap `bitrise
+// config path` used to fall into: it printed the new config.yml path
+// unconditionally, so `cat $(bitrise config path)` failed with "no such
+// file" for anyone still being served by the predecessor CLI's config.yaml
+// fallback.
+func TestPathCmd_PrintsPredecessorPathWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, "bitrise"), 0o700))
+	predecessorFile := filepath.Join(dir, "bitrise", "config.yaml")
+	require.NoError(t, os.WriteFile(predecessorFile, []byte("theme: dark\n"), 0o600))
+
+	cmd, out := newTestCmd(t, NewPathCommand())
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, predecessorFile+"\n", out.String())
 }
 
 func TestPathCmd_RejectsPositionalArgs(t *testing.T) {

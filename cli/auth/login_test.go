@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -27,6 +28,27 @@ func TestRunTokenLogin_SavesToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "bitpat_faketoken", saved.Token)
 	assert.False(t, saved.IsOAuthManaged())
+}
+
+// TestRunTokenLogin_BlocksWhileAuthLockHeld covers all three auth.Save call
+// sites at once, since runTokenLogin, runEmailLogin, and doOAuthLogin now
+// wrap the same auth.Lock — without it, a login racing a background token
+// refresh (internal/oauth.EnsureFreshPAT) could clobber the refreshed
+// credentials.
+func TestRunTokenLogin_BlocksWhileAuthLockHeld(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	unlock, err := auth.Lock(context.Background())
+	require.NoError(t, err)
+	defer unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	cmd := newTestCmd(t, "bitpat_faketoken\n")
+	cmd.SetContext(ctx)
+
+	err = runTokenLogin(cmd)
+	require.Error(t, err, "the save must wait for the auth lock, not race a concurrent refresh")
 }
 
 func TestRunTokenLogin_EmptyTokenErrors(t *testing.T) {
@@ -170,6 +192,32 @@ func TestDoOAuthLogin_FailsFastOverSSH(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "--with-token")
 	assert.False(t, browserCalled, "should fail before ever trying to open a browser")
+}
+
+// TestAuthLogin_SSHSessionDefaultsToTokenPrompt guards the regression: an
+// interactive terminal with no mode flag over SSH used to still pick browser
+// OAuth (which then hard-errors inside doOAuthLogin) instead of falling
+// through to the token prompt like a bare `auth login` used to before OAuth
+// existed.
+func TestAuthLogin_SSHSessionDefaultsToTokenPrompt(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("SSH_CONNECTION", "10.0.0.1 1234 10.0.0.2 22")
+
+	orig := cmdutil.IsTerminal
+	cmdutil.IsTerminal = func(io.Reader) bool { return true }
+	t.Cleanup(func() { cmdutil.IsTerminal = orig })
+
+	cmd := NewLoginCommand()
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetIn(strings.NewReader("bitpat_sshuser\n"))
+	cmd.SetArgs(nil)
+
+	require.NoError(t, cmd.Execute())
+
+	saved, err := auth.Load()
+	require.NoError(t, err)
+	assert.Equal(t, "bitpat_sshuser", saved.Token)
 }
 
 // The tests below exercise NewLoginCommand()'s actual cobra dispatch (flag

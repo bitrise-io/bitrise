@@ -6,21 +6,19 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var ErrNoToken = errors.New("no Bitrise access token configured (run 'bitrise auth login' or set BITRISE_TOKEN)")
 
 // NewAPIClient builds a *bitriseapi.Client using the token resolved by
-// liveToken and the configured API base URL.
+// liveToken and the resolved API base URL.
 func NewAPIClient(cmd *cobra.Command) (*bitriseapi.Client, error) {
 	tok, err := liveToken(cmd)
 	if err != nil {
 		return nil, err
 	}
-	r := config.FromContext(cmd.Context())
-	return bitriseapi.New(r.APIBaseURL, tok)
+	return bitriseapi.New(ResolveAPIBaseURL(cmd), tok)
 }
 
 // ResolveToken returns the configured token and whether it came from the

@@ -2,6 +2,8 @@ package config
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -77,6 +79,28 @@ func TestListCmd_YMLFormat(t *testing.T) {
 	assert.Contains(t, out, `default_workspace_id: ""`)
 	assert.Contains(t, out, `output: ""`)
 	assert.Contains(t, out, `theme: ""`)
+}
+
+// TestListCmd_ReportsPredecessorPathWhileFallbackLive covers the same trap
+// `bitrise config path` had: list printed the new config.yml path
+// unconditionally, so during the fallback window it named a file that does
+// not exist right beside the values it had just read from the legacy one.
+func TestListCmd_ReportsPredecessorPathWhileFallbackLive(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", dir)
+
+	predecessorDir, err := internalconfig.PredecessorDir()
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(predecessorDir, 0o700))
+	legacyPath := filepath.Join(predecessorDir, "config.yaml")
+	require.NoError(t, os.WriteFile(legacyPath, []byte("theme: dark\n"), 0o600))
+
+	cmd, out := newTestCmd(t, NewListCommand())
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	got := out.String()
+	assert.Contains(t, got, "Path: "+legacyPath)
+	assert.Contains(t, got, "theme: dark")
 }
 
 func TestListCmd_RejectsPositionalArgs(t *testing.T) {

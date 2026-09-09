@@ -79,7 +79,7 @@ func resolveTokenAndSource() (token, source string, err error) {
 // currentStatus is kept separate from NewStatusCommand's RunE so it can be
 // tested directly.
 func currentStatus() (authStatus, error) {
-	p, err := auth.Path()
+	p, err := auth.ActivePath()
 	if err != nil {
 		return authStatus{}, err
 	}

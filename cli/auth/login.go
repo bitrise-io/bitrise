@@ -84,6 +84,13 @@ logout' to clear).`,
 			case passwordStdin:
 				return fmt.Errorf("--password-stdin requires --email (token login reads the token, not a password)")
 			case cmdutil.IsTerminal(cmd.InOrStdin()):
+				if cmdutil.IsSSHSession() {
+					// Browser OAuth can't complete over SSH (the loopback
+					// redirect can't reach this machine); fall through to
+					// the token prompt like it used to, instead of picking
+					// OAuth here and immediately hard-erroring inside it.
+					return runTokenLogin(cmd)
+				}
 				// Interactive and no mode chosen: default to browser OAuth.
 				return runOAuthLogin(cmd)
 			default:
@@ -114,8 +121,9 @@ logout' to clear).`,
 }
 
 // runTokenLogin reads the token from stdin, or prompts for it (masked) when
-// stdin is a terminal. The prompt is only reachable via an explicit
-// --with-token, since a bare interactive `auth login` defaults to OAuth.
+// stdin is a terminal. The prompt is reachable via an explicit --with-token,
+// or a bare interactive `auth login` over SSH (browser OAuth can't complete
+// there); otherwise a bare interactive `auth login` defaults to OAuth.
 func runTokenLogin(cmd *cobra.Command) error {
 	tok, err := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Token: ", false)
 	if err != nil {
@@ -124,6 +132,11 @@ func runTokenLogin(cmd *cobra.Command) error {
 	if tok == "" {
 		return fmt.Errorf("token is empty")
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
@@ -158,6 +171,11 @@ func runEmailLogin(cmd *cobra.Command, email string, passwordStdin bool) error {
 		}
 		return err
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(auth.Auth{Token: tok}); err != nil {
 		return err
 	}
@@ -179,6 +197,11 @@ func doOAuthLogin(cmd *cobra.Command, openBrowser func(string) error) error {
 	if err != nil {
 		return err
 	}
+	unlock, err := auth.Lock(cmd.Context())
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := auth.Save(a); err != nil {
 		return err
 	}
