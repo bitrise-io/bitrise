@@ -13,8 +13,13 @@ import (
 // output (e.g. `stack list -o json | jq`), and re-pointing the global logger
 // would also move `bitrise run`'s step output to stderr with it.
 func Failf(format string, args ...interface{}) {
-	s := style.New(os.Stderr)
-	_, _ = fmt.Fprintf(os.Stderr, "%s %s\n", s.Failure.Render("Error:"), fmt.Sprintf(format, args...))
+	// The root command prints help and returns an empty error purely to exit
+	// non-zero, so an empty message means there is nothing to report — a bare
+	// "Error:" after successful help output reads as a bug.
+	if msg := fmt.Sprintf(format, args...); msg != "" {
+		s := style.New(os.Stderr)
+		_, _ = fmt.Fprintf(os.Stderr, "%s %s\n", s.Failure.Render("Error:"), msg)
+	}
 
 	if globalTracker != nil {
 		globalTracker.Wait()
