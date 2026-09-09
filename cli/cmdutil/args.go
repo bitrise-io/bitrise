@@ -36,6 +36,27 @@ func CommandTokenIndex(fs *pflag.FlagSet, args []string, globalFlagNames []strin
 // command token) are bitrise globals; anything after belongs to the passthrough.
 func ApplyGlobalFlagsFromArgs(root *cobra.Command, args []string, globalFlagNames []string) {
 	fs := root.PersistentFlags()
+	walkLeadingGlobals(fs, args, globalFlagNames, func(a globalFlagAssignment) {
+		_ = fs.Set(a.name, a.value)
+	})
+}
+
+// GlobalFlagValuesFromArgs returns the values the leading global flags in args
+// assign, keyed by flag name. It reads the same tokens ApplyGlobalFlagsFromArgs
+// would set, without touching the command — for callers that need a global's
+// value before cobra has parsed anything.
+func GlobalFlagValuesFromArgs(fs *pflag.FlagSet, args, globalFlagNames []string) map[string]string {
+	values := map[string]string{}
+	walkLeadingGlobals(fs, args, globalFlagNames, func(a globalFlagAssignment) {
+		values[a.name] = a.value
+	})
+	return values
+}
+
+// walkLeadingGlobals reports every assignment the global flags before the
+// command token make. Both callers above need the same walk and differ only in
+// what they do with each assignment.
+func walkLeadingGlobals(fs *pflag.FlagSet, args, globalFlagNames []string, apply func(globalFlagAssignment)) {
 	boundary := CommandTokenIndex(fs, args, globalFlagNames)
 	for i := 0; i < boundary; {
 		assignments, consumed := matchGlobalFlags(fs, args[i:boundary], globalFlagNames)
@@ -43,7 +64,7 @@ func ApplyGlobalFlagsFromArgs(root *cobra.Command, args []string, globalFlagName
 			break // unreachable within the boundary, but keeps the loop well-defined
 		}
 		for _, a := range assignments {
-			_ = fs.Set(a.name, a.value)
+			apply(a)
 		}
 		i += consumed
 	}
