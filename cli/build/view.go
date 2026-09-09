@@ -53,6 +53,20 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	}
 	buildSlug := args[0]
 
+	// build view has no positional arg for the app slug (only --app), so
+	// args is nil here. Only a user-provided value can be a display name —
+	// an ambient one (env/config) is already a canonical slug.
+	if cmdutil.AppSlugIsUserProvided(cmd, nil) {
+		client, err := cmdutil.NewAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		appSlug, err = cmdutil.NewResolver(client).AppSlug(cmd.Context(), appSlug)
+		if err != nil {
+			return err
+		}
+	}
+
 	if web {
 		url := buildWebURL(cmdutil.ResolveWebBaseURL(cmd), appSlug, buildSlug)
 		if err := openBrowser(url); err != nil {
@@ -63,10 +77,6 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	}
 
 	client, err := cmdutil.NewAPIClient(cmd)
-	if err != nil {
-		return err
-	}
-	appSlug, err = cmdutil.NewResolver(client).AppSlug(cmd.Context(), appSlug)
 	if err != nil {
 		return err
 	}

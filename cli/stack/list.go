@@ -40,20 +40,20 @@ available stacks.`,
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			resolvedWorkspace := workspaceSlug
-			if resolvedWorkspace == "" {
-				resolvedWorkspace = cmdutil.DefaultWorkspaceSlug(cmd)
-				// Flagged so a build step doesn't silently switch from the
-				// global stack list to a workspace-scoped one without the
-				// user noticing.
-				if resolvedWorkspace != "" && output.Format == output.FormatRaw {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Using default workspace: %s\n", resolvedWorkspace)
-				}
-			}
-
 			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
 				return err
+			}
+
+			resolvedWorkspace, workspaceFromDefault, err := cmdutil.ResolveAndLookupWorkspaceSlug(cmd, client, workspaceSlug)
+			if err != nil {
+				return err
+			}
+			// Flagged so a build step doesn't silently switch from the
+			// global stack list to a workspace-scoped one without the
+			// user noticing.
+			if workspaceFromDefault && output.Format == output.FormatRaw {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Using default workspace: %s\n", resolvedWorkspace)
 			}
 
 			result, err := internalstack.NewService(client).List(cmd.Context(), resolvedWorkspace)

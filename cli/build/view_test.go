@@ -3,6 +3,7 @@ package build
 import (
 	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -33,6 +34,30 @@ func TestViewCmd_HappyPath(t *testing.T) {
 	assert.Regexp(t, `Workflow:\s+primary`, out)
 }
 
+func TestViewCmd_EnvOnly_SkipsNameResolution(t *testing.T) {
+	var gotPath string
+	var titleLookupCalled bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			titleLookupCalled = true
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":{"slug":"build-1","build_number":7,"status":1,"branch":"main","triggered_workflow":"primary"}}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	t.Setenv(cmdutil.EnvAppID, "env-app-slug")
+	cmd := newTestViewCmd(t, srv.URL)
+	out, err := runViewCapture(t, cmd, []string{"build-1"}, false, unusedBrowser(t))
+	require.NoError(t, err)
+
+	assert.Equal(t, "/apps/env-app-slug/builds/build-1", gotPath)
+	assert.False(t, titleLookupCalled, "an ambient app slug (env/config) must not be resolved by name")
+	assert.Regexp(t, `Build #7`, out)
+}
+
 func TestViewCmd_RequiresApp(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
@@ -54,9 +79,30 @@ func TestViewCmd_BuildNotFound(t *testing.T) {
 	require.EqualError(t, err, `build "missing" not found`)
 }
 
-func TestViewCmd_Web_OpensBrowserAndSkipsAPICall(t *testing.T) {
+func TestViewCmd_Web_EnvOnly_SkipsAPICall(t *testing.T) {
 	cmd := newTestViewCmd(t, "https://unused.test")
-	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
+	t.Setenv(cmdutil.EnvAppID, "env-app-slug")
+
+	var gotURL string
+	_, err := runViewCapture(t, cmd, []string{"build-1"}, true, func(url string) error {
+		gotURL = url
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "https://app.bitrise.io/app/env-app-slug/build/build-1", gotURL)
+}
+
+func TestViewCmd_Web_ResolvesUserProvidedName(t *testing.T) {
+	var gotTitle string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotTitle = r.URL.Query().Get("title")
+		_, _ = w.Write([]byte(`{"data":[{"slug":"app-123","title":"My App Name","owner":{}}],"paging":{}}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	cmd := newTestViewCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "My App Name"))
 	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
 
 	var gotURL string
@@ -65,7 +111,8 @@ func TestViewCmd_Web_OpensBrowserAndSkipsAPICall(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "https://app.bitrise.io/app/my-app/build/build-1", gotURL)
+	assert.Equal(t, "https://app.bitrise.io/app/app-123/build/build-1", gotURL)
+	assert.Equal(t, "My App Name", gotTitle)
 }
 
 func TestViewCmd_RejectsWrongArgCount(t *testing.T) {

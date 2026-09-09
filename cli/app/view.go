@@ -56,6 +56,20 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 		return err
 	}
 
+	// Only a user-provided value (--app or a positional arg) can be a
+	// display name, so only that case needs a client to resolve it — an
+	// ambient value (env/config) is already a canonical slug.
+	if cmdutil.AppSlugIsUserProvided(cmd, args) {
+		client, err := cmdutil.NewAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		appSlug, err = cmdutil.NewResolver(client).AppSlug(cmd.Context(), appSlug)
+		if err != nil {
+			return err
+		}
+	}
+
 	if web {
 		url := fmt.Sprintf("%s/app/%s", cmdutil.ResolveWebBaseURL(cmd), appSlug)
 		if err := openBrowser(url); err != nil {
@@ -69,7 +83,7 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	if err != nil {
 		return err
 	}
-	a, err := internalapp.NewService(client).ViewByNameOrSlug(cmd.Context(), cmdutil.NewResolver(client), appSlug)
+	a, err := internalapp.NewService(client).View(cmd.Context(), appSlug)
 	if err != nil {
 		return err
 	}

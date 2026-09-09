@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/resolve"
 )
 
 // App is the CLI representation of a Bitrise app (project).
@@ -65,21 +64,6 @@ func (s *Service) List(ctx context.Context, opts ListOptions) (AppsResult, error
 		items = append(items, fromAPI(a))
 	}
 	return AppsResult{Items: items, NextCursor: next}, nil
-}
-
-// ViewByNameOrSlug resolves value via r and returns the app. When r found a
-// name match in the current API call (complete=true), that result is used
-// directly — no second request. Otherwise (cache hit or literal-slug
-// passthrough) GET /apps/{slug} is called via View.
-func (s *Service) ViewByNameOrSlug(ctx context.Context, r *resolve.Resolver, value string) (App, error) {
-	app, complete, err := r.ResolveApp(ctx, value)
-	if err != nil {
-		return App{}, err
-	}
-	if complete {
-		return fromAPI(app), nil
-	}
-	return s.View(ctx, app.Slug)
 }
 
 // View returns details of a single app by slug.
