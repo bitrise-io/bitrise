@@ -96,14 +96,6 @@ func PredecessorDir() (string, error) {
 	return filepath.Dir(dir), nil
 }
 
-func predecessorConfigPath() (string, error) {
-	dir, err := PredecessorDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "config.yaml"), nil // note: .yaml, not .yml
-}
-
 // predecessorConfig is a superset of Config: every current field (so
 // unmarshaling the current config.yml through it loses nothing), plus the
 // predecessor CLI's pre-rename key spellings (app_slug,
@@ -232,6 +224,14 @@ func ActivePath() (string, error) {
 		}
 	}
 	return p, nil
+}
+
+func predecessorConfigPath() (string, error) {
+	dir, err := PredecessorDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.yaml"), nil // note: .yaml, not .yml
 }
 
 // LoadDir searches the current working directory and its ancestors for a

@@ -79,14 +79,6 @@ func Path() (string, error) {
 	return filepath.Join(dir, "auth.yaml"), nil
 }
 
-func predecessorPath() (string, error) {
-	dir, err := config.PredecessorDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "auth.yaml"), nil
-}
-
 // ActivePath returns the auth file Load() actually reads from right now:
 // the predecessor CLI's auth.yaml while that fallback is live, or the
 // current path once anything has written it (or if neither exists yet).
@@ -188,4 +180,12 @@ func Clear() error {
 		return fmt.Errorf("remove %s: %w", pp, err)
 	}
 	return nil
+}
+
+func predecessorPath() (string, error) {
+	dir, err := config.PredecessorDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "auth.yaml"), nil
 }
