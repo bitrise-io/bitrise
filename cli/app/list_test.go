@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
 )
@@ -135,6 +136,90 @@ func TestListCmd_PropagatesAPIError(t *testing.T) {
 	assert.Contains(t, err.Error(), "forbidden")
 }
 
+func TestListCmd_WorkspaceScopedPath(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("workspace", "my-workspace"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/my-workspace/apps", gotPath)
+}
+
+func TestListCmd_WorkspaceFromEnv(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	t.Setenv(cmdutil.EnvWorkspaceID, "env-ws")
+	cmd, _ := newTestListCmd(t, srv.URL)
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/env-ws/apps", gotPath)
+	assert.Contains(t, errOut.String(), "Using default workspace: env-ws")
+}
+
+func TestListCmd_WorkspaceFromConfig(t *testing.T) {
+	t.Setenv(cmdutil.EnvWorkspaceID, "")
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	cmd, _ := newTestListCmdWithConfig(t, srv.URL, config.Config{DefaultWorkspaceID: "cfg-ws"})
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/cfg-ws/apps", gotPath)
+	assert.Contains(t, errOut.String(), "Using default workspace: cfg-ws")
+}
+
+func TestListCmd_WorkspaceFlagWinsOverDefault_NoBreadcrumb(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	t.Setenv(cmdutil.EnvWorkspaceID, "env-ws")
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("workspace", "flag-ws"))
+	errOut := &bytes.Buffer{}
+	cmd.SetErr(errOut)
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/flag-ws/apps", gotPath)
+	assert.NotContains(t, errOut.String(), "Using default workspace", "an explicit --workspace is not a default")
+}
+
+func TestListCmd_WorkspaceNameResolvesToSlug(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/organizations" {
+			_, _ = w.Write([]byte(`{"data":[{"slug":"acme","name":"Acme Corp"}]}`))
+			return
+		}
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("workspace", "Acme Corp"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/acme/apps", gotPath)
+}
+
 func TestListCmd_RejectsPositionalArgs(t *testing.T) {
 	cmd := NewListCommand()
 	cmd.SetArgs([]string{"unexpected"})
@@ -157,6 +242,16 @@ func newTestListCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buf
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd, &out
+}
+
+// newTestListCmdWithConfig is newTestListCmd for tests that need extra
+// resolved config keys (e.g. default_workspace_id) alongside the API base URL.
+func newTestListCmdWithConfig(t *testing.T, apiBaseURL string, global config.Config) (*cobra.Command, *bytes.Buffer) {
+	t.Helper()
+	cmd, out := newTestListCmd(t, apiBaseURL)
+	global.APIBaseURL = apiBaseURL
+	cmd.SetContext(config.WithResolved(t.Context(), config.Resolve(config.Config{}, config.Config{}, global)))
+	return cmd, out
 }
 
 func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {

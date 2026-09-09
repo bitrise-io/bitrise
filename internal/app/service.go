@@ -22,13 +22,15 @@ type App struct {
 }
 
 // ListOptions paginates and filters app lists. Filter fields map to the
-// query parameters of GET /apps.
+// query parameters of GET /apps (or GET /organizations/{org-slug}/apps when
+// OrgSlug is set).
 type ListOptions struct {
 	Limit       int
 	Cursor      string
 	SortBy      string
 	Title       string
 	ProjectType string
+	OrgSlug     string // non-empty scopes the listing to that workspace
 }
 
 // AppsResult is one page of apps.
@@ -55,6 +57,7 @@ func (s *Service) List(ctx context.Context, opts ListOptions) (AppsResult, error
 		Limit:       opts.Limit,
 		Title:       opts.Title,
 		ProjectType: opts.ProjectType,
+		OrgSlug:     opts.OrgSlug,
 	})
 	if err != nil {
 		return AppsResult{}, err

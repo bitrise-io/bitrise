@@ -52,6 +52,32 @@ func TestList_PassesOptionsAsQueryParams(t *testing.T) {
 	assert.Equal(t, "android", gotQuery.Get("project_type"))
 }
 
+func TestList_PassesOrgSlugAsOrgScopedPath(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+	client := newAPIClient(t, srv.URL)
+
+	_, err := NewService(client).List(context.Background(), ListOptions{OrgSlug: "acme"})
+	require.NoError(t, err)
+	assert.Equal(t, "/organizations/acme/apps", gotPath)
+}
+
+func TestList_EmptyOrgSlugUsesGlobalPath(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+	client := newAPIClient(t, srv.URL)
+
+	_, err := NewService(client).List(context.Background(), ListOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, "/apps", gotPath)
+}
+
 func TestList_PropagatesAPIError(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
