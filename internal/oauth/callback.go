@@ -84,7 +84,15 @@ func (cs *callbackServer) handle(w http.ResponseWriter, r *http.Request) {
 	// could abort an in-flight login with a forged ?error=... — bypassing
 	// the CSRF check entirely on the deny path.
 	if q.Get("state") != cs.state {
-		cs.deliver(w, callbackResult{err: errors.New("state mismatch on OAuth callback — possible CSRF, aborting")})
+		// A provider that omits state on a deny (contrary to RFC 6749
+		// §4.1.2.1) would otherwise be reported as a CSRF attempt with no
+		// hint of the real cause, so name the error param too — without
+		// letting it change what happens, which stays "abort".
+		err := errors.New("state mismatch on OAuth callback — possible CSRF, aborting")
+		if errCode := q.Get("error"); errCode != "" {
+			err = fmt.Errorf("%w (the callback also reported: %s)", err, joinNonEmpty(errCode, q.Get("error_description")))
+		}
+		cs.deliver(w, callbackResult{err: err})
 		return
 	}
 	if errCode := q.Get("error"); errCode != "" {

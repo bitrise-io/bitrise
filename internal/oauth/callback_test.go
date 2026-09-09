@@ -48,6 +48,22 @@ func TestCallbackServer_StateCheckedBeforeError(t *testing.T) {
 	_, err := cs.wait(waitCtx(t))
 	assert.ErrorContains(t, err, "state mismatch")
 	assert.NotContains(t, err.Error(), "authorization denied")
+	// The mismatch still decides the outcome, but the error param is named
+	// so a provider that omits state on a deny isn't reported as pure CSRF.
+	assert.ErrorContains(t, err, "access_denied")
+}
+
+// TestCallbackServer_DenyWithoutState covers the provider that omits state on
+// a deny: the login still aborts as a state mismatch, but the reason the
+// provider gave has to survive into the message.
+func TestCallbackServer_DenyWithoutState(t *testing.T) {
+	cs := startCallbackServer(t, "right")
+	visitCallback(t, cs, "?error=access_denied&error_description=User+said+no")
+
+	_, err := cs.wait(waitCtx(t))
+	assert.ErrorContains(t, err, "state mismatch")
+	assert.ErrorContains(t, err, "access_denied")
+	assert.ErrorContains(t, err, "User said no")
 }
 
 func TestCallbackServer_MissingCode(t *testing.T) {
