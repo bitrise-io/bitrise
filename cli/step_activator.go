@@ -2,7 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/stepman/activator"
 	"github.com/bitrise-io/stepman/stepid"
@@ -17,9 +20,38 @@ type stepActivator struct {
 
 func newStepActivator(logger log.Logger) stepActivator {
 	return stepActivator{
-		activator: activator.New(logger, activator.OptionsFromEnv()),
+		activator: activator.New(logger, activatorOptionsFromEnv()),
 		logger:    logger,
 	}
+}
+
+// activatorOptionsFromEnv resolves how steps are activated for this run.
+// Stepman takes these as explicit options and reads no environment of its own,
+// so the mapping lives here, at the edge, and happens once per run.
+//
+// Both feature flags default to on; only "false" or "0" opts out.
+func activatorOptionsFromEnv() activator.Options {
+	return activator.Options{
+		UseSteplibAPI:          !isEnvDisabled(configs.SteplibUseAPIEnvKey),
+		SteplibAPIURL:          "",
+		UsePrecompiled:         !isEnvDisabled(configs.SteplibUseBinaryEnvKey),
+		PrecompiledStorageURLs: splitStorageURLs(os.Getenv(configs.SteplibStorageURLsEnvKey)),
+	}
+}
+
+// isEnvDisabled reports whether an opt-out flag is switched off. Any other
+// value, including an unset variable, leaves the feature enabled.
+func isEnvDisabled(key string) bool {
+	return os.Getenv(key) == "false" || os.Getenv(key) == "0"
+}
+
+// splitStorageURLs parses the comma-separated storage URL override. An empty
+// override yields nil, which leaves stepman's built-in list in place.
+func splitStorageURLs(override string) []string {
+	if override == "" {
+		return nil
+	}
+	return strings.Split(override, ",")
 }
 
 // Note: even when err != nil, the ActivatedStep struct will be returned with a valid DidStepLibUpdate value

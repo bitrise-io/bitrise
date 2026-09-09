@@ -26,7 +26,7 @@ require (
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44 // indirect
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.38 // indirect
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef // indirect
-	github.com/bitrise-io/stepman v0.25.1-0.20260907160025-dd3e96a0c736 // indirect
+	github.com/bitrise-io/stepman v0.25.1-0.20260909084850-82e8e6752dc6 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.6.4 // indirect

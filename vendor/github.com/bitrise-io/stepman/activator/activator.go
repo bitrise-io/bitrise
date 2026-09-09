@@ -1,9 +1,6 @@
 package activator
 
 import (
-	"os"
-	"strings"
-
 	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/steplibrary"
@@ -13,14 +10,16 @@ import (
 const (
 	bitriseSteplibURL    = "https://github.com/bitrise-io/bitrise-steplib.git"
 	bitriseSteplibAPIURL = "https://steplib.bitrise.io/api"
-
-	useSteplibAPIEnv               = "BITRISE_STEPLIB_USE_API"
-	precompiledStepsEnv            = "BITRISE_STEPLIB_USE_BINARY"
-	precompiledStepsStorageURLsEnv = "BITRISE_STEPLIB_STORAGE_URLS"
 )
 
 // Options is the configuration of an Activator. It is resolved once, when the
 // Activator is built, rather than re-read on every step activation.
+//
+// Every field is supplied by the caller: stepman reads no configuration of its
+// own, so whichever process owns these settings also owns how they are
+// discovered. The Bitrise CLI, for one, maps environment variables onto them.
+// The zero value activates every step from source, through a git-cloned
+// StepLib.
 type Options struct {
 	// UseSteplibAPI activates steps of the canonical Bitrise StepLib over the
 	// StepLib V2 API instead of a local git clone. It has no effect on
@@ -38,33 +37,6 @@ type Options struct {
 	// PrecompiledStorageURLs are the base URLs tried in order for precompiled
 	// executables. Empty means steplib.DefaultPrecompiledStorageURLs.
 	PrecompiledStorageURLs []string
-}
-
-// OptionsFromEnv resolves the Options that stepman reads from the environment.
-// Both feature flags default to on and are disabled by setting them to "false"
-// or "0". Callers that configure the activator themselves do not need this.
-func OptionsFromEnv() Options {
-	return Options{
-		UseSteplibAPI:          !isEnvDisabled(useSteplibAPIEnv),
-		SteplibAPIURL:          "",
-		UsePrecompiled:         !isEnvDisabled(precompiledStepsEnv),
-		PrecompiledStorageURLs: splitStorageURLs(os.Getenv(precompiledStepsStorageURLsEnv)),
-	}
-}
-
-// isEnvDisabled reports whether an opt-out flag is switched off. Any other
-// value, including an unset variable, leaves the feature enabled.
-func isEnvDisabled(key string) bool {
-	return os.Getenv(key) == "false" || os.Getenv(key) == "0"
-}
-
-// splitStorageURLs parses the comma-separated storage URL override. An empty
-// override yields nil, which withDefaults resolves to the built-in list.
-func splitStorageURLs(override string) []string {
-	if override == "" {
-		return nil
-	}
-	return strings.Split(override, ",")
 }
 
 // withDefaults fills in the values that Options leaves optional, so the rest of
