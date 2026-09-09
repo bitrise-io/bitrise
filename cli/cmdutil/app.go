@@ -76,8 +76,9 @@ func AppSlugRequiredErr() error {
 	return errors.New("--app is required")
 }
 
-// NewResolver returns a Resolver wired to client and a fresh in-memory cache.
-func NewResolver(cmd *cobra.Command, client *bitriseapi.Client) *resolve.Resolver {
+// NewResolver returns a Resolver wired to client and a fresh in-memory cache,
+// so repeated lookups within one command invocation hit the API once.
+func NewResolver(client *bitriseapi.Client) *resolve.Resolver {
 	return resolve.New(client, cache.New())
 }
 
@@ -90,5 +91,5 @@ func ResolveAndLookupAppSlug(cmd *cobra.Command, client *bitriseapi.Client) (str
 	if err != nil {
 		return "", err
 	}
-	return NewResolver(cmd, client).AppSlug(cmd.Context(), raw)
+	return NewResolver(client).AppSlug(cmd.Context(), raw)
 }

@@ -287,7 +287,7 @@ func tryOnlineValidate(cmd *cobra.Command, bitriseConfigPath, bitriseConfigBase6
 	}
 
 	if appSlug != "" {
-		resolved, rerr := cmdutil.NewResolver(cmd, client).AppSlug(cmd.Context(), appSlug)
+		resolved, rerr := cmdutil.NewResolver(client).AppSlug(cmd.Context(), appSlug)
 		if rerr != nil {
 			return nil, fmt.Sprintf("online validation unavailable: %s", rerr), false
 		}

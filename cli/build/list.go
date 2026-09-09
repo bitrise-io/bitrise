@@ -87,7 +87,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 				beforeTime = &t
 			}
 
-			appSlug, err := cmdutil.NewResolver(cmd, client).AppSlug(cmd.Context(), rawAppSlug)
+			appSlug, err := cmdutil.NewResolver(client).AppSlug(cmd.Context(), rawAppSlug)
 			if err != nil {
 				return err
 			}

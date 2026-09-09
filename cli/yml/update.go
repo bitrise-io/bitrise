@@ -56,7 +56,7 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 				return fmt.Errorf("bitrise.yml content is empty")
 			}
 
-			appSlug, err := cmdutil.NewResolver(cmd, client).AppSlug(cmd.Context(), rawAppSlug)
+			appSlug, err := cmdutil.NewResolver(client).AppSlug(cmd.Context(), rawAppSlug)
 			if err != nil {
 				return err
 			}

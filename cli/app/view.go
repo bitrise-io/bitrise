@@ -69,7 +69,7 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	if err != nil {
 		return err
 	}
-	a, err := internalapp.NewService(client).ViewByNameOrSlug(cmd.Context(), cmdutil.NewResolver(cmd, client), appSlug)
+	a, err := internalapp.NewService(client).ViewByNameOrSlug(cmd.Context(), cmdutil.NewResolver(client), appSlug)
 	if err != nil {
 		return err
 	}
