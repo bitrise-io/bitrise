@@ -12,7 +12,7 @@ import (
 	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 )
 
-func (c *Client) getStepVersionInfo(ctx context.Context, stepID, version string) (models.StepInfoModel, ResolvedStepVersion, error) {
+func (c Client) getStepVersionInfo(ctx context.Context, stepID, version string) (models.StepInfoModel, ResolvedStepVersion, error) {
 	if stepID == "" {
 		return models.StepInfoModel{}, ResolvedStepVersion{}, errors.New("missing required input: step id")
 	}
@@ -61,7 +61,7 @@ func (c *Client) getStepVersionInfo(ctx context.Context, stepID, version string)
 
 // resolveVersion turns a parsed version constraint into a concrete version
 // string, fetching the step's version list when the constraint needs it.
-func (c *Client) resolveVersion(ctx context.Context, stepID, version string, constraint models.VersionConstraint, latestVersions steplibindex.LatestPointer) (string, error) {
+func (c Client) resolveVersion(ctx context.Context, stepID, version string, constraint models.VersionConstraint, latestVersions steplibindex.LatestPointer) (string, error) {
 	switch constraint.VersionLockType {
 	case models.Latest:
 		return latestVersions.Latest, nil

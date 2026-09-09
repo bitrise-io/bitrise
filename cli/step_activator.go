@@ -18,24 +18,27 @@ type stepActivator struct {
 	logger    log.Logger
 }
 
-func newStepActivator(logger log.Logger) stepActivator {
+func newStepActivator(logger log.Logger, isOfflineMode bool) stepActivator {
 	return stepActivator{
-		activator: activator.New(logger, activatorOptionsFromEnv()),
+		activator: activator.New(logger, activatorOptions(isOfflineMode)),
 		logger:    logger,
 	}
 }
 
-// activatorOptionsFromEnv resolves how steps are activated for this run.
-// Stepman takes these as explicit options and reads no environment of its own,
-// so the mapping lives here, at the edge, and happens once per run.
+// activatorOptions resolves how steps are activated for this run. Stepman takes
+// these as explicit options and reads no environment of its own, so the mapping
+// lives here, at the edge, and happens once per run.
 //
-// Both feature flags default to on; only "false" or "0" opts out.
-func activatorOptionsFromEnv() activator.Options {
+// The options are opt-outs, so the zero value is what production wants. Offline
+// mode is not one of them: it is a run mode the caller already resolved, and it
+// reaches stepman here rather than as an argument to every activation.
+func activatorOptions(isOfflineMode bool) activator.Options {
 	return activator.Options{
-		UseSteplibAPI:          !isEnvDisabled(configs.SteplibUseAPIEnvKey),
+		DisableSteplibAPI:      isEnvDisabled(configs.SteplibUseAPIEnvKey),
 		SteplibAPIURL:          "",
-		UsePrecompiled:         !isEnvDisabled(configs.SteplibUseBinaryEnvKey),
+		DisablePrecompiled:     isEnvDisabled(configs.SteplibUseBinaryEnvKey),
 		PrecompiledStorageURLs: splitStorageURLs(os.Getenv(configs.SteplibStorageURLsEnvKey)),
+		IsOfflineMode:          isOfflineMode,
 	}
 }
 

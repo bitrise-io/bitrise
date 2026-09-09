@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/bitrise-io/bitrise/v2/configs"
 	"github.com/bitrise-io/bitrise/v2/log"
 	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/bitrise-io/stepman/preload"
@@ -32,8 +34,8 @@ var listCachedStepsCommand = &cobra.Command{
 
 var preloadStepsCommand = &cobra.Command{
 	Use:   "preload",
-	Short: "Warms the local Step cache by preloading Bitrise maintained Steps.",
-	Long:  "Preloaded Steps are activated from the local cache instead of being downloaded, which speeds up builds that use them.",
+	Short: "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
+	Long:  fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineModeEnvKey),
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		logCommandParameters(cmd)
 

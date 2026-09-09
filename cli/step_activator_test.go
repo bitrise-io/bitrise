@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestActivatorOptionsFromEnv covers the env-var reads that used to live in
-// stepman: both feature flags default to on and only "false"/"0" opts out.
-func TestActivatorOptionsFromEnv(t *testing.T) {
+// TestActivatorOptions covers the env-var reads that used to live in stepman:
+// both feature flags default to on and only "false"/"0" opts out.
+func TestActivatorOptions(t *testing.T) {
 	tests := []struct {
 		name                string
 		envValue            string // empty means the env var is unset
@@ -34,19 +34,27 @@ func TestActivatorOptionsFromEnv(t *testing.T) {
 				}
 			}
 
-			opts := activatorOptionsFromEnv()
-			require.Equal(t, tt.wantAPI, opts.UseSteplibAPI)
-			require.Equal(t, tt.wantBinary, opts.UsePrecompiled)
+			opts := activatorOptions(false)
+			require.Equal(t, tt.wantAPI, !opts.DisableSteplibAPI)
+			require.Equal(t, tt.wantBinary, !opts.DisablePrecompiled)
 		})
 	}
 }
 
-func TestActivatorOptionsFromEnv_StorageURLOverride(t *testing.T) {
+func TestActivatorOptions_StorageURLOverride(t *testing.T) {
 	t.Setenv("BITRISE_STEPLIB_STORAGE_URLS", "https://a.example.com,https://b.example.com")
 	require.Equal(t, []string{"https://a.example.com", "https://b.example.com"},
-		activatorOptionsFromEnv().PrecompiledStorageURLs)
+		activatorOptions(false).PrecompiledStorageURLs)
 
 	require.NoError(t, os.Unsetenv("BITRISE_STEPLIB_STORAGE_URLS"))
-	require.Nil(t, activatorOptionsFromEnv().PrecompiledStorageURLs,
+	require.Nil(t, activatorOptions(false).PrecompiledStorageURLs,
 		"no override leaves the defaults to be filled in by stepman")
+}
+
+// Offline mode is a run mode rather than an env var read here: the caller
+// resolves it and it reaches stepman as an option instead of being threaded
+// through every activation.
+func TestActivatorOptions_OfflineMode(t *testing.T) {
+	require.False(t, activatorOptions(false).IsOfflineMode)
+	require.True(t, activatorOptions(true).IsOfflineMode)
 }

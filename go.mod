@@ -11,7 +11,7 @@ require (
 	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.38
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.25.1-0.20260909084850-82e8e6752dc6
+	github.com/bitrise-io/stepman v0.25.1-0.20260909100734-091deee08e50
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/gofrs/uuid v4.3.1+incompatible
 	github.com/hashicorp/go-retryablehttp v0.7.8

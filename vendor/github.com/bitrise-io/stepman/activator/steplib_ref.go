@@ -7,7 +7,6 @@ import (
 	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
 )
 
@@ -19,6 +18,7 @@ func (a *Activator) ActivateSteplibRefStep(
 	didStepLibUpdateInWorkflow bool,
 ) (ActivatedStep, error) {
 	log := a.log
+	isOfflineMode := a.opts.IsOfflineMode
 	stepYMLPath := filepath.Join(workDir, "current_step.yml")
 	//nolint:exhaustruct // missing fields are added down below based on activation result
 	activationResult := ActivatedStep{
@@ -26,19 +26,16 @@ func (a *Activator) ActivateSteplibRefStep(
 		DidStepLibUpdate: false,
 	}
 
-	var libraryAPI *steplibrary.Client
-	if a.useSteplibAPIFor(id.SteplibSource) {
-		libraryAPI = a.library
-	}
+	useSteplibAPI := a.useSteplibAPIFor(id.SteplibSource)
 
 	// The inventory source is set here, on the same branch that dispatches, and before
 	// any return: the caller keeps the partial result on error, so a failed activation
 	// is still attributable to the inventory that served it.
-	if libraryAPI == nil {
+	if !useSteplibAPI {
 		activationResult.ActivationInventorySource = ActivationInventorySourceSteplib
 
 		// Old stepman preparation codepath
-		stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow)
+		stepInfo, didUpdate, err := prepareStepLibForActivation(log, id, didStepLibUpdateInWorkflow, isOfflineMode)
 		activationResult.StepInfo = stepInfo
 		activationResult.DidStepLibUpdate = didUpdate
 		if err != nil {
@@ -50,10 +47,11 @@ func (a *Activator) ActivateSteplibRefStep(
 
 	// ActivateStep dispatches to the v2 or legacy codepath.
 	activateOpts := steplib.Options{
-		UsePrecompiled: a.opts.UsePrecompiled,
-		StorageURLs:    a.opts.PrecompiledStorageURLs,
+		DisablePrecompiled: a.opts.DisablePrecompiled,
+		StorageURLs:        a.opts.PrecompiledStorageURLs,
+		IsOfflineMode:      isOfflineMode,
 	}
-	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, activateOpts, libraryAPI, a.fetcher)
+	resolvedStep, err := steplib.ActivateStep(id, activatedStepDir, stepYMLPath, log, activateOpts, useSteplibAPI, a.library, a.fetcher)
 	activationResult.StepInfo = resolvedStep.StepInfo
 	activationResult.ExecutablePath = resolvedStep.ExecPath
 	if resolvedStep.ExecPath != "" {
@@ -72,6 +70,7 @@ func prepareStepLibForActivation(
 	log stepman.Logger,
 	id stepid.CanonicalID,
 	didStepLibUpdateInWorkflow bool,
+	isOfflineMode bool,
 ) (stepInfo models.StepInfoModel, didUpdate bool, err error) {
 	err = stepman.SetupLibrary(id.SteplibSource, log)
 	if err != nil {
@@ -86,7 +85,7 @@ func prepareStepLibForActivation(
 		return models.StepInfoModel{}, false, fmt.Errorf("version constraint is invalid: %s %s", id.IDorURI, id.Version)
 	}
 
-	if shouldUpdateStepLibForStep(versionConstraint, didStepLibUpdateInWorkflow) {
+	if shouldUpdateStepLibForStep(versionConstraint, isOfflineMode, didStepLibUpdateInWorkflow) {
 		log.Infof("Step uses latest version, updating StepLib...")
 		_, err = stepman.UpdateLibrary(id.SteplibSource, log)
 		if err != nil {
@@ -98,7 +97,7 @@ func prepareStepLibForActivation(
 
 	stepInfo, err = stepman.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
 	if err != nil {
-		if didStepLibUpdateInWorkflow {
+		if !canUpdateStepLib(isOfflineMode, didStepLibUpdateInWorkflow) {
 			return stepInfo, didUpdate, err
 		}
 
@@ -119,12 +118,24 @@ func prepareStepLibForActivation(
 	return stepInfo, didUpdate, nil
 }
 
-func shouldUpdateStepLibForStep(constraint models.VersionConstraint, didStepLibUpdateInWorkflow bool) bool {
-	if didStepLibUpdateInWorkflow {
+func shouldUpdateStepLibForStep(constraint models.VersionConstraint, isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool {
+	if !canUpdateStepLib(isOfflineMode, didStepLibUpdateInWorkflow) {
 		return false
 	}
 
 	return (constraint.VersionLockType == models.Latest) ||
 		(constraint.VersionLockType == models.MinorLocked) ||
 		(constraint.VersionLockType == models.MajorLocked)
+}
+
+func canUpdateStepLib(isOfflineMode bool, didStepLibUpdateInWorkflow bool) bool {
+	if isOfflineMode {
+		return false
+	}
+
+	if didStepLibUpdateInWorkflow {
+		return false
+	}
+
+	return true
 }

@@ -204,7 +204,7 @@ func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, track
 		tracker:          tracker,
 		containerManager: containerManager,
 		agentConfig:      agentConfig,
-		stepActivator:    newStepActivator(logger),
+		stepActivator:    newStepActivator(logger, config.Modes.IsSteplibOfflineMode),
 	}
 }
 
@@ -491,6 +491,7 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 		return nil, fmt.Errorf("failed to check Secret Envs Filtering mode: %s", err)
 	}
 
+	isSteplibOfflineMode := isSteplibOfflineMode()
 	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
 
 	return &RunConfig{
@@ -501,6 +502,7 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 			NoOutputTimeout:         noOutputTimeout,
 			SecretFilteringMode:     enabledFiltering,
 			SecretEnvsFilteringMode: enabledEnvsFiltering,
+			IsSteplibOfflineMode:    isSteplibOfflineMode,
 		},
 		Config:   bitriseConfig,
 		Workflow: runParams.WorkflowToRunID,

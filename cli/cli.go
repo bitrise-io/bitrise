@@ -185,6 +185,10 @@ func before(cmd *cobra.Command, _ []string) error {
 		configs.IsPullRequestMode = true
 	}
 
+	// want to access this key in setup command too
+	isOfflineMode := isSteplibOfflineMode()
+	registerSteplibOfflineMode(isOfflineMode)
+
 	return nil
 }
 

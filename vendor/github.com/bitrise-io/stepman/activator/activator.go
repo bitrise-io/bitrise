@@ -1,7 +1,6 @@
 package activator
 
 import (
-	"github.com/bitrise-io/stepman/activator/steplib"
 	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/bitrise-io/stepman/stepman"
@@ -15,55 +14,53 @@ const (
 // Options is the configuration of an Activator. It is resolved once, when the
 // Activator is built, rather than re-read on every step activation.
 //
-// Every field is supplied by the caller: stepman reads no configuration of its
-// own, so whichever process owns these settings also owns how they are
-// discovered. The Bitrise CLI, for one, maps environment variables onto them.
-// The zero value activates every step from source, through a git-cloned
-// StepLib.
+// The flags are opt-outs, so the zero value is what production wants: the
+// StepLib V2 API and prebuilt executables both on.
 type Options struct {
-	// UseSteplibAPI activates steps of the canonical Bitrise StepLib over the
-	// StepLib V2 API instead of a local git clone. It has no effect on
-	// custom/self-hosted StepLibs, which always use the git-clone path.
-	UseSteplibAPI bool
+	// DisableSteplibAPI routes canonical Bitrise StepLib steps through a local
+	// git clone instead of the StepLib V2 API. Custom/self-hosted StepLibs use
+	// the git-clone path either way.
+	DisableSteplibAPI bool
 
 	// SteplibAPIURL is the base URL of the StepLib V2 API. Empty means the
 	// canonical Bitrise inventory.
 	SteplibAPIURL string
 
-	// UsePrecompiled allows activating a step from a prebuilt executable
-	// instead of downloading and building its source.
-	UsePrecompiled bool
+	// DisablePrecompiled builds every step from source, even where the library
+	// offers a prebuilt executable.
+	DisablePrecompiled bool
 
 	// PrecompiledStorageURLs are the base URLs tried in order for precompiled
 	// executables. Empty means steplib.DefaultPrecompiledStorageURLs.
 	PrecompiledStorageURLs []string
+
+	// IsOfflineMode forbids network access, restricting activation to what is
+	// already in the local StepLib cache. It is not supported together with
+	// the StepLib V2 API, which has no local inventory to read from.
+	IsOfflineMode bool
 }
 
 // withDefaults fills in the values that Options leaves optional, so the rest of
-// the package can rely on them being set.
+// the package can rely on them being set. PrecompiledStorageURLs is not among
+// them: steplib owns that list and defaults it itself.
 func withDefaults(opts Options) Options {
 	if opts.SteplibAPIURL == "" {
 		opts.SteplibAPIURL = bitriseSteplibAPIURL
 	}
-	if len(opts.PrecompiledStorageURLs) == 0 {
-		opts.PrecompiledStorageURLs = steplib.DefaultPrecompiledStorageURLs
-	}
 	return opts
 }
 
-// Activator activates steps. It owns the collaborators that are worth keeping
-// alive across activations — most importantly a single HTTP client, so that
-// every step in a run shares one connection pool — and is therefore meant to be
-// built once per workflow run and reused, not per step.
+// Activator activates steps.
 type Activator struct {
 	log     stepman.Logger
 	opts    Options
 	fetcher httpfetch.Client
 
-	// library serves the StepLib V2 inventory. It is built even when
-	// UseSteplibAPI is off, because whether a given step may use it also
-	// depends on that step's StepLib source; see useSteplibAPIFor.
-	library *steplibrary.Client
+	// library serves the StepLib V2 inventory. Always present, including when
+	// UseSteplibAPI is off: whether a given step may use it depends on that
+	// step's StepLib source too, so the choice is made per activation rather
+	// than here. See useSteplibAPIFor.
+	library steplibrary.Client
 }
 
 // New builds an Activator. Reuse the returned value for every step of a run:
@@ -84,5 +81,5 @@ func New(log stepman.Logger, opts Options) *Activator {
 // V2 API. The API only hosts the canonical Bitrise StepLib, so custom StepLibs
 // stay on the git-clone path regardless of configuration.
 func (a *Activator) useSteplibAPIFor(steplibURI string) bool {
-	return a.opts.UseSteplibAPI && steplibURI == bitriseSteplibURL
+	return !a.opts.DisableSteplibAPI && steplibURI == bitriseSteplibURL
 }
