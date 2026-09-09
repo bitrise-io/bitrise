@@ -30,6 +30,22 @@ type ConfigsModel struct {
 	EnvListBytesLimitInKB int `json:"env_list_bytes_limit_in_kb,omitempty"`
 }
 
+// ConfigLimitOverrides selects which env size limits to write to the config
+// file. A nil field is left unchanged; a non-nil field is written as-is,
+// including 0, which disables that check.
+type ConfigLimitOverrides struct {
+	EnvBytesLimitInKB     *int
+	EnvListBytesLimitInKB *int
+}
+
+// configsFile mirrors the on-disk config, using pointers so an unset field is
+// omitted and a 0 is written explicitly (unlike ConfigsModel, whose omitempty
+// int fields would drop a 0 and fall back to the default).
+type configsFile struct {
+	EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty"`
+	EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty"`
+}
+
 func getEnvmanConfigsDirPath() string {
 	return path.Join(pathutil.UserHomeDir(), ".envman")
 }
@@ -74,12 +90,7 @@ func GetConfigs() (ConfigsModel, error) {
 			return ConfigsModel{}, err
 		}
 
-		type ConfigsFileMode struct {
-			EnvBytesLimitInKB     *int `json:"env_bytes_limit_in_kb,omitempty"`
-			EnvListBytesLimitInKB *int `json:"env_list_bytes_limit_in_kb,omitempty"`
-		}
-
-		var userConfigs ConfigsFileMode
+		var userConfigs configsFile
 		if err := json.Unmarshal(bytes, &userConfigs); err != nil {
 			return ConfigsModel{}, err
 		}
@@ -100,6 +111,67 @@ func GetConfigs() (ConfigsModel, error) {
 	}
 
 	return configs, nil
+}
+
+// SetConfigLimits merges the given limits into the config file, creating it if
+// needed, and returns a restore function that reverts the file to its previous
+// state (its original content, or its absence).
+//
+// Unlike the process env var overrides, this reaches an `envman` binary that
+// predates env var support (e.g. one invoked by a step to export outputs),
+// since reading configs.json is the older, always-present mechanism.
+func SetConfigLimits(overrides ConfigLimitOverrides) (restore func() error, err error) {
+	if overrides.EnvBytesLimitInKB == nil && overrides.EnvListBytesLimitInKB == nil {
+		return func() error { return nil }, nil
+	}
+
+	configPth := getEnvmanConfigsFilePath()
+
+	existed, err := pathutil.IsPathExists(configPth)
+	if err != nil {
+		return nil, err
+	}
+
+	var merged configsFile
+	var originalBytes []byte
+	if existed {
+		originalBytes, err = fileutil.ReadBytesFromFile(configPth)
+		if err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(originalBytes, &merged); err != nil {
+			return nil, err
+		}
+	}
+
+	if overrides.EnvBytesLimitInKB != nil {
+		merged.EnvBytesLimitInKB = overrides.EnvBytesLimitInKB
+	}
+	if overrides.EnvListBytesLimitInKB != nil {
+		merged.EnvListBytesLimitInKB = overrides.EnvListBytesLimitInKB
+	}
+
+	mergedBytes, err := json.Marshal(merged)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ensureEnvmanConfigDirExists(); err != nil {
+		return nil, err
+	}
+	if err := fileutil.WriteBytesToFile(configPth, mergedBytes); err != nil {
+		return nil, err
+	}
+
+	return func() error {
+		if !existed {
+			if err := os.Remove(configPth); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			return nil
+		}
+		return fileutil.WriteBytesToFile(configPth, originalBytes)
+	}, nil
 }
 
 // envLimitOverride reads a limit from a process env var, treating a value of 0
