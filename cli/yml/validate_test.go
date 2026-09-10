@@ -3,10 +3,12 @@ package yml
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -16,6 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/internal/auth"
 	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/output"
 )
 
 const validConfig = `format_version: "17"
@@ -245,6 +248,96 @@ func TestValidateCmd_OfflineAndAppAreMutuallyExclusive(t *testing.T) {
 	assert.Contains(t, err.Error(), "none of the others can be")
 }
 
+func TestValidateCmd_FileIsAnAliasOfConfig(t *testing.T) {
+	for _, flag := range []string{"--" + fileKey, "-f"} {
+		t.Run(flag, func(t *testing.T) {
+			var gotYML string
+			cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, r *http.Request) {
+				gotYML = submittedYML(t, r)
+				_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+			})
+			path := filepath.Join(t.TempDir(), "custom.yml")
+			require.NoError(t, os.WriteFile(path, []byte(validConfig), 0600))
+
+			cmd.SetArgs([]string{flag, path})
+			require.NoError(t, cmd.Execute())
+			assert.Equal(t, validConfig, gotYML)
+		})
+	}
+}
+
+func TestValidateCmd_DashConfigPathReadsStdin(t *testing.T) {
+	for _, flag := range []string{"--" + cmdutil.ConfigKey, "--" + fileKey} {
+		t.Run(flag, func(t *testing.T) {
+			var gotYML string
+			cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, r *http.Request) {
+				gotYML = submittedYML(t, r)
+				_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+			})
+			cmd.SetIn(strings.NewReader(validConfig))
+
+			cmd.SetArgs([]string{flag, stdinPath})
+			require.NoError(t, cmd.Execute())
+			assert.Equal(t, validConfig, gotYML)
+		})
+	}
+}
+
+func TestValidateCmd_ConfigBase64OutranksAStdinPath(t *testing.T) {
+	var gotYML string
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, r *http.Request) {
+		gotYML = submittedYML(t, r)
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	cmd.SetIn(strings.NewReader(locallyInvalidConfig))
+
+	cmd.SetArgs([]string{"--" + cmdutil.ConfigKey, stdinPath, "--" + cmdutil.ConfigBase64Key, encode(validConfig)})
+	require.NoError(t, cmd.Execute())
+	assert.Equal(t, validConfig, gotYML)
+}
+
+func TestValidateCmd_FileAndConfigAreMutuallyExclusive(t *testing.T) {
+	for _, other := range []string{cmdutil.ConfigKey, cmdutil.ConfigBase64Key} {
+		t.Run(other, func(t *testing.T) {
+			cmd := NewValidateCommand()
+			cmd.SetArgs([]string{"--" + fileKey, "a", "--" + other, "b"})
+			cmd.SetOut(io.Discard)
+			cmd.SetErr(io.Discard)
+
+			err := cmd.Execute()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "none of the others can be")
+		})
+	}
+}
+
+func TestValidateCmd_EmptyFormatFallsBackToTheGlobalOutputDefault(t *testing.T) {
+	t.Cleanup(func() { output.SetDefault(output.FormatRaw) })
+	output.SetDefault(output.FormatYML)
+
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+
+	stdout := captureStdout(t, func() { require.NoError(t, cmd.RunE(cmd, nil)) })
+	assert.Contains(t, stdout, "is_valid: true")
+}
+
+func TestValidateCmd_FormatFlagOutranksTheGlobalOutputDefault(t *testing.T) {
+	t.Cleanup(func() { output.SetDefault(output.FormatRaw) })
+	output.SetDefault(output.FormatYML)
+
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+	require.NoError(t, cmd.Flags().Set(cmdutil.FormatKey, output.FormatJSON))
+
+	stdout := captureStdout(t, func() { require.NoError(t, cmd.RunE(cmd, nil)) })
+	assert.Contains(t, stdout, `"is_valid":true`)
+}
+
 func encode(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
@@ -283,4 +376,33 @@ func newTestValidateCmd(t *testing.T, handler http.HandlerFunc) *cobra.Command {
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd
+}
+
+// submittedYML returns the bitrise.yml the command posted for online validation.
+func submittedYML(t *testing.T, r *http.Request) string {
+	t.Helper()
+	var body struct {
+		BitriseYML string `json:"bitrise_yml"`
+	}
+	require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+	return body.BitriseYML
+}
+
+// captureStdout runs fn with os.Stdout redirected to a pipe and returns what
+// it wrote there. validate() renders through cmdutil's loggers, which write to
+// os.Stdout rather than to the command's own writer.
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
+	original := os.Stdout
+	os.Stdout = w
+	defer func() { os.Stdout = original }()
+
+	fn()
+	require.NoError(t, w.Close())
+
+	out, err := io.ReadAll(r)
+	require.NoError(t, err)
+	return string(out)
 }

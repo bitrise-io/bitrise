@@ -31,7 +31,10 @@ const (
 	PRReadyStateKey     = "pr-ready-state"
 	ConfigKey           = "config"
 	InventoryKey        = "inventory"
-	FormatKey           = "format"
+	// FormatKey selects the output format. It takes the -f shorthand only on
+	// commands that have no --file flag: where both exist (yml update/validate,
+	// rde template create/update), -f binds to --file and --format has none.
+	FormatKey = "format"
 
 	TagKey    = "tag"
 	GitKey    = "git"

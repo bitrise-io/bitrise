@@ -65,10 +65,7 @@ later 'bitrise yml get' returns an equivalent, reformatted document.`,
 		},
 	}
 
-	// No -f shorthand: every other cloud command uses -f for --format, so
-	// binding it to --file here would make `yml update -f json` open a file
-	// named "json" while `yml get -f json` selects a format.
-	cmd.Flags().StringVar(&filePath, "file", "", "path to the bitrise.yml file, or - for stdin (reads from stdin if omitted)")
+	cmd.Flags().StringVarP(&filePath, "file", "f", "", "path to the bitrise.yml file, or - for stdin (reads from stdin if omitted)")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID to update the bitrise.yml for (or set BITRISE_APP_ID; inside a build, defaults to the app the build runs for)")
 
 	return cmd

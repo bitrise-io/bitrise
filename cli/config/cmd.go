@@ -48,8 +48,7 @@ file then global file) > built-in default (raw). theme resolves the same way,
 via --theme and $%s (default: auto). Both honor the per-directory file, like
 app_id/default_workspace_id above — neither is a credential or a URL. Note
 --output only affects commands that share the raw/json/yml format vocabulary:
-'yml validate', 'local workflow-list' and 'plugin list/info' keep their own
---format flag.
+'local workflows' and 'plugin list/info' keep their own --format flag.
 
 'get'/'set'/'unset'/'list' only read and write the global file — per-dir
 files must be edited by hand.

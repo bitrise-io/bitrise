@@ -8,70 +8,83 @@ This document tracks the user-visible breaking changes introduced for the **v3**
 major release. v3 merges the cloud resource-management commands into the existing
 CLI.
 
-Append new breaking changes here as later v3 steps land. List each change with
-what changed, the impact, and how to migrate.
+**Audience: existing Bitrise CLI v2 users.** Every entry describes a change against
+v2 behavior. Commands that are new in v3 are not covered here.
 
-## Legacy (urfave → cobra) cleanup
-
-The v2 line migrated the CLI from `urfave/cli` to `cobra` while preserving the old
-surface behind compatibility shims. v3 removes those shims and adopts cobra's
-native behavior.
+## Command-line behavior
 
 ### Argument parsing
 
-- **Single-dash long flags are no longer accepted.** `urfave` treated `-config`
-  and `--config` as equivalent; cobra/pflag treat a single dash as shorthand flags.
-  So `-workflow` is now rejected (`unknown shorthand flag: 'w' in -workflow`), and —
-  worse — `-config x` is silently parsed as the `-c` shorthand with value `onfig`
-  (not `--config x`). Always use the double-dash form for long flags:
-  `bitrise run -config bitrise.yml` → `bitrise run --config bitrise.yml`. Short flags
+- **Single-dash long flags are no longer accepted.** v2 treated `-config` and
+  `--config` as the same flag. A single dash now introduces short flags only, so
+  `-config x` would otherwise be read as `-c` with the value `onfig`. Rather than
+  misread it, the CLI rejects any single-dash spelling of a long flag:
+  `bitrise run -config bitrise.yml` →
+  `Error: unknown flag: -config (did you mean --config?)`, exit 1. Short flags
   (e.g. `-c`, `-i`) are unaffected.
   *Migrate:* update scripts/CI invocations to use `--<flag>` for long flag names.
 - **Unknown flags are now rejected.** Previously an unrecognized flag that followed
   a positional argument was silently ignored (e.g. `bitrise run wf --bogus` still
   ran the workflow). It now produces an error.
 - **Unknown commands now produce a concise error.** `bitrise notacommand` prints
-  cobra's `unknown command "notacommand" for "bitrise"` error (and exits 1) instead
-  of printing the full help text.
+  `unknown command "notacommand" for "bitrise"` and exits 1, instead of printing
+  the full help text.
+
+### Error output
+
+- **Errors now go to stderr, not stdout.** In v2 every fatal error was printed to
+  stdout, mixed into whatever the command was producing. v3 writes them to stderr
+  as `Error: <message>`. The exit code is unchanged (1).
+  *Migrate:* capture stderr wherever a script reads the failure reason; a
+  stdout-only capture now comes back empty on failure.
+- **Under `run --output-format json`, fatal errors are no longer JSON.** They used to
+  be printed to stdout as a JSON log line like every other message; they are now the
+  same plain `Error: …` line on stderr. This covers errors that abort the command —
+  bad arguments, no workflow specified, setup failures. A workflow that runs and
+  *fails* is unaffected: its log output is still JSON on stdout, and it still exits
+  with the build's exit code.
+  *Migrate:* read stderr for the abort reason, or key off the exit code.
+- **A bare `bitrise` no longer prints an empty `Error:` line** below its help output.
 
 ### Help and version output
 
-- **Root `--help` uses cobra's native layout.** The previous urfave-style
+- **`bitrise --help` has a new layout.** The previous
   `NAME / USAGE / VERSION / GLOBAL OPTIONS / COMMANDS / PLUGINS` layout is gone.
-  Installed plugins are still listed (in a `Plugins:` section appended to the help),
-  but the `[$ENV]` env-binding hints next to global flags are no longer shown.
+  Installed plugins are still listed, in a `Plugins:` section appended to the help,
+  but the `[$ENV]` hints next to global flags are no longer shown.
 
 ### Command listing and completion
 
-- **Commands and flags are listed alphabetically** in help output (previously in
-  declaration order).
-- **A `completion` command is now available** (cobra's shell-completion generator),
-  e.g. `bitrise completion bash`.
+- **Commands and flags are listed alphabetically** in help output. v2 listed them
+  in a fixed, hand-picked order.
+- **A `completion` command is now available** for generating shell-completion
+  scripts, e.g. `bitrise completion bash`.
 
 ### Environment variable handling
 
-Env-var reading for the bool "mode" flags was unified into one consistent rule:
-**explicit flag > bound env var (parsed with `strconv.ParseBool`) > inventory-based
-default**. A non-bool env value is now an error.
+Reading the boolean "mode" flags from environment variables was unified into one
+rule: **explicit flag > environment variable > inventory-based default**. The
+accepted values are `1`, `t`, `T`, `true`, `TRUE`, `True` and their false
+counterparts (`0`, `f`, `F`, `false`, `FALSE`, `False`); anything else is now an
+error.
 
-- **`run --secret-filtering` is now bound to `$BITRISE_SECRET_FILTERING`** and
-  validated like `trigger --secret-filtering`: the env value is parsed with
-  `ParseBool`, a non-bool value errors, and the flag is reported to analytics when
-  sourced from the env. Previously `run` matched the env literally (`"true"`/`"false"`
-  only), ignored other values, and never reported it as set from the env.
-- **`$BITRISE_SECRET_ENVS_FILTERING` is now parsed with `ParseBool`** (e.g. `1`/`0`
-  are now accepted) and a non-bool value errors, instead of being matched literally.
-- **`$CI` and `$DEBUG` parsing accepts all `ParseBool` spellings** (e.g. `DEBUG=1`
-  now enables debug mode). Non-bool values for these already errored and still do.
-- An empty value for any of these env vars is treated as unset (the CLI falls back
-  to the inventory-based default) rather than as `false`.
+- **`run --secret-filtering` now reads `$BITRISE_SECRET_FILTERING`**, the way
+  `trigger --secret-filtering` always did: any accepted spelling works, a
+  non-boolean value errors, and the flag is reported to analytics when it came from
+  the environment. Previously `run` matched the value literally (`"true"`/`"false"`
+  only), ignored anything else, and never reported it as set from the environment.
+- **`$BITRISE_SECRET_ENVS_FILTERING` accepts every boolean spelling** (e.g. `1`/`0`
+  now work) and errors on a non-boolean value, instead of being matched literally.
+- **`$CI` and `$DEBUG` accept every boolean spelling** (e.g. `DEBUG=1` now enables
+  debug mode). Non-boolean values for these already errored and still do.
+- An empty value for any of these variables is treated as unset — the CLI falls back
+  to the inventory-based default rather than to `false`.
 
 ## Command reorganization
 
 The commands were regrouped by use case under `local`, `yml`, and `step` parent
 commands. The old top-level names continue to work as hidden aliases, so existing
-scripts keep running: `trigger-check` was the only command removed outright, and
-`validate` the only one whose behavior changed.
+scripts keep running; `trigger-check` is the only command removed outright.
 
 ### `trigger-check` removed
 
@@ -107,6 +120,17 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   *Migrate:* no action required for existing scripts. New usage and documentation
   should prefer the grouped paths.
 
+### Plugins named like a new command need the colon prefix
+
+- **A plugin whose name collides with a command is no longer reachable without `:`.**
+  A plugin is only looked up when the first word isn't a known command, so the
+  commands added in v3 now shadow same-named plugins: `bitrise step …` runs the built-in
+  `step` command instead of the bundled `:step` plugin. The same applies to any plugin
+  named `app`, `build`, `auth`, `stack`, `user`, `config`, `api`, `rde`, `yml` or
+  `local`.
+  *Migrate:* use the colon syntax — `bitrise :step …` — which has always worked and is
+  unaffected.
+
 ### `yml validate` updated
 
 - **`validate` now validates online when you're authenticated, instead of locally.**
@@ -118,7 +142,8 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   the old top-level `bitrise validate` is an alias of this command, existing invocations
   change behavior as soon as a token is present — including picking up any difference
   between the server's messages and the local ones. When validation happens online the
-  command says so on stderr and names the escape hatch, and the result gains a `source`
+  command says so on stderr and tells you how to force the local check, and the
+  result gains a `source`
   field under `--format json`; a local result carries no marker and its output on
   stdout is unchanged from v2. Two flags control it, and they cannot be combined:
   the new `--offline` forces the local-only check, and the optional `--app` (or
@@ -126,29 +151,32 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   pools).
   *Migrate:* pass `--offline` anywhere you depend on local validation or on its exact
   output — in particular scripts and tests that assert on validation messages.
+- **An unsupported `format_version` no longer fails validation online.** v2 rejected a
+  `bitrise.yml` whose `format_version` is newer than the CLI supports — `is_valid:
+  false`, a hard error, exit 1. On the online path that check is now only a warning,
+  and `is_valid` follows whatever the API reports, so the same file validates clean
+  and exits 0. Since a build normally has a token, this is the common case in CI.
+  `--offline` still fails it exactly as v2 did.
+  *Migrate:* pass `--offline` wherever validation is meant to gate on the running CLI
+  being new enough for the config.
+- **Inside a Bitrise build, `bitrise validate` now runs app-specific checks.**
+  `$BITRISE_APP_SLUG` is injected into every build and is now read as an app-ID
+  fallback, so an authenticated `bitrise validate` with no app named validates against
+  the app the build runs for. That adds the API's app-specific checks — stacks, machine
+  types, license pools — which previously ran for nobody, so a config that validated
+  cleanly before can now report app-specific errors. `--offline` is unaffected: it
+  skips the online path, and an app ID picked up from the environment stays ignored
+  there.
+  *Migrate:* pass `--offline`, or unset `BITRISE_APP_SLUG` for the invocation, to
+  restore the previous behavior.
+- **`validate --format yml` now works.** v2's help advertised "Accepted: json, yml"
+  but the command rejected anything other than `raw` and `json`, exiting 1 with
+  `Invalid format: yml`. It now renders the result as YAML. With no `--format`, the
+  command follows the new global `--output` / `$BITRISE_OUTPUT` / `output` config key
+  — all unset by default, so nothing changes unless you opt in.
 
 ## Config handling
 
-- **Inside a Bitrise build, cloud commands with no `--app` now target the app the build
-  runs for.** `$BITRISE_APP_SLUG` and `$BITRISE_WORKSPACE_ID` are injected into every
-  build, and both are now read as identity fallbacks: `app_id` resolves as `--app` >
-  `$BITRISE_APP_ID` > `$BITRISE_APP_SLUG` > per-directory file > global file, and
-  `default_workspace_id` the same way via `--workspace` and `$BITRISE_WORKSPACE_ID`.
-  So a build step running `bitrise yml get` or `bitrise yml update` without `--app` no
-  longer fails with `--app is required` — it acts on the host app, and for `yml update`
-  that means overwriting that app's own stored bitrise.yml. `bitrise yml validate` never
-  required `--app`, but it now picks the host app up on its own, so a build step that
-  validates online runs the app-specific checks (stacks, machine types, license pools)
-  that previously ran only when `--app` was passed explicitly — a config that validated
-  cleanly before can now report app-specific errors. `--offline` is unaffected: it skips
-  the online path, and an ambient app ID stays ignored there. Note the env var also
-  outranks an `app_id` pinned in a `.bitrise-cli.yml`. `bitrise stack list` picks up
-  `$BITRISE_WORKSPACE_ID` the same way: without `--workspace`, a build step now returns
-  the host workspace's stacks, including any custom stacks configured for it, where it
-  previously always returned the global list. *Migrate:* pass `--app`/`--workspace`
-  explicitly in any build step that targets a different app or workspace than the one
-  it runs in; unset `BITRISE_APP_SLUG`/`BITRISE_WORKSPACE_ID` for the invocation to
-  restore the previous behavior.
 - **Two new config file locations are now read, layered under the existing one.**
   Besides the pre-existing `~/.bitrise/config.json`, the CLI now also reads a global
   `~/.config/bitrise/cli/config.yml` and a per-directory `.bitrise-cli.yml` (found by
@@ -159,26 +187,25 @@ scripts keep running: `trigger-check` was the only command removed outright, and
   one. *Migrate:* no action required. To have a value controlled by the new
   per-directory or global file instead, remove that value from
   `~/.bitrise/config.json`.
-- **`api_base_url` and `web_base_url` never come from the per-directory file.** These
-  two keys — new in v3, managed with `bitrise config get/set/unset/list` and stored in
-  the global `~/.config/bitrise/cli/config.yml` — are the one exception to the
-  precedence above: they are only ever read from the global file. Both carry
-  credentials (a bearer token, a login password) to whatever host they name, and
-  `.bitrise-cli.yml` is picked up from the working directory and its ancestors with no
-  confirmation, so a repo you merely clone and run `bitrise` inside of must not be able
-  to redirect them. `web_base_url` is additionally overridable via
-  `$BITRISE_WEB_BASE_URL`, which wins over the global file. *Migrate:* set these keys
-  with `bitrise config set` or the env var — either key in a `.bitrise-cli.yml` is
-  ignored.
 - **`setup`/CLI-update-check/plugin-update-check now also write `config.yml`.** If you
   already have `~/.bitrise/config.json`, it keeps being updated exactly as before (still
   authoritative for reads), and `~/.config/bitrise/cli/config.yml` is kept in sync
   alongside it. If you don't have a legacy file, one is no longer created — these
   commands now write only the new `config.yml`. *Migrate:* no action required.
-- **A missing/unwritable `~/.config` directory can now fail `setup` and every
-  plugin invocation.** If `~/.config/bitrise/cli/config.yml` can't be written
-  (e.g. a CI container where `~/.bitrise` is writable but `~/.config` isn't),
-  `bitrise setup` reports failure even though setup itself succeeded, and any
-  `bitrise <plugin>` invocation aborts before running the plugin. *Migrate:*
-  ensure `~/.config` (or `$XDG_CONFIG_HOME`) is writable wherever `setup` or
-  plugins run.
+- **An unwritable `~/.config` directory can now fail `setup` and plugin invocations.**
+  A *missing* directory is fine — it's created, at any depth. An unwritable one only
+  matters if you have no `~/.bitrise/config.json` yet: when that legacy file exists it
+  stays authoritative and a failed `config.yml` write is downgraded to a warning.
+  Without it, `bitrise setup` reports failure even though setup itself succeeded, and
+  a `bitrise <plugin>` invocation aborts before running the plugin — on the runs where
+  that plugin's update check is due. *Migrate:* ensure `~/.config` (or
+  `$XDG_CONFIG_HOME`) is writable wherever `setup` or plugins run.
+
+## Telemetry
+
+- **`ANALYTICS_DISABLED=true` now disables analytics as well.** v2 honored only
+  `BITRISE_ANALYTICS_DISABLED`; both names work now. A side effect is visible on
+  stdout: `bitrise run` stops printing its "Bitrise collects anonymous usage stats…"
+  notice for anyone who had the unprefixed variable set. *Migrate:* no action
+  required; unset `ANALYTICS_DISABLED` if you were relying on Bitrise analytics
+  staying on while another tool's were off.

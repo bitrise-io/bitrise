@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -47,6 +49,24 @@ func TestUpdateCmd_EmptyContent(t *testing.T) {
 
 	err := cmd.RunE(cmd, nil)
 	require.Error(t, err)
+}
+
+func TestUpdateCmd_FileShorthand(t *testing.T) {
+	var gotBody string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		_, _ = w.Write([]byte(`{}`))
+	})
+
+	path := filepath.Join(t.TempDir(), "bitrise.yml")
+	require.NoError(t, os.WriteFile(path, []byte("format_version: \"13\"\n"), 0600))
+
+	cmd, _ := newTestUpdateCmd(t, srv.URL, "")
+	cmd.SetArgs([]string{"--app", "app-slug", "-f", path})
+	require.NoError(t, cmd.Execute())
+
+	assert.JSONEq(t, `{"app_config_datastore_yaml":{"format_version":"13"}}`, gotBody)
 }
 
 func newTestUpdateCmd(t *testing.T, apiBaseURL, stdin string) (*cobra.Command, *bytes.Buffer) {

@@ -34,6 +34,13 @@ func SetDefault(format string) {
 	defaultFormat = format
 }
 
+// Default returns the format set by SetDefault. Commands that render through
+// their own logger instead of ConfigureOutputFormat need it to honour the
+// root-persistent --output flag.
+func Default() string {
+	return defaultFormat
+}
+
 // ParseFormat validates a format string without mutating any global state,
 // accepting "human" as an alias for FormatRaw.
 func ParseFormat(s string) (string, error) {

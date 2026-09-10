@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -23,6 +24,13 @@ import (
 // historical local-only behavior deterministically.
 const offlineKey = "offline"
 
+// fileKey is the cloud CLI's name for the config path, kept as a hidden alias
+// of cmdutil.ConfigKey.
+const fileKey = "file"
+
+// stdinPath is the config path that means "read the config from stdin".
+const stdinPath = "-"
+
 // NewValidateCommand ...
 func NewValidateCommand() *cobra.Command {
 	validateCommand := &cobra.Command{
@@ -32,9 +40,17 @@ func NewValidateCommand() *cobra.Command {
 	}
 
 	cmdutil.AddConfigAndInventoryFlags(validateCommand.Flags())
-	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json.")
+	validateCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json, yml.")
 	validateCommand.Flags().Bool(offlineKey, false, "Skip online validation even if authenticated; use only the local schema check.")
 	cmdutil.AddAppFlag(validateCommand.Flags(), "app ID to validate against (enables app-specific checks: stacks, machine types, license pools; inside a build, defaults to the app the build runs for)")
+
+	// --file is the name the cloud CLI used for what is --config here; kept as
+	// a hidden alias so its invocations keep working without documenting two
+	// names for one input.
+	validateCommand.Flags().StringP(fileKey, "f", "", "Alias for --config.")
+	_ = validateCommand.Flags().MarkHidden(fileKey)
+	validateCommand.MarkFlagsMutuallyExclusive(fileKey, cmdutil.ConfigKey)
+	validateCommand.MarkFlagsMutuallyExclusive(fileKey, cmdutil.ConfigBase64Key)
 
 	// --offline skips the online path entirely, so accepting it together with
 	// --app would silently ignore the app-specific checks --app asks for. An
@@ -389,6 +405,9 @@ func validate(cmd *cobra.Command, _ []string) error {
 
 	bitriseConfigBase64Data, _ := cmd.Flags().GetString(cmdutil.ConfigBase64Key)
 	bitriseConfigPath, _ := cmd.Flags().GetString(cmdutil.ConfigKey)
+	if filePath, _ := cmd.Flags().GetString(fileKey); filePath != "" {
+		bitriseConfigPath = filePath
+	}
 
 	inventoryBase64Data, _ := cmd.Flags().GetString(cmdutil.InventoryBase64Key)
 	inventoryPath, _ := cmd.Flags().GetString(cmdutil.InventoryKey)
@@ -398,15 +417,38 @@ func validate(cmd *cobra.Command, _ []string) error {
 
 	format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 	if format == "" {
-		format = output.FormatRaw
+		format = output.Default()
 	}
 
 	var log cmdutil.Logger = cmdutil.NewDefaultRawLogger()
-	if format == output.FormatJSON {
+	switch format {
+	case output.FormatRaw:
+	case output.FormatJSON:
 		log = cmdutil.NewDefaultJSONLogger()
-	} else if format != output.FormatRaw {
+	case output.FormatYML:
+		log = cmdutil.NewDefaultYAMLLogger()
+	default:
 		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
 		os.Exit(1)
+	}
+
+	// A "-" path feeds stdin through the base64 channel, so both the online and
+	// the local check pick it up. An explicit --config-base64 still wins, the
+	// way it does over a real path everywhere else.
+	if bitriseConfigPath == stdinPath {
+		bitriseConfigPath = ""
+		if bitriseConfigBase64Data == "" {
+			stdinConfig, err := io.ReadAll(cmd.InOrStdin())
+			if err != nil {
+				log.Print(NewValidationError(fmt.Sprintf("Failed to read the config from stdin: %s", err)))
+				os.Exit(1)
+			}
+			if len(stdinConfig) == 0 {
+				log.Print(NewValidationError("No config received on stdin"))
+				os.Exit(1)
+			}
+			bitriseConfigBase64Data = base64.StdEncoding.EncodeToString(stdinConfig)
+		}
 	}
 
 	validation, warnings, err := runValidate(cmd, bitriseConfigPath, bitriseConfigBase64Data, inventoryPath, inventoryBase64Data, offline, appSlug)
