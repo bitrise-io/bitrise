@@ -26,13 +26,10 @@ func newStepActivator(logger log.Logger, isOfflineMode bool) stepActivator {
 	}
 }
 
-// activatorOptions resolves how steps are activated for this run. Stepman takes
-// these as explicit options and reads no environment of its own, so the mapping
-// lives here, at the edge, and happens once per run.
-//
-// The options are opt-outs, so the zero value is what production wants. Offline
-// mode is not one of them: it is a run mode the caller already resolved, and it
-// reaches stepman here rather than as an argument to every activation.
+// activatorOptions maps this run's environment onto stepman's options - the
+// CLI's job, since stepman reads none of its own. The flags are opt-outs, so
+// the zero value is what production wants; offline mode arrives already
+// resolved into the run's modes.
 func activatorOptions(isOfflineMode bool) activator.Options {
 	return activator.Options{
 		DisableSteplibAPI:      isEnvDisabled(configs.SteplibUseAPIEnvKey),
@@ -65,11 +62,6 @@ func (a stepActivator) activateStep(
 	stepDir string, // $TMPDIR/bitrise/step_src
 	workDir string, // $TMPDIR/bitrise
 ) (activator.ActivatedStep, error) {
-	// A WorkflowRunner built as a struct literal rather than through
-	// NewWorkflowRunner leaves this zero, and the nil activator would otherwise
-	// surface as a nil dereference deep inside stepman. Lazily building one here
-	// would hide the mistake and hand back a per-step activator, which is the
-	// thing this field exists to avoid, so say so instead.
 	if a.activator == nil {
 		return activator.ActivatedStep{}, errors.New("step activator is not initialised: build the WorkflowRunner with NewWorkflowRunner")
 	}
