@@ -15,6 +15,7 @@ pipelines:
       - source_branch: "*"
     workflows:
       run_lint: {}
+      run_docs_check: {}
       run_unit_tests_macos: {}
       run_unit_tests_linux: {}
       run_integration_tests_macos: {}
@@ -115,6 +116,18 @@ workflows:
     - bundle::setup_repo: {}
     - bundle::install_dependencies: {}
     - bundle::run_lint: {}
+
+  run_docs_check:
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - script@1:
+        title: Check generated CLI docs
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -ex
+            make docs-check
 
   run_unit_tests_macos:
     steps:
