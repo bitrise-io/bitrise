@@ -83,6 +83,25 @@ func TestListCmd_WorkspaceFromConfig(t *testing.T) {
 	assert.Contains(t, errOut.String(), "Using default workspace: cfg-ws")
 }
 
+func TestListCmd_WorkspaceNameResolvesToSlug(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/organizations" {
+			_, _ = w.Write([]byte(`{"data":[{"slug":"acme","name":"Acme Corp"}]}`))
+			return
+		}
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	cmd, _ := newTestListCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("workspace", "Acme Corp"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "/organizations/acme/available-stacks", gotPath)
+}
+
 func TestListCmd_WorkspaceFlagWinsOverDefault_NoBreadcrumb(t *testing.T) {
 	var gotPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -35,6 +35,27 @@ func AddAppFlag(fs *pflag.FlagSet, help string) {
 	fs.String(FlagApp, "", help)
 }
 
+// flagAppSlug returns just the --app flag's value, or "" if unset.
+func flagAppSlug(cmd *cobra.Command) string {
+	v, _ := cmd.Flags().GetString(FlagApp)
+	return v
+}
+
+// ambientAppSlug returns the app slug from BITRISE_APP_ID, then
+// BITRISE_APP_SLUG, then the app_id set by `bitrise app create` or `bitrise
+// config set app_id` — all of which are always already a canonical slug
+// (Bitrise-injected or previously resolved by this CLI), never a display
+// name a user typed, so callers never resolve these by name.
+func ambientAppSlug(cmd *cobra.Command) string {
+	if v := os.Getenv(EnvAppID); v != "" {
+		return v
+	}
+	if v := os.Getenv(EnvAppIDLegacy); v != "" {
+		return v
+	}
+	return config.FromContext(cmd.Context()).AppID
+}
+
 // ResolveAppSlug returns the app slug from --app, falling back to
 // BITRISE_APP_ID, then BITRISE_APP_SLUG, then the app_id set by
 // `bitrise app create` or `bitrise config set app_id`.
@@ -59,16 +80,25 @@ func ResolveAppSlugArg(cmd *cobra.Command, args []string) (string, error) {
 // returns an empty string instead of an error when neither source is set —
 // for commands where the app is optional (e.g. `yml validate --app`).
 func LookupAppSlug(cmd *cobra.Command) string {
-	if v, _ := cmd.Flags().GetString(FlagApp); v != "" {
+	if v := flagAppSlug(cmd); v != "" {
 		return v
 	}
-	if v := os.Getenv(EnvAppID); v != "" {
-		return v
+	return ambientAppSlug(cmd)
+}
+
+// AppSlugIsUserProvided reports whether the app slug ResolveAppSlug /
+// ResolveAppSlugArg / LookupAppSlug would return for cmd/args came from
+// something the user typed (--app, or a positional argument in args) rather
+// than an ambient source (BITRISE_APP_ID/BITRISE_APP_SLUG, saved config).
+// Only a user-provided value can be a display name — ambient ones are always
+// already a canonical slug — so callers that resolve a name to a slug
+// themselves (rather than through ResolveAndLookupAppSlug) use this to skip
+// that lookup, and its API call, for ambient values.
+func AppSlugIsUserProvided(cmd *cobra.Command, args []string) bool {
+	if len(args) > 0 && args[0] != "" {
+		return true
 	}
-	if v := os.Getenv(EnvAppIDLegacy); v != "" {
-		return v
-	}
-	return config.FromContext(cmd.Context()).AppID
+	return flagAppSlug(cmd) != ""
 }
 
 // AppSlugRequiredErr returns the standard missing-app-slug error.
@@ -82,14 +112,17 @@ func NewResolver(client *bitriseapi.Client) *resolve.Resolver {
 	return resolve.New(client, cache.New())
 }
 
-// ResolveAndLookupAppSlug reads the app slug from --app / env / config (same
-// precedence as ResolveAppSlug), then resolves a display name to an app slug
-// via a targeted GET /apps?title=<value> query if the value doesn't match any
-// slug directly.
+// ResolveAndLookupAppSlug reads the app slug from --app, falling back to
+// BITRISE_APP_ID, then BITRISE_APP_SLUG, then config app_id. Only a --app
+// value goes through the name lookup (a targeted GET /apps?title=<value>
+// query) — the ambient sources are already a canonical slug, so resolving
+// those would just be a wasted API call.
 func ResolveAndLookupAppSlug(cmd *cobra.Command, client *bitriseapi.Client) (string, error) {
-	raw, err := ResolveAppSlug(cmd)
-	if err != nil {
-		return "", err
+	if v := flagAppSlug(cmd); v != "" {
+		return NewResolver(client).AppSlug(cmd.Context(), v)
 	}
-	return NewResolver(client).AppSlug(cmd.Context(), raw)
+	if v := ambientAppSlug(cmd); v != "" {
+		return v, nil
+	}
+	return "", AppSlugRequiredErr()
 }

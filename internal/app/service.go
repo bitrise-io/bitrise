@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/resolve"
 )
 
 // App is the CLI representation of a Bitrise app (project).
@@ -23,13 +22,15 @@ type App struct {
 }
 
 // ListOptions paginates and filters app lists. Filter fields map to the
-// query parameters of GET /apps.
+// query parameters of GET /apps (or GET /organizations/{org-slug}/apps when
+// OrgSlug is set).
 type ListOptions struct {
 	Limit       int
 	Cursor      string
 	SortBy      string
 	Title       string
 	ProjectType string
+	OrgSlug     string // non-empty scopes the listing to that workspace
 }
 
 // AppsResult is one page of apps.
@@ -56,6 +57,7 @@ func (s *Service) List(ctx context.Context, opts ListOptions) (AppsResult, error
 		Limit:       opts.Limit,
 		Title:       opts.Title,
 		ProjectType: opts.ProjectType,
+		OrgSlug:     opts.OrgSlug,
 	})
 	if err != nil {
 		return AppsResult{}, err
@@ -65,21 +67,6 @@ func (s *Service) List(ctx context.Context, opts ListOptions) (AppsResult, error
 		items = append(items, fromAPI(a))
 	}
 	return AppsResult{Items: items, NextCursor: next}, nil
-}
-
-// ViewByNameOrSlug resolves value via r and returns the app. When r found a
-// name match in the current API call (complete=true), that result is used
-// directly — no second request. Otherwise (cache hit or literal-slug
-// passthrough) GET /apps/{slug} is called via View.
-func (s *Service) ViewByNameOrSlug(ctx context.Context, r *resolve.Resolver, value string) (App, error) {
-	app, complete, err := r.ResolveApp(ctx, value)
-	if err != nil {
-		return App{}, err
-	}
-	if complete {
-		return fromAPI(app), nil
-	}
-	return s.View(ctx, app.Slug)
 }
 
 // View returns details of a single app by slug.

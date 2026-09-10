@@ -184,12 +184,14 @@ func TestResolveAndLookupAppSlug_PassesSlugThrough(t *testing.T) {
 	assert.Equal(t, "3f8a91c02d4e", slug)
 }
 
-// TestResolveAndLookupAppSlug_PrecedenceIsUnchanged pins that the resolver runs
-// after --app / env / config precedence, on whatever that produced, rather than
-// replacing it.
-func TestResolveAndLookupAppSlug_PrecedenceIsUnchanged(t *testing.T) {
-	t.Setenv(EnvAppID, "My iOS App")
-	client, calls := appsClient(t, `{"data":[{"slug":"app-123","title":"My iOS App"}],"paging":{}}`)
+// TestResolveAndLookupAppSlug_AmbientSourceSkipsResolution pins that only a
+// --app value is resolved by name. BITRISE_APP_ID (like BITRISE_APP_SLUG and
+// the config app_id) is always already a canonical slug — Bitrise injects it
+// verbatim into every build — so resolving it would just be a wasted API
+// call, and the value passes through unchanged instead.
+func TestResolveAndLookupAppSlug_AmbientSourceSkipsResolution(t *testing.T) {
+	t.Setenv(EnvAppID, "env-app-slug")
+	client, calls := appsClient(t, `{"data":[],"paging":{}}`)
 
 	cmd := &cobra.Command{}
 	cmd.SetContext(t.Context())
@@ -197,8 +199,24 @@ func TestResolveAndLookupAppSlug_PrecedenceIsUnchanged(t *testing.T) {
 
 	slug, err := ResolveAndLookupAppSlug(cmd, client)
 	require.NoError(t, err)
-	assert.Equal(t, "app-123", slug)
-	assert.Equal(t, []string{"My iOS App"}, *calls)
+	assert.Equal(t, "env-app-slug", slug)
+	assert.Empty(t, *calls, "an ambient source must not be resolved by name")
+}
+
+func TestAppSlugIsUserProvided(t *testing.T) {
+	t.Setenv(EnvAppIDLegacy, "")
+
+	cmd := &cobra.Command{}
+	AddAppFlag(cmd.Flags(), "app slug")
+	assert.False(t, AppSlugIsUserProvided(cmd, nil), "no flag, no arg, no ambient source")
+
+	t.Setenv(EnvAppID, "env-app-slug")
+	assert.False(t, AppSlugIsUserProvided(cmd, nil), "an ambient env var is not user-provided")
+
+	assert.True(t, AppSlugIsUserProvided(cmd, []string{"arg-app-slug"}), "a positional arg is user-provided")
+
+	require.NoError(t, cmd.Flags().Set(FlagApp, "flag-app-slug"))
+	assert.True(t, AppSlugIsUserProvided(cmd, nil), "the --app flag is user-provided")
 }
 
 func TestResolveAndLookupAppSlug_AmbiguousNameErrors(t *testing.T) {

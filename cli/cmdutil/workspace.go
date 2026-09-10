@@ -70,6 +70,23 @@ func ResolveWorkspaceID(cmd *cobra.Command) (string, error) {
 	return ws.Slug, nil
 }
 
+// ResolveAndLookupWorkspaceSlug resolves a command's --workspace flag value
+// (flagValue), falling back to DefaultWorkspaceSlug (BITRISE_WORKSPACE_ID /
+// default_workspace_id). Only flagValue is resolved by name (a lookup
+// against GET /organizations, since --workspace can be a display name) —
+// the fallback is always already a canonical slug (Bitrise-injected or
+// previously saved by this CLI as a slug), so it's used verbatim without an
+// extra request. usedDefault reports whether the value came from the
+// fallback, for callers that print a "using default workspace" breadcrumb.
+func ResolveAndLookupWorkspaceSlug(cmd *cobra.Command, client *bitriseapi.Client, flagValue string) (slug string, usedDefault bool, err error) {
+	if flagValue != "" {
+		slug, err = NewResolver(client).WorkspaceSlug(cmd.Context(), flagValue)
+		return slug, false, err
+	}
+	slug = DefaultWorkspaceSlug(cmd)
+	return slug, slug != "", nil
+}
+
 // interactiveWorkspacePicker reports whether the workspace picker can run: it
 // reads keys from stdin and draws to stderr, so both must be a terminal, and it
 // only makes sense for raw/human output (json/yml callers want the

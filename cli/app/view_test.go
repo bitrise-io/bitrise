@@ -47,6 +47,27 @@ func TestViewCmd_FlagFallback(t *testing.T) {
 	assert.Equal(t, "/apps/my-app", gotPath)
 }
 
+func TestViewCmd_EnvOnly_SkipsNameResolution(t *testing.T) {
+	var gotPath string
+	var titleLookupCalled bool
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps" {
+			titleLookupCalled = true
+			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
+			return
+		}
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":{"slug":"env-app-slug","title":"My App","provider":"github","owner":{}}}`))
+	})
+
+	t.Setenv(cmdutil.EnvAppID, "env-app-slug")
+	cmd, _ := newTestViewCmd(t, srv.URL)
+	require.NoError(t, runView(cmd, nil, false, unusedBrowser(t)))
+
+	assert.Equal(t, "/apps/env-app-slug", gotPath)
+	assert.False(t, titleLookupCalled, "an ambient app slug (env/config) must not be resolved by name")
+}
+
 func TestViewCmd_RequiresAppSlug(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
@@ -67,17 +88,38 @@ func TestViewCmd_AppNotFound(t *testing.T) {
 	require.EqualError(t, err, `app "missing-app" not found`)
 }
 
-func TestViewCmd_Web_OpensBrowserAndSkipsAPICall(t *testing.T) {
+func TestViewCmd_Web_EnvOnly_SkipsAPICall(t *testing.T) {
 	cmd, _ := newTestViewCmd(t, "https://unused.test")
 	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
+	t.Setenv(cmdutil.EnvAppID, "env-app-slug")
 
 	var gotURL string
-	err := runView(cmd, []string{"my-app"}, true, func(url string) error {
+	err := runView(cmd, nil, true, func(url string) error {
 		gotURL = url
 		return nil
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "https://app.bitrise.io/app/my-app", gotURL)
+	assert.Equal(t, "https://app.bitrise.io/app/env-app-slug", gotURL)
+}
+
+func TestViewCmd_Web_ResolvesUserProvidedName(t *testing.T) {
+	var gotTitle string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotTitle = r.URL.Query().Get("title")
+		_, _ = w.Write([]byte(`{"data":[{"slug":"app-123","title":"My App Name","owner":{}}],"paging":{}}`))
+	})
+
+	cmd, _ := newTestViewCmd(t, srv.URL)
+	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
+
+	var gotURL string
+	err := runView(cmd, []string{"My App Name"}, true, func(url string) error {
+		gotURL = url
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "https://app.bitrise.io/app/app-123", gotURL)
+	assert.Equal(t, "My App Name", gotTitle)
 }
 
 func TestViewCmd_RejectsMultipleArgs(t *testing.T) {

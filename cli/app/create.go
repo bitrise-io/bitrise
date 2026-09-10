@@ -117,14 +117,17 @@ func runCreate(cmd *cobra.Command, detector internalapp.GitDetector, flags creat
 		return err
 	}
 
+	client, err := cmdutil.NewAPIClient(cmd)
+	if err != nil {
+		return err
+	}
+
 	// --workspace wins; otherwise fall back to BITRISE_WORKSPACE_ID /
 	// default_workspace_id. Still empty means Service.Create auto-detects,
 	// which only succeeds when the account has exactly one workspace.
-	resolvedWorkspace := flags.workspace
-	workspaceFromDefault := false
-	if resolvedWorkspace == "" {
-		resolvedWorkspace = cmdutil.DefaultWorkspaceSlug(cmd)
-		workspaceFromDefault = resolvedWorkspace != ""
+	resolvedWorkspace, workspaceFromDefault, err := cmdutil.ResolveAndLookupWorkspaceSlug(cmd, client, flags.workspace)
+	if err != nil {
+		return err
 	}
 
 	stderr := cmd.ErrOrStderr()
@@ -154,11 +157,6 @@ func runCreate(cmd *cobra.Command, detector internalapp.GitDetector, flags creat
 			}
 			fmt.Fprintf(stderr, "No bitrise.yml provided — using server preset for project-type=%s\n", presetProjectType)
 		}
-	}
-
-	client, err := cmdutil.NewAPIClient(cmd)
-	if err != nil {
-		return err
 	}
 
 	res, err := internalapp.NewService(client).Create(ctx, internalapp.CreateOptions{

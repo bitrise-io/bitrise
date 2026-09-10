@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/resolve"
 )
 
 func TestList_MapsAPIShape(t *testing.T) {
@@ -53,6 +52,32 @@ func TestList_PassesOptionsAsQueryParams(t *testing.T) {
 	assert.Equal(t, "android", gotQuery.Get("project_type"))
 }
 
+func TestList_PassesOrgSlugAsOrgScopedPath(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+	client := newAPIClient(t, srv.URL)
+
+	_, err := NewService(client).List(context.Background(), ListOptions{OrgSlug: "acme"})
+	require.NoError(t, err)
+	assert.Equal(t, "/organizations/acme/apps", gotPath)
+}
+
+func TestList_EmptyOrgSlugUsesGlobalPath(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"data":[]}`))
+	})
+	client := newAPIClient(t, srv.URL)
+
+	_, err := NewService(client).List(context.Background(), ListOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, "/apps", gotPath)
+}
+
 func TestList_PropagatesAPIError(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -90,41 +115,6 @@ func TestView_AppNotFound(t *testing.T) {
 
 	_, err := NewService(client).View(context.Background(), "missing-app")
 	require.EqualError(t, err, `app "missing-app" not found`)
-}
-
-func TestViewByNameOrSlug_NameMatch_SkipsSecondRequest(t *testing.T) {
-	var requests int
-	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		requests++
-		assert.Equal(t, "/apps", r.URL.Path)
-		_, _ = w.Write([]byte(`{"data":[{"slug":"my-app","title":"My App","provider":"github","owner":{"slug":"acme"}}],"paging":{}}`))
-	})
-	client := newAPIClient(t, srv.URL)
-	r := resolve.New(client, nil)
-
-	got, err := NewService(client).ViewByNameOrSlug(context.Background(), r, "My App")
-	require.NoError(t, err)
-	assert.Equal(t, 1, requests, "a complete name match must not trigger a second request")
-	assert.Equal(t, App{Slug: "my-app", Title: "My App", Provider: "github", OwnerSlug: "acme"}, got)
-}
-
-func TestViewByNameOrSlug_Passthrough_FallsThroughToView(t *testing.T) {
-	var gotPaths []string
-	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		gotPaths = append(gotPaths, r.URL.Path)
-		if r.URL.Path == "/apps" {
-			_, _ = w.Write([]byte(`{"data":[],"paging":{}}`))
-			return
-		}
-		_, _ = w.Write([]byte(`{"data":{"slug":"my-app","title":"My App","provider":"github","owner":{"slug":"acme"}}}`))
-	})
-	client := newAPIClient(t, srv.URL)
-	r := resolve.New(client, nil)
-
-	got, err := NewService(client).ViewByNameOrSlug(context.Background(), r, "my-app")
-	require.NoError(t, err)
-	assert.Equal(t, []string{"/apps", "/apps/my-app"}, gotPaths)
-	assert.Equal(t, App{Slug: "my-app", Title: "My App", Provider: "github", OwnerSlug: "acme"}, got)
 }
 
 func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {

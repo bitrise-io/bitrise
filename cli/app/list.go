@@ -17,18 +17,28 @@ import (
 // NewListCommand returns the `app list` subcommand.
 func NewListCommand() *cobra.Command {
 	var (
-		limit       int
-		cursor      string
-		sortBy      string
-		title       string
-		projectType string
-		fetchAll    bool
+		limit         int
+		cursor        string
+		sortBy        string
+		title         string
+		projectType   string
+		fetchAll      bool
+		workspaceSlug string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List apps the authenticated user can access",
 		Long: `List all apps the authenticated user can access.
+
+Workspace, highest to lowest:
+  --workspace WORKSPACE_ID
+  $BITRISE_WORKSPACE_ID (injected inside a Bitrise build)
+  the default_workspace_id config key ('bitrise config set')
+
+When a workspace resolves, only apps owned by that workspace are returned.
+Otherwise every app the authenticated user can access, across all
+workspaces, is returned.
 
 Filters:
   --title TITLE          filter apps by title
@@ -43,6 +53,7 @@ Pagination:
 In JSON mode (--format json), next_cursor holds the cursor value for scripting:
   bitrise app list --format json | jq -r '.next_cursor'`,
 		Example: `  bitrise app list
+  bitrise app list --workspace acme
   bitrise app list --all
   bitrise app list --format json | jq -r '.next_cursor'
   bitrise app list --project-type ios --limit 100`,
@@ -65,6 +76,14 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 			}
 			svc := internalapp.NewService(client)
 
+			resolvedWorkspace, workspaceFromDefault, err := cmdutil.ResolveAndLookupWorkspaceSlug(cmd, client, workspaceSlug)
+			if err != nil {
+				return err
+			}
+			if workspaceFromDefault && output.Format == output.FormatRaw {
+				fmt.Fprintf(cmd.ErrOrStderr(), "Using default workspace: %s\n", resolvedWorkspace)
+			}
+
 			makeOpts := func(cur string) internalapp.ListOptions {
 				return internalapp.ListOptions{
 					Limit:       limit,
@@ -72,6 +91,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 					SortBy:      sortBy,
 					Title:       title,
 					ProjectType: projectType,
+					OrgSlug:     resolvedWorkspace,
 				}
 			}
 
@@ -115,6 +135,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 	cmd.Flags().StringVar(&sortBy, "sort-by", "", "ordering accepted by the API (created_at, last_build_at)")
 	cmd.Flags().StringVar(&title, "title", "", "filter apps by title")
 	cmd.Flags().StringVar(&projectType, "project-type", "", "filter by project type (ios, android, ...)")
+	cmd.Flags().StringVar(&workspaceSlug, cmdutil.FlagWorkspace, "", "only list apps owned by this workspace, or set BITRISE_WORKSPACE_ID / default_workspace_id")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
 	_ = cmd.RegisterFlagCompletionFunc("sort-by", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
@@ -133,7 +154,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 func nextPageCmd(cmd *cobra.Command) func(nextCursor string) string {
 	return func(nextCursor string) string {
 		parts := []string{"bitrise app list"}
-		for _, name := range []string{"title", "project-type", "sort-by", "limit"} {
+		for _, name := range []string{"title", "project-type", "sort-by", "limit", cmdutil.FlagWorkspace} {
 			if f := cmd.Flags().Lookup(name); f != nil && f.Changed {
 				parts = append(parts, "--"+name, shellescape.Quote(f.Value.String()))
 			}

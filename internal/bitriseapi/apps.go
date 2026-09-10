@@ -30,6 +30,7 @@ type AppsListOptions struct {
 	Limit       int    // server default (50) when 0
 	Title       string
 	ProjectType string
+	OrgSlug     string // non-empty selects GET /organizations/{org-slug}/apps instead of GET /apps; not a query param
 }
 
 func (o AppsListOptions) params() url.Values {
@@ -54,9 +55,20 @@ func (o AppsListOptions) params() url.Values {
 
 // Apps returns one page of apps the authenticated user can access, and the
 // cursor for the next page ("" when there isn't one).
-// Endpoint: GET /apps.
+//
+// When opts.OrgSlug is non-empty, the org-scoped endpoint is used:
+//
+//	GET /organizations/{org-slug}/apps
+//
+// Otherwise the global endpoint is used:
+//
+//	GET /apps
 func (c *Client) Apps(ctx context.Context, opts AppsListOptions) ([]App, string, error) {
-	return getPage[App](ctx, c, "/apps", opts.params())
+	path := "/apps"
+	if opts.OrgSlug != "" {
+		path = "/organizations/" + url.PathEscape(opts.OrgSlug) + "/apps"
+	}
+	return getPage[App](ctx, c, path, opts.params())
 }
 
 // App returns the details of a single app by slug.

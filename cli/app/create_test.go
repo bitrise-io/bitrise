@@ -193,7 +193,7 @@ func TestCreateCmd_UsesDefaultWorkspaceFromConfig(t *testing.T) {
 	t.Setenv(cmdutil.EnvWorkspaceID, "")
 	api := newStubAPI(t)
 	api.handle("/organizations", func(w http.ResponseWriter, _ *http.Request) {
-		t.Error("auto-detect must not run when default_workspace_id is set")
+		t.Error("default_workspace_id is already a canonical slug and must not be resolved by name")
 		_, _ = io.WriteString(w, `{"data":[]}`)
 	})
 	api.handle("/apps/register", func(w http.ResponseWriter, _ *http.Request) {
@@ -213,6 +213,31 @@ func TestCreateCmd_UsesDefaultWorkspaceFromConfig(t *testing.T) {
 	require.NoError(t, json.Unmarshal(api.bodies["/apps/register"], &reg))
 	assert.Equal(t, "cfg-ws", reg["organization_slug"])
 	assert.Contains(t, errOut.String(), "Using default workspace: cfg-ws")
+}
+
+func TestCreateCmd_WorkspaceNameResolvesToSlug(t *testing.T) {
+	api := newStubAPI(t)
+	api.handle("/organizations", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"data":[{"slug":"acme","name":"Acme Corp"}]}`)
+	})
+	api.handle("/apps/register", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"slug":"new-app"}`)
+	})
+	api.handle("/apps/new-app/finish", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"build_trigger_token":"btt","branch_name":"main"}`)
+	})
+
+	cmd, _, _ := newTestCreateCmd(t, api.baseURL)
+	require.NoError(t, runCreate(cmd, noCallDetector{t: t}, createFlags{
+		repoURL:   "https://github.com/acme/widget.git",
+		branch:    "main",
+		title:     "Widget",
+		workspace: "Acme Corp",
+	}))
+
+	var reg map[string]any
+	require.NoError(t, json.Unmarshal(api.bodies["/apps/register"], &reg))
+	assert.Equal(t, "acme", reg["organization_slug"])
 }
 
 func TestCreateCmd_WorkspaceFlagWinsOverDefault(t *testing.T) {
@@ -334,6 +359,13 @@ type stubAPI struct {
 func newStubAPI(t *testing.T) *stubAPI {
 	t.Helper()
 	s := &stubAPI{registry: map[string]http.HandlerFunc{}, bodies: map[string][]byte{}}
+	// Every workspace value now goes through the workspace name resolver,
+	// which calls GET /organizations. Default to zero matches (the resolved
+	// value passes through as a literal slug); tests exercising org lookup
+	// itself override this via api.handle("/organizations", ...).
+	s.registry["/organizations"] = func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, `{"data":[]}`)
+	}
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		s.bodies[r.URL.Path] = body
