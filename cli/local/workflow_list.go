@@ -42,9 +42,9 @@ func NewWorkflowListCommand() *cobra.Command {
 
 // WorkflowListOutputModel ...
 type WorkflowListOutputModel struct {
-	Data     map[string]map[string]string `json:"data,omitempty" yml:"data,omitempty"`
-	Warnings []string                     `json:"warnings,omitempty" yml:"warnings,omitempty"`
-	Error    string                       `json:"error,omitempty" yml:"error,omitempty"`
+	Data     map[string]map[string]string `json:"data,omitempty" yaml:"data,omitempty"`
+	Warnings []string                     `json:"warnings,omitempty" yaml:"warnings,omitempty"`
+	Error    string                       `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
 // NewOutput ...
