@@ -21,20 +21,18 @@ func NewCmd() *cobra.Command {
 		Long: `Manage Bitrise Remote Dev Environments — sessions, templates, saved inputs,
 and the machine catalog (stacks, machine types).
 
-Workspace resolution (highest to lowest precedence):
-  --workspace ID            flag on the rde command
-  BITRISE_WORKSPACE_ID      environment variable
-  default_workspace_id      saved with 'bitrise config set'
-  auto-detect               when none of the above is set: your only workspace is used,
-                             or you're prompted to pick one interactively
+If --workspace isn't resolved from a flag, env var, or configured default,
+and you belong to more than one workspace, you're prompted to pick one on a
+terminal, or shown a sorted list of workspaces to choose from via --workspace
+otherwise.
 
-Saved inputs are user-scoped — they do not require --workspace.`,
+Saved inputs are user-scoped, though — they do not require --workspace, and
+the 'saved-input' subcommand does not accept it.`,
 		Example: `  bitrise rde session list --workspace WORKSPACE_ID
   bitrise rde session list --format json
   bitrise rde machine-type list --stack osx-xcode-16.0.x-edge`,
 		RunE: cmdutil.RequireKnownSubcommand,
 	}
-	c.PersistentFlags().String(cmdutil.FlagWorkspace, "", "workspace ID (or set BITRISE_WORKSPACE_ID or default_workspace_id; auto-detected if you have exactly one workspace)")
 
 	c.AddCommand(
 		claude.NewCmd(),

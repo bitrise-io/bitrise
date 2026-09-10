@@ -47,7 +47,10 @@ Optional fields:
                       baked-in values available to startup/warmup scripts
   feature_flags       array of {name, description}
   workspace_links     array of {label, folder_path, feature_flag_name} — IDE
-                      folder shortcuts
+                      folder shortcuts. Note: 'template view' output doesn't
+                      include feature_flag_name (the API doesn't return it),
+                      so a view → edit → create/update round trip silently
+                      drops it from any existing links — reapply it by hand.
 
 Example spec exercising every field (a macOS iOS-app dev environment —
 adjust to taste):
@@ -137,6 +140,10 @@ func newUpdateCmd() *cobra.Command {
 Only fields present in the file are sent. Array fields (template_variables,
 session_inputs, feature_flags, workspace_links) replace the server's
 existing list wholesale when present — to clear one, include it as [].
+
+Note: 'template view' output doesn't include a workspace link's
+feature_flag_name (the API doesn't return it), so the round-trip workflow
+below silently drops it from any existing links — reapply it by hand.
 
 Round-trip workflow:
 

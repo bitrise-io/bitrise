@@ -30,7 +30,7 @@ var versionCommand = &cobra.Command{
 
 func init() {
 	versionCommand.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
-	versionCommand.Flags().Bool("full", false, "Prints the build number as well.")
+	versionCommand.Flags().Bool("full", false, "Also prints the format version, OS, Go version, build number, and commit.")
 }
 
 func printVersionCmd(cmd *cobra.Command, _ []string) error {

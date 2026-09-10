@@ -29,7 +29,7 @@ func NewSetupCommand() *cobra.Command {
 
 	setupCommand.Flags().Bool("clean", false, "Removes bitrise's workdir before setup.")
 	setupCommand.Flags().Bool("minimal", false, "Only installs the required tools for running in CI mode.")
-	setupCommand.Flags().Bool("no-update", false, "Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated.")
+	setupCommand.Flags().Bool("no-update", false, "Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated (or set BITRISE_SETUP_NO_UPDATE=true).")
 
 	return setupCommand
 }

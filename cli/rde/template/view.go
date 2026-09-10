@@ -106,5 +106,15 @@ func renderDetail(w io.Writer, t internalrde.Template) error {
 			ew.F("  %s\n", label)
 		}
 	}
+	if len(t.WorkspaceLinks) > 0 {
+		ew.Ln()
+		ew.Ln(s.Dim.Render("Workspace links"))
+		for _, l := range t.WorkspaceLinks {
+			ew.F("  %s\n", l.Label)
+			if l.FolderPath != "" {
+				ew.F("    %s\n", s.Dim.Render(l.FolderPath))
+			}
+		}
+	}
 	return ew.Err
 }

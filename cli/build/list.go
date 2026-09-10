@@ -39,10 +39,8 @@ func NewListCommand() *cobra.Command {
 		Short: "List builds for an app",
 		Long: `List builds for an app.
 
-Pagination:
-  --limit N     max items per page (server default if 0)
-  --cursor TOKEN opaque token from a previous page's next_cursor
-  --all         fetch all pages automatically
+BUILD_ID's app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").
 
 In JSON mode (--format json), next_cursor holds the cursor value for scripting:
   bitrise build list --app my-app-id --format json | jq -r '.next_cursor'`,
@@ -163,6 +161,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 	cmd.Flags().BoolVar(&fetchAll, "all", false, "fetch all pages automatically")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	cmd.MarkFlagsMutuallyExclusive("all", "cursor")
 
 	_ = cmd.RegisterFlagCompletionFunc("status", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"in-progress", "success", "failed", "aborted", "aborted-with-success"}, cobra.ShellCompDirectiveNoFileComp

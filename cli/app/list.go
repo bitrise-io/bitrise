@@ -31,24 +31,9 @@ func NewListCommand() *cobra.Command {
 		Short: "List apps the authenticated user can access",
 		Long: `List all apps the authenticated user can access.
 
-Workspace, highest to lowest:
-  --workspace WORKSPACE_ID
-  $BITRISE_WORKSPACE_ID (injected inside a Bitrise build)
-  the default_workspace_id config key ('bitrise config set')
-
-When a workspace resolves, only apps owned by that workspace are returned.
-Otherwise every app the authenticated user can access, across all
-workspaces, is returned.
-
-Filters:
-  --title TITLE          filter apps by title
-  --project-type TYPE    e.g. ios, android
-  --sort-by FIELD        ordering accepted by the API (created_at, last_build_at)
-
-Pagination:
-  --limit N     max items per page (server default if 0)
-  --cursor TOKEN opaque token from a previous page's next_cursor
-  --all         fetch all pages automatically
+When a workspace resolves (via --workspace, its env var, or a configured
+default), only apps owned by that workspace are returned. Otherwise every
+app the authenticated user can access, across all workspaces, is returned.
 
 In JSON mode (--format json), next_cursor holds the cursor value for scripting:
   bitrise app list --format json | jq -r '.next_cursor'`,
@@ -137,6 +122,7 @@ In JSON mode (--format json), next_cursor holds the cursor value for scripting:
 	cmd.Flags().StringVar(&projectType, "project-type", "", "filter by project type (ios, android, ...)")
 	cmd.Flags().StringVar(&workspaceSlug, cmdutil.FlagWorkspace, "", "only list apps owned by this workspace, or set BITRISE_WORKSPACE_ID / default_workspace_id")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	cmd.MarkFlagsMutuallyExclusive("all", "cursor")
 
 	_ = cmd.RegisterFlagCompletionFunc("sort-by", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{"created_at", "last_build_at"}, cobra.ShellCompDirectiveNoFileComp

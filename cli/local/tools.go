@@ -55,6 +55,7 @@ const toolsConfigFlagUsage = `Config or version file paths to install tools from
 	- .nvmrc (NVM): Node.js version
 	- .fvmrc (FVM 3.x): Flutter version from JSON {"flutter": "<version>"}
 	- .fvm/fvm_config.json (legacy FVM): Flutter version from {"flutterSdkVersion": "<version>"}
+	- package.json: Node.js version from the "engines.node" field
 	- bitrise.yml: tools defined in the "tools" section`
 
 const (

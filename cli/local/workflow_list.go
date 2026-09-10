@@ -20,6 +20,10 @@ func NewWorkflowListCommand() *cobra.Command {
 	workflowListCommand := &cobra.Command{
 		Use:   "workflows",
 		Short: "List of available workflows in config.",
+		Example: `  bitrise workflows
+  bitrise workflows --minimal
+  bitrise workflows --id-only
+  bitrise workflows --format json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
@@ -34,8 +38,9 @@ func NewWorkflowListCommand() *cobra.Command {
 	workflowListCommand.Flags().StringP(cmdutil.ConfigKey, "c", "", "Path where the workflow config file is located.")
 	workflowListCommand.Flags().String(cmdutil.ConfigBase64Key, "", "base64 encoded config data.")
 	workflowListCommand.Flags().String(cmdutil.FormatKey, "", "Output format. Accepted: raw, json.")
-	workflowListCommand.Flags().Bool("minimal", false, "Print summary of workflows only.")
-	workflowListCommand.Flags().Bool("id-only", false, "Print workflow ids only.")
+	workflowListCommand.Flags().Bool("minimal", false, "Print summary of workflows only (mutually exclusive with --id-only).")
+	workflowListCommand.Flags().Bool("id-only", false, "Print workflow ids only (mutually exclusive with --minimal).")
+	workflowListCommand.MarkFlagsMutuallyExclusive("minimal", "id-only")
 
 	return workflowListCommand
 }
@@ -190,16 +195,8 @@ func workflowList(cmd *cobra.Command) error {
 		logger = cmdutil.NewDefaultJSONLogger()
 	}
 
-	if minimal && idOnly {
-		logger.Print(NewErrorOutput("Either define --minimal or --id-only"))
-		os.Exit(1)
-	}
-
-	warnings := []string{}
-
 	// Config validation
-	bitriseConfig, warns, err := cmdutil.CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
-	warnings = append(warnings, warns...)
+	bitriseConfig, warnings, err := cmdutil.CreateBitriseConfigFromCLIParams(bitriseConfigBase64Data, bitriseConfigPath, bitrise.ValidationTypeFull)
 	if err != nil {
 		logger.Print(NewErrorOutput(fmt.Sprintf("Failed to create bitrise config: %s", err)))
 		os.Exit(1)

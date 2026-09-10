@@ -19,7 +19,15 @@ func NewTriggerCommand() *cobra.Command {
 		Use:     "trigger",
 		Aliases: []string{"t"},
 		Short:   "Triggers a specified Workflow.",
-		RunE:    trigger,
+		Long: `Deprecated: use 'bitrise run WORKFLOW_ID' instead.
+
+Resolves a workflow from the bitrise.yml trigger_map using push/pull-request/tag
+filters, then runs it the same way 'bitrise run' does.`,
+		Example: `  bitrise trigger main
+  bitrise trigger --push-branch main
+  bitrise trigger --pr-source-branch feature/x --pr-target-branch main
+  bitrise trigger --tag v1.2.3`,
+		RunE: trigger,
 	}
 
 	flags := triggerCommand.Flags()

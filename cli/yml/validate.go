@@ -36,7 +36,24 @@ func NewValidateCommand() *cobra.Command {
 	validateCommand := &cobra.Command{
 		Use:   "validate",
 		Short: "Validates a specified bitrise config.",
-		RunE:  validate,
+		Long: `Validate a bitrise.yml (and, if present, an inventory/secrets file).
+
+By default, bitrise.yml is read from the current directory; use --config to
+point elsewhere, --config-base64 to pass it inline, or --config - to read it
+from stdin.
+
+Validation runs online (against the Bitrise API, which also checks
+app-specific things like stacks, machine types, and license pools when --app
+is given) whenever you're authenticated; pass --offline to force the local
+schema-only check instead, or --app to enable the app-specific checks
+explicitly. Falls back to the local check automatically if the online
+attempt can't complete.`,
+		Example: `  bitrise yml validate
+  bitrise yml validate --config ./ci/bitrise.yml
+  bitrise yml validate --config - < bitrise.yml
+  bitrise yml validate --offline
+  bitrise yml validate --app my-app-id --format json`,
+		RunE: validate,
 	}
 
 	cmdutil.AddConfigAndInventoryFlags(validateCommand.Flags())

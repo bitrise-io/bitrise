@@ -11,7 +11,13 @@ func NewShareCommand() *cobra.Command {
 	shareCommand := &cobra.Command{
 		Use:   "share",
 		Short: "Publish your step.",
-		RunE:  share,
+		Long: `Publish a step to a step library, guiding you through the full flow.
+
+Run bare (no subcommand), this runs the whole interactive publishing wizard.
+The subcommands (start, create, audit, finish) let you drive the same steps
+individually instead — useful for scripting, or resuming after one step
+failed.`,
+		RunE: share,
 	}
 
 	shareCommand.AddCommand(

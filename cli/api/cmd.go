@@ -38,7 +38,10 @@ if it's an absolute http(s):// URL. The response body goes to stdout, so it
 composes with tools like jq.
 
 --field pairs are sent as strings; use --input for bodies that need nesting
-or non-string values.`,
+or non-string values.
+
+Unlike every other cloud command, this one has no --format flag, so -f is
+--field here instead of --format.`,
 		Example: `  bitrise api /me
   bitrise api /apps -f sort_by=last_build_at --all | jq '.data[].title'
   bitrise api "/apps/APP_ID/builds?limit=10"

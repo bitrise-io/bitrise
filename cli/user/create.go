@@ -32,7 +32,7 @@ func NewCreateCommand() *cobra.Command {
 		usage string
 	}{
 		{"email", &email, "email address to register"},
-		{"username", &username, "desired username"},
+		{"username", &username, "desired username (must be unique)"},
 		{"first-name", &firstName, "first name on the account"},
 		{"last-name", &lastName, "last name on the account"},
 	}
@@ -41,15 +41,6 @@ func NewCreateCommand() *cobra.Command {
 		Use:   "create",
 		Short: "Create a new Bitrise account",
 		Long: `Create a new Bitrise account by email and password.
-
-Required flags:
-  --email ADDRESS    the email address to register
-  --username NAME    desired username (must be unique)
-  --first-name N     first name on the account
-  --last-name N      last name on the account
-
-Optional flags:
-  --password-stdin   read the password from stdin instead of prompting
 
 Password input:
   By default the command prompts for the password (input is masked when stdin

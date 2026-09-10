@@ -15,7 +15,7 @@ func newShareStartCommand() *cobra.Command {
 		RunE:  start,
 	}
 
-	shareStartCommand.Flags().StringP(cmdutil.CollectionKey, "c", "", "Collection of step.")
+	shareStartCommand.Flags().StringP(cmdutil.CollectionKey, "c", "", "Collection of step (required, or set STEPMAN_COLLECTION).")
 	cmdutil.SetFlagEnvVar(shareStartCommand.Flags(), cmdutil.CollectionKey, cmdutil.CollectionPathEnvKey)
 
 	return shareStartCommand
