@@ -128,3 +128,14 @@ func newRootCommand() *cobra.Command {
 
 	return rootCmd
 }
+
+// NewRootCommandForDocs returns the fully wired root command with a stable
+// Use ("bitrise"), for tools/gendocs. The normal root command derives Use
+// from os.Args[0] to support a renamed/aliased binary, which would make
+// generated doc filenames and command names depend on whatever name `go run`
+// gives its temp binary, so the doc generator needs a pinned name instead.
+func NewRootCommandForDocs() *cobra.Command {
+	root := newRootCommand()
+	root.Use = "bitrise"
+	return root
+}

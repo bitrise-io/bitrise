@@ -5,7 +5,18 @@ DOCKER_COMPOSE_FILE=integrationtests/docker/local_docker_test_environment/docker
 SRC_DIR_IN_GOPATH=/bitrise/src
 DOCKERCOMPOSE=$(shell which docker-compose 2> /dev/null || echo '')
 
-.PHONY: docker-with-group-test docker-step-based-test setup-test-environment build-main-container docker-clean
+.PHONY: docker-with-group-test docker-step-based-test setup-test-environment build-main-container docker-clean docs docs-check
+
+docs:
+	go run ./tools/gendocs
+
+docs-check: docs
+	@status=$$(git status --porcelain docs/cli README.md); \
+	if [ -n "$$status" ]; then \
+		echo "Generated CLI docs are out of date — run 'make docs' and commit the result:"; \
+		echo "$$status"; \
+		exit 1; \
+	fi
 
 docker-step-based-test: setup-test-environment
 	@echo "Running docker integration tests..."
