@@ -364,12 +364,12 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 			builder.WriteString(colorstring.Green("✓ Tools activated for subsequent steps in the workflow"))
 			builder.WriteString("\n")
 		}
-		builder.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&builder,
 			"%s %s %s\n",
 			colorstring.Yellow("! If you need tools in the current shell session, run"),
 			colorstring.Cyan("eval \"$(bitrise tools setup --format bash ...)\""),
 			colorstring.Yellow("instead."),
-		))
+		)
 		return builder.String(), nil
 	case outputFormatJSON:
 		data, err := json.MarshalIndent(envMap, "", "  ")
@@ -389,7 +389,7 @@ func convertToOutputFormat(envs []provider.EnvironmentActivation, format string,
 		slices.Sort(sortedKeys)
 		for _, k := range sortedKeys {
 			v := envMap[k]
-			builder.WriteString(fmt.Sprintf("export %s=\"%s\"\n", k, v))
+			fmt.Fprintf(&builder, "export %s=\"%s\"\n", k, v)
 		}
 		message := fmt.Sprintf(
 			"# %s\n# Make sure to run %s instead\n",
