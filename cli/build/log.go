@@ -24,13 +24,14 @@ func NewLogCommand() *cobra.Command {
 		Short: "Print the build log",
 		Long: `Print the log output for a single build.
 
-BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.
+BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").
 
 --wait waits for the build to finish before printing the log — useful when
 the build is still in-progress. Ctrl-C detaches without affecting the
 running build.
 
-Output is always raw text — logs stream as-is, ignoring --format.`,
+Output is always raw text — this command has no --format flag.`,
 		Example: `  bitrise build log abc123 --app my-app-id
   bitrise build log abc123 --app my-app-id --wait
   bitrise build log abc123 --app my-app-id --wait --interval 10s

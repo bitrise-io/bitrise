@@ -19,7 +19,10 @@ func NewYMLCommand() *cobra.Command {
 		Short: "Print the bitrise.yml a specific build ran with",
 		Long: `Print the bitrise.yml configuration that a specific build ran with.
 
-This is a shortcut for "bitrise yml get --app ID --build BUILD_ID".`,
+This is a shortcut for "bitrise yml get --app ID --build BUILD_ID".
+
+BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").`,
 		Example: `  bitrise build yml abc123 --app my-app-id
   bitrise build yml abc123 --app my-app-id --format json`,
 		Args: cobra.ExactArgs(1),

@@ -19,15 +19,19 @@ func NewWatchCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watch BUILD_ID",
 		Short: "Stream logs for a running build",
-		Long: `Stream build logs until the build finishes, then exit with a status
-reflecting the build outcome (0 = success, non-zero = failed or aborted).
+		Long: `Wait for the build to finish, then exit with a status reflecting the
+build outcome (0 = success, non-zero = failed or aborted).
+
+With --format json/yml, or when stdout isn't a terminal, build logs stream to
+it as plain text (to stderr instead, in --format json/yml, so stdout stays
+pipeable and carries only the final build record). On a terminal with the
+default raw format, an interactive status display is shown instead of raw
+log lines.
 
 Ctrl-C detaches the CLI without affecting the running build.
 
-BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.
-
-In --format json/yml, logs stream to stderr and the final build record is
-written to stdout, so this stays pipeable.`,
+BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").`,
 		Example: `  bitrise build watch abc123 --app my-app-id
   bitrise build watch abc123 --app my-app-id --interval 5s
   bitrise build watch abc123 --app my-app-id --format json`,

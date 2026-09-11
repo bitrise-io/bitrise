@@ -17,6 +17,10 @@ func NewInitCommand() *cobra.Command {
 		Use:     "init",
 		Aliases: []string{"i"},
 		Short:   "Init bitrise config.",
+		Long: `Interactively create a bitrise.yml (and secrets file) for the current project.
+
+This delegates to the 'init' plugin. If it's not installed yet, 'bitrise
+setup' is run automatically first to install it, then init is retried.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 

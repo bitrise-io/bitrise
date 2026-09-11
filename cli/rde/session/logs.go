@@ -44,13 +44,11 @@ start every time you connect.
 By default this prints the log captured so far and exits, without waiting for
 more output. Pass --follow to keep streaming new output live until you stop it
 with Ctrl-C (the backend does not signal end-of-log, so --follow runs until
-interrupted).
+interrupted), and to wait for the stage to start if it hasn't produced any
+logs yet instead of erroring.
 
-  --stage    which script's logs to show: warmup or startup (required). warmup
-             runs once at session creation; startup runs on every session
-             start/restart.
-  --follow   keep streaming new output until Ctrl-C, and wait for the stage to
-             start if it hasn't produced any logs yet (instead of erroring).
+warmup logs run once at session creation; startup logs run on every session
+start/restart.
 
 --format is rejected — logs stream as raw text, not a single object. Pipe or
 redirect as needed; diagnostics go to stderr so a redirect captures only log

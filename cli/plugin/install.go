@@ -14,6 +14,9 @@ func newInstallCommand() *cobra.Command {
 	pluginInstallCommand := &cobra.Command{
 		Use:   "install <plugin_source_remote_or_local_url>",
 		Short: "Install bitrise plugin.",
+		Example: `  bitrise plugin install https://github.com/bitrise-io/bitrise-plugins-init.git
+  bitrise plugin install ./local-plugin-dir
+  bitrise plugin install https://github.com/bitrise-io/bitrise-plugins-init.git --version 1.2.3`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
@@ -26,7 +29,8 @@ func newInstallCommand() *cobra.Command {
 	}
 
 	pluginInstallCommand.Flags().String("version", "", "Plugin version tag.")
-	pluginInstallCommand.Flags().String("source", "", "Deprecated!!! Specify as arg instead - Plugin source url (can be local path or remote url).")
+	pluginInstallCommand.Flags().String("source", "", "Plugin source url (can be local path or remote url).")
+	_ = pluginInstallCommand.Flags().MarkDeprecated("source", "specify the plugin source as a positional argument instead")
 
 	return pluginInstallCommand
 }

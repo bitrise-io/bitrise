@@ -25,6 +25,7 @@ func NewCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE:  cmdutil.DelegateToList,
 	}
+	c.PersistentFlags().String(cmdutil.FlagWorkspace, "", "workspace ID (or set BITRISE_WORKSPACE_ID or default_workspace_id; auto-detected if you have exactly one workspace)")
 	c.AddCommand(newListCmd())
 	return c
 }

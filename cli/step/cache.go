@@ -40,7 +40,17 @@ func NewPreloadStepsCommand() *cobra.Command {
 	preloadStepsCommand := &cobra.Command{
 		Use:   "preload",
 		Short: "Makes sure that Bitrise CLI can be used in offline mode by preloading Bitrise maintaned Steps.",
-		Long:  fmt.Sprintf("Use the %s env var to test after preloading steps.", configs.IsSteplibOfflineModeEnvKey),
+		Long: fmt.Sprintf(`Downloads and caches step versions from the steplib so later runs can use them
+without network access. Use the %s env var to test after preloading steps.
+
+--minors-since and --patches-since add versions purely by recency, regardless
+of --majors/--minors: --minors-since additionally includes the latest patch of
+any minor released in the last N months even if its major wasn't selected;
+--patches-since additionally includes any patch at all released in the last N
+months.`, configs.IsSteplibOfflineModeEnvKey),
+		Example: `  bitrise step preload
+  bitrise step preload --maintainer bitrise
+  bitrise step preload --majors 3 --minors 2`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 

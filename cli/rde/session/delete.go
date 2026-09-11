@@ -13,7 +13,12 @@ func newDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete SESSION_ID",
 		Short: "Permanently delete a session",
-		Args:  cmdutil.RequireArgs("SESSION_ID"),
+		Long: `Permanently delete a session.
+
+The session must already be terminated or failed — delete rejects a session
+that's still running or terminating. Use 'terminate --wait' first, or
+'delete-terminated' to sweep every already-terminated session at once.`,
+		Args: cmdutil.RequireArgs("SESSION_ID"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
 

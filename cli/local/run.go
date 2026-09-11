@@ -49,14 +49,25 @@ type RunConfig struct {
 // NewRunCommand ...
 func NewRunCommand() *cobra.Command {
 	runCommand := &cobra.Command{
-		Use:     "run",
+		Use:     "run WORKFLOW_ID",
 		Aliases: []string{"r"},
 		Short:   "Runs a specified Workflow.",
-		RunE:    run,
+		Long: `Run a workflow defined in bitrise.yml on the local host.
+
+WORKFLOW_ID is normally given as a positional argument. --workflow is also
+accepted and takes precedence over the positional argument if both are given.
+
+By default, bitrise.yml is read from the current directory; use --config to
+point elsewhere.`,
+		Example: `  bitrise run primary
+  bitrise run primary --config ./ci/bitrise.yml
+  bitrise run primary --inventory .bitrise.secrets.yml
+  bitrise run primary --workflow primary`,
+		RunE: run,
 	}
 
 	flags := runCommand.Flags()
-	flags.String(cmdutil.WorkflowKey, "", "workflow id to run.")
+	flags.String(cmdutil.WorkflowKey, "", "workflow id to run (takes precedence over the positional WORKFLOW_ID argument)")
 	flags.StringP(cmdutil.ConfigKey, "c", "", "Path where the workflow config file is located.")
 	flags.StringP(cmdutil.InventoryKey, "i", "", "Path of the inventory file.")
 	cmdutil.AddSecretFilteringFlag(flags)

@@ -64,9 +64,11 @@ invocation creates a new, uniquely named session (claude-<id>).
 
 Resume a previous session instead of creating one:
 
-  --continue        resume the most recent session started from this repo
-  --resume          pick a previous session for this repo from a list
-  --resume SESSION  resume a specific session by ID (or name)
+  --continue         resume the most recent session started from this repo
+  --resume           pick a previous session for this repo from a list
+  SESSION            resume a specific session by ID (or name), passed as a
+                     plain positional argument, e.g. 'bitrise rde claude SESSION_ID'
+                     — not a value for --resume, which takes none
 
 Resuming reconnects to the session if it's still running, otherwise restores it
 and continues the same Claude Code conversation. Sessions are tracked locally
@@ -90,7 +92,8 @@ the in-session claude; once saved, future sessions reuse it.`,
 		Example: `  bitrise rde claude --workspace WORKSPACE_ID
   bitrise rde claude --stack osx-xcode-16.0.x-edge --machine-type g2.mac.m2pro.4c-6g
   bitrise rde claude --continue
-  bitrise rde claude --resume`,
+  bitrise rde claude --resume
+  bitrise rde claude SESSION_ID`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -126,6 +129,7 @@ the in-session claude; once saved, future sessions reuse it.`,
 		},
 	}
 
+	c.Flags().String(cmdutil.FlagWorkspace, "", "workspace ID (or set BITRISE_WORKSPACE_ID or default_workspace_id; auto-detected if you have exactly one workspace)")
 	c.Flags().DurationVar(&waitTimeout, "wait-timeout", 10*time.Minute, "max time to wait for the session to start (uses Go duration syntax: 30s, 5m, 1h)")
 	c.Flags().BoolVar(&resume, "resume", false, "resume a previous session for this repo; with no SESSION_ID, pick one from a list")
 	c.Flags().BoolVar(&continueLatest, "continue", false, "resume the most recent session started from this repo")

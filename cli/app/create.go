@@ -40,21 +40,10 @@ func NewCreateCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Register a new app on Bitrise",
-		Long: fmt.Sprintf(`Register a new app on Bitrise.
+		Long: `Register a new app on Bitrise.
 
-Auto-detection from the current git repo:
-  --repo-url     git remote get-url origin
-  --branch       git symbolic-ref --short HEAD (else %q)
-  --title        last path segment of the repo URL (".git" stripped)
-
-Workspace, highest to lowest:
-  --workspace WORKSPACE_ID
-  $BITRISE_WORKSPACE_ID
-  the default_workspace_id config key ('bitrise config set')
-  auto-detected, when your account has exactly one workspace
-
-So --workspace is only required if you belong to several workspaces and
-haven't set a default.
+--workspace is only required if you belong to several workspaces and haven't
+set a default (see 'bitrise config set default_workspace_id').
 
 bitrise.yml handling:
   --bitrise-yml PATH                upload that file as the app's config
@@ -63,7 +52,7 @@ bitrise.yml handling:
 
 The new app's ID is saved as the default app_id in
 ~/.config/bitrise/cli/config.yml, so later commands (e.g. 'bitrise yml get')
-target it without --app.`, internalapp.DefaultBranchFallback),
+target it without --app.`,
 		Example: `  bitrise app create
   bitrise app create --repo-url https://github.com/me/proj --workspace acme
   bitrise app create --bitrise-yml ./ci/bitrise.yml --stack osx-xcode-16.0.x
@@ -77,7 +66,7 @@ target it without --app.`, internalapp.DefaultBranchFallback),
 	cmd.Flags().StringVar(&flags.repoURL, "repo-url", "", "git repo URL (default: 'git remote get-url origin' in cwd)")
 	cmd.Flags().StringVar(&flags.branch, "branch", "", fmt.Sprintf("default branch (default: 'git symbolic-ref --short HEAD', else %q)", internalapp.DefaultBranchFallback))
 	cmd.Flags().StringVar(&flags.title, "title", "", "app title (default: last path segment of repo URL)")
-	cmd.Flags().StringVar(&flags.provider, "provider", "auto", "git provider: auto, github, gitlab, bitbucket, custom")
+	cmd.Flags().StringVar(&flags.provider, "provider", "auto", "git provider: auto (registers as 'custom' — does not detect the host from --repo-url), github, gitlab, bitbucket, custom")
 	cmd.Flags().StringVar(&flags.workspace, cmdutil.FlagWorkspace, "", "workspace ID to own the app (or set BITRISE_WORKSPACE_ID / default_workspace_id; auto-detected if you have exactly one)")
 	cmd.Flags().StringVar(&flags.stackID, "stack", "", fmt.Sprintf("build stack ID (default %q)", internalapp.DefaultStackID))
 	cmd.Flags().StringVar(&flags.projectType, "project-type", "", fmt.Sprintf("project type for server-side preset (default %q)", internalapp.DefaultProjectType))

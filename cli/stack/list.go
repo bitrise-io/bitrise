@@ -20,14 +20,9 @@ func NewListCommand() *cobra.Command {
 		Short: "List available stacks and their machine configurations",
 		Long: `List all available stacks with their OS, status, and version information.
 
-Workspace, highest to lowest:
-  --workspace WORKSPACE_ID
-  $BITRISE_WORKSPACE_ID (injected inside a Bitrise build)
-  the default_workspace_id config key ('bitrise config set')
-
-When a workspace resolves, returns stacks available for that workspace,
-including any custom stacks configured for it. Otherwise returns globally
-available stacks.`,
+When a workspace resolves (via --workspace, its env var, or a configured
+default), returns stacks available for that workspace, including any custom
+stacks configured for it. Otherwise returns globally available stacks.`,
 		Example: `  bitrise stack list
   bitrise stack list --workspace my-workspace-id
   bitrise stack list --format json`,
