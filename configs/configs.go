@@ -68,6 +68,20 @@ const (
 	// fetches during setup are prone to rate-limiting.
 	SetupNoUpdateEnvKey = "BITRISE_SETUP_NO_UPDATE"
 
+	// --- Step activation
+	// These configure stepman's activator. Stepman reads no environment of its
+	// own, so the CLI resolves them here and passes them in as explicit options.
+
+	// SteplibUseAPIEnvKey when set to "false" or "0", activates steps of the canonical
+	// Bitrise StepLib through a local git clone of the library instead of the StepLib V2 API.
+	SteplibUseAPIEnvKey = "BITRISE_STEPLIB_USE_API"
+	// SteplibUseBinaryEnvKey when set to "false" or "0", always builds steps from source
+	// instead of downloading a prebuilt executable where the library offers one.
+	SteplibUseBinaryEnvKey = "BITRISE_STEPLIB_USE_BINARY"
+	// SteplibStorageURLsEnvKey overrides the comma-separated list of base URLs tried in
+	// order when downloading a prebuilt step executable. Empty leaves stepman's defaults.
+	SteplibStorageURLsEnvKey = "BITRISE_STEPLIB_STORAGE_URLS"
+
 	// --- Debug Options
 
 	// DebugUseSystemTools ...

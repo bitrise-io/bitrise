@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -155,6 +156,11 @@ func (fm fileManager) lchown(path string, uid, gid int) error {
 }
 
 // copyOwner invokes lchown to copy ownership from srcInfo to dstPath.
+// Ownership is preserved best effort: only root may chown a file to another
+// user, so a non-root copier gets EPERM whenever the source is owned by
+// someone else (e.g. a build artifact written by a root container) — after the
+// content was already copied. Such a copy succeeds owned by the caller
+// instead of failing.
 func (fm fileManager) copyOwner(srcInfo os.FileInfo, dstPath string) error {
 	if runtime.GOOS == "windows" {
 		return nil
@@ -168,6 +174,9 @@ func (fm fileManager) copyOwner(srcInfo os.FileInfo, dstPath string) error {
 	}
 	// os.Lchown affects the link itself when given the link path
 	if err := fm.lchown(dstPath, int(stat.Uid), int(stat.Gid)); err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			return nil
+		}
 		return fmt.Errorf("lchown(symlink) %s: %w", dstPath, err)
 	}
 	return nil

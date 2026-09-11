@@ -181,6 +181,10 @@ type WorkflowRunner struct {
 	// agentConfig is only non-nil if the CLI is configured to run in agent mode
 	agentConfig      *configs.AgentConfig
 	containerManager *containermanager.Manager
+
+	// stepActivator is built once per run so that every step activation shares
+	// one HTTP client, rather than each step building its own.
+	stepActivator stepActivator
 }
 
 func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, tracker analytics.Tracker) WorkflowRunner {
@@ -200,6 +204,7 @@ func NewWorkflowRunner(config RunConfig, agentConfig *configs.AgentConfig, track
 		tracker:          tracker,
 		containerManager: containerManager,
 		agentConfig:      agentConfig,
+		stepActivator:    newStepActivator(logger, config.Modes.IsSteplibOfflineMode),
 	}
 }
 

@@ -43,11 +43,10 @@ type WorkflowRunPlan struct {
 }
 
 type WorkflowExecutionPlan struct {
-	UUID                 string              `json:"uuid"`
-	WorkflowID           string              `json:"workflow_id"`
-	Steps                []StepExecutionPlan `json:"steps"`
-	WorkflowTitle        string              `json:"-"`
-	IsSteplibOfflineMode bool                `json:"-"`
+	UUID          string              `json:"uuid"`
+	WorkflowID    string              `json:"workflow_id"`
+	Steps         []StepExecutionPlan `json:"steps"`
+	WorkflowTitle string              `json:"-"`
 }
 
 // WithGroupPlan ...
@@ -190,11 +189,10 @@ func (builder *WorkflowRunPlanBuilder) Build(modes WorkflowRunModes, targetWorkf
 		}
 
 		executionPlan = append(executionPlan, WorkflowExecutionPlan{
-			UUID:                 builder.uuidProvider(),
-			WorkflowID:           workflowID,
-			Steps:                stepPlans,
-			WorkflowTitle:        workflowTitle,
-			IsSteplibOfflineMode: modes.IsSteplibOfflineMode,
+			UUID:          builder.uuidProvider(),
+			WorkflowID:    workflowID,
+			Steps:         stepPlans,
+			WorkflowTitle: workflowTitle,
 		})
 	}
 

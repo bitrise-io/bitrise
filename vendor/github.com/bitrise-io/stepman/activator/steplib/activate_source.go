@@ -6,6 +6,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 )
@@ -17,6 +18,7 @@ func activateStepSource(
 	destination string,
 	log stepman.Logger,
 	isOfflineMode bool,
+	fetcher httpfetch.Client,
 ) error {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
@@ -35,7 +37,7 @@ func activateStepSource(
 			return fmt.Errorf("download step: %s", errMsg)
 		}
 
-		err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log)
+		err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log, fetcher)
 		if err != nil {
 			return fmt.Errorf("download failed: %s", err)
 		}
