@@ -1,16 +1,24 @@
 ## bitrise rde session terminate
 
-Terminate a running session (preserves it for later restart)
+Terminate a running session but keep it for a later restore
 
 ### Synopsis
 
-Terminate a running session (preserves it for later restart).
+Terminate a running session but keep it for a later restore.
+
+The VM is stopped and its disk is preserved: the session stays in the list as
+"terminated" and can be brought back with 'session restore'. Use this when you
+intend to come back to this exact session (e.g. to keep uncommitted work or an
+expensive warm state). A terminated session keeps using disk space until it is
+deleted.
+
+If you are simply done with the session, use 'session delete' instead — it
+works on running sessions directly and frees the disk; no terminate needed.
 
 Terminate is asynchronous: by default the command returns while the session
 is still "terminating". Pass --wait to block until the session settles into a
-terminal state ("terminated" or "failed"). This is what makes a
-'terminate --wait && delete' pipeline reliable — delete rejects any session
-that isn't yet terminated or failed.
+terminal state ("terminated" or "failed"), e.g. before restoring it or when
+you want the disk snapshot to be complete before moving on.
 
 ```
 bitrise rde session terminate SESSION_ID [flags]
@@ -21,7 +29,7 @@ bitrise rde session terminate SESSION_ID [flags]
 ```
   -f, --format string           Output format. Accepted: raw (default), json, yml
   -h, --help                    help for terminate
-      --wait                    block until the session settles into a terminal state (terminated/failed) before returning; makes 'terminate --wait && delete' reliable
+      --wait                    block until the session settles into a terminal state (terminated/failed) before returning
       --wait-timeout duration   max time to wait when --wait is set (Go duration syntax: 30s, 5m, 1h) (default 10m0s)
 ```
 

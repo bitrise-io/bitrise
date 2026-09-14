@@ -123,7 +123,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`rde saved-input update`](docs/cli/bitrise_rde_saved-input_update.md) | Update a saved input's value and/or secret flag |
 | [`rde saved-input view`](docs/cli/bitrise_rde_saved-input_view.md) | Show details of a single saved input |
 | [`rde session create`](docs/cli/bitrise_rde_session_create.md) | Create a new RDE session |
-| [`rde session delete`](docs/cli/bitrise_rde_session_delete.md) | Permanently delete a session |
+| [`rde session delete`](docs/cli/bitrise_rde_session_delete.md) | Permanently delete a session in any state (running sessions are stopped and discarded) |
 | [`rde session delete-terminated`](docs/cli/bitrise_rde_session_delete-terminated.md) | Permanently delete every terminated session in the workspace |
 | [`rde session diff`](docs/cli/bitrise_rde_session_diff.md) | Compare a session's template snapshot with the current template |
 | [`rde session download`](docs/cli/bitrise_rde_session_download.md) | Download a file or directory from a session |
@@ -133,7 +133,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`rde session notifications`](docs/cli/bitrise_rde_session_notifications.md) | List notifications emitted by a session |
 | [`rde session open-vnc`](docs/cli/bitrise_rde_session_open-vnc.md) | Open a session's VNC endpoint in the OS-default viewer |
 | [`rde session restore`](docs/cli/bitrise_rde_session_restore.md) | Restore a terminated session (re-provisions its VM from the persistent disk) |
-| [`rde session terminate`](docs/cli/bitrise_rde_session_terminate.md) | Terminate a running session (preserves it for later restart) |
+| [`rde session terminate`](docs/cli/bitrise_rde_session_terminate.md) | Terminate a running session but keep it for a later restore |
 | [`rde session update`](docs/cli/bitrise_rde_session_update.md) | Update a session's name, description, auto-terminate duration, or labels |
 | [`rde session upload`](docs/cli/bitrise_rde_session_upload.md) | Upload a local file or directory into a session |
 | [`rde session view`](docs/cli/bitrise_rde_session_view.md) | Show details of a single session |
