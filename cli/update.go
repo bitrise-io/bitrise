@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	tagsURL     = "https://api.github.com/repos/bitrise-io/bitrise/tags"
-	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s/bitrise-%s-x86_64"
+	tagsURL         = "https://api.github.com/repos/bitrise-io/bitrise/tags"
+	releasesBaseURL = "https://github.com/bitrise-io/bitrise/releases/download"
 )
 
 var updateCommand = &cobra.Command{
@@ -42,6 +42,24 @@ var updateCommand = &cobra.Command{
 	},
 }
 
+// The endpoints and the install method check are fields so tests can replace
+// them with local fakes.
+type updater struct {
+	tagsURL         string
+	releasesBaseURL string
+	client          *http.Client
+	isBrewInstall   func() (bool, error)
+}
+
+func newUpdater() updater {
+	return updater{
+		tagsURL:         tagsURL,
+		releasesBaseURL: releasesBaseURL,
+		client:          http.DefaultClient,
+		isBrewInstall:   installedWithBrew,
+	}
+}
+
 func init() {
 	updateCommand.Flags().String("version", "", "version to update - only for GitHub release page installations.")
 }
@@ -53,7 +71,7 @@ func checkUpdate() error {
 	if configs.CheckIsCLIUpdateCheckRequired() {
 		log.Infof("Checking for new CLI version...")
 
-		newVersion, err := newCLIVersion()
+		newVersion, err := newUpdater().newCLIVersion()
 		if err != nil {
 			return fmt.Errorf("failed to check update for CLI, error: %s", err)
 		}
@@ -133,8 +151,8 @@ func newVersionFromBrew() (string, error) {
 	return "", nil
 }
 
-func newCLIVersion() (string, error) {
-	withBrew, err := installedWithBrew()
+func (u updater) newCLIVersion() (string, error) {
+	withBrew, err := u.isBrewInstall()
 	if err != nil {
 		return "", err
 	}
@@ -142,7 +160,7 @@ func newCLIVersion() (string, error) {
 		return newVersionFromBrew()
 	}
 
-	latest, err := latestTag()
+	latest, err := u.latestTag()
 	if err != nil {
 		return "", err
 	}
@@ -157,8 +175,8 @@ func newCLIVersion() (string, error) {
 	return "", nil
 }
 
-func latestTag() (*ver.Version, error) {
-	resp, err := http.Get(tagsURL)
+func (u updater) latestTag() (*ver.Version, error) {
+	resp, err := u.client.Get(u.tagsURL)
 	if err != nil {
 		return nil, err
 	}
@@ -179,19 +197,19 @@ func latestTag() (*ver.Version, error) {
 	return ver.NewVersion(result[0].Name)
 }
 
-func download(version string) error {
+func (u updater) download(version string) error {
 	path, err := exec.LookPath(os.Args[0])
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf(downloadURL, version, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
+	url := u.binaryURL(version, runtime.GOOS)
 
 	tmpfile, err := os.CreateTemp("", "bitrise")
 	if err != nil {
 		return fmt.Errorf("can't create temporary file: %s", err)
 	}
 
-	resp, err := http.Get(url)
+	resp, err := u.client.Get(url)
 	if err != nil {
 		return fmt.Errorf("error while downloading url (%s), error: %v", url, err)
 	}
@@ -221,6 +239,14 @@ func download(version string) error {
 	return nil
 }
 
+func (u updater) binaryURL(version, goos string) string {
+	return fmt.Sprintf("%s/v%s/%s", u.releasesBaseURL, version, assetName(goos))
+}
+
+func assetName(goos string) string {
+	return fmt.Sprintf("bitrise-%s-x86_64", strings.ToUpper(goos[:1])+goos[1:])
+}
+
 func update(cmd *cobra.Command) error {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logger.Infof("Updating Bitrise CLI...")
@@ -228,7 +254,9 @@ func update(cmd *cobra.Command) error {
 	versionFlag, _ := cmd.Flags().GetString("version")
 	logger.Printf("Current version: %s", version.VERSION)
 
-	withBrew, err := installedWithBrew()
+	u := newUpdater()
+
+	withBrew, err := u.isBrewInstall()
 	if err != nil {
 		return err
 	}
@@ -266,7 +294,7 @@ func update(cmd *cobra.Command) error {
 	logger.Infof("Bitrise CLI installed from source")
 
 	if versionFlag == "" {
-		latest, err := latestTag()
+		latest, err := u.latestTag()
 		if err != nil {
 			return err
 		}
@@ -281,7 +309,7 @@ func update(cmd *cobra.Command) error {
 	logger.Printf("Updating to version: %s", versionFlag)
 
 	logger.Print("Downloading Bitrise CLI...")
-	if err := download(versionFlag); err != nil {
+	if err := u.download(versionFlag); err != nil {
 		return err
 	}
 
