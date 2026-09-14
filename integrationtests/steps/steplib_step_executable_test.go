@@ -15,7 +15,7 @@ import (
 func TestSteplibStepExecutable(t *testing.T) {
 	cmd := command.New(testhelpers.BinPath(), "run", "step-executable-test", "-c", "steplib_step_executable/bitrise.yml")
 	envs := os.Environ()
-	envs = append(envs, "BITRISE_EXPERIMENT_PRECOMPILED_STEPS=true")
+	envs = append(envs, "BITRISE_STEPLIB_USE_BINARY=true")
 	cmd.SetEnvs(envs...)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)

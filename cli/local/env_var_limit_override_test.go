@@ -4,14 +4,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/envman/v2/envman"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/stretchr/testify/require"
 )
 
 func TestApplyEnvVarLimitOverrides(t *testing.T) {
-	runner := WorkflowRunner{logger: log.NewLogger(log.GetGlobalLoggerOpts())}
+	//nolint:exhaustruct // the override logic reads none of the config
+	runner := NewWorkflowRunner(RunConfig{}, nil, noOpTracker{})
 	key := envman.EnvListBytesLimitInKBEnvKey
 
 	tests := []struct {

@@ -130,7 +130,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -144,7 +143,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3",
 			resolutionStrategy: provider.ResolutionStrategyLatestReleased,
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -158,7 +156,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "0.0.1",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")
@@ -172,7 +169,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse("settings experimental=true", "")
 				m.setError(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), fmt.Errorf("fake error"))
 			},
 			want: false,
@@ -183,7 +179,6 @@ func TestCanBeInstalledWithNix(t *testing.T) {
 			version:            "3.3.9",
 			resolutionStrategy: provider.ResolutionStrategyStrict,
 			setupFake: func(m *fakeExecEnv) {
-				m.setResponse("settings experimental=true", "")
 				m.setResponse(fmt.Sprintf("plugin install %s %s", nixpkgs.PluginName, nixpkgs.PluginGitURL), "")
 				m.setResponse(fmt.Sprintf("plugin update %s", nixpkgs.PluginName), "")
 				m.setResponse("ls --installed --json --quiet ruby", "[]")

@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/stepman/internal/httpfetch"
 	"github.com/bitrise-io/stepman/models"
 	"github.com/bitrise-io/stepman/stepman"
 )
@@ -50,6 +51,8 @@ func CacheSteps(log stepman.Logger, steplibURL, maintaner string, opts CacheOpts
 		return err
 	}
 
+	fetcher := httpfetch.NewClient(log)
+
 	preloadQueue := make(chan stepWorkInfo)
 	preloadResults := make(chan preloadResult)
 	errC := make(chan error)
@@ -60,7 +63,7 @@ func CacheSteps(log stepman.Logger, steplibURL, maintaner string, opts CacheOpts
 		workersWaitGroup.Add(1)
 		go func() {
 			for s := range preloadQueue {
-				results, err := preloadStepVersions(log, steplibURL, stepLib, s.stepID, s.step, opts)
+				results, err := preloadStepVersions(log, steplibURL, stepLib, s.stepID, s.step, opts, fetcher)
 				if err != nil {
 					log.Debugf("Failed to preload step %s: %s", s.stepID, err)
 					errC <- err
@@ -136,7 +139,7 @@ func CacheSteps(log stepman.Logger, steplibURL, maintaner string, opts CacheOpts
 	return nil
 }
 
-func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel, opts CacheOpts) ([]preloadResult, error) {
+func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.StepCollectionModel, stepID string, step models.StepGroupModel, opts CacheOpts, fetcher httpfetch.Client) ([]preloadResult, error) {
 	results := []preloadResult{}
 
 	_, found := stepman.ReadRoute(steplibURL)
@@ -152,7 +155,7 @@ func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.S
 	}
 
 	log.Infof("Preloading step %s@latest", stepID)
-	err := preloadStep(log, stepLib, steplibURL, stepID, step.LatestVersionNumber, latestVersion)
+	err := preloadStep(log, stepLib, steplibURL, stepID, step.LatestVersionNumber, latestVersion, fetcher)
 	if err != nil {
 		return results, fmt.Errorf("failed to preload step %s@%s: %w", stepID, latestVersionNumber, err)
 	}
@@ -176,7 +179,7 @@ func preloadStepVersions(log stepman.Logger, steplibURL string, stepLib models.S
 		}
 
 		log.Debugf("Preloading step %s@%s", stepID, version)
-		err := preloadStep(log, stepLib, steplibURL, stepID, version, step)
+		err := preloadStep(log, stepLib, steplibURL, stepID, version, step, fetcher)
 		if err != nil {
 			results = append(results, preloadResult{
 				stepID:  stepID,
@@ -216,7 +219,7 @@ func cleanStepSourceDir(route stepman.SteplibRoute, id, version string) (string,
 	return stepSourceDir, nil
 }
 
-func preloadStep(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI string, id, version string, step models.StepModel) error {
+func preloadStep(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI string, id, version string, step models.StepModel, fetcher httpfetch.Client) error {
 	route, found := stepman.ReadRoute(stepLibURI)
 	if !found {
 		return fmt.Errorf("no route found for %s steplib", stepLibURI)
@@ -228,7 +231,7 @@ func preloadStep(log stepman.Logger, stepLib models.StepCollectionModel, stepLib
 	}
 
 	log.Debugf("Downloading step %s@%s", id, version)
-	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log); err != nil {
+	if err := stepman.DownloadStep(stepLibURI, stepLib, id, version, step.Source.Commit, log, fetcher); err != nil {
 		return fmt.Errorf("download failed: %s", err)
 	}
 
