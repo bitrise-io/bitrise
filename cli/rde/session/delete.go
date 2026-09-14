@@ -12,12 +12,24 @@ import (
 func newDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete SESSION_ID",
-		Short: "Permanently delete a session",
-		Long: `Permanently delete a session.
+		Short: "Permanently delete a session in any state (running sessions are stopped and discarded)",
+		Long: `Permanently delete a session in any state.
 
-The session must already be terminated or failed — delete rejects a session
-that's still running or terminating. Use 'terminate --wait' first, or
-'delete-terminated' to sweep every already-terminated session at once.`,
+This is the way to get rid of a session you are done with. It works on running,
+starting, terminating, terminated and failed sessions alike — no need to
+'terminate' first. The session disappears immediately and cannot be restored.
+
+If the VM is still running, the backend stops it and then discards it together
+with its disk in the background; the command does not wait for that. Anything
+still on the VM (uncommitted work, unsynced files) is lost, so push or download
+what you need before deleting.
+
+Only use 'session terminate' instead when you intend to 'session restore' the
+same session later — a terminated session keeps its disk (and keeps using disk
+space) until it is deleted.
+
+The command refuses while the machine state is "unknown" (e.g. its node lost
+connectivity); retry once the state settles.`,
 		Args: cmdutil.RequireArgs("SESSION_ID"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)

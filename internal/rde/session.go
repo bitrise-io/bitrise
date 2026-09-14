@@ -526,10 +526,10 @@ func (s *Service) WaitForSSHReady(ctx context.Context, workspaceID, sessionID st
 // is cancelled.
 //
 // This is the teardown companion to WaitForReady: a bare TerminateSession
-// returns while the session is still "terminating", so a
-// 'terminate && delete' pipeline races the backend — delete rejects any
-// session that isn't yet "terminated" or "failed". Waiting here closes
-// that gap.
+// returns while the session is still "terminating". Callers that need the
+// shutdown (and disk snapshot) to have completed — e.g. before restoring —
+// wait here. Note that DeleteSession no longer needs this: it accepts a
+// session in any state and stops the VM itself.
 func (s *Service) WaitForTerminated(ctx context.Context, workspaceID, sessionID string, interval time.Duration) (Session, error) {
 	if s.client == nil {
 		return Session{}, errClient()

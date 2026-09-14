@@ -37,7 +37,7 @@ bitrise rde session [flags]
 
 * [bitrise rde](bitrise_rde.md)	 - Manage Bitrise Remote Dev Environments (sessions, templates, …)
 * [bitrise rde session create](bitrise_rde_session_create.md)	 - Create a new RDE session
-* [bitrise rde session delete](bitrise_rde_session_delete.md)	 - Permanently delete a session
+* [bitrise rde session delete](bitrise_rde_session_delete.md)	 - Permanently delete a session in any state (running sessions are stopped and discarded)
 * [bitrise rde session delete-terminated](bitrise_rde_session_delete-terminated.md)	 - Permanently delete every terminated session in the workspace
 * [bitrise rde session diff](bitrise_rde_session_diff.md)	 - Compare a session's template snapshot with the current template
 * [bitrise rde session download](bitrise_rde_session_download.md)	 - Download a file or directory from a session
@@ -47,7 +47,7 @@ bitrise rde session [flags]
 * [bitrise rde session notifications](bitrise_rde_session_notifications.md)	 - List notifications emitted by a session
 * [bitrise rde session open-vnc](bitrise_rde_session_open-vnc.md)	 - Open a session's VNC endpoint in the OS-default viewer
 * [bitrise rde session restore](bitrise_rde_session_restore.md)	 - Restore a terminated session (re-provisions its VM from the persistent disk)
-* [bitrise rde session terminate](bitrise_rde_session_terminate.md)	 - Terminate a running session (preserves it for later restart)
+* [bitrise rde session terminate](bitrise_rde_session_terminate.md)	 - Terminate a running session but keep it for a later restore
 * [bitrise rde session update](bitrise_rde_session_update.md)	 - Update a session's name, description, auto-terminate duration, or labels
 * [bitrise rde session upload](bitrise_rde_session_upload.md)	 - Upload a local file or directory into a session
 * [bitrise rde session view](bitrise_rde_session_view.md)	 - Show details of a single session
