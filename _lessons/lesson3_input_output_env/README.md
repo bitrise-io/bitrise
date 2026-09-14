@@ -4,7 +4,7 @@
 
 [Lesson 4 - Keeping the control even when the engines are on fire](../lesson4_errors)
 
-You are probably familiar with environment variables. These are crucial part of [Bitrise](https://bitrise.io), because our Steps communicate using Environment Variables. We created [envman](https://github.com/bitrise-io/envman) to make Environment Variable management a whole lot easier. Also for security reasons we added a .bitrise.secrets.yml to store all your secret passwords and any other local machine- or user related data. At every `bitrise init` we create a .gitignore file to make sure that the top secret data you are storing in this file is not added to git.
+You are probably familiar with environment variables. These are crucial part of [Bitrise](https://bitrise.io), because our Steps communicate using Environment Variables. We created [envman](https://github.com/bitrise-io/envman) to make Environment Variable management a whole lot easier. Also for security reasons we added a .bitrise.secrets.yml to store all your secret passwords and any other local machine- or user related data. At every `bitrise local init` we create a .gitignore file to make sure that the top secret data you are storing in this file is not added to git.
 
 There are multiple ways to create Environment Variables
 

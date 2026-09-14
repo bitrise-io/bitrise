@@ -26,6 +26,6 @@ You can notice that there is a fallback workflow at the end of the trigger map. 
 
 You can notice on the [Bitrise website](https://bitrise.io) that the triggers there are the names of the branch that received the push or pull request.
 
-You can try the samples in the bitrise.yml. Just run the `bitrise trigger` command to view the full list of triggers in the .yml and try running the given workflow with the `bitrise trigger <selected_trigger_expression>` command.
+You can try the samples in the bitrise.yml. `bitrise trigger` is a legacy command — hidden from `bitrise help` and deprecated in favor of `bitrise local run <workflow>` for the simple case — but it's kept around specifically for this: resolving a workflow from the trigger_map. Just run the `bitrise trigger` command to view the full list of triggers in the .yml and try running the given workflow with the `bitrise trigger <selected_trigger_expression>` command.
 
 [Back to Lesson 5](../lesson5_complex_wf)

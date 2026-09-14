@@ -13,7 +13,7 @@ app:
 workflows:
   example-envs:
     # You can run this workflow with:
-    # bitrise run example-envs
+    # bitrise local run example-envs
     envs: []
     steps:
       - https://github.com/bitrise-io/bitrise-steplib.git::script@0.9.0:

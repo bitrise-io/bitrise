@@ -4,8 +4,8 @@ Bitrise CLI is the workflow runner that powers [Bitrise](https://bitrise.io/) bu
 
 It's also useful as a standalone dev tool in your local environment. You can:
 
-- quickly validate your `bitrise.yml` changes before pushing a commit (`bitrise validate`)
-- run CI workflows locally (`bitrise run workflow_name`)
+- quickly validate your `bitrise.yml` changes before pushing a commit (`bitrise yml validate`)
+- run CI workflows locally (`bitrise local run workflow_name`)
 - run the workflow editor in `localhost` and edit your configs and pipelines visually (`bitrise :workflow-editor`)
 - perform various other tasks (for a full list run `bitrise help`)
 
@@ -22,7 +22,7 @@ There are multiple ways to install Bitrise CLI:
 - Download a pre-built binary from the [releases](https://github.com/bitrise-io/bitrise/releases) page
 - There might be other [community-maintained packages](https://repology.org/project/bitrise/versions)
 
-You can enable shell completion for the `bitrise run` command: [https://blog.bitrise.io/workflow-id-completion](https://blog.bitrise.io/workflow-id-completion)
+You can enable shell completion for the `bitrise local run` command: [https://blog.bitrise.io/workflow-id-completion](https://blog.bitrise.io/workflow-id-completion)
 
 ### Building from source
 
@@ -213,5 +213,5 @@ You can use your own Step as you can see in the `_examples`, even if it's
 not yet committed into a repository, or from a repository directly.
 
 If you would like to share your awesome Step with others
-you can do so by calling `stepman share` and then following the
+you can do so by calling `bitrise step share` and then following the
 guide it prints.

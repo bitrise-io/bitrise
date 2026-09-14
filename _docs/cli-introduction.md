@@ -11,12 +11,12 @@ If you choose to go the old fashioned way just check the [releases site](https:/
 
 ## Setting up Bitrise
 
-The installation is done so let's run the `bitrise setup` command to finish up and install the missing dependencies!
+The installation is done so let's run the `bitrise local setup` command to finish up and install the missing dependencies!
 
 ## Create your first project
 
-Let's run the `bitrise init` command in the terminal. Your first Workflow is ready to be run!
+Let's run the `bitrise local init` command in the terminal. Your first Workflow is ready to be run!
 
-Make sure you are in the current project's directory and run the `bitrise run` command. It will show you the workflows listed in the bitrise.yml. Now you simply have to choose one (after the init there's only one called `primary`) from the list and call `bitrise run <workflowname>` and watch CLI execute your Workflow Step-by-Step! You can add Steps to the Workflow from our [StepLib](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps) or even from your own StepLib fork if you have one.
+Make sure you are in the current project's directory and run the `bitrise local run` command. It will show you the workflows listed in the bitrise.yml. Now you simply have to choose one (after the init there's only one called `primary`) from the list and call `bitrise local run <workflowname>` and watch CLI execute your Workflow Step-by-Step! You can add Steps to the Workflow from our [StepLib](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps) or even from your own StepLib fork if you have one.
 
 Happy Building!

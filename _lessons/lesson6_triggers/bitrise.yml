@@ -10,7 +10,7 @@ description: |-
 
   The Trigger Map ('trigger_map') defines mapping between trigger patterns
     and workflows.
-  You can run workflows directly with bitrise: bitrise run workflow-name
+  You can run workflows directly with bitrise: bitrise local run workflow-name
     Or you can 'trigger' a build: bitrise trigger some-pattern
 
    With this example 'trigger_map' if you 'bitrise trigger test'
@@ -20,7 +20,7 @@ description: |-
     workflow called 'fallback' will be used.
 
   Workflows ('workflows') are where you can define different, separate scenarios,
-    which you can then 'bitrise run' or 'bitrise trigger'.
+    which you can then 'bitrise local run' or 'bitrise trigger'.
 
 app:
   envs:

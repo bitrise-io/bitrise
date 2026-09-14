@@ -4,7 +4,7 @@
 
 [Lesson 3 - The ins and outs with environment variables](../lesson3_input_output_env)
 
-Basically Workflows are groups of steps. There are main Workflows, that contain the Steps which provide the main functionality. There are utility Workflows that we use to prepare everything for the main Workflow, to clean up or to send notification containing the build status. The utility Workflows begin with '_' and these Workflows can't be run using the `bitrise run <workflowname>` command.
+Basically Workflows are groups of steps. There are main Workflows, that contain the Steps which provide the main functionality. There are utility Workflows that we use to prepare everything for the main Workflow, to clean up or to send notification containing the build status. The utility Workflows begin with '_' and these Workflows can't be run using the `bitrise local run <workflowname>` command.
 
 What could be a better example to show how Workflows work, than to create an iOS Unit Test Workflow? Let's get down to business!
 First of all, what do we need in the Unit Test Workflow?

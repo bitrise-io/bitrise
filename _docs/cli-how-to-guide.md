@@ -10,19 +10,19 @@ If you choose to go the old fashioned way just check the [releases site](https:/
 
 ## Setting up Bitrise
 
-When you are done with the installation you have to run the `bitrise setup` command in the terminal and you are ready to use bitrise-cli! This command checks and installs every needed dependency to run your awesome Workflows.
+When you are done with the installation you have to run the `bitrise local setup` command in the terminal and you are ready to use bitrise-cli! This command checks and installs every needed dependency to run your awesome Workflows.
 
 ## Your first project
 
 Now everything is ready for you to take it for a spin! You can see the available commands if you simply type `bitrise help` in the terminal.
 
-Let's start with `bitrise init`
+Let's start with `bitrise local init`
 
 The command first prints our awesome looking logo - don't feel ashamed to stop and stare for a few seconds, we also stared in awe for quite some time when we first saw it - and now let's get down to business! As first step enter the project title, next is the primary development branch.
 
 ![Success](images/success.gif "Success")
 
-Great success! Now all that's left is give it a test run! The previous command created a bitrise.yml file in the current directory with a simple workflow. Just type `bitrise run primary` and watch CLI do the magic.
+Great success! Now all that's left is give it a test run! The previous command created a bitrise.yml file in the current directory with a simple workflow. Just type `bitrise local run primary` and watch CLI do the magic.
 The file contains a simple workflow that only has the Step called [script](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/script) from our [StepLib](https://github.com/bitrise-io/steps-script) (this Step can be used to run a simple script). In this case it writes `Welcome to Bitrise!` to the terminal.
 
 ## Creating your own Workflow
@@ -52,7 +52,7 @@ As you can see there are plenty of extra fields like `summary`, `title`, `before
               #!/bin/bash
               echo "Welcome to Bitrise!"
 
-You can try running it again with `bitrise run myflippinawesomewf`. Let's carry on and add the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) that is used in the `steps-and-workflows` tutorial.
+You can try running it again with `bitrise local run myflippinawesomewf`. Let's carry on and add the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) that is used in the `steps-and-workflows` tutorial.
 Let's stick to a minimalist approach when adding the [Timestamp Step](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps/timestamp/0.9.0) and only add `timestamp` as a new step in your Workflow. This will tell bitrise to search the default StepLib for a Step called `timestamp`, download the bash script of the Step and run it. You should always pay attention to the indentation! It is crucial to keep your .yml well formatted to get the correct functionality.
 Now the Workflow should look like this:
 
