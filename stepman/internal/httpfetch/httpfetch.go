@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 
+	_ "github.com/bartventer/httpcache/store/memcache"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -37,6 +38,15 @@ type Client interface {
 	DownloadWithHash(ctx context.Context, destPath, url, expectedHash string) error
 }
 
+// Clients are a pair of caching and passthrough clients.
+// They share one connection pool, for performance.
+type Clients struct {
+	// Caching reads through a HTTP cache that honours Cache-Control and revalidates with ETags.
+	Caching Client
+	// Passthrough fetches step archives and precompiled executables, uncached.
+	Passthrough Client
+}
+
 // Logger is the minimal logging interface Client needs; the retry adapter only
 // emits debug lines.
 type Logger interface {
@@ -52,18 +62,55 @@ type client struct {
 	httpClient *http.Client
 }
 
-// NewClient returns a Client backed by a retryablehttp client, so callers get
-// transient-failure retries by default. Use NewWithClient to supply a specific
-// *http.Client (e.g. a test server's client).
-func NewClient(logger Logger) Client {
+// newRetryingClient returns an *http.Client that retries transient failures.
+func newRetryingClient(logger Logger) *http.Client {
 	rc := retryablehttp.NewClient()
 	rc.Logger = &retryhttpLogger{l: logger}
 	rc.ErrorHandler = retryablehttp.PassthroughErrorHandler
-	return &client{httpClient: rc.StandardClient()}
+	return rc.StandardClient()
 }
 
-// NewWithClient returns a Client backed by the given httpClient, which must be
-// non-nil. Prefer NewClient unless you need a specific transport.
+// NewClient returns a Client backed by a retryablehttp client.
+func NewClient(logger Logger) Client {
+	return &client{httpClient: newRetryingClient(logger)}
+}
+
+// NewCachingClient returns a caching and a passthrough Client. Both run over the
+// same retrying transport, so they share one connection pool.
+func NewCachingClient(logger Logger) (Clients, error) {
+	// The cache is layered above the retries, so a 500 is retried before it is stored.
+	passthrough := newRetryingClient(logger)
+	caching, err := NewCachingWithClient(logger, passthrough)
+	if err != nil {
+		return Clients{}, err
+	}
+
+	return Clients{
+		Caching:     caching,
+		Passthrough: &client{httpClient: passthrough},
+	}, nil
+}
+
+// NewCachingWithClient returns a caching Client.
+// Prefer NewCachingClient unless you need a specific transport.
+func NewCachingWithClient(logger Logger, httpClient *http.Client) (Client, error) {
+	upstream := httpClient.Transport
+	if upstream == nil {
+		upstream = http.DefaultTransport // what net/http itself uses for a nil Transport
+	}
+
+	cached, err := newCachingTransport(logger, upstream)
+	if err != nil {
+		return nil, err
+	}
+
+	caching := *httpClient
+	caching.Transport = cached
+	return &client{httpClient: &caching}, nil
+}
+
+// NewWithClient returns a Client backed by the given httpClient.
+// Prefer NewClient unless you need a specific transport.
 func NewWithClient(httpClient *http.Client) Client {
 	return &client{httpClient: httpClient}
 }
@@ -90,8 +137,7 @@ func (c *client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 
 // StatusError is returned by Get when the server responds with a non-2xx
 // status, so callers can branch on the code (e.g. treat 404 as "not found")
-// via errors.As. Body holds a bounded snippet of the response body, which
-// usually explains the failure (a 404 page, S3's XML error, …).
+// via errors.As.
 type StatusError struct {
 	URL  string
 	Code int

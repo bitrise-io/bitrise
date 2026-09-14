@@ -1,3 +1,13 @@
+# github.com/bartventer/httpcache v0.14.0
+## explicit; go 1.25
+github.com/bartventer/httpcache
+github.com/bartventer/httpcache/internal
+github.com/bartventer/httpcache/internal/urlutil
+github.com/bartventer/httpcache/pkg/urlkey
+github.com/bartventer/httpcache/store
+github.com/bartventer/httpcache/store/driver
+github.com/bartventer/httpcache/store/internal/registry
+github.com/bartventer/httpcache/store/memcache
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring

@@ -3,6 +3,7 @@ module github.com/bitrise-io/stepman
 go 1.25.0
 
 require (
+	github.com/bartventer/httpcache v0.14.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 	github.com/bitrise-io/envman/v2 v2.5.2
 	github.com/bitrise-io/go-utils v1.0.13

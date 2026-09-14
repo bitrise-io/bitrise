@@ -16,14 +16,12 @@ Key entry point is `main.go` → `cli.Run()` which sets up the CLI application w
 
 ### Step activation paths
 
-Activation goes through `activator.Activator`, built once per run with `activator.New` (see `activator/activator.go`), so every step of a run shares one HTTP client. `Options` carries the config that used to be read from env vars deep in the call stack: stepman reads no environment of its own, and the caller — the Bitrise CLI — resolves those settings and passes them in. `activator/` has two ways to resolve and download a step:
+Activation goes through `activator.Activator`, built once per run with, so every step of a run shares one HTTP client.
 
 - **Legacy git-clone path**: clones the steplib repo locally and reads spec.json. This is the codepath used for custom/self-hosted steplibs.
-- **StepLib V2 API path** (default): fetches static JSON over HTTPS (no git clone), implemented in `activator/steplib/` (`activate.go`, `source.go`) and `steplibrary/`. Used for the canonical Bitrise steplib source when `Options.UseSteplibAPI` is set — see `Activator.useSteplibAPIFor` in `activator/activator.go`. The API base URL and the shared HTTP client are passed to `steplibrary.New`. Offline mode is not supported on this path and fails explicitly: an offline run against the canonical steplib has to opt out via `Options.UseSteplibAPI` to fall back to the git-clone path.
+- **StepLib API path** (default): fetches static JSON over HTTPS (no git clone).
 
-Precompiled step executables (skip building from source) are controlled by `Options.UsePrecompiled`, with the storage URLs to try in `Options.PrecompiledStorageURLs` (defaults in `activator/steplib/activate.go`).
-
-The Bitrise CLI maps `BITRISE_STEPLIB_USE_API`, `BITRISE_STEPLIB_USE_BINARY` and `BITRISE_STEPLIB_STORAGE_URLS` onto those options in `cli/step_activator.go`; both feature flags default to on there and are disabled with `false`/`0`.
+Precompiled step executables (skip building from source) are controlled by `Options.UsePrecompiled`, with the storage URLs to try in `Options.PrecompiledStorageURLs`.
 
 ## Development Commands
 
