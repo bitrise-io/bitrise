@@ -10,7 +10,10 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"slices"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
 	"github.com/bitrise-io/bitrise/v2/configs"
@@ -25,6 +28,11 @@ import (
 const (
 	tagsURL         = "https://api.github.com/repos/bitrise-io/bitrise/tags"
 	releasesBaseURL = "https://github.com/bitrise-io/bitrise/releases/download"
+	releaseNotesURL = "https://github.com/bitrise-io/bitrise/releases/tag"
+
+	// The GitHub tags API returns the tags unordered, so the whole first page is
+	// read and sorted here.
+	tagsPerPage = 100
 )
 
 var updateCommand = &cobra.Command{
@@ -51,12 +59,21 @@ type updater struct {
 	isBrewInstall   func() (bool, error)
 }
 
+// A new major version is reported separately because it is never installed
+// automatically: it can contain breaking changes, so the user has to ask for it.
+type availableUpdates struct {
+	sameMajor *ver.Version
+	newMajor  *ver.Version
+}
+
 func newUpdater() updater {
 	return updater{
 		tagsURL:         tagsURL,
 		releasesBaseURL: releasesBaseURL,
 		client:          http.DefaultClient,
-		isBrewInstall:   installedWithBrew,
+		// Cached: the check shells out to brew, and a single run asks for the
+		// install method more than once.
+		isBrewInstall: sync.OnceValues(installedWithBrew),
 	}
 }
 
@@ -71,13 +88,20 @@ func checkUpdate() error {
 	if configs.CheckIsCLIUpdateCheckRequired() {
 		log.Infof("Checking for new CLI version...")
 
-		newVersion, err := newUpdater().newCLIVersion()
+		u := newUpdater()
+
+		updates, err := u.availableUpdates()
 		if err != nil {
 			return fmt.Errorf("failed to check update for CLI, error: %s", err)
 		}
-		if newVersion != "" {
-			printCLIUpdateInfos(newVersion)
+		if updates.sameMajor != nil {
+			printCLIUpdateInfos(updates.sameMajor.String())
 		}
+		withBrew, err := u.isBrewInstall()
+		if err != nil {
+			return fmt.Errorf("failed to check update for CLI, error: %s", err)
+		}
+		printNewMajorInfos(updates.newMajor, withBrew)
 
 		if err := configs.SaveCLIUpdateCheck(); err != nil {
 			return err
@@ -110,6 +134,25 @@ func printCLIUpdateInfos(newVersion string) {
 	log.Warnf("\nNew version (%s) of the Bitrise CLI available", newVersion)
 	log.Printf("Run command to update the Bitrise CLI:")
 	log.Donef("$ bitrise update")
+}
+
+func printNewMajorInfos(newMajor *ver.Version, withBrew bool) {
+	if newMajor == nil {
+		return
+	}
+
+	log.Warnf("\nBitrise CLI %s is available (new major version)", newMajor)
+	log.Printf("It is not installed automatically, because a major version can contain breaking changes.")
+	log.Printf("To install it:")
+	log.Donef("$ %s", majorUpdateCommand(newMajor, withBrew))
+	log.Printf("Release notes: %s/v%s", releaseNotesURL, newMajor)
+}
+
+func majorUpdateCommand(newMajor *ver.Version, withBrew bool) string {
+	if withBrew {
+		return "brew upgrade bitrise"
+	}
+	return fmt.Sprintf("bitrise update --version %s", newMajor)
 }
 
 func installedWithBrew() (bool, error) {
@@ -151,32 +194,72 @@ func newVersionFromBrew() (string, error) {
 	return "", nil
 }
 
-func (u updater) newCLIVersion() (string, error) {
-	withBrew, err := u.isBrewInstall()
-	if err != nil {
-		return "", err
-	}
-	if withBrew {
-		return newVersionFromBrew()
-	}
-
-	latest, err := u.latestTag()
-	if err != nil {
-		return "", err
-	}
+func (u updater) availableUpdates() (availableUpdates, error) {
 	current, err := ver.NewVersion(version.VERSION)
 	if err != nil {
 		// Dev builds (no ldflags) have VERSION="dev" which is not valid semver -> skip the update check.
-		return "", nil
+		return availableUpdates{}, nil
 	}
-	if latest.GreaterThan(current) {
-		return latest.String(), nil
+
+	withBrew, err := u.isBrewInstall()
+	if err != nil {
+		return availableUpdates{}, err
 	}
-	return "", nil
+
+	var published []*ver.Version
+	if withBrew {
+		published, err = brewVersions()
+	} else {
+		published, err = u.publishedVersions()
+	}
+	if err != nil {
+		return availableUpdates{}, err
+	}
+
+	return newAvailableUpdates(current, published), nil
 }
 
-func (u updater) latestTag() (*ver.Version, error) {
-	resp, err := u.client.Get(u.tagsURL)
+func newAvailableUpdates(current *ver.Version, published []*ver.Version) availableUpdates {
+	var updates availableUpdates
+
+	currentMajor := current.Segments()[0]
+	for _, candidate := range published {
+		switch major := candidate.Segments()[0]; {
+		case major == currentMajor && candidate.GreaterThan(current):
+			updates.sameMajor = candidate
+		case major > currentMajor:
+			updates.newMajor = candidate
+		}
+	}
+
+	return updates
+}
+
+func brewVersions() ([]*ver.Version, error) {
+	newVersion, err := newVersionFromBrew()
+	if err != nil || newVersion == "" {
+		return nil, err
+	}
+
+	parsed, err := ver.NewVersion(newVersion)
+	if err != nil {
+		return nil, err
+	}
+	return []*ver.Version{parsed}, nil
+}
+
+// Pre-releases are left out: they are published for opt-in testing, and must
+// never be offered to someone who did not ask for them.
+func (u updater) publishedVersions() ([]*ver.Version, error) {
+	req, err := http.NewRequest(http.MethodGet, u.tagsURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	query := req.URL.Query()
+	query.Set("per_page", strconv.Itoa(tagsPerPage))
+	req.URL.RawQuery = query.Encode()
+
+	resp, err := u.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +277,17 @@ func (u updater) latestTag() (*ver.Version, error) {
 		return nil, err
 	}
 
-	return ver.NewVersion(result[0].Name)
+	var versions []*ver.Version
+	for _, tag := range result {
+		parsed, err := ver.NewVersion(tag.Name)
+		if err != nil || parsed.Prerelease() != "" {
+			continue
+		}
+		versions = append(versions, parsed)
+	}
+	slices.SortFunc(versions, func(a, b *ver.Version) int { return a.Compare(b) })
+
+	return versions, nil
 }
 
 func (u updater) download(version string) error {
@@ -293,12 +386,20 @@ func update(cmd *cobra.Command) error {
 
 	logger.Infof("Bitrise CLI installed from source")
 
+	var newMajor *ver.Version
 	if versionFlag == "" {
-		latest, err := u.latestTag()
+		updates, err := u.availableUpdates()
 		if err != nil {
 			return err
 		}
-		versionFlag = latest.String()
+		newMajor = updates.newMajor
+
+		if updates.sameMajor == nil {
+			logger.Donef("Bitrise CLI is already up-to-date")
+			printNewMajorInfos(newMajor, withBrew)
+			return nil
+		}
+		versionFlag = updates.sameMajor.String()
 	}
 
 	if versionFlag == version.VERSION {
@@ -313,7 +414,13 @@ func update(cmd *cobra.Command) error {
 		return err
 	}
 
-	return bitrise.RunSetup(logger, versionFlag, bitrise.SetupModeDefault, false, false)
+	if err := bitrise.RunSetup(logger, versionFlag, bitrise.SetupModeDefault, false, false); err != nil {
+		return err
+	}
+
+	printNewMajorInfos(newMajor, withBrew)
+
+	return nil
 }
 
 // CopyFile ...
