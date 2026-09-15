@@ -1,9 +1,13 @@
 package cli
 
 import (
+	"cmp"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v2/version"
@@ -51,11 +55,34 @@ func TestUpdaterPublishedVersions(t *testing.T) {
 	}
 }
 
-func TestUpdaterPublishedVersionsAsksForAFullPage(t *testing.T) {
-	var gotPerPage string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPerPage = r.URL.Query().Get("per_page")
-		if _, err := w.Write([]byte("[]")); err != nil {
+func TestUpdaterPublishedVersionsReadsEveryPage(t *testing.T) {
+	// The newest version sits on the last page, where a single-page read would
+	// miss it.
+	tags := make([]string, 0, tagsPerPage*2+1)
+	for i := range tagsPerPage * 2 {
+		tags = append(tags, fmt.Sprintf("1.0.%d", i))
+	}
+	tags = append(tags, "2.45.0")
+
+	u := testUpdater(t, tags...)
+
+	versions, err := u.publishedVersions()
+
+	require.NoError(t, err)
+	require.Len(t, versions, len(tags))
+	require.Equal(t, "2.45.0", versions[len(versions)-1].String())
+}
+
+func TestUpdaterPublishedVersionsStopsAtThePageCap(t *testing.T) {
+	var requestedPages int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requestedPages++
+
+		page := make([]map[string]string, 0, tagsPerPage)
+		for i := range tagsPerPage {
+			page = append(page, map[string]string{"name": fmt.Sprintf("v1.0.%d", i)})
+		}
+		if err := json.NewEncoder(w).Encode(page); err != nil {
 			t.Errorf("failed to write tags response: %s", err)
 		}
 	}))
@@ -68,7 +95,28 @@ func TestUpdaterPublishedVersionsAsksForAFullPage(t *testing.T) {
 	_, err := u.publishedVersions()
 
 	require.NoError(t, err)
-	require.Equal(t, "100", gotPerPage)
+	require.Equal(t, maxTagPages, requestedPages)
+}
+
+func TestUpdaterTagPageParameters(t *testing.T) {
+	var gotQuery url.Values
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		if _, err := w.Write([]byte("[]")); err != nil {
+			t.Errorf("failed to write tags response: %s", err)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	u := newUpdater()
+	u.tagsURL = server.URL
+	u.client = server.Client()
+
+	_, err := u.tagPage(3)
+
+	require.NoError(t, err)
+	require.Equal(t, "100", gotQuery.Get("per_page"))
+	require.Equal(t, "3", gotQuery.Get("page"))
 }
 
 func TestNewAvailableUpdates(t *testing.T) {
@@ -180,15 +228,7 @@ func TestUpdaterBinaryURL(t *testing.T) {
 func testUpdater(t *testing.T, tags ...string) updater {
 	t.Helper()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		payload := make([]map[string]string, 0, len(tags))
-		for _, tag := range tags {
-			payload = append(payload, map[string]string{"name": "v" + tag})
-		}
-		if err := json.NewEncoder(w).Encode(payload); err != nil {
-			t.Errorf("failed to write tags response: %s", err)
-		}
-	}))
+	server := httptest.NewServer(tagsHandler(t, tags))
 	t.Cleanup(server.Close)
 
 	u := newUpdater()
@@ -197,6 +237,31 @@ func testUpdater(t *testing.T, tags ...string) updater {
 	u.isBrewInstall = func() (bool, error) { return false, nil }
 
 	return u
+}
+
+// Serves the tags the way the GitHub tags API does: prefixed with "v", split
+// into pages, in the order given.
+func tagsHandler(t *testing.T, tags []string) http.HandlerFunc {
+	t.Helper()
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		page, err := strconv.Atoi(cmp.Or(r.URL.Query().Get("page"), "1"))
+		if err != nil {
+			t.Errorf("invalid page parameter: %s", err)
+			return
+		}
+
+		start := min((page-1)*tagsPerPage, len(tags))
+		end := min(start+tagsPerPage, len(tags))
+
+		payload := make([]map[string]string, 0, end-start)
+		for _, tag := range tags[start:end] {
+			payload = append(payload, map[string]string{"name": "v" + tag})
+		}
+		if err := json.NewEncoder(w).Encode(payload); err != nil {
+			t.Errorf("failed to write tags response: %s", err)
+		}
+	}
 }
 
 func setVersion(t *testing.T, v string) {

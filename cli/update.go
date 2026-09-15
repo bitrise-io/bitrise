@@ -30,9 +30,10 @@ const (
 	releasesBaseURL = "https://github.com/bitrise-io/bitrise/releases/download"
 	releaseNotesURL = "https://github.com/bitrise-io/bitrise/releases/tag"
 
-	// The GitHub tags API returns the tags unordered, so the whole first page is
-	// read and sorted here.
 	tagsPerPage = 100
+	// Tag order is not part of the API contract, so every page is read before a
+	// version is picked. The cap bounds the number of requests.
+	maxTagPages = 10
 )
 
 var updateCommand = &cobra.Command{
@@ -61,6 +62,10 @@ type updater struct {
 
 // A new major version is reported separately because it is never installed
 // automatically: it can contain breaking changes, so the user has to ask for it.
+type gitHubTag struct {
+	Name string `json:"name"`
+}
+
 type availableUpdates struct {
 	sameMajor *ver.Version
 	newMajor  *ver.Version
@@ -251,12 +256,40 @@ func brewVersions() ([]*ver.Version, error) {
 // Pre-releases are left out: they are published for opt-in testing, and must
 // never be offered to someone who did not ask for them.
 func (u updater) publishedVersions() ([]*ver.Version, error) {
+	var versions []*ver.Version
+
+	for page := 1; page <= maxTagPages; page++ {
+		tags, err := u.tagPage(page)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, tag := range tags {
+			parsed, err := ver.NewVersion(tag.Name)
+			if err != nil || parsed.Prerelease() != "" {
+				continue
+			}
+			versions = append(versions, parsed)
+		}
+
+		if len(tags) < tagsPerPage {
+			break
+		}
+	}
+
+	slices.SortFunc(versions, func(a, b *ver.Version) int { return a.Compare(b) })
+
+	return versions, nil
+}
+
+func (u updater) tagPage(page int) ([]gitHubTag, error) {
 	req, err := http.NewRequest(http.MethodGet, u.tagsURL, nil)
 	if err != nil {
 		return nil, err
 	}
 	query := req.URL.Query()
 	query.Set("per_page", strconv.Itoa(tagsPerPage))
+	query.Set("page", strconv.Itoa(page))
 	req.URL.RawQuery = query.Encode()
 
 	resp, err := u.client.Do(req)
@@ -269,25 +302,12 @@ func (u updater) publishedVersions() ([]*ver.Version, error) {
 		}
 	}()
 
-	var result []struct {
-		Name string `json:"name"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	var tags []gitHubTag
+	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
 		return nil, err
 	}
 
-	var versions []*ver.Version
-	for _, tag := range result {
-		parsed, err := ver.NewVersion(tag.Name)
-		if err != nil || parsed.Prerelease() != "" {
-			continue
-		}
-		versions = append(versions, parsed)
-	}
-	slices.SortFunc(versions, func(a, b *ver.Version) int { return a.Compare(b) })
-
-	return versions, nil
+	return tags, nil
 }
 
 func (u updater) download(version string) error {
