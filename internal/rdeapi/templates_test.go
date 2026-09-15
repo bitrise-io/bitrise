@@ -150,3 +150,38 @@ func TestTemplates_ValidationGuards(t *testing.T) {
 		t.Errorf("validation guards made %d HTTP call(s); should short-circuit", rs.hits)
 	}
 }
+
+func TestUpdateTemplate_DeviceSpecFlag(t *testing.T) {
+	rs := newRecordingServer(t, `{"template":{"id":"t1"}}`)
+
+	// Clearing: the flag rides alone, with no deviceSpec.
+	if _, err := rs.client().UpdateTemplate(context.Background(), "ws-1", "t1", UpdateTemplateRequest{UpdateDeviceSpec: true}); err != nil {
+		t.Fatalf("UpdateTemplate: %v", err)
+	}
+	var sent map[string]any
+	if err := json.Unmarshal(rs.lastBody, &sent); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if sent["updateDeviceSpec"] != true {
+		t.Errorf("updateDeviceSpec = %v, want true", sent["updateDeviceSpec"])
+	}
+	if _, ok := sent["deviceSpec"]; ok {
+		t.Errorf("deviceSpec should be omitted when clearing, body = %s", rs.lastBody)
+	}
+
+	// Setting: both go out together.
+	if _, err := rs.client().UpdateTemplate(context.Background(), "ws-1", "t1", UpdateTemplateRequest{
+		DeviceSpec:       &DeviceSpec{Platform: "ios", DeviceModel: "iPhone 16"},
+		UpdateDeviceSpec: true,
+	}); err != nil {
+		t.Fatalf("UpdateTemplate: %v", err)
+	}
+	sent = nil
+	if err := json.Unmarshal(rs.lastBody, &sent); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	spec, _ := sent["deviceSpec"].(map[string]any)
+	if spec["platform"] != "ios" || spec["deviceModel"] != "iPhone 16" || sent["updateDeviceSpec"] != true {
+		t.Errorf("body = %s", rs.lastBody)
+	}
+}

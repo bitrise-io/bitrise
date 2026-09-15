@@ -7,10 +7,19 @@ Upload a local file or directory into a session
 Upload a local file or directory into a running session.
 
 The local path is tarred + gzipped, uploaded to cloud storage via a signed
-URL, then extracted on the session VM at REMOTE_FOLDER.
+URL, then extracted on the session VM inside REMOTE_FOLDER.
 
-For directories: the directory's contents are extracted into REMOTE_FOLDER
-(not the directory itself).
+REMOTE_FOLDER is always a DIRECTORY (absolute path; created if missing, owned
+by the session user). It is never the name of the file you are sending:
+
+  - a directory: its contents are extracted into REMOTE_FOLDER (not the
+    directory itself), overwriting files of the same name;
+  - a single file: it lands as REMOTE_FOLDER/<basename>. To replace one
+    remote file, upload it into the file's PARENT directory. Naming the
+    file's own path as REMOTE_FOLDER is rejected by the server.
+
+Extracted files belong to the session user (vagrant on macOS, ubuntu on
+Linux); local ownership is not carried over.
 
 ```
 bitrise rde session upload SESSION_ID LOCAL_PATH REMOTE_FOLDER [flags]
@@ -20,6 +29,8 @@ bitrise rde session upload SESSION_ID LOCAL_PATH REMOTE_FOLDER [flags]
 
 ```
   bitrise rde session upload SESSION_ID ./project /Users/vagrant/project
+  # replace one file: upload it into its parent directory
+  bitrise rde session upload SESSION_ID ./app/AndroidManifest.xml /home/ubuntu/app
   bitrise rde session upload SESSION_ID ./build.tar.gz /Users/vagrant/artifacts
 ```
 

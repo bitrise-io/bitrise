@@ -5,6 +5,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/claude"
+	"github.com/bitrise-io/bitrise/v2/cli/rde/deviceguide"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/machinetype"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/savedinput"
 	"github.com/bitrise-io/bitrise/v2/cli/rde/session"
@@ -27,10 +28,17 @@ terminal, or shown a sorted list of workspaces to choose from via --workspace
 otherwise.
 
 Saved inputs are user-scoped, though — they do not require --workspace, and
-the 'saved-input' subcommand does not accept it.`,
+the 'saved-input' subcommand does not accept it.
+
+Device sessions: a session can boot an iOS simulator or Android emulator
+('rde session create --device-platform ios|android'). Before creating one,
+read 'rde device-guide' (then 'rde device-guide ios' or 'android'): it is the
+know-how for waiting until the device is ready, connecting, driving it, and
+what never to do.`,
 		Example: `  bitrise rde session list --workspace WORKSPACE_ID
   bitrise rde session list --format json
-  bitrise rde machine-type list --stack osx-xcode-16.0.x-edge`,
+  bitrise rde machine-type list --stack osx-xcode-16.0.x-edge
+  bitrise rde device-guide          # read before creating a session with a device`,
 		RunE: cmdutil.RequireKnownSubcommand,
 	}
 
@@ -42,6 +50,7 @@ the 'saved-input' subcommand does not accept it.`,
 		template.NewCmd(),
 		savedinput.NewCmd(),
 		usage.NewCmd(),
+		deviceguide.NewCmd(),
 	)
 	return c
 }

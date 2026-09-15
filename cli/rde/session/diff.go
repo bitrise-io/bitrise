@@ -23,7 +23,8 @@ reports template_outdated=true.
 
 Lists which template variable keys changed (values are never exposed) and
 the simple per-field differences (stack, machine type, scripts, working
-directory). When the template was deleted, only the snapshot is shown.`,
+directory, declared device). When the template was deleted, only the
+snapshot is shown.`,
 		Args: cmdutil.RequireArgs("SESSION_ID"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -83,6 +84,7 @@ func renderDiff(w io.Writer, d internalrde.SessionTemplateDiff) error {
 		writeFieldDiff(ew, lbl, "Stack", d.Snapshot.StackID, d.Current.StackID)
 		writeFieldDiff(ew, lbl, "Machine type", d.Snapshot.MachineType, d.Current.MachineType)
 		writeFieldDiff(ew, lbl, "Working dir", d.Snapshot.WorkingDirectory, d.Current.WorkingDirectory)
+		writeFieldDiff(ew, lbl, "Device", deviceDiffLabel(d.Snapshot.DeviceSpec), deviceDiffLabel(d.Current.DeviceSpec))
 		writeBoolDiff(ew, lbl, "Startup script set", d.Snapshot.StartupScript != "", d.Current.StartupScript != "")
 		writeBoolDiff(ew, lbl, "Warmup script set", d.Snapshot.WarmupScript != "", d.Current.WarmupScript != "")
 		writeIntDiff(ew, lbl, "Session inputs", len(d.Snapshot.SessionInputs), len(d.Current.SessionInputs))
@@ -112,6 +114,27 @@ func writeIntDiff(ew *cmdutil.ErrWriter, lbl func(string) string, name string, b
 	ew.F("%s%d → %d\n", lbl(name+":"), before, after)
 }
 
+// deviceDiffLabel renders a template's declared device for the diff: the
+// same "platform · model · version" summary 'session view' shows, plus the
+// sizing knobs (RAM, cores, cold boot) when set so a change to any of them
+// is visible. "" when the template declares no device.
+func deviceDiffLabel(d *internalrde.DeviceSpec) string {
+	if d == nil {
+		return ""
+	}
+	out := d.Summary()
+	if d.RAMMb > 0 {
+		out += fmt.Sprintf(" · %d MB", d.RAMMb)
+	}
+	if d.Cores > 0 {
+		out += fmt.Sprintf(" · %d cores", d.Cores)
+	}
+	if d.ColdBoot {
+		out += " · cold boot"
+	}
+	return out
+}
+
 func valueOrPlaceholder(v string) string {
 	if v == "" {
 		return "(unset)"
@@ -126,6 +149,7 @@ func configsEqual(a, b internalrde.TemplateConfig) bool {
 	return a.StackID == b.StackID &&
 		a.MachineType == b.MachineType &&
 		a.WorkingDirectory == b.WorkingDirectory &&
+		deviceDiffLabel(a.DeviceSpec) == deviceDiffLabel(b.DeviceSpec) &&
 		(a.StartupScript != "") == (b.StartupScript != "") &&
 		(a.WarmupScript != "") == (b.WarmupScript != "") &&
 		len(a.SessionInputs) == len(b.SessionInputs) &&

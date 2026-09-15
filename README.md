@@ -116,6 +116,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | Command | Description |
 |---|---|
 | [`rde claude`](docs/cli/bitrise_rde_claude.md) | Create an RDE session and attach to Claude Code |
+| [`rde device-guide`](docs/cli/bitrise_rde_device-guide.md) | Print the guide for driving a session's iOS simulator / Android emulator |
 | [`rde machine-type list`](docs/cli/bitrise_rde_machine-type_list.md) | List machine types compatible with a given stack |
 | [`rde saved-input create`](docs/cli/bitrise_rde_saved-input_create.md) | Create a new saved input |
 | [`rde saved-input delete`](docs/cli/bitrise_rde_saved-input_delete.md) | Delete a saved input |
@@ -124,7 +125,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`rde saved-input view`](docs/cli/bitrise_rde_saved-input_view.md) | Show details of a single saved input |
 | [`rde session create`](docs/cli/bitrise_rde_session_create.md) | Create a new RDE session |
 | [`rde session delete`](docs/cli/bitrise_rde_session_delete.md) | Permanently delete a session in any state (running sessions are stopped and discarded) |
-| [`rde session delete-terminated`](docs/cli/bitrise_rde_session_delete-terminated.md) | Permanently delete every terminated session in the workspace |
+| [`rde session delete-terminated`](docs/cli/bitrise_rde_session_delete-terminated.md) | Permanently delete your terminated sessions in this workspace |
 | [`rde session diff`](docs/cli/bitrise_rde_session_diff.md) | Compare a session's template snapshot with the current template |
 | [`rde session download`](docs/cli/bitrise_rde_session_download.md) | Download a file or directory from a session |
 | [`rde session exec`](docs/cli/bitrise_rde_session_exec.md) | Run a command on a session over SSH |
@@ -133,6 +134,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`rde session notifications`](docs/cli/bitrise_rde_session_notifications.md) | List notifications emitted by a session |
 | [`rde session open-vnc`](docs/cli/bitrise_rde_session_open-vnc.md) | Open a session's VNC endpoint in the OS-default viewer |
 | [`rde session restore`](docs/cli/bitrise_rde_session_restore.md) | Restore a terminated session (re-provisions its VM from the persistent disk) |
+| [`rde session ssh`](docs/cli/bitrise_rde_session_ssh.md) | Print SSH connection details (command, host, port, user, password) for a session |
 | [`rde session terminate`](docs/cli/bitrise_rde_session_terminate.md) | Terminate a running session but keep it for a later restore |
 | [`rde session update`](docs/cli/bitrise_rde_session_update.md) | Update a session's name, description, auto-terminate duration, or labels |
 | [`rde session upload`](docs/cli/bitrise_rde_session_upload.md) | Upload a local file or directory into a session |

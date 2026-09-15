@@ -13,6 +13,11 @@ When REMOTE_PATH is a directory, the directory itself is recreated inside
 LOCAL_PATH by default. Pass --only-contents to drop just its contents into
 LOCAL_PATH instead.
 
+If the server answers "File download is not available…", this deployment has
+no file store behind the command — do not retry. Copy the file with scp using
+the SSH command and password 'rde session ssh' prints instead ('rde
+device-guide' has the password-feeding recipe).
+
 ```
 bitrise rde session download SESSION_ID REMOTE_PATH LOCAL_PATH [flags]
 ```

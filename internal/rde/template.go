@@ -24,8 +24,11 @@ type Template struct {
 	SessionInputs     []SessionInputDef  `json:"session_inputs,omitempty" yaml:"session_inputs,omitempty"`
 	FeatureFlags      []FeatureFlag      `json:"feature_flags,omitempty" yaml:"feature_flags,omitempty"`
 	WorkspaceLinks    []WorkspaceLink    `json:"workspace_links,omitempty" yaml:"workspace_links,omitempty"`
-	CreatedAt         *time.Time         `json:"created_at,omitempty" yaml:"created_at,omitempty"`
-	UpdatedAt         *time.Time         `json:"updated_at,omitempty" yaml:"updated_at,omitempty"`
+	// DeviceSpec is the device sessions created from the template boot
+	// unless overridden at create time; nil when none is declared.
+	DeviceSpec *DeviceSpec `json:"device_spec,omitempty" yaml:"device_spec,omitempty"`
+	CreatedAt  *time.Time  `json:"created_at,omitempty" yaml:"created_at,omitempty"`
+	UpdatedAt  *time.Time  `json:"updated_at,omitempty" yaml:"updated_at,omitempty"`
 }
 
 // TemplateVariable is a baked-in template variable.
@@ -76,6 +79,14 @@ type TemplateSpec struct {
 	SessionInputs     *[]SessionInputSpec     `json:"session_inputs,omitempty" yaml:"session_inputs,omitempty"`
 	FeatureFlags      *[]FeatureFlagSpec      `json:"feature_flags,omitempty" yaml:"feature_flags,omitempty"`
 	WorkspaceLinks    *[]WorkspaceLinkSpec    `json:"workspace_links,omitempty" yaml:"workspace_links,omitempty"`
+
+	// DeviceSpec declares the device sessions created from the template
+	// boot by default. Nil = don't touch on update (or no device on
+	// create); non-nil = set it. To remove a template's device on update,
+	// set ClearDeviceSpec instead — encoding/json can't tell a JSON null
+	// from an absent key, so clearing is a flag rather than a spec field.
+	DeviceSpec      *DeviceSpec `json:"device_spec,omitempty" yaml:"device_spec,omitempty"`
+	ClearDeviceSpec bool        `json:"-" yaml:"-"`
 }
 
 type TemplateVariableSpec struct {
@@ -125,6 +136,7 @@ func (s *Service) CreateTemplate(ctx context.Context, workspaceID string, spec T
 		WorkingDirectory: deref(spec.WorkingDirectory),
 		StartupScript:    deref(spec.StartupScript),
 		WarmupScript:     deref(spec.WarmupScript),
+		DeviceSpec:       deviceSpecToAPI(spec.DeviceSpec),
 	}
 	if spec.TemplateVariables != nil {
 		req.TemplateVariables = toWireVariables(*spec.TemplateVariables)
@@ -147,7 +159,9 @@ func (s *Service) CreateTemplate(ctx context.Context, workspaceID string, spec T
 
 // UpdateTemplate patches an existing template. Pointer scalars are sent
 // only when non-nil; arrays trigger their corresponding updateXxx flag
-// when non-nil (even when empty — which clears the existing list).
+// when non-nil (even when empty — which clears the existing list). The
+// device is replaced when DeviceSpec is non-nil and removed when
+// ClearDeviceSpec is set; otherwise it is left alone.
 func (s *Service) UpdateTemplate(ctx context.Context, workspaceID, templateID string, spec TemplateSpec) (Template, error) {
 	if s.client == nil {
 		return Template{}, errClient()
@@ -176,6 +190,10 @@ func (s *Service) UpdateTemplate(ctx context.Context, workspaceID, templateID st
 	if spec.WorkspaceLinks != nil {
 		req.WorkspaceLinks = toWireWorkspaceLinks(*spec.WorkspaceLinks)
 		req.UpdateWorkspaceLinks = true
+	}
+	if spec.DeviceSpec != nil || spec.ClearDeviceSpec {
+		req.DeviceSpec = deviceSpecToAPI(spec.DeviceSpec)
+		req.UpdateDeviceSpec = true
 	}
 	t, err := s.client.UpdateTemplate(ctx, workspaceID, templateID, req)
 	if err != nil {
@@ -323,6 +341,7 @@ func templateFromAPI(w rdeapi.Template) Template {
 		WarmupScript:     w.WarmupScript,
 		CreatedByEmail:   w.CreatedByEmail,
 		WorkspaceID:      w.WorkspaceID,
+		DeviceSpec:       deviceSpecFromAPI(w.DeviceSpec),
 		CreatedAt:        parseTime(w.CreatedAt),
 		UpdatedAt:        parseTime(w.UpdatedAt),
 	}

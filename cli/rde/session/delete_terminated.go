@@ -23,9 +23,13 @@ func newDeleteTerminatedCmd() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "delete-terminated",
-		Short: "Permanently delete every terminated session in the workspace",
-		Long: `Permanently delete every terminated session in the workspace.
-This cannot be undone. Pass --yes to skip the confirmation prompt.`,
+		Short: "Permanently delete your terminated sessions in this workspace",
+		Long: `Permanently delete your terminated sessions in this workspace.
+
+Only sessions YOU created are affected: the server scopes the call to the
+caller's own sessions, so other members' sessions (and workspace-owned
+device-preview sessions) are never touched. This cannot be undone. Pass
+--yes to skip the confirmation prompt.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
@@ -39,7 +43,7 @@ This cannot be undone. Pass --yes to skip the confirmation prompt.`,
 			}
 			if !assumeYes {
 				if _, err := fmt.Fprint(cmd.ErrOrStderr(),
-					"This will permanently delete every terminated session in the workspace.\nProceed? [y/N]: "); err != nil {
+					"This will permanently delete YOUR terminated sessions in this workspace (other members' sessions are not affected).\nProceed? [y/N]: "); err != nil {
 					return err
 				}
 				answer, err := cmdutil.ReadSecretInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "", true)

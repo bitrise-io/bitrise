@@ -129,6 +129,36 @@ func TestCreateTarGzFile_ExtractRoundTrip(t *testing.T) {
 	}
 }
 
+// TestCreateTarGzFile_StripsLocalOwnership pins that the archive never
+// carries the local uid/gid/user/group: a root-side extraction on the VM
+// would otherwise recreate the caller's numeric uid there (files landing
+// owned by e.g. 501:root, unwritable by the session user).
+func TestCreateTarGzFile_StripsLocalOwnership(t *testing.T) {
+	src := t.TempDir()
+	writeFile(t, filepath.Join(src, "a.txt"), "hello")
+	if err := os.MkdirAll(filepath.Join(src, "sub"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	writeFile(t, filepath.Join(src, "sub", "b.txt"), "x")
+
+	for name, path := range map[string]string{
+		"directory":   src,
+		"single file": filepath.Join(src, "a.txt"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			headers := archiveHeaders(t, path)
+			if len(headers) == 0 {
+				t.Fatal("archive is empty")
+			}
+			for _, h := range headers {
+				if h.Uid != 0 || h.Gid != 0 || h.Uname != "" || h.Gname != "" {
+					t.Errorf("%s: owner leaked into archive: uid=%d gid=%d uname=%q gname=%q", h.Name, h.Uid, h.Gid, h.Uname, h.Gname)
+				}
+			}
+		})
+	}
+}
+
 func TestCreateTarGzFile_MissingSourceLeavesNoTempFile(t *testing.T) {
 	// os.CreateTemp("") and os.TempDir() both resolve $TMPDIR, so redirecting it
 	// keeps the count from seeing another test run's archives. Windows reads
@@ -313,6 +343,41 @@ func archiveEntries(t *testing.T, sourcePath string) map[string]archiveEntry {
 		}
 	}
 	return entries
+}
+
+// archiveHeaders archives sourcePath and returns every tar header, for tests
+// that care about metadata (ownership) rather than content.
+func archiveHeaders(t *testing.T, sourcePath string) []*tar.Header {
+	t.Helper()
+
+	f, _, err := createTarGzFile(sourcePath)
+	if err != nil {
+		t.Fatalf("createTarGzFile(%q): %v", sourcePath, err)
+	}
+	t.Cleanup(func() {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+	})
+
+	gr, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatalf("open gzip: %v", err)
+	}
+	defer gr.Close() //nolint:errcheck // reading in a test
+
+	var headers []*tar.Header
+	tr := tar.NewReader(gr)
+	for {
+		header, err := tr.Next()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			t.Fatalf("read tar: %v", err)
+		}
+		headers = append(headers, header)
+	}
+	return headers
 }
 
 func tarGzWithEntry(t *testing.T, name, body string) []byte {

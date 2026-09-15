@@ -26,8 +26,12 @@ type Template struct {
 	SessionInputs     []SessionInputDef  `json:"sessionInputs,omitempty"`
 	FeatureFlags      []FeatureFlag      `json:"featureFlags,omitempty"`
 	WorkspaceLinks    []WorkspaceLink    `json:"workspaceLinks,omitempty"`
-	CreatedAt         string             `json:"createdAt,omitempty"`
-	UpdatedAt         string             `json:"updatedAt,omitempty"`
+	// DeviceSpec is the virtual device (iOS simulator / Android emulator)
+	// sessions created from this template boot by default; nil when the
+	// template declares none.
+	DeviceSpec *DeviceSpec `json:"deviceSpec,omitempty"`
+	CreatedAt  string      `json:"createdAt,omitempty"`
+	UpdatedAt  string      `json:"updatedAt,omitempty"`
 }
 
 // TemplateVariable is a baked-in template variable.
@@ -115,11 +119,16 @@ type CreateTemplateRequest struct {
 	SessionInputs     []SessionInputCreate     `json:"sessionInputs,omitempty"`
 	FeatureFlags      []FeatureFlagCreate      `json:"featureFlags,omitempty"`
 	WorkspaceLinks    []WorkspaceLinkCreate    `json:"workspaceLinks,omitempty"`
+	// DeviceSpec declares the device sessions created from the template boot
+	// by default (optional).
+	DeviceSpec *DeviceSpec `json:"deviceSpec,omitempty"`
 }
 
-// UpdateTemplateRequest is the PATCH body. The four UpdateXxx booleans are
+// UpdateTemplateRequest is the PATCH body. The UpdateXxx booleans are
 // required when an array field should replace the server's existing list —
-// an array with its flag unset is treated as "no change", not "clear it".
+// an array with its flag unset is treated as "no change", not "clear it" —
+// and UpdateDeviceSpec when the template's device should become DeviceSpec
+// (nil DeviceSpec + UpdateDeviceSpec clears it).
 type UpdateTemplateRequest struct {
 	Name             *string `json:"name,omitempty"`
 	Description      *string `json:"description,omitempty"`
@@ -137,6 +146,8 @@ type UpdateTemplateRequest struct {
 	UpdateFeatureFlags      bool                     `json:"updateFeatureFlags,omitempty"`
 	WorkspaceLinks          []WorkspaceLinkCreate    `json:"workspaceLinks,omitempty"`
 	UpdateWorkspaceLinks    bool                     `json:"updateWorkspaceLinks,omitempty"`
+	DeviceSpec              *DeviceSpec              `json:"deviceSpec,omitempty"`
+	UpdateDeviceSpec        bool                     `json:"updateDeviceSpec,omitempty"`
 }
 
 // ListTemplates returns every template visible in the workspace.

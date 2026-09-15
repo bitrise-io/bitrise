@@ -140,14 +140,67 @@ func renderSessionDetail(w io.Writer, sess internalrde.Session) error {
 	} else if sess.TemplateOutdated {
 		ew.F("%s%s\n", lbl("Template state:"), s.Dim.Render("outdated (template changed since session creation)"))
 	}
-	if sess.SSHAddress != "" {
-		ew.F("%s%s\n", lbl("SSH:"), sess.SSHAddress)
-	}
-	if sess.VNCAddress != "" {
-		ew.F("%s%s\n", lbl("VNC:"), sess.VNCAddress)
+	// A dead session has nothing to connect to; the API may still echo the
+	// last known addresses, so don't invite a connection that cannot succeed.
+	if !isTerminalStatus(sess.Status) {
+		if sess.SSHAddress != "" {
+			ew.F("%s%s\n", lbl("SSH:"), sess.SSHAddress)
+		}
+		if sess.VNCAddress != "" {
+			ew.F("%s%s\n", lbl("VNC:"), sess.VNCAddress)
+		}
 	}
 	if sess.PersistentDiskStatus != "" {
 		ew.F("%s%s\n", lbl("Persistent disk:"), diskStatusText(s, sess.PersistentDiskStatus))
+	}
+	if d := sess.Device; d != nil {
+		what := "device"
+		if d.Spec != nil {
+			what = d.Spec.Summary()
+		}
+		state := d.State
+		if state == "" {
+			state = "not running"
+		}
+		ew.F("%s%s — %s\n", lbl("Device:"), what, deviceStateStyle(s, d.State).Render(state))
+		guide := "bitrise rde device-guide"
+		if d.Spec != nil && (d.Spec.Platform == "ios" || d.Spec.Platform == "android") {
+			guide += " " + d.Spec.Platform
+		}
+		ew.F("%s%s\n", lbl("Device guide:"), guide)
+		if d.DeviceNotes != "" {
+			ew.F("%s%s\n", lbl("Device notes:"), d.DeviceNotes)
+		}
+		// The two states agents get wrong: a boot in progress invites
+		// "helping" (which breaks it), and a failure reads as "dead" even when
+		// only the stream is (the notes say). Say so where the state is read.
+		switch d.State {
+		case "booting":
+			ew.F("%s%s\n", lbl(""), "booting — do nothing on the VM; the device reports ready or failed on its own (see the guide for the time budget)")
+		case "failed":
+			ew.F("%s%s\n", lbl(""), "failed — read the device notes: a stream-only failure leaves the device drivable over adb / simctl (guide §6)")
+		case "ready":
+			if d.DeviceNotes != "" {
+				ew.F("%s%s\n", lbl(""), "ready, with notes — what booted differs from the request; the device spec above echoes what you asked for, the notes say what you got")
+			}
+		}
+		if d.AppName != "" || d.InstallStatus != "" {
+			app := d.AppName
+			if app == "" {
+				app = "app"
+			}
+			if d.BuildNumber != "" {
+				app += " #" + d.BuildNumber
+			}
+			install := d.InstallStatus
+			if install == "" {
+				install = "not started"
+			}
+			if d.InstallStatus == "failed" && d.InstallReason != "" {
+				install += ": " + d.InstallReason
+			}
+			ew.F("%s%s — install %s\n", lbl("Device app:"), app, install)
+		}
 	}
 	if sess.AutoTerminateAt != nil {
 		ew.F("%s%s\n", lbl("Auto-terminates at:"), formatTime(sess.AutoTerminateAt))

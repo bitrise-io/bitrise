@@ -1,11 +1,15 @@
 ## bitrise rde session delete-terminated
 
-Permanently delete every terminated session in the workspace
+Permanently delete your terminated sessions in this workspace
 
 ### Synopsis
 
-Permanently delete every terminated session in the workspace.
-This cannot be undone. Pass --yes to skip the confirmation prompt.
+Permanently delete your terminated sessions in this workspace.
+
+Only sessions YOU created are affected: the server scopes the call to the
+caller's own sessions, so other members' sessions (and workspace-owned
+device-preview sessions) are never touched. This cannot be undone. Pass
+--yes to skip the confirmation prompt.
 
 ```
 bitrise rde session delete-terminated [flags]

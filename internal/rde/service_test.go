@@ -448,6 +448,69 @@ func TestStatusFromAPI(t *testing.T) {
 	}
 }
 
+// TestDeviceEnumsFromAPI pins the device-state / install-status mapping to
+// the same forward-compatible contract as statusFromAPI: known values become
+// short words, UNSPECIFIED and "" collapse to "", and an enum value this CLI
+// doesn't know yet is still readable instead of vanishing.
+func TestDeviceEnumsFromAPI(t *testing.T) {
+	stateCases := map[string]string{
+		"PREVIEW_DEVICE_STATE_BOOTING":     "booting",
+		"PREVIEW_DEVICE_STATE_READY":       "ready",
+		"PREVIEW_DEVICE_STATE_FAILED":      "failed",
+		"PREVIEW_DEVICE_STATE_UNSPECIFIED": "",
+		"":                                 "",
+		"PREVIEW_DEVICE_STATE_FUTURE_NEW":  "future_new",
+	}
+	for in, want := range stateCases {
+		if got := deviceStateFromAPI(in); got != want {
+			t.Errorf("deviceStateFromAPI(%q) = %q, want %q", in, got, want)
+		}
+	}
+	installCases := map[string]string{
+		"PREVIEW_INSTALL_STATUS_PENDING":     "pending",
+		"PREVIEW_INSTALL_STATUS_RUNNING":     "running",
+		"PREVIEW_INSTALL_STATUS_OK":          "ok",
+		"PREVIEW_INSTALL_STATUS_FAILED":      "failed",
+		"PREVIEW_INSTALL_STATUS_UNSPECIFIED": "",
+		"":                                   "",
+		"PREVIEW_INSTALL_STATUS_SKIPPED":     "skipped",
+	}
+	for in, want := range installCases {
+		if got := installStatusFromAPI(in); got != want {
+			t.Errorf("installStatusFromAPI(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// TestDeviceFromAPI checks the wire → CLI mapping of a session's device block
+// end to end: spec fields pass through, enums are normalized, nil stays nil.
+func TestDeviceFromAPI(t *testing.T) {
+	if got := deviceFromAPI(nil); got != nil {
+		t.Fatalf("deviceFromAPI(nil) = %+v, want nil", got)
+	}
+	got := deviceFromAPI(&rdeapi.SessionDevice{
+		Spec:          &rdeapi.DeviceSpec{Platform: "android", DeviceModel: "pixel_7", SystemImage: "system-images;android-34;google_apis;x86_64"},
+		State:         "PREVIEW_DEVICE_STATE_READY",
+		InstallStatus: "PREVIEW_INSTALL_STATUS_FAILED",
+		InstallReason: "adb: INSTALL_FAILED_OLDER_SDK",
+		DeviceNotes:   "cold boot",
+		AppName:       "Demo",
+		BuildNumber:   "42",
+	})
+	if got == nil {
+		t.Fatal("deviceFromAPI returned nil for a populated device")
+	}
+	if got.State != "ready" || got.InstallStatus != "failed" {
+		t.Errorf("normalized enums = %q / %q, want ready / failed", got.State, got.InstallStatus)
+	}
+	if got.Spec == nil || got.Spec.Platform != "android" || got.Spec.DeviceModel != "pixel_7" || got.Spec.SystemImage != "system-images;android-34;google_apis;x86_64" {
+		t.Errorf("unexpected spec: %+v", got.Spec)
+	}
+	if got.InstallReason != "adb: INSTALL_FAILED_OLDER_SDK" || got.DeviceNotes != "cold boot" || got.AppName != "Demo" || got.BuildNumber != "42" {
+		t.Errorf("pass-through fields lost: %+v", got)
+	}
+}
+
 // TestLegacyImageFallsBackToStackID locks in the read fallback for templates
 // and sessions created before stack_id existed: the resolved image id surfaces
 // as the stack id so they still display, while a populated stack_id always wins.

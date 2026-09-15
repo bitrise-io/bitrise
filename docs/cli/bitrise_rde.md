@@ -15,6 +15,12 @@ otherwise.
 Saved inputs are user-scoped, though — they do not require --workspace, and
 the 'saved-input' subcommand does not accept it.
 
+Device sessions: a session can boot an iOS simulator or Android emulator
+('rde session create --device-platform ios|android'). Before creating one,
+read 'rde device-guide' (then 'rde device-guide ios' or 'android'): it is the
+know-how for waiting until the device is ready, connecting, driving it, and
+what never to do.
+
 ```
 bitrise rde [flags]
 ```
@@ -25,6 +31,7 @@ bitrise rde [flags]
   bitrise rde session list --workspace WORKSPACE_ID
   bitrise rde session list --format json
   bitrise rde machine-type list --stack osx-xcode-16.0.x-edge
+  bitrise rde device-guide          # read before creating a session with a device
 ```
 
 ### Options
@@ -49,6 +56,7 @@ bitrise rde [flags]
 
 * [bitrise](bitrise.md)	 - Bitrise Automations Workflow Runner
 * [bitrise rde claude](bitrise_rde_claude.md)	 - Create an RDE session and attach to Claude Code
+* [bitrise rde device-guide](bitrise_rde_device-guide.md)	 - Print the guide for driving a session's iOS simulator / Android emulator
 * [bitrise rde machine-type](bitrise_rde_machine-type.md)	 - List machine types compatible with a given stack
 * [bitrise rde saved-input](bitrise_rde_saved-input.md)	 - Manage saved inputs (reusable credentials/values)
 * [bitrise rde session](bitrise_rde_session.md)	 - Create, list, inspect, and manage RDE sessions

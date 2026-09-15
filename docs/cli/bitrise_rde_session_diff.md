@@ -10,7 +10,8 @@ reports template_outdated=true.
 
 Lists which template variable keys changed (values are never exposed) and
 the simple per-field differences (stack, machine type, scripts, working
-directory). When the template was deleted, only the snapshot is shown.
+directory, declared device). When the template was deleted, only the
+snapshot is shown.
 
 ```
 bitrise rde session diff SESSION_ID [flags]

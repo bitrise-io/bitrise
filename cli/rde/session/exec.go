@@ -1,6 +1,7 @@
 package session
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -152,7 +153,7 @@ connection, nohup it inside the session instead.`,
 			if err != nil {
 				return err
 			}
-			return renderExecResult(cmd, res)
+			return renderExecResult(cmd, res, shellHint(args[1:], shellMode, res.ExitCode))
 		},
 	}
 	c.Flags().BoolVar(&shellMode, "shell", false, "interpret everything after '--' as a shell command line (pipes, &&, $(...), redirection) instead of a program with literal arguments")
@@ -200,9 +201,39 @@ func buildExecCommand(cmdArgs []string, shell bool) string {
 	return cmdutil.JoinShellArgs(cmdArgs)
 }
 
-func renderExecResult(cmd *cobra.Command, res internalrde.ExecResult) error {
+// shellHintText is appended to the exit-status error when the shape of the
+// invocation strongly suggests the caller meant a shell command line but
+// forgot --shell: one multi-word token, run as a program name, exit 127.
+const shellHintText = "hint: the whole string was run as one program name; pass --shell before '--' to run it as a shell command line"
+
+// shellHint returns shellHintText when a non-shell exec passed exactly one
+// token that contains whitespace or shell metacharacters and the remote shell
+// answered 127 (command not found). That combination is almost always
+// `exec ID -- "cd x && ls"` without --shell: bash looked for a program literally
+// named "cd x && ls", and the "command not found" it prints sends people
+// hunting for a missing binary. Anything else returns "".
+func shellHint(cmdArgs []string, shell bool, exitCode int) string {
+	if shell || exitCode != 127 || len(cmdArgs) != 1 {
+		return ""
+	}
+	if strings.ContainsAny(cmdArgs[0], " \t\n|&;<>$`()") {
+		return shellHintText
+	}
+	return ""
+}
+
+// renderExecResult writes the remote result and turns a non-zero remote exit
+// into a non-zero local exit in BOTH output modes. In non-raw modes the
+// envelope (exit_code/stdout/stderr) still goes to stdout untouched; only the
+// process exit status and a one-line stderr message change, so a CI wrapper
+// that checks `$?` — the shape the help recommends — sees remote failures.
+// hint, when non-empty, is appended to that error (see shellHint).
+func renderExecResult(cmd *cobra.Command, res internalrde.ExecResult, hint string) error {
 	if output.Format != output.FormatRaw {
-		return output.Print(cmd.OutOrStdout(), res, output.Format)
+		if err := output.Print(cmd.OutOrStdout(), res, output.Format); err != nil {
+			return err
+		}
+		return execExitError(cmd, res.ExitCode, hint)
 	}
 	// Raw mode: stream stdout and stderr to their natural sinks. We don't
 	// echo a JSON-shaped envelope — users piping `| jq` should be using
@@ -217,11 +248,25 @@ func renderExecResult(cmd *cobra.Command, res internalrde.ExecResult) error {
 			return err
 		}
 	}
-	if res.ExitCode != 0 {
-		// Suppress cobra's "Error: ..." line — the remote command's
-		// stderr already explains the failure.
-		cmdutil.SilenceRootErrors(cmd)
-		return fmt.Errorf("remote command exited with status %d", res.ExitCode)
+	return execExitError(cmd, res.ExitCode, hint)
+}
+
+// execExitError maps a remote exit code to the command's return value: nil
+// for 0, otherwise an error whose text goes to stderr only. Cobra's own
+// "Error: …" line is suppressed — the remote command's stderr (or the
+// rendered envelope) already explains the failure — and the message is
+// written here so it never lands in stdout next to a JSON/YAML envelope.
+func execExitError(cmd *cobra.Command, exitCode int, hint string) error {
+	if exitCode == 0 {
+		return nil
 	}
-	return nil
+	cmdutil.SilenceRootErrors(cmd)
+	msg := fmt.Sprintf("remote command exited with status %d", exitCode)
+	if hint != "" {
+		msg += "\n" + hint
+	}
+	_, _ = fmt.Fprintln(cmd.ErrOrStderr(), msg)
+	// Returned (not just printed) so root exits 1; silenced above so cobra
+	// does not print it a second time.
+	return errors.New(msg)
 }

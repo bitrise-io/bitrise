@@ -17,6 +17,7 @@ func newCreateCmd() *cobra.Command {
 	var (
 		file   string
 		format string
+		device deviceFlags
 	)
 	c := &cobra.Command{
 		Use:   "create",
@@ -51,6 +52,20 @@ Optional fields:
                       include feature_flag_name (the API doesn't return it),
                       so a view → edit → create/update round trip silently
                       drops it from any existing links — reapply it by hand.
+  device_spec         {platform, device_model, os_version, system_image} — a
+                      virtual device sessions created from the template boot
+                      unless overridden (see below)
+
+Declared device: pass --device-platform ios or android (plus optionally
+--device-model, --device-os-version, --device-system-image — the same flags
+'rde session create' takes) to declare a virtual device on the template.
+Sessions created from the template then boot that device as declared;
+'rde session create' can tweak it per field with --device-model etc. (no
+--device-platform), replace it (with --device-platform) or skip it with
+--no-device. The template's stack and machine type
+must fit the platform (iOS: a macOS stack; Android: a dockerless Android
+Linux stack). The flags take precedence over a device_spec in the file.
+Read 'bitrise rde device-guide' before declaring one.
 
 Example spec exercising every field (a macOS iOS-app dev environment —
 adjust to taste):
@@ -87,10 +102,13 @@ adjust to taste):
     "workspace_links": [
       {"label": "Open app in Xcode", "folder_path": "/Users/vagrant/git/ios"},
       {"label": "Open scripts (beta only)", "folder_path": "/Users/vagrant/git/scripts", "feature_flag_name": "enable_beta_simulator"}
-    ]
+    ],
+    "device_spec": {"platform": "ios", "device_model": "iPhone 16", "os_version": "18.2"}
   }`,
 		Example: `  bitrise rde template create --file template.json
-  cat template.json | bitrise rde template create --file -`,
+  cat template.json | bitrise rde template create --file -
+  # Declare an iOS simulator every session from this template boots by default.
+  bitrise rde template create --file template.json --device-platform ios --device-model "iPhone 16"`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -102,9 +120,16 @@ adjust to taste):
 			if file == "" {
 				return fmt.Errorf("--file is required")
 			}
+			deviceSpec, err := device.spec()
+			if err != nil {
+				return err
+			}
 			spec, err := readTemplateSpec(cmd.InOrStdin(), file)
 			if err != nil {
 				return err
+			}
+			if deviceSpec != nil {
+				spec.DeviceSpec = deviceSpec
 			}
 			workspaceID, err := cmdutil.ResolveWorkspaceID(cmd)
 			if err != nil {
@@ -124,13 +149,16 @@ adjust to taste):
 	c.Flags().StringVarP(&file, "file", "f", "", "path to a JSON spec file (use '-' for stdin)")
 	// No -f shorthand: --file owns it on this command.
 	c.Flags().StringVar(&format, cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json, yml")
+	device.bind(c)
 	return c
 }
 
 func newUpdateCmd() *cobra.Command {
 	var (
-		file   string
-		format string
+		file        string
+		format      string
+		device      deviceFlags
+		clearDevice bool
 	)
 	c := &cobra.Command{
 		Use:   "update TEMPLATE_ID",
@@ -145,6 +173,14 @@ Note: 'template view' output doesn't include a workspace link's
 feature_flag_name (the API doesn't return it), so the round-trip workflow
 below silently drops it from any existing links — reapply it by hand.
 
+The template's declared device (the one sessions created from it boot
+unless overridden) is replaced when device_spec is present in the file or
+when --device-platform is given (with optional --device-model,
+--device-os-version, --device-system-image — the same flags 'rde session
+create' takes; they take precedence over the file). Pass --clear-device to
+remove it. Either may be used without --file. Read 'bitrise rde
+device-guide' before declaring one.
+
 Round-trip workflow:
 
   bitrise rde template view TEMPLATE_ID --format json > template.json
@@ -152,6 +188,11 @@ Round-trip workflow:
   bitrise rde template update TEMPLATE_ID --file template.json
 
 Pass --file - to read the JSON from stdin.`,
+		Example: `  bitrise rde template update TEMPLATE_ID --file template.json
+  # Declare (or replace) the device sessions from this template boot by default.
+  bitrise rde template update TEMPLATE_ID --device-platform android --device-model pixel_7
+  # Stop declaring a device.
+  bitrise rde template update TEMPLATE_ID --clear-device`,
 		Args: cmdutil.RequireArgs("TEMPLATE_ID"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
@@ -160,12 +201,25 @@ Pass --file - to read the JSON from stdin.`,
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
-			if file == "" {
-				return fmt.Errorf("--file is required")
-			}
-			spec, err := readTemplateSpec(cmd.InOrStdin(), file)
+			deviceSpec, err := device.spec()
 			if err != nil {
 				return err
+			}
+			if file == "" && deviceSpec == nil && !clearDevice {
+				return fmt.Errorf("--file is required (or a --device-* flag / --clear-device)")
+			}
+			var spec internalrde.TemplateSpec
+			if file != "" {
+				if spec, err = readTemplateSpec(cmd.InOrStdin(), file); err != nil {
+					return err
+				}
+			}
+			if deviceSpec != nil {
+				spec.DeviceSpec = deviceSpec
+			}
+			if clearDevice {
+				spec.DeviceSpec = nil
+				spec.ClearDeviceSpec = true
 			}
 			workspaceID, err := cmdutil.ResolveWorkspaceID(cmd)
 			if err != nil {
@@ -187,9 +241,14 @@ Pass --file - to read the JSON from stdin.`,
 			return output.Render(cmd.OutOrStdout(), output.Format, t, renderDetail)
 		},
 	}
-	c.Flags().StringVarP(&file, "file", "f", "", "path to a JSON spec file (use '-' for stdin)")
+	c.Flags().StringVarP(&file, "file", "f", "", "path to a JSON spec file (use '-' for stdin); optional when only changing the device")
 	// No -f shorthand: --file owns it on this command.
 	c.Flags().StringVar(&format, cmdutil.FormatKey, "", "Output format. Accepted: raw (default), json, yml")
+	device.bind(c)
+	c.Flags().BoolVar(&clearDevice, "clear-device", false, "remove the template's declared device so sessions created from it boot none")
+	for _, f := range []string{"device-platform", "device-model", "device-os-version", "device-system-image"} {
+		c.MarkFlagsMutuallyExclusive("clear-device", f)
+	}
 	return c
 }
 

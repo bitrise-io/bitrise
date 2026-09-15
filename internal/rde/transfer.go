@@ -185,6 +185,13 @@ func writeTarGz(w io.Writer, sourcePath string) error {
 			return fmt.Errorf("file info header: %w", err)
 		}
 		header.Name = filepath.ToSlash(name) // tar names are slash-separated on every platform
+		// Never ship the local owner: FileInfoHeader copies the numeric
+		// uid/gid of the caller's machine, and a root-side extraction on the
+		// VM honours them, so files landed as e.g. 501:root and the session
+		// user lost write access to its own directory. Ownership is the
+		// server's call (it extracts as the session user).
+		header.Uid, header.Gid = 0, 0
+		header.Uname, header.Gname = "", ""
 		if err := tw.WriteHeader(header); err != nil {
 			return fmt.Errorf("write header: %w", err)
 		}

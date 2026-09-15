@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
 	"github.com/bitrise-io/bitrise/v2/output"
@@ -834,5 +835,260 @@ func TestDeleteTerminatedCmd_ProceedsOnYes(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "Deleted 1 terminated session(s)") {
 		t.Errorf("unexpected stdout: %q", stdout)
+	}
+}
+
+// A device session needs neither --template nor --stack/--machine-type: the
+// backend fills the platform defaults. The device spec and artifact ride on
+// the wire in the same shape a preview link uses.
+func TestCreateCmd_DeviceSpec(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = io.WriteString(w, `{"session":{"id":"s-dev","name":"ios-check","status":"SESSION_STATUS_PENDING","device":{"spec":{"platform":"ios","deviceModel":"iPhone 16"},"state":"PREVIEW_DEVICE_STATE_UNSPECIFIED"}}}`)
+	}))
+	defer srv.Close()
+
+	stdout, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"ios-check", "--device-platform", "ios", "--device-model", "iPhone 16", "--device-os-version", "18.2", "--artifact-url", "https://cdn.example.com/app.zip", "--artifact-name", "Demo"},
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	spec, _ := gotBody["deviceSpec"].(map[string]any)
+	if spec["platform"] != "ios" || spec["deviceModel"] != "iPhone 16" || spec["osVersion"] != "18.2" {
+		t.Errorf("unexpected deviceSpec: %v", gotBody["deviceSpec"])
+	}
+	art, _ := gotBody["artifact"].(map[string]any)
+	if art["url"] != "https://cdn.example.com/app.zip" || art["appName"] != "Demo" {
+		t.Errorf("unexpected artifact: %v", gotBody["artifact"])
+	}
+	if _, has := gotBody["stackId"]; has {
+		t.Errorf("stackId must be omitted so the platform default applies: %v", gotBody)
+	}
+	if !strings.Contains(stdout, "s-dev") {
+		t.Errorf("stdout missing create confirmation:\n%s", stdout)
+	}
+}
+
+// TestCreateCmd_ArtifactURLStdin: a signed artifact URL is a bearer
+// credential, so --artifact-url-stdin reads it from stdin (trimmed) and the
+// request body carries it exactly as if it had been passed inline.
+func TestCreateCmd_ArtifactURLStdin(t *testing.T) {
+	const signed = "https://cdn.example.com/app.apk?X-Amz-Signature=abc123"
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = io.WriteString(w, `{"session":{"id":"s-dev","name":"android-check","status":"SESSION_STATUS_PENDING"}}`)
+	}))
+	defer srv.Close()
+
+	stdout, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"android-check", "--device-platform", "android", "--artifact-url-stdin", "--artifact-name", "Demo"},
+		Stdin:              signed + "\n",
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	art, _ := gotBody["artifact"].(map[string]any)
+	if art["url"] != signed || art["appName"] != "Demo" {
+		t.Errorf("unexpected artifact: %v", gotBody["artifact"])
+	}
+	if !strings.Contains(stdout, "s-dev") {
+		t.Errorf("stdout missing create confirmation:\n%s", stdout)
+	}
+}
+
+func TestCreateCmd_ArtifactURLStdinValidation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no request expected, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer srv.Close()
+
+	// Mutually exclusive with --artifact-url.
+	_, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--device-platform", "android", "--artifact-url", "https://cdn.example.com/b.apk", "--artifact-url-stdin"},
+		Stdin:              "https://cdn.example.com/a.apk\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "artifact-url") {
+		t.Errorf("error = %v, want --artifact-url / --artifact-url-stdin exclusivity error", err)
+	}
+
+	// Requires --device-platform, like the other device flags.
+	_, _, err = cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--stack", "linux-docker-android", "--machine-type", "g2.linux.large", "--artifact-url-stdin"},
+		Stdin:              "https://cdn.example.com/a.apk\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "--device-platform") {
+		t.Errorf("error = %v, want --device-platform requirement", err)
+	}
+
+	// Empty stdin is an error rather than a silent no-artifact session.
+	_, _, err = cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--device-platform", "android", "--artifact-url-stdin"},
+		Stdin:              "\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "stdin") {
+		t.Errorf("error = %v, want empty-stdin error", err)
+	}
+}
+
+func TestCreateCmd_DeviceFlagsNeedPlatform(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("no request expected, got %s %s", r.Method, r.URL.Path)
+	}))
+	defer srv.Close()
+	_, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--stack", "osx-xcode-26.6.x", "--machine-type", "g2.mac.m2pro.4c-6g", "--device-model", "iPhone 16"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "--device-platform") {
+		t.Fatalf("expected a --device-platform error, got %v", err)
+	}
+}
+
+// TestCreateCmd_WaitDeviceReady: with a device requested, --wait does not stop
+// at "running" — it keeps polling until the device itself reports ready.
+func TestCreateCmd_WaitDeviceReady(t *testing.T) {
+	deviceWaitPollInterval = time.Millisecond
+	t.Cleanup(func() { deviceWaitPollInterval = 3 * time.Second })
+	sess := func(state string) string {
+		return `{"session":{"id":"` + uuidSession + `","name":"ios-check","status":"SESSION_STATUS_RUNNING","device":{"spec":{"platform":"ios"},"state":"` + state + `"}}}`
+	}
+	var getCount int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/workspaces/ws-1/sessions":
+			_, _ = io.WriteString(w, sess("PREVIEW_DEVICE_STATE_UNSPECIFIED"))
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/workspaces/ws-1/sessions/"+uuidSession:
+			getCount++
+			if getCount < 3 {
+				_, _ = io.WriteString(w, sess("PREVIEW_DEVICE_STATE_BOOTING"))
+				return
+			}
+			_, _ = io.WriteString(w, sess("PREVIEW_DEVICE_STATE_READY"))
+		default:
+			t.Errorf("unexpected: %s %s", r.Method, r.URL.Path)
+		}
+	}))
+	defer srv.Close()
+
+	stdout, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"ios-check", "--device-platform", "ios", "--wait"},
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if getCount < 3 {
+		t.Errorf("expected --wait to keep polling while the device boots, got %d GETs", getCount)
+	}
+	if !strings.Contains(stdout, "iOS simulator — ready") {
+		t.Errorf("stdout should show the device as ready:\n%s", stdout)
+	}
+}
+
+// TestCreateCmd_WaitDeviceFailedExitsNonZero: a device that fails to boot is
+// a non-zero exit even though the session itself is running.
+func TestCreateCmd_WaitDeviceFailedExitsNonZero(t *testing.T) {
+	body := `{"session":{"id":"` + uuidSession + `","name":"ios-check","status":"SESSION_STATUS_RUNNING","device":{"spec":{"platform":"ios"},"state":"PREVIEW_DEVICE_STATE_FAILED","deviceNotes":"simulator never booted"}}}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, body)
+	}))
+	defer srv.Close()
+
+	_, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"ios-check", "--device-platform", "ios", "--wait"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "device failed to boot") || !strings.Contains(err.Error(), "simulator never booted") {
+		t.Fatalf("expected a device-failed error carrying the notes, got %v", err)
+	}
+}
+
+// TestCreateCmd_TemplateDeviceOverride: with --template, the per-device
+// fields may be given without --device-platform. The spec goes out with an
+// empty platform so the backend merges it over the template's declared
+// device and the unset fields inherit the template's.
+func TestCreateCmd_TemplateDeviceOverride(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = io.WriteString(w, `{"session":{"id":"s-dev","name":"ios-check","status":"SESSION_STATUS_PENDING","device":{"spec":{"platform":"ios","deviceModel":"iPhone 15"}}}}`)
+	}))
+	defer srv.Close()
+
+	_, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"ios-check", "--template", uuidTemplate, "--device-model", "iPhone 15"},
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	spec, ok := gotBody["deviceSpec"].(map[string]any)
+	if !ok {
+		t.Fatalf("deviceSpec missing from body: %v", gotBody)
+	}
+	if spec["deviceModel"] != "iPhone 15" {
+		t.Errorf("deviceModel = %v, want iPhone 15", spec["deviceModel"])
+	}
+	if p, has := spec["platform"]; has && p != "" {
+		t.Errorf("platform must be left empty so the template's is inherited, got %v", p)
+	}
+	if _, has := gotBody["noDevice"]; has {
+		t.Errorf("noDevice must be omitted unless --no-device was passed: %v", gotBody)
+	}
+}
+
+// TestCreateCmd_NoDevice: --no-device rides on the wire as noDevice and is
+// mutually exclusive with every device flag.
+func TestCreateCmd_NoDevice(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_, _ = io.WriteString(w, `{"session":{"id":"s-1","name":"dev","status":"SESSION_STATUS_PENDING"}}`)
+	}))
+	defer srv.Close()
+
+	_, _, err := cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--template", uuidTemplate, "--no-device"},
+	})
+	if err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if gotBody["noDevice"] != true {
+		t.Errorf("noDevice = %v, want true (body=%v)", gotBody["noDevice"], gotBody)
+	}
+	if _, has := gotBody["deviceSpec"]; has {
+		t.Errorf("deviceSpec must be omitted with --no-device: %v", gotBody)
+	}
+
+	gotBody = nil
+	_, _, err = cmdtest.Run(t, newCreateCmd(), cmdtest.Opts{
+		RDEAPIBaseURL:      srv.URL,
+		DefaultWorkspaceID: "ws-1",
+		Args:               []string{"dev", "--template", uuidTemplate, "--no-device", "--device-platform", "ios"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "no-device") || !strings.Contains(err.Error(), "device-platform") {
+		t.Fatalf("expected a --no-device/--device-platform exclusivity error, got %v", err)
+	}
+	if gotBody != nil {
+		t.Errorf("server must not be hit when the flags conflict")
 	}
 }

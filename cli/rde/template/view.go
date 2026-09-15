@@ -68,6 +68,9 @@ func renderDetail(w io.Writer, t internalrde.Template) error {
 	if t.WorkingDirectory != "" {
 		ew.F("%s%s\n", lbl("Working dir:"), t.WorkingDirectory)
 	}
+	if t.DeviceSpec != nil {
+		ew.F("%s%s\n", lbl("Device:"), t.DeviceSpec.Summary())
+	}
 	if t.CreatedByEmail != "" {
 		ew.F("%s%s\n", lbl("Owner:"), t.CreatedByEmail)
 	}

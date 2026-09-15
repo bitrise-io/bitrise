@@ -114,6 +114,34 @@ func diskStatusFromAPI(s string) string {
 	return strings.ToLower(v)
 }
 
+// deviceStateFromAPI strips the PREVIEW_DEVICE_STATE_ prefix similarly
+// ("booting" / "ready" / "failed" / "").
+func deviceStateFromAPI(s string) string {
+	if s == "" {
+		return ""
+	}
+	const prefix = "PREVIEW_DEVICE_STATE_"
+	v := strings.TrimPrefix(s, prefix)
+	if v == "UNSPECIFIED" {
+		return ""
+	}
+	return strings.ToLower(v)
+}
+
+// installStatusFromAPI strips the PREVIEW_INSTALL_STATUS_ prefix similarly
+// ("pending" / "running" / "ok" / "failed" / "").
+func installStatusFromAPI(s string) string {
+	if s == "" {
+		return ""
+	}
+	const prefix = "PREVIEW_INSTALL_STATUS_"
+	v := strings.TrimPrefix(s, prefix)
+	if v == "UNSPECIFIED" {
+		return ""
+	}
+	return strings.ToLower(v)
+}
+
 // looksLikeUUID is a syntactic check (8-4-4-4-12 hex). Cheap and good
 // enough to distinguish IDs from names — the server validates the real
 // format on its side.

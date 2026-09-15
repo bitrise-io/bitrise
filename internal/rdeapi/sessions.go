@@ -39,9 +39,12 @@ type Session struct {
 	OwnerType string `json:"ownerType,omitempty"`
 	// OwnerID is the owner's identifier, typed by OwnerType: the owning
 	// user's ID for "user", the workspace slug for "workspace".
-	OwnerID   string `json:"ownerId,omitempty"`
-	CreatedAt string `json:"createdAt,omitempty"`
-	UpdatedAt string `json:"updatedAt,omitempty"`
+	OwnerID string `json:"ownerId,omitempty"`
+	// Device is the session's virtual device and readiness; absent when
+	// the session has no device.
+	Device    *SessionDevice `json:"device,omitempty"`
+	CreatedAt string         `json:"createdAt,omitempty"`
+	UpdatedAt string         `json:"updatedAt,omitempty"`
 }
 
 // SessionTemplateSnapshot is the template config snapshotted at session
@@ -127,6 +130,51 @@ type CreateSessionRequest struct {
 	// the "bitrise.io/" key prefix is reserved for system-owned labels and
 	// rejected on writes).
 	Labels map[string]string `json:"labels,omitempty"`
+	// DeviceSpec boots a virtual device (iOS simulator / Android emulator)
+	// with the session — the same shape a device preview link carries. With
+	// it, StackID/MachineType/Cluster may be omitted (deployment defaults).
+	DeviceSpec *DeviceSpec `json:"deviceSpec,omitempty"`
+	// Artifact is an optional app build to install once the device is
+	// ready; requires DeviceSpec.
+	Artifact *DeviceArtifact `json:"artifact,omitempty"`
+	// NoDevice creates the session without the device its template declares.
+	// Invalid together with DeviceSpec; ignored when the template declares
+	// no device.
+	NoDevice bool `json:"noDevice,omitempty"`
+}
+
+// DeviceSpec describes a virtual device in the preview-link vocabulary.
+type DeviceSpec struct {
+	Platform    string `json:"platform"`
+	DeviceModel string `json:"deviceModel,omitempty"`
+	OSVersion   string `json:"osVersion,omitempty"`
+	SystemImage string `json:"systemImage,omitempty"`
+	RAMMb       uint32 `json:"ramMb,omitempty"`
+	Cores       uint32 `json:"cores,omitempty"`
+	ColdBoot    bool   `json:"coldBoot,omitempty"`
+}
+
+// DeviceArtifact is the app build a device session installs. URL is a
+// signed download URL the VM fetches directly; the API never returns it.
+type DeviceArtifact struct {
+	URL         string `json:"url"`
+	AppName     string `json:"appName,omitempty"`
+	BuildNumber string `json:"buildNumber,omitempty"`
+	CommitSHA   string `json:"commitSha,omitempty"`
+}
+
+// SessionDevice is a session's virtual device and its readiness
+// (Session.device). "running" does not mean the device is usable: State
+// is the VM-asserted verdict (PREVIEW_DEVICE_STATE_BOOTING / READY / FAILED).
+type SessionDevice struct {
+	Spec          *DeviceSpec `json:"spec,omitempty"`
+	State         string      `json:"state,omitempty"`
+	DeviceNotes   string      `json:"deviceNotes,omitempty"`
+	InstallStatus string      `json:"installStatus,omitempty"`
+	InstallReason string      `json:"installReason,omitempty"`
+	AppName       string      `json:"appName,omitempty"`
+	BuildNumber   string      `json:"buildNumber,omitempty"`
+	CommitSHA     string      `json:"commitSha,omitempty"`
 }
 
 // UpdateSessionRequest is the PATCH body for updating a session. Pointer
@@ -162,6 +210,7 @@ type TemplateConfig struct {
 	FeatureFlags      []TemplateConfigFlag     `json:"featureFlags,omitempty"`
 	TemplateVariables []TemplateConfigVariable `json:"templateVariables,omitempty"`
 	WorkspaceLinks    []SnapshotLink           `json:"workspaceLinks,omitempty"`
+	DeviceSpec        *DeviceSpec              `json:"deviceSpec,omitempty"`
 	UpdatedAt         string                   `json:"updatedAt,omitempty"`
 }
 
@@ -350,8 +399,10 @@ func (c *Client) DeleteSession(ctx context.Context, workspaceID, sessionID strin
 	return c.del(ctx, wsPath(workspaceID, "/sessions/"+url.PathEscape(sessionID)))
 }
 
-// DeleteTerminatedSessions removes every terminated (stopped) session in the
-// workspace for the caller and returns the count of deleted sessions.
+// DeleteTerminatedSessions removes the CALLER'S terminated (stopped)
+// sessions in the workspace and returns the count of deleted sessions. The
+// server scopes it to sessions the caller owns; other members' sessions are
+// never affected.
 // Endpoint: POST /v1/workspaces/{workspaceId}/sessions:delete-terminated.
 func (c *Client) DeleteTerminatedSessions(ctx context.Context, workspaceID string) (int, error) {
 	if workspaceID == "" {
