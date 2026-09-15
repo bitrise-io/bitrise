@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"slices"
 	"strconv"
@@ -295,11 +296,10 @@ func (u updater) download(version string) error {
 	if err != nil {
 		return err
 	}
-	url := u.binaryURL(version, runtime.GOOS)
 
-	tmpfile, err := os.CreateTemp("", "bitrise")
+	url, err := u.binaryURL(version, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
-		return fmt.Errorf("can't create temporary file: %s", err)
+		return err
 	}
 
 	resp, err := u.client.Get(url)
@@ -315,16 +315,7 @@ func (u updater) download(version string) error {
 		return fmt.Errorf("can't download url (%s), status: %s", url, http.StatusText(resp.StatusCode))
 	}
 
-	_, err = io.Copy(tmpfile, resp.Body)
-	if err != nil {
-		return fmt.Errorf("error while writing to temp file, error: %v", err)
-	}
-
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("can't remove file (%s), error: %s", path, err)
-	}
-
-	if err := CopyFile(tmpfile.Name(), path, true); err != nil {
+	if err := replaceBinary(path, resp.Body); err != nil {
 		return err
 	}
 	log.Donef("Bitrise CLI is successfully updated!")
@@ -332,12 +323,63 @@ func (u updater) download(version string) error {
 	return nil
 }
 
-func (u updater) binaryURL(version, goos string) string {
-	return fmt.Sprintf("%s/v%s/%s", u.releasesBaseURL, version, assetName(goos))
+// The replacement is written next to the binary and renamed over it, so a
+// failure at any point leaves the working CLI in place. The temporary file
+// cannot live in the system temp dir, because a rename does not cross
+// filesystems.
+func replaceBinary(path string, contents io.Reader) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	tmpFile, err := os.CreateTemp(filepath.Dir(path), ".bitrise-update-")
+	if err != nil {
+		return fmt.Errorf("can't create temporary file: %s", err)
+	}
+	defer func() {
+		if err := os.Remove(tmpFile.Name()); err != nil && !os.IsNotExist(err) {
+			log.Warnf("failed to remove temporary file (%s), error: %s", tmpFile.Name(), err)
+		}
+	}()
+
+	if _, err := io.Copy(tmpFile, contents); err != nil {
+		return fmt.Errorf("error while writing to temp file, error: %v", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("can't close temporary file, error: %s", err)
+	}
+	if err := os.Chmod(tmpFile.Name(), info.Mode()); err != nil {
+		return fmt.Errorf("can't set the permissions of the temporary file, error: %s", err)
+	}
+	if err := os.Rename(tmpFile.Name(), path); err != nil {
+		return fmt.Errorf("can't replace file (%s), error: %s", path, err)
+	}
+
+	return nil
 }
 
-func assetName(goos string) string {
-	return fmt.Sprintf("bitrise-%s-x86_64", strings.ToUpper(goos[:1])+goos[1:])
+func (u updater) binaryURL(version, goos, goarch string) (string, error) {
+	asset, err := assetName(goos, goarch)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s/v%s/%s", u.releasesBaseURL, version, asset), nil
+}
+
+func assetName(goos, goarch string) (string, error) {
+	var arch string
+	switch goarch {
+	case "amd64":
+		arch = "x86_64"
+	case "arm64":
+		arch = "arm64"
+	default:
+		return "", fmt.Errorf("no Bitrise CLI release is published for %s/%s", goos, goarch)
+	}
+
+	return fmt.Sprintf("bitrise-%s-%s", strings.ToUpper(goos[:1])+goos[1:], arch), nil
 }
 
 func update(cmd *cobra.Command) error {

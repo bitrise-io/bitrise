@@ -2,9 +2,14 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/bitrise-io/bitrise/v2/version"
 	ver "github.com/hashicorp/go-version"
@@ -165,14 +170,72 @@ func TestMajorUpdateCommand(t *testing.T) {
 }
 
 func TestAssetName(t *testing.T) {
-	require.Equal(t, "bitrise-Darwin-x86_64", assetName("darwin"))
-	require.Equal(t, "bitrise-Linux-x86_64", assetName("linux"))
+	tests := []struct {
+		goos   string
+		goarch string
+		want   string
+	}{
+		{goos: "darwin", goarch: "amd64", want: "bitrise-Darwin-x86_64"},
+		{goos: "darwin", goarch: "arm64", want: "bitrise-Darwin-arm64"},
+		{goos: "linux", goarch: "amd64", want: "bitrise-Linux-x86_64"},
+		{goos: "linux", goarch: "arm64", want: "bitrise-Linux-arm64"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.want, func(t *testing.T) {
+			asset, err := assetName(test.goos, test.goarch)
+
+			require.NoError(t, err)
+			require.Equal(t, test.want, asset)
+		})
+	}
+}
+
+func TestAssetNameOfAnArchitectureWeDoNotPublish(t *testing.T) {
+	_, err := assetName("linux", "386")
+
+	require.EqualError(t, err, "no Bitrise CLI release is published for linux/386")
 }
 
 func TestUpdaterBinaryURL(t *testing.T) {
-	require.Equal(t,
-		"https://github.com/bitrise-io/bitrise/releases/download/v2.45.0/bitrise-Darwin-x86_64",
-		newUpdater().binaryURL("2.45.0", "darwin"))
+	url, err := newUpdater().binaryURL("2.45.0", "darwin", "arm64")
+
+	require.NoError(t, err)
+	require.Equal(t, "https://github.com/bitrise-io/bitrise/releases/download/v2.45.0/bitrise-Darwin-arm64", url)
+}
+
+func TestReplaceBinary(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.WriteFile(path, []byte("old binary"), 0755))
+
+	require.NoError(t, replaceBinary(path, strings.NewReader("new binary")))
+
+	contents, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Equal(t, "new binary", string(contents))
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0755), info.Mode().Perm())
+
+	requireOnlyFile(t, dir, "bitrise")
+}
+
+func TestReplaceBinaryKeepsTheOriginalWhenTheDownloadFails(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bitrise")
+	require.NoError(t, os.WriteFile(path, []byte("old binary"), 0755))
+
+	err := replaceBinary(path, iotest.ErrReader(errors.New("connection reset")))
+
+	require.ErrorContains(t, err, "connection reset")
+
+	contents, readErr := os.ReadFile(path)
+	require.NoError(t, readErr)
+	require.Equal(t, "old binary", string(contents))
+
+	requireOnlyFile(t, dir, "bitrise")
 }
 
 // Tags are served in the given order, and prefixed with "v", the way the GitHub
@@ -197,6 +260,19 @@ func testUpdater(t *testing.T, tags ...string) updater {
 	u.isBrewInstall = func() (bool, error) { return false, nil }
 
 	return u
+}
+
+func requireOnlyFile(t *testing.T, dir, name string) {
+	t.Helper()
+
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+	require.Equal(t, []string{name}, names)
 }
 
 func setVersion(t *testing.T, v string) {
