@@ -558,10 +558,10 @@ func validateStringOrRegexType(idx int, field string, value interface{}) error {
 }
 
 func stringFromTriggerCondition(value interface{}) string {
-	if value == nil {
-		return ""
-	}
-	return value.(string)
+	// A trigger condition can be a plain string literal or a hash with a single
+	// 'regex' key. stringLiteralOrRegex handles both shapes (and nil), returning
+	// the matching string without panicking on regex-map conditions.
+	return stringLiteralOrRegex(value)
 }
 
 func stringLiteralOrRegex(value interface{}) string {
