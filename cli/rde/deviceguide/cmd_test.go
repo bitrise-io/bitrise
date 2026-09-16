@@ -58,19 +58,22 @@ func TestDeviceGuide_NoMirrorHeader(t *testing.T) {
 	}
 }
 
-// TestDeviceGuide_RejectsJSON: the inherited --format json has no shape for
-// a Markdown guide, so the command must refuse it instead of printing raw
-// Markdown where a caller expects a JSON object.
-func TestDeviceGuide_RejectsJSON(t *testing.T) {
-	for _, args := range [][]string{nil, {"ios"}} {
-		stdout, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{Args: args, Format: output.FormatJSON})
-		if err == nil || !strings.Contains(err.Error(), "json") {
-			t.Errorf("args %v: error = %v, want --format json rejection", args, err)
-		}
-		// cobra echoes the usage on error; the guide body itself must not
-		// have been printed.
-		if strings.Contains(stdout, "PREVIEW_DEVICE_STATE_READY") || strings.Contains(stdout, "serve-sim") {
-			t.Errorf("args %v: guide must not be printed when --format json is rejected:\n%s", args, stdout)
+// TestDeviceGuide_RejectsNonRawFormat: the inherited --format flag has no
+// structured shape for a Markdown guide, so the command must refuse any
+// non-raw format instead of printing raw Markdown where a caller expects a
+// JSON/YAML object — matching `session logs`'s rejection.
+func TestDeviceGuide_RejectsNonRawFormat(t *testing.T) {
+	for _, format := range []string{output.FormatJSON, output.FormatYML} {
+		for _, args := range [][]string{nil, {"ios"}} {
+			stdout, _, err := cmdtest.Run(t, NewCmd(), cmdtest.Opts{Args: args, Format: format})
+			if err == nil || !strings.Contains(err.Error(), format) {
+				t.Errorf("format %s, args %v: error = %v, want a --format %s rejection", format, args, err, format)
+			}
+			// cobra echoes the usage on error; the guide body itself must not
+			// have been printed.
+			if strings.Contains(stdout, "PREVIEW_DEVICE_STATE_READY") || strings.Contains(stdout, "serve-sim") {
+				t.Errorf("format %s, args %v: guide must not be printed when rejected:\n%s", format, args, stdout)
+			}
 		}
 	}
 }

@@ -64,8 +64,8 @@ device to be ready ('rde session view'), connect, drive it efficiently
 (accessibility tree first, then input), let a human watch, and what never to
 do. Pass ios or android for that platform's specifics.
 
-The guide is Markdown prose; --format json is rejected (there is no
-single-object JSON shape for it).`,
+The guide is Markdown prose; --format json/yml is rejected (there is no
+single-object shape for it).`,
 		Example: `  bitrise rde device-guide
   bitrise rde device-guide ios
   bitrise rde device-guide android`,
@@ -76,10 +76,11 @@ single-object JSON shape for it).`,
 			if err := output.ConfigureOutputFormat(format); err != nil {
 				return fmt.Errorf("failed to configure output format: %w", err)
 			}
-			// The inherited --format flag has no JSON shape here: the guide
-			// is Markdown prose, not a single object (mirrors `session logs`).
-			if output.Format == output.FormatJSON {
-				return fmt.Errorf("device-guide prints Markdown; --format json is not supported")
+			// The inherited --format flag has no structured shape here: the
+			// guide is Markdown prose, not a single object (mirrors `session
+			// logs`, which rejects the same way).
+			if output.Format != output.FormatRaw {
+				return fmt.Errorf("device-guide cannot be combined with --format %s (it prints Markdown, not a single object)", output.Format)
 			}
 			body := guideDeviceSessions
 			if len(args) == 1 {
