@@ -90,7 +90,6 @@ func TestPrependPaths(t *testing.T) {
 	}
 }
 
-
 func TestConvertToEnvMap(t *testing.T) {
 	// Use a static PATH for the duraton of tests
 	t.Setenv("PATH", "/usr/bin:/bin")
@@ -146,6 +145,24 @@ func TestConvertToEnvMap(t *testing.T) {
 			expected: map[string]string{
 				"NODE_ENV": "development",
 				"PATH":     "/usr/local/bin:/usr/bin:/bin",
+			},
+		},
+		{
+			name: "same path contributed by multiple activations",
+			activations: []provider.EnvironmentActivation{
+				{
+					ContributedEnvVars: map[string]string{"ASDF_NODEJS_VERSION": "22.23.2"},
+					ContributedPaths:   []string{"/home/user/.asdf/shims"},
+				},
+				{
+					ContributedEnvVars: map[string]string{"ASDF_RUBY_VERSION": "3.4.1"},
+					ContributedPaths:   []string{"/home/user/.asdf/shims"},
+				},
+			},
+			expected: map[string]string{
+				"ASDF_NODEJS_VERSION": "22.23.2",
+				"ASDF_RUBY_VERSION":   "3.4.1",
+				"PATH":                "/home/user/.asdf/shims:/usr/bin:/bin",
 			},
 		},
 		{
@@ -241,7 +258,7 @@ func TestConvertToEnvMap(t *testing.T) {
 			// 	pathPtr = &tt.pathEnv
 			// }
 
-			result := ConvertToEnvMap(tt.activations) 
+			result := ConvertToEnvMap(tt.activations)
 
 			assert.Equal(t, tt.expected, result)
 		})
