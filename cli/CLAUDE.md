@@ -104,7 +104,9 @@ to the group's `utils.go` only when a second command renders the same type
   `SLUG` is `$BITRISE_APP_SLUG`, which Bitrise sets in every build.
 - **Workspace**, never organization, org or owner. `rde template`'s `OWNER` column is
   the creator's email, a different thing.
-- Singular nouns. Verbs: `trigger` not create, `abort` not cancel, `view`, `list`.
+- Singular nouns. CRUD verbs: `create`, `update`, `delete`, `list`, `view`. `build`
+  (and `local`) uses `trigger` instead of `create` to start a run, and `abort`
+  instead of `cancel` to stop one.
 - `Use`, `Short` and `Example` always. Add `Long` only for an example, a precedence
   rule or a surprise - cobra already prints the flags.
 
