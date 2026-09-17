@@ -36,7 +36,7 @@ workflows:
     - STEP_GIT_CLONE_URL:
     description: |-
       If this is the first time you try to share a Step you should
-      first call: $ bitrise share
+      first call: $ bitrise step share
 
       This will print you a guide, and information about how Step sharing
       works. Please read it at least once!
@@ -51,7 +51,7 @@ workflows:
       the `STEP_ID_IN_STEPLIB` and `STEP_GIT_VERION_TAG_TO_SHARE`
       environments are set to the desired values!
 
-      To share this Step into a StepLib you can just run: $ bitrise run share-this-step
+      To share this Step into a StepLib you can just run: $ bitrise local run share-this-step
 
       Once it finishes the only thing left is to actually create a Pull Request,
       the way described in the guide printed at the end of the process.
@@ -63,8 +63,8 @@ workflows:
             set -e
             set -x
 
-            bitrise share start -c ${MY_STEPLIB_REPO_FORK_GIT_URL}
+            bitrise step share start -c ${MY_STEPLIB_REPO_FORK_GIT_URL}
 
-            bitrise share create --stepid ${STEP_ID_IN_STEPLIB} --tag ${STEP_GIT_VERION_TAG_TO_SHARE} --git ${STEP_GIT_CLONE_URL}
+            bitrise step share create --stepid ${STEP_ID_IN_STEPLIB} --tag ${STEP_GIT_VERION_TAG_TO_SHARE} --git ${STEP_GIT_CLONE_URL}
 
-            bitrise share finish
+            bitrise step share finish

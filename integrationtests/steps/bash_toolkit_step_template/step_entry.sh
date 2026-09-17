@@ -5,7 +5,7 @@ echo "This is the value specified for the input 'example_step_input': ${example_
 #
 # --- Export Environment Variables for other Steps:
 # You can export Environment Variables for other Steps with
-#  envman, which is automatically installed by `bitrise setup`.
+#  envman, which is automatically installed by `bitrise local setup`.
 # A very simple example:
 #  envman add --key EXAMPLE_STEP_OUTPUT --value 'the value you want to share'
 # Envman can handle piped inputs, which is useful if the text you want to
