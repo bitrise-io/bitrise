@@ -338,6 +338,50 @@ func TestValidateCmd_FormatFlagOutranksTheGlobalOutputDefault(t *testing.T) {
 	assert.Contains(t, stdout, `"is_valid":true`)
 }
 
+func TestValidateCmd_InvalidConfigStillPrintsTheResult(t *testing.T) {
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":["missing format_version"],"warnings":[]}`))
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(locallyInvalidConfig)))
+	require.NoError(t, cmd.Flags().Set(cmdutil.FormatKey, output.FormatJSON))
+
+	var err error
+	stdout := captureStdout(t, func() { err = cmd.RunE(cmd, nil) })
+
+	require.ErrorIs(t, err, errValidationFailed)
+	assert.Empty(t, err.Error(), "the root must not print a second error line over the rendered result")
+	assert.Contains(t, stdout, `"is_valid":false`)
+	assert.Contains(t, stdout, "missing format_version")
+}
+
+func TestValidateCmd_UnsupportedFormatFails(t *testing.T) {
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigBase64Key, encode(validConfig)))
+	require.NoError(t, cmd.Flags().Set(cmdutil.FormatKey, "bogus"))
+
+	var err error
+	stdout := captureStdout(t, func() { err = cmd.RunE(cmd, nil) })
+
+	require.ErrorIs(t, err, errValidationFailed)
+	assert.Contains(t, stdout, "Invalid format: bogus")
+}
+
+func TestValidateCmd_EmptyStdinFails(t *testing.T) {
+	cmd, _ := newTestValidateCommand(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"errors":[],"warnings":[]}`))
+	})
+	cmd.SetIn(strings.NewReader(""))
+	require.NoError(t, cmd.Flags().Set(cmdutil.ConfigKey, stdinPath))
+
+	var err error
+	stdout := captureStdout(t, func() { err = cmd.RunE(cmd, nil) })
+
+	require.ErrorIs(t, err, errValidationFailed)
+	assert.Contains(t, stdout, "No config received on stdin")
+}
+
 func encode(s string) string {
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }

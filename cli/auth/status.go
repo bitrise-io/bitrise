@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -40,7 +41,7 @@ Sources, in precedence order:
 
 			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 			if err := output.ConfigureOutputFormat(format); err != nil {
-				cmdutil.Failf("Failed to configure output format, error: %s", err)
+				return fmt.Errorf("failed to configure output format: %w", err)
 			}
 
 			s, err := currentStatus()

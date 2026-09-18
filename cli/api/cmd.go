@@ -72,7 +72,9 @@ Unlike every other cloud command, this one has no --format flag, so -f is
 			resolvedMethod := strings.ToUpper(method)
 			if resolvedMethod == "" {
 				resolvedMethod = http.MethodGet
-				if len(kvFields) > 0 || body != nil {
+				// --all only works over GET, so fields asked for alongside it
+				// are filters for the list being paged, not a body.
+				if !all && (len(kvFields) > 0 || body != nil) {
 					resolvedMethod = http.MethodPost
 				}
 			}

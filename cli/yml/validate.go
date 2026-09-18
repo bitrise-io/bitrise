@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
@@ -30,6 +29,13 @@ const fileKey = "file"
 
 // stdinPath is the config path that means "read the config from stdin".
 const stdinPath = "-"
+
+// errValidationFailed exits non-zero without printing anything further:
+// validate already rendered the failure in the requested format, and a second
+// "Error:" line on top of that would corrupt `--format json`. cli/root.go
+// returns the same empty error for the same reason — cmdutil.Failf prints
+// nothing when the message is empty.
+var errValidationFailed = errors.New("")
 
 // NewValidateCommand ...
 func NewValidateCommand() *cobra.Command {
@@ -446,7 +452,7 @@ func validate(cmd *cobra.Command, _ []string) error {
 		log = cmdutil.NewDefaultYAMLLogger()
 	default:
 		log.Print(NewValidationError(fmt.Sprintf("Invalid format: %s", format)))
-		os.Exit(1)
+		return errValidationFailed
 	}
 
 	// A "-" path feeds stdin through the base64 channel, so both the online and
@@ -458,11 +464,11 @@ func validate(cmd *cobra.Command, _ []string) error {
 			stdinConfig, err := io.ReadAll(cmd.InOrStdin())
 			if err != nil {
 				log.Print(NewValidationError(fmt.Sprintf("Failed to read the config from stdin: %s", err)))
-				os.Exit(1)
+				return errValidationFailed
 			}
 			if len(stdinConfig) == 0 {
 				log.Print(NewValidationError("No config received on stdin"))
-				os.Exit(1)
+				return errValidationFailed
 			}
 			bitriseConfigBase64Data = base64.StdEncoding.EncodeToString(stdinConfig)
 		}
@@ -479,13 +485,13 @@ func validate(cmd *cobra.Command, _ []string) error {
 
 	if err != nil {
 		log.Print(NewValidationError(err.Error(), warnings...))
-		os.Exit(1)
+		return errValidationFailed
 	}
 
 	log.Print(NewValidationResponse(*validation, warnings...))
 
 	if !validation.IsValid() {
-		os.Exit(1)
+		return errValidationFailed
 	}
 
 	return nil

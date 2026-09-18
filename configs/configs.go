@@ -327,6 +327,12 @@ func saveGlobalConfig(mutate func(*internalconfig.Config) error) error {
 // internalconfig.Lock. saveLegacyConfig's read-modify-write of the legacy
 // ~/.bitrise/config.json above is not — a second concurrent call here can
 // still drop this call's update to that file.
+//
+// When the legacy file exists it is the authoritative one and has already
+// been written by the time config.yml is touched, so a failing sync is warned
+// about rather than returned: reporting a failure would misdescribe a write
+// that did land. With no legacy file, config.yml is the only target, and its
+// failure is the caller's to handle.
 func saveConfig(existed bool, legacy ConfigModel, mutate func(*internalconfig.Config) error) error {
 	if existed {
 		if err := saveLegacyConfig(legacy); err != nil {

@@ -78,7 +78,7 @@ Target host:
 				}
 			}
 
-			if err := cmdutil.CheckPasswordStdinPiped(passwordStdin, cmdutil.IsTerminal(cmd.InOrStdin()), "bitrise user create --email <email>"); err != nil {
+			if err := cmdutil.CheckPasswordStdinPiped(passwordStdin, cmdutil.IsTerminal(cmd.InOrStdin()), "bitrise user create --email <email> --username <username> --first-name <first> --last-name <last>"); err != nil {
 				return err
 			}
 			pw, err := cmdutil.ReadPasswordInput(cmd.InOrStdin(), cmd.ErrOrStderr(), "Choose a password: ", passwordStdin)

@@ -148,6 +148,34 @@ func TestCmd_AllMergesPages(t *testing.T) {
 	assert.Equal(t, []any{float64(1), float64(2)}, got["data"])
 }
 
+func TestCmd_AllKeepsFieldsOnAGet(t *testing.T) {
+	var gotMethod, gotSortBy string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotSortBy = r.URL.Query().Get("sort_by")
+		_, _ = w.Write([]byte(`{"data":[1],"paging":{"next":""}}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	cmd, _ := newTestCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("all", "true"))
+	require.NoError(t, cmd.Flags().Set("field", "sort_by=last_build_at"))
+	require.NoError(t, cmd.RunE(cmd, []string{"/apps"}))
+
+	assert.Equal(t, http.MethodGet, gotMethod)
+	assert.Equal(t, "last_build_at", gotSortBy)
+}
+
+func TestCmd_AllWithExplicitNonGetIsRejected(t *testing.T) {
+	cmd, _ := newTestCmd(t, "http://127.0.0.1:0")
+	require.NoError(t, cmd.Flags().Set("all", "true"))
+	require.NoError(t, cmd.Flags().Set("method", "post"))
+
+	err := cmd.RunE(cmd, []string{"/apps"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--all is only supported for GET requests")
+}
+
 func TestCmd_FieldAndInputMutuallyExclusive(t *testing.T) {
 	cmd := NewCmd()
 	cmd.SetArgs([]string{"/apps", "--field", "a=b", "--input", "-"})
