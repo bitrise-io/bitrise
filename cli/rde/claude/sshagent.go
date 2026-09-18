@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 // ensureAgentHasKey is an rde-claude-only convenience. The in-session git

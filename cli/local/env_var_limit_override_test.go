@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/analytics/analyticstest"
+	"github.com/bitrise-io/bitrise/v3/analytics/analyticstest"
 	"github.com/bitrise-io/envman/v2/envman"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/stretchr/testify/require"

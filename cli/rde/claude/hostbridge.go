@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
 )
 
 // transferActionTimeout caps the download/upload host actions. A single archive

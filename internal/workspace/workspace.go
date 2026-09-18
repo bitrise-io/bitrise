@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
 )
 
 // EnvWorkspaceID supplies the workspace when --workspace isn't passed. Bitrise

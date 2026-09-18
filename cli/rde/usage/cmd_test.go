@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // sparseReport mimics the backend's proto3 JSON: zero-valued fields and empty

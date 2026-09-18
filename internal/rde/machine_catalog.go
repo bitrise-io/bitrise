@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // Stack is a machine stack available in the workspace. The ID is the stable

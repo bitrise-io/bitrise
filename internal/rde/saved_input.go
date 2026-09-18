@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // SavedInput is the CLI-facing saved-input record. `Value` is masked by

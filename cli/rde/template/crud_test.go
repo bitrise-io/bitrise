@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
 )
 
 // uuidTemplateID is a UUID-shaped template arg. Real RDE template IDs are

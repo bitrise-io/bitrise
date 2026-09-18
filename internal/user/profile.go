@@ -3,7 +3,7 @@ package user
 import (
 	"context"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 // Profile is the CLI representation of the authenticated user.

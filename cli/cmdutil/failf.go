@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/internal/style"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 // Failf prints a formatted error to stderr and exits the process with status

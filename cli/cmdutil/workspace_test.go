@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
-	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // A bare command has a nil Context(), which must read as "no default set"

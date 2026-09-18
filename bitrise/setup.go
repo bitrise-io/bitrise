@@ -6,10 +6,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/plugins"
+	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/stepman/toolkits"
 )

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rde/localsession"
+	"github.com/bitrise-io/bitrise/v3/internal/rde/localsession"
 )
 
 func TestParseAITitle(t *testing.T) {

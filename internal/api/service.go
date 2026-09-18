@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 // KeyValue is one --field key=value pair.

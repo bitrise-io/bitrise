@@ -3,7 +3,7 @@ package corelog_test
 import (
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/log/corelog"
+	"github.com/bitrise-io/bitrise/v3/log/corelog"
 )
 
 func ExampleLogger() {

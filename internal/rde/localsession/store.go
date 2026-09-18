@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
 )
 
 // Record is one resumable `rde claude` session. JSON tags define the on-disk

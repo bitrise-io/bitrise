@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil/picker"
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/internal/workspace"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil/picker"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/workspace"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // FlagWorkspace is the workspace a command acts on.

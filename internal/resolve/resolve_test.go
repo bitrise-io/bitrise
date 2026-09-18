@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/cache"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/cache"
 )
 
 func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {

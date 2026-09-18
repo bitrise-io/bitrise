@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
 	"github.com/spf13/cobra"
 )
 

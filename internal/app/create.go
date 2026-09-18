@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/workspace"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/workspace"
 )
 
 // DefaultStackID is the stack used by Create when opts.StackID is empty. Any

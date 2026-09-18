@@ -3,8 +3,8 @@ package nixpkgs
 import (
 	"os/exec"
 
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 const (

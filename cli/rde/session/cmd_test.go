@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
 )
 
 func TestParentCmd_DelegatesToList(t *testing.T) {

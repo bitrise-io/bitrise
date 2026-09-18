@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/bitrise-io/bitrise/v2/internal/webclient"
+	"github.com/bitrise-io/bitrise/v3/internal/webclient"
 )
 
 func TestSignup_HappyPath(t *testing.T) {

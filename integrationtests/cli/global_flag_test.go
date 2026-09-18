@@ -6,8 +6,8 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )

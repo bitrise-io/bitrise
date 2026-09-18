@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/log"
 	stepman "github.com/bitrise-io/stepman/cli"
 	"github.com/bitrise-io/stepman/preload"
 	"github.com/spf13/cobra"

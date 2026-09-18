@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 func TestProfileService_Me(t *testing.T) {

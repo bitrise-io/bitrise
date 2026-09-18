@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
+	internalconfig "github.com/bitrise-io/bitrise/v3/internal/config"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/stretchr/testify/require"
 )

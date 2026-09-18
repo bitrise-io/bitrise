@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
+	internalconfig "github.com/bitrise-io/bitrise/v3/internal/config"
 )
 
 func TestListCmd_Empty(t *testing.T) {

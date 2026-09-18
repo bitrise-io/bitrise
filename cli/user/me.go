@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internaluser "github.com/bitrise-io/bitrise/v2/internal/user"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internaluser "github.com/bitrise-io/bitrise/v3/internal/user"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // NewMeCommand returns the `user me` subcommand.

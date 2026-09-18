@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/alias"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 	"github.com/stretchr/testify/assert"
 )
 

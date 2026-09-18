@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // sessionResponse is an httptest handler returning a running session whose VNC

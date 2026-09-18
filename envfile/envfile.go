@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/colorstring"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"gopkg.in/yaml.v3"

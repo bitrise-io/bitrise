@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 // Build is the CLI-facing build record. JSON/YAML tags define the stable

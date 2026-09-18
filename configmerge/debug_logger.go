@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/log"
 )
 
 const timestampLayout = "15:04:05"

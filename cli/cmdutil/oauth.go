@@ -3,8 +3,8 @@ package cmdutil
 import (
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/internal/oauth"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/oauth"
 )
 
 // Env vars overriding the OAuth defaults below — rarely changed, mostly for

@@ -6,10 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 func newDiffCmd() *cobra.Command {

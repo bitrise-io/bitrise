@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 var validCreateArgs = []string{"--email", "a@b.io", "--username", "alice", "--first-name", "Alice", "--last-name", "L"}

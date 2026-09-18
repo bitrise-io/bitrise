@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalconfig "github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 func Test_loggerParameters(t *testing.T) {

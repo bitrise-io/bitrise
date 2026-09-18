@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rde/localsession"
+	"github.com/bitrise-io/bitrise/v3/internal/rde/localsession"
 )
 
 // DefaultMetadataInterval is how often ClaudeMetadataMonitor polls the session

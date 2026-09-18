@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
 	"gopkg.in/yaml.v2"
 )
 

@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/stretchr/testify/require"
 )
 

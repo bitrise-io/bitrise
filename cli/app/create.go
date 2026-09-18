@@ -11,11 +11,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/configs"
-	internalapp "github.com/bitrise-io/bitrise/v2/internal/app"
-	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	internalapp "github.com/bitrise-io/bitrise/v3/internal/app"
+	internalconfig "github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // createFlags bundles app create's parsed flag values so runCreate can take

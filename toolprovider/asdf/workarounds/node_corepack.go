@@ -3,7 +3,7 @@ package workarounds
 import (
 	"fmt"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/asdf/execenv"
 )
 
 // When installing a new Node.js version, the `corepack` executable is missing until we reshim the installed version.

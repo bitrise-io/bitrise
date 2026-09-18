@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise/execenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

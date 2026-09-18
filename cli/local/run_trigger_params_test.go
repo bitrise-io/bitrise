@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/stretchr/testify/require"
 )
 

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
-	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
+	"github.com/bitrise-io/bitrise/v3/internal/baseurl"
+	"github.com/bitrise-io/bitrise/v3/internal/stringutil"
 )
 
 const defaultTimeout = 30 * time.Second

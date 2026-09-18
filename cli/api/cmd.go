@@ -12,8 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalapi "github.com/bitrise-io/bitrise/v2/internal/api"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalapi "github.com/bitrise-io/bitrise/v3/internal/api"
 )
 
 // NewCmd returns the `api` command: a generic, curl-like authenticated

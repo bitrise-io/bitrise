@@ -8,7 +8,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/log"
 	"golang.org/x/term"
 )
 

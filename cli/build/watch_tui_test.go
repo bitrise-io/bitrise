@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	internalbuild "github.com/bitrise-io/bitrise/v2/internal/build"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
+	internalbuild "github.com/bitrise-io/bitrise/v3/internal/build"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 // The TUI used to print each log line with tea.Batch, which bubbletea runs

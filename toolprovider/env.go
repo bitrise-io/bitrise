@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 

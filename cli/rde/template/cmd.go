@@ -3,7 +3,7 @@ package template
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 // NewCmd returns the `bitrise rde template` parent command.

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // IsNotFound reports whether err is an RDE API 404 — the resource was deleted

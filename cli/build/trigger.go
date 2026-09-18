@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalbuild "github.com/bitrise-io/bitrise/v2/internal/build"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalbuild "github.com/bitrise-io/bitrise/v3/internal/build"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // NewTriggerCommand returns the `build trigger` subcommand.

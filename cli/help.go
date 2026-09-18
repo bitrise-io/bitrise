@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/plugins"
 )
 
 // printInstalledPlugins appends the installed plugin list to the root help.

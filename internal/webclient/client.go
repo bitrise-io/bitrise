@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
-	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/bitrise-io/bitrise/v3/internal/baseurl"
+	"github.com/bitrise-io/bitrise/v3/version"
 )
 
 // defaultTimeout bounds a single request against app.bitrise.io, mirroring

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	clianalytics "github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	clianalytics "github.com/bitrise-io/bitrise/v3/analytics"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/stepman/activator"
 	"github.com/bitrise-io/stepman/toolkits"

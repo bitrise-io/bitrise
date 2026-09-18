@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/log"
 )
 
 func NewLogoutCommand() *cobra.Command {

@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/nixpkgs"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/workarounds"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise/nixpkgs"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise/workarounds"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 // We pin one Mise version because:

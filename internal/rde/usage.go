@@ -3,7 +3,7 @@ package rde
 import (
 	"context"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // PlatformUsage aggregates active sessions on one OS platform. Always dense:

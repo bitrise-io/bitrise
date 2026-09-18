@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/analytics"
+	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

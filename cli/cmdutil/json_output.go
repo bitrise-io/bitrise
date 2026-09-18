@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // Logger ...

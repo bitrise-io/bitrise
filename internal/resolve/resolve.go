@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
-	"github.com/bitrise-io/bitrise/v2/internal/cache"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/cache"
 )
 
 // Resolver maps a display name to an app slug.

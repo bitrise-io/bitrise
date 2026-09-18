@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
 )
 
 // loginTimeout bounds the whole browser round-trip.
