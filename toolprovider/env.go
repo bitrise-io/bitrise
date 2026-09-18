@@ -20,12 +20,17 @@ func ConvertToEnvMap(activations []provider.EnvironmentActivation) map[string]st
 		}
 	}
 
+	// Providers can contribute the same dir for every activated tool (asdf contributes its shims dir),
+	// so the same entry must not end up in $PATH multiple times.
 	var newPathEntries []string
+	seenPaths := map[string]bool{}
 	for _, act := range activations {
 		for _, p := range act.ContributedPaths {
-			if p != "" {
-				newPathEntries = append(newPathEntries, p)
+			if p == "" || seenPaths[p] {
+				continue
 			}
+			seenPaths[p] = true
+			newPathEntries = append(newPathEntries, p)
 		}
 	}
 

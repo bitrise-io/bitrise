@@ -14,7 +14,7 @@ workflows:
           inputs:
             - content: |
                 set -ex
-                node --version | grep -q "22"
+                node --version | grep -Eq "^v22\\."
                 npm install -g @expo/cli
   node_corepack_test:
     steps:
