@@ -39,14 +39,18 @@ type StepSearchOptions struct {
 	Maintainers []string
 }
 
+// params encodes the list filters with the `[]` suffix Rails' strong
+// parameters require: a bare repeated key arrives as a String, which
+// `permit(categories: [], maintainers: [])` drops, silently disabling the
+// filter.
 func (o StepSearchOptions) params() url.Values {
 	p := url.Values{}
 	p.Set("query", o.Query)
 	for _, c := range o.Categories {
-		p.Add("categories", c)
+		p.Add("categories[]", c)
 	}
 	for _, m := range o.Maintainers {
-		p.Add("maintainers", m)
+		p.Add("maintainers[]", m)
 	}
 	return p
 }

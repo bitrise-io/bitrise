@@ -21,15 +21,15 @@ func TestSearchSteps_PassesAuthHeaderAndQuery(t *testing.T) {
 
 	_, err := newAPIClient(t, srv.URL, "my-token").SearchSteps(context.Background(), StepSearchOptions{
 		Query:       "clone",
-		Categories:  []string{"utility"},
+		Categories:  []string{"utility", "build"},
 		Maintainers: []string{"bitrise"},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "/search-steps", gotPath)
 	assert.Equal(t, "token my-token", gotAuth)
 	assert.Equal(t, []string{"clone"}, gotQuery["query"])
-	assert.Equal(t, []string{"utility"}, gotQuery["categories"])
-	assert.Equal(t, []string{"bitrise"}, gotQuery["maintainers"])
+	assert.Equal(t, []string{"utility", "build"}, gotQuery["categories[]"])
+	assert.Equal(t, []string{"bitrise"}, gotQuery["maintainers[]"])
 }
 
 func TestSearchSteps_ParsesResponse(t *testing.T) {
