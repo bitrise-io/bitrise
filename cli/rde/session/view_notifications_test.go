@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 func TestViewCmd_HappyPath(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
 )
 
 // Claude Code auth env-var names — also the saved-input keys the RDE control

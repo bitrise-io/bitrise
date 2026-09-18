@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/versionsort"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/versionsort"
 	"github.com/hashicorp/go-version"
 )
 

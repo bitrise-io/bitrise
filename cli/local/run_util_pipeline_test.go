@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/bitrise"
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/bitrise"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 const validStagedPipeline = `

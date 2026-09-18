@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/analytics/analyticstest"
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/analytics/analyticstest"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 // TestMain installs a no-op analytics tracker: RunE calls

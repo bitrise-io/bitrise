@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

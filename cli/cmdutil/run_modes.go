@@ -4,9 +4,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v3/analytics"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 

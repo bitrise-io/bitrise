@@ -24,7 +24,7 @@ Use these values throughout — do not assume them from memory.
 
 ## Step 0: Preflight (run in parallel)
 
-- Confirm `go.mod` contains `module github.com/bitrise-io/bitrise/v2`. If not, ask the user to `cd` to the repo root and stop.
+- Confirm `go.mod` contains `module github.com/bitrise-io/bitrise/v3`. If not, ask the user to `cd` to the repo root and stop.
 - Working tree must be clean. If dirty, ask: continue or abort (recommend abort).
 - Verify `gh`, `gcloud`, `shasum`, and `git` are on PATH. List all missing and stop if any.
 - Verify an active gcloud account exists. If not, instruct the user to run `gcloud auth login` and stop.

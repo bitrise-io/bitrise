@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 
-	"github.com/bitrise-io/bitrise/v2/cli"
+	"github.com/bitrise-io/bitrise/v3/cli"
 )
 
 const (

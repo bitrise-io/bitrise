@@ -1,4 +1,4 @@
-module github.com/bitrise-io/bitrise/v2
+module github.com/bitrise-io/bitrise/v3
 
 go 1.25.11
 

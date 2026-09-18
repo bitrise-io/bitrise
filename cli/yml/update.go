@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalyml "github.com/bitrise-io/bitrise/v2/internal/yml"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalyml "github.com/bitrise-io/bitrise/v3/internal/yml"
 )
 
 // NewUpdateCommand returns the `yml update` subcommand.

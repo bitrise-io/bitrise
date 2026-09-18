@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 // GetResult holds the retrieved bitrise.yml content.

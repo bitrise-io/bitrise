@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/internal/style"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 func TestSpinnerModel_ViewShowsLabelAndStatus(t *testing.T) {

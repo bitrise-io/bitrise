@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/stretchr/testify/require"
 )
 

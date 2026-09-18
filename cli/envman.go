@@ -3,7 +3,7 @@ package cli
 import (
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/spf13/cobra"
 )

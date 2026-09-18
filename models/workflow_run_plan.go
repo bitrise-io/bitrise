@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/bitrise-io/bitrise/v3/version"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )

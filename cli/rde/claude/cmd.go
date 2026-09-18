@@ -16,10 +16,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalapp "github.com/bitrise-io/bitrise/v2/internal/app"
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
-	"github.com/bitrise-io/bitrise/v2/internal/rde/localsession"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalapp "github.com/bitrise-io/bitrise/v3/internal/app"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/internal/rde/localsession"
 )
 
 // The command provisions a templateless session from a chosen stack + machine

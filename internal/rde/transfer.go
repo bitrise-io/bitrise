@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v3/internal/rdeapi"
 )
 
 // gcsHTTPTimeout caps each cloud-storage transfer leg (PUT during upload,

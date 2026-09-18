@@ -7,9 +7,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/bitrise-io/bitrise/v2/envfile"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envfile"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 	"github.com/bitrise-io/goinp/goinp"
 )

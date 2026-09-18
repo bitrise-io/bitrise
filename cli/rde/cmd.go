@@ -3,14 +3,14 @@ package rde
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/claude"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/machinetype"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/savedinput"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/session"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/stack"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/template"
-	"github.com/bitrise-io/bitrise/v2/cli/rde/usage"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/claude"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/machinetype"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/savedinput"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/session"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/stack"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/template"
+	"github.com/bitrise-io/bitrise/v3/cli/rde/usage"
 )
 
 // NewCmd returns the `bitrise rde` parent command.

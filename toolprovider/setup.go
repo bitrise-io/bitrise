@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/versionfile"
+	"github.com/bitrise-io/bitrise/v3/analytics"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/versionfile"
 )
 
 // RunVersionFileSetup installs tools from version files.

@@ -7,8 +7,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 // parseLabelFlags converts repeatable key=value flag values into a label

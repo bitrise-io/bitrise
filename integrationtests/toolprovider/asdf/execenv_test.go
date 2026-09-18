@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/asdf/execenv"
 	"github.com/stretchr/testify/assert"
 )
 

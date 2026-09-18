@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // testSessionID is UUID-shaped so ResolveSessionID short-circuits without a

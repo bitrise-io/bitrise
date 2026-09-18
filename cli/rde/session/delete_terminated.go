@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 // deleteTerminatedResult is the --format json/yml shape: {"deleted_count": N}.

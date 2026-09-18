@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/baseurl"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/internal/baseurl"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 const (

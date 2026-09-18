@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
 )
 
 func TestRunLogout_ClearsAuthFile(t *testing.T) {

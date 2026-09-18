@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/hashicorp/go-retryablehttp"
 )
 

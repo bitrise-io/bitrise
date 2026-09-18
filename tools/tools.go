@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/log"
 	envman "github.com/bitrise-io/envman/v2/cli"
 	envmanEnv "github.com/bitrise-io/envman/v2/env"
 	envmanModels "github.com/bitrise-io/envman/v2/models"

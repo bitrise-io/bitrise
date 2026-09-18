@@ -6,7 +6,7 @@ package savedinput
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 )
 
 // NewCmd returns the `bitrise rde saved-input` parent command.

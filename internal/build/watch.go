@@ -9,7 +9,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
 
 // Watch streams the build log to w using the API's delta-log protocol,

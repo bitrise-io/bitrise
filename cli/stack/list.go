@@ -6,10 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	internalstack "github.com/bitrise-io/bitrise/v2/internal/stack"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
-	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	internalstack "github.com/bitrise-io/bitrise/v3/internal/stack"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
+	"github.com/bitrise-io/bitrise/v3/output"
 )
 
 func NewListCommand() *cobra.Command {

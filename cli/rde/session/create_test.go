@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdtest"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdtest"
 )
 
 func TestCreateCmd_RequiresTemplateAndName(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
+	"github.com/bitrise-io/bitrise/v3/internal/stringutil"
 )
 
 // tokenResponse covers both the WorkOS token endpoint (code→JWT, refresh) and

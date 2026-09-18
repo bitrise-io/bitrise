@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/alias"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 // ToolVersion represents a tool and its version from a version file, such as .tool-versions, .ruby-version, etc.

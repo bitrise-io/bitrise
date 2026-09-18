@@ -6,9 +6,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/asdf/execenv"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/asdf"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/asdf/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise"
 )
 
 // InstalledTool represents an installed tool with its versions.

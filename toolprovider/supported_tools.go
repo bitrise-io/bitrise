@@ -3,8 +3,8 @@ package toolprovider
 import (
 	"slices"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/alias"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/alias"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 // ToolInfo describes a supported tool: its canonical name and any accepted

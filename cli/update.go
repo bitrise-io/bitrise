@@ -11,10 +11,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/bitrise"
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/bitrise-io/bitrise/v3/bitrise"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/spf13/cobra"
 )

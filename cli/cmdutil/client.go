@@ -4,8 +4,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
-	"github.com/bitrise-io/bitrise/v2/internal/bitriseapi"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 	"github.com/spf13/cobra"
 )
 

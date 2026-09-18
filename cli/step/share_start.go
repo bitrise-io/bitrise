@@ -3,8 +3,8 @@ package step
 import (
 	"os"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/tools"
 	"github.com/spf13/cobra"
 )
 

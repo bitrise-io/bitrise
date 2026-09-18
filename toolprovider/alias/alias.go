@@ -3,7 +3,7 @@ package alias
 import (
 	"slices"
 
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 var toolAliasMap = map[provider.ToolID]provider.ToolID{

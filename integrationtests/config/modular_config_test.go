@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
-	"github.com/bitrise-io/bitrise/v2/models"
+	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/require"
 )

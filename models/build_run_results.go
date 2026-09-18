@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/exitcode"
+	"github.com/bitrise-io/bitrise/v3/exitcode"
 )
 
 type BuildRunResultsModel struct {

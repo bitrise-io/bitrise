@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/filelock"
+	"github.com/bitrise-io/bitrise/v3/internal/filelock"
 )
 
 // lockStaleAfter/lockRefreshInterval size the lease for the OAuth ladder's

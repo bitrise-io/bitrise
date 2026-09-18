@@ -11,8 +11,8 @@ import (
 	"github.com/bitrise-io/stepman/activator"
 	"github.com/bitrise-io/stepman/toolkits"
 
-	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/analytics"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 // NoOpTracker implements analytics.Tracker with no-op methods.

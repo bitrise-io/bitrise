@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/plugins"
-	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/plugins"
+	"github.com/bitrise-io/bitrise/v3/version"
 	ver "github.com/hashicorp/go-version"
 )
 

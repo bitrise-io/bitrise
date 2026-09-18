@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
-	"github.com/bitrise-io/bitrise/v2/internal/auth"
-	"github.com/bitrise-io/bitrise/v2/internal/config"
-	internalstack "github.com/bitrise-io/bitrise/v2/internal/stack"
+	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/internal/auth"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
+	internalstack "github.com/bitrise-io/bitrise/v3/internal/stack"
 )
 
 func TestListCmd_GlobalPath(t *testing.T) {

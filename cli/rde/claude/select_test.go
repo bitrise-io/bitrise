@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	internalrde "github.com/bitrise-io/bitrise/v2/internal/rde"
+	internalrde "github.com/bitrise-io/bitrise/v3/internal/rde"
 )
 
 func TestResolveDefault(t *testing.T) {

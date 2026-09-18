@@ -5,10 +5,10 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/bitrise-io/bitrise/v2/cli/docker"
-	"github.com/bitrise-io/bitrise/v2/configs"
-	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/bitrise/v2/tools"
+	"github.com/bitrise-io/bitrise/v3/cli/docker"
+	"github.com/bitrise-io/bitrise/v3/configs"
+	"github.com/bitrise-io/bitrise/v3/models"
+	"github.com/bitrise-io/bitrise/v3/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 

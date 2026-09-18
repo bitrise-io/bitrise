@@ -12,8 +12,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
-	internalbuild "github.com/bitrise-io/bitrise/v2/internal/build"
-	"github.com/bitrise-io/bitrise/v2/internal/style"
+	internalbuild "github.com/bitrise-io/bitrise/v3/internal/build"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 // runWatchTUI is the interactive variant of runWatch. It renders a permanent

@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
 )
 
 // EnvToken overrides the stored access token; it takes precedence over auth.yaml.

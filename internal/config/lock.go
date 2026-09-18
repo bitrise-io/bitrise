@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/internal/filelock"
+	"github.com/bitrise-io/bitrise/v3/internal/filelock"
 )
 
 // LockStaleAfter bounds how long a held lock on config.yml is honored before

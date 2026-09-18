@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/bitrise/v2/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"

@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
-	"github.com/bitrise-io/bitrise/v2/internal/stringutil"
-	"github.com/bitrise-io/bitrise/v2/internal/webclient"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/stringutil"
+	"github.com/bitrise-io/bitrise/v3/internal/webclient"
 )
 
 // Service runs signup and login flows against an app.bitrise.io target.

@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/models"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/models"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 // ParseVersionString takes a string like `3.12:latest` and parses it into a plain version string (3.12) and a ResolutionStrategy (latest released).

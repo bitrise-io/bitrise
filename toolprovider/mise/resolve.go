@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/mise/execenv"
-	"github.com/bitrise-io/bitrise/v2/toolprovider/provider"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise/execenv"
+	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 )
 
 var ansiEscape = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)

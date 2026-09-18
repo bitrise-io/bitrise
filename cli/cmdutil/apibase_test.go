@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/config"
 )
 
 func TestResolveAPIBaseURL_EnvWinsOverContext(t *testing.T) {
