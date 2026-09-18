@@ -27,8 +27,8 @@ The list below is what differs deliberately. Anything not on it follows
   `RunE: cmdutil.DelegateToList`. Leaves are unaffected. Every other group root,
   including `bitrise rde` itself, prints help via `RequireKnownSubcommand`.
 - **`--format` is bound.** `var format string` +
-  `StringVar(&format, cmdutil.FormatKey, ...)`, then use the variable. The rest of the
-  CLI leaves it unbound and calls `GetString` in `RunE`. No file crosses over.
+  `StringVarP(&format, cmdutil.FormatKey, "f", ...)`, then use the variable. The rest
+  of the CLI leaves it unbound and calls `GetString` in `RunE`. No file crosses over.
 - **`--workspace` is an ID.** `cmdutil.ResolveWorkspaceID` returns an explicit flag
   value verbatim. `app` and `stack` use `ResolveAndLookupWorkspaceSlug`, which accepts
   a display name. With flag, env and default all empty, `ResolveWorkspaceID`
