@@ -85,32 +85,4 @@ func Test_JsonParams(t *testing.T) {
 		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 	}
-
-	t.Log("trigger check test")
-	{
-		config := map[string]interface{}{
-			"config":  configPth,
-			"pattern": "json_params_test_target",
-			"format":  "json",
-		}
-
-		cmd := command.New(testhelpers.BinPath(), "trigger-check", "--json-params", testhelpers.ToJSON(t, config))
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"json_params_test_target","workflow":"json_params_test_target"}`, out)
-	}
-
-	t.Log("trigger check test - param override")
-	{
-		config := map[string]interface{}{
-			"config":  configPth,
-			"pattern": "json_params_test_target",
-			"format":  "raw",
-		}
-
-		cmd := command.New(testhelpers.BinPath(), "trigger-check", "--json-params", testhelpers.ToJSON(t, config), "--format", "json")
-		out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-		require.NoError(t, err, out)
-		require.Equal(t, `{"pattern":"json_params_test_target","workflow":"json_params_test_target"}`, out)
-	}
 }

@@ -1,75 +1,56 @@
 package cli
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bitrise-io/bitrise/v2/analytics"
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/rdeapi"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
 	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/output"
 	"github.com/bitrise-io/bitrise/v2/plugins"
+	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/spf13/cobra"
 )
 
 // Run ...
 func Run() {
-	// In the case of `--output-format=json` flag is set for the run command, all the logs are expected in JSON format.
-	// Because logs might be printed before processing the run command args,
-	// we need to manually parse the logger configuration.
-	isRunCommand, logFormat := loggerParameters(os.Args[1:])
-	debugMode := legacy.IsDebugMode(os.Args[1:], DebugModeKey)
-
-	loggerType := log.ConsoleLogger
-	if isRunCommand && string(logFormat) != "" {
-		loggerType = logFormat
-	}
-
-	// Global logger needs to be initialised before using any log function
-	opts := log.LoggerOpts{
-		LoggerType:      loggerType,
-		Producer:        log.BitriseCLI,
-		DebugLogEnabled: debugMode,
-		Writer:          os.Stdout,
-		TimeProvider:    time.Now,
-	}
-	log.InitGlobalLogger(opts)
-
-	if debugMode {
-		// set for other tools, as an ENV
-		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
-			failf("Failed to set DEBUG env, error: %s", err)
-
-		}
-
-		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
-			failf("Failed to set LOGLEVEL env, error: %s", err)
-
-		}
-
-		configs.IsDebugMode = true
-	}
-
-	// This is needed for the getPluginsList func in the root help output,
-	// which is evaluated before executing the command's PersistentPreRunE.
-	if err := plugins.InitPaths(); err != nil {
-		failf("Failed to initialize plugin path, error: %s", err)
-	}
-
-	globalTracker = analytics.NewDefaultTracker()
-	defer func() {
-		globalTracker.Wait()
-	}()
-
-	if err := legacy.ValidateGlobalBoolEnvs(); err != nil {
-		failf("%s", err)
-	}
+	rawArgs := os.Args[1:]
 
 	rootCmd := newRootCommand()
+	configureStyleFromArgs(rootCmd, rawArgs)
+	initLogger(rawArgs)
 
-	rawArgs := os.Args[1:]
+	// This is needed for printInstalledPlugins in the root help output, which is
+	// evaluated before executing the command's PersistentPreRunE.
+	if err := plugins.InitPaths(); err != nil {
+		cmdutil.Failf("Failed to initialize plugin path, error: %s", err)
+	}
+
+	tracker := analytics.NewDefaultTracker()
+	cmdutil.SetTracker(tracker)
+	defer tracker.Wait()
+
+	// The backend attributes RDE API traffic by User-Agent, so keep the
+	// "bitrise-cli/" prefix from the reference implementation rather than
+	// switching to "bitrise/" — nothing server-side keying on it changes.
+	rdeapi.UserAgent = "bitrise-cli/" + version.VERSION
+
+	// Abort when a global bool flag's bound env var holds a non-bool value (an
+	// empty value is allowed and treated as unset).
+	for _, envKey := range []string{configs.CIModeEnvKey, configs.DebugModeEnvKey} {
+		if _, err := cmdutil.ResolveBoolEnv(envKey); err != nil {
+			cmdutil.Failf("%s", err)
+		}
+	}
+
 	if pluginName, pluginArgs, isPlugin := detectPlugin(rootCmd, rawArgs); isPlugin {
 		runPlugin(rootCmd, rawArgs, pluginName, pluginArgs)
 		return
@@ -78,42 +59,112 @@ func Run() {
 	// envman is a passthrough command: it must receive its args verbatim, so it
 	// is dispatched before cobra to keep the global flags (which precede the
 	// command) from being forwarded into the passthrough.
-	if envmanArgs, isEnvman := envmanPassthrough(rawArgs); isEnvman {
+	if envmanArgs, isEnvman := envmanPassthrough(rootCmd, rawArgs); isEnvman {
 		runEnvman(rootCmd, rawArgs, envmanArgs)
 		return
 	}
 
-	normalized := legacy.NormalizeLegacyArgs(rawArgs, rootCmd)
+	rejectSingleDashLongFlags(rootCmd, rawArgs)
 
-	// TODO: MIGRATION PERIOD - NEEDED TO KEEP COMPATIBILITY
-	// An unknown top-level command is not a plugin and not a known command, so
-	// cobra's Find returns an error. The previous framework printed the app help
-	// and exited 1 in that case.
-	if _, _, err := rootCmd.Find(normalized); err != nil {
-		printRootHelp(rootCmd)
-		failf("")
+	rootCmd.SetArgs(rawArgs)
+	if err := rootCmd.Execute(); err != nil {
+		cmdutil.Failf("%s", err)
+	}
+}
+
+// configureStyleFromArgs applies --no-color and --theme before cobra parses, so
+// errors raised during parsing carry the styling the user asked for. before()
+// applies them again from the fully resolved config; this early pass exists
+// because cobra returns flag and argument errors from ParseFlags and
+// ValidateArgs, both of which run ahead of any PersistentPreRunE — for those
+// errors this is the only styling that ever applies.
+//
+// It reads only the leading global flags, so a value that happens to spell one
+// (bitrise build trigger --commit-message --no-color) and anything past the
+// command token are left alone. The config file's theme is not available this
+// early -- resolving it needs configs.ResolveConfig, which runs in before()
+// and can itself fail -- so only the flag and its env var are consulted.
+func configureStyleFromArgs(root *cobra.Command, arguments []string) {
+	values := cmdutil.GlobalFlagValuesFromArgs(root.PersistentFlags(), arguments, cmdutil.GlobalFlagNames)
+
+	noColor, _ := strconv.ParseBool(values[cmdutil.FlagNoColor])
+	theme, err := style.ParseTheme(config.FirstNonEmptyString(values[cmdutil.FlagTheme], os.Getenv(cmdutil.EnvTheme)))
+	if err != nil {
+		theme = style.ThemeAuto
+	}
+	style.Configure(noColor, theme)
+}
+
+// initLogger sets up the global logger up front, before cobra parses the args,
+// because log output can happen before the command itself runs.
+func initLogger(arguments []string) {
+	// For `--output-format=json` on the run command all logs are expected in JSON.
+	// Because logs might be printed before the run command args are processed, we
+	// parse the logger configuration manually here.
+	isRunCommand, logFormat := loggerParameters(arguments)
+	loggerType := log.ConsoleLogger
+	if isRunCommand && logFormat != "" {
+		loggerType = logFormat
 	}
 
-	rootCmd.SetArgs(normalized)
-	if err := rootCmd.Execute(); err != nil {
-		failf("%s", err)
+	// An explicit --debug flag wins (matching the --ci precedence); otherwise the
+	// bound DEBUG env decides. cobra re-parses the same flag later for help,
+	// analytics and the command itself; this early pass only feeds the logger.
+	// "--flag x" syntax is not supported for bool flags, so only the bare flag and
+	// the "--debug=x" form are accepted.
+	debugMode := false
+	debugSetByFlag := false
+	for _, argument := range arguments {
+		if !cmdutil.IsFlag(cmdutil.DebugModeKey, argument) {
+			continue
+		}
+		if _, raw, ok := strings.Cut(argument, "="); ok {
+			if parsed, err := strconv.ParseBool(raw); err == nil {
+				debugMode, debugSetByFlag = parsed, true
+			}
+		} else {
+			debugMode, debugSetByFlag = true, true
+		}
+	}
+	if !debugSetByFlag {
+		debugMode, _ = strconv.ParseBool(os.Getenv(configs.DebugModeEnvKey))
+	}
+
+	log.InitGlobalLogger(log.LoggerOpts{
+		LoggerType:      loggerType,
+		Producer:        log.BitriseCLI,
+		DebugLogEnabled: debugMode,
+		Writer:          os.Stdout,
+		TimeProvider:    time.Now,
+	})
+
+	if debugMode {
+		// propagate to other tools (and our own log level) via env
+		if err := os.Setenv(configs.DebugModeEnvKey, "true"); err != nil {
+			cmdutil.Failf("Failed to set DEBUG env, error: %s", err)
+		}
+		if err := os.Setenv("LOGLEVEL", "debug"); err != nil {
+			cmdutil.Failf("Failed to set LOGLEVEL env, error: %s", err)
+		}
+		configs.IsDebugMode = true
 	}
 }
 
 func loggerParameters(arguments []string) (isRunCommand bool, outputFormat log.LoggerType) {
 	for i, argument := range arguments {
+		// The run command is reachable both as the legacy top-level `run` alias
+		// and as the canonical `local run`.
 		if argument == "run" {
 			isRunCommand = true
 		}
+		if argument == "local" && i+1 < len(arguments) && arguments[i+1] == "run" {
+			isRunCommand = true
+		}
 
-		// syntax
-		// -flag
-		// --flag   // double dashes are also permitted
-		// -flag=x
-		// -flag x  // non-boolean flags only
-		// One or two dashes may be used; they are equivalent.
-		// https://pkg.go.dev/flag#hdr-Command_line_flag_syntax
-		if legacy.IsFlag(OutputFormatKey, argument) {
+		// Long flags use the double-dash form only:
+		//   --output-format value
+		//   --output-format=value
+		if cmdutil.IsFlag(cmdutil.OutputFormatKey, argument) {
 			var value string
 			components := strings.Split(argument, "=")
 
@@ -146,8 +197,8 @@ func before(cmd *cobra.Command, _ []string) error {
 
 	// CI Mode check. The --ci flag is seeded from the CI env var when not set
 	// explicitly on the command line (an explicit --ci=false still wins).
-	isCI, _ := root.PersistentFlags().GetBool(CIKey)
-	if !root.PersistentFlags().Changed(CIKey) {
+	isCI, _ := root.PersistentFlags().GetBool(cmdutil.CIKey)
+	if !root.PersistentFlags().Changed(cmdutil.CIKey) {
 		if envCI, err := strconv.ParseBool(os.Getenv(configs.CIModeEnvKey)); err == nil {
 			isCI = envCI
 		}
@@ -156,44 +207,71 @@ func before(cmd *cobra.Command, _ []string) error {
 		// if CI mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.CIModeEnvKey, "true"); err != nil {
-			failf("Failed to set CI env, error: %s", err)
+			cmdutil.Failf("Failed to set CI env, error: %s", err)
 		}
 		configs.IsCIMode = true
 	}
 
 	if err := configs.InitPaths(); err != nil {
-		failf("Failed to initialize required paths, error: %s", err)
+		cmdutil.Failf("Failed to initialize required paths, error: %s", err)
 	}
 
 	// Pull Request Mode check
-	if isPR, _ := root.PersistentFlags().GetBool(PRKey); isPR {
+	if isPR, _ := root.PersistentFlags().GetBool(cmdutil.PRKey); isPR {
 		// if PR mode indicated make sure we set the related env
 		//  so all other tools we use will also get it
 		if err := os.Setenv(configs.PRModeEnvKey, "true"); err != nil {
-			failf("Failed to set PR env, error: %s", err)
+			cmdutil.Failf("Failed to set PR env, error: %s", err)
 		}
 		configs.IsPullRequestMode = true
 	}
 
-	pullReqID := os.Getenv(configs.PullRequestIDEnvKey)
-	if pullReqID != "" {
+	if os.Getenv(configs.PullRequestIDEnvKey) != "" {
 		configs.IsPullRequestMode = true
 	}
-
-	IsPR := os.Getenv(configs.PRModeEnvKey)
-	if IsPR == "true" {
+	if os.Getenv(configs.PRModeEnvKey) == "true" {
 		configs.IsPullRequestMode = true
 	}
 
 	// want to access this key in setup command too
-	isOfflineMode := isSteplibOfflineMode()
-	registerSteplibOfflineMode(isOfflineMode)
+	isOfflineMode := cmdutil.IsSteplibOfflineMode()
+	cmdutil.RegisterSteplibOfflineMode(isOfflineMode)
+
+	// Resolve the layered config (legacy ~/.bitrise/config.json, checked first
+	// and wins when present, then the new per-dir .bitrise-cli.yml and global
+	// config.yml as lower-precedence layers) and stash it on the command's
+	// context.
+	resolved, err := configs.ResolveConfig()
+	if err != nil {
+		log.Warnf("Failed to resolve config, ignoring: %s", err)
+	}
+
+	ctx := cmd.Context()
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cmd.SetContext(config.WithResolved(ctx, resolved))
+
+	// Seed the output-format and theme defaults once per invocation. Root
+	// flag beats the env var, which beats the config key — matching every
+	// other resolver in cli/cmdutil (webbase.go, app.go, workspace.go).
+	// resolved.Output/Theme already carry per-directory over global.
+	flagOutput, _ := root.PersistentFlags().GetString(cmdutil.FlagOutput)
+	rawOutput := config.FirstNonEmptyString(flagOutput, os.Getenv(cmdutil.EnvOutput), resolved.Output, output.FormatRaw)
+	format, err := output.ParseFormat(rawOutput)
+	if err != nil {
+		return err
+	}
+	output.SetDefault(format)
+
+	flagTheme, _ := root.PersistentFlags().GetString(cmdutil.FlagTheme)
+	rawTheme := config.FirstNonEmptyString(flagTheme, os.Getenv(cmdutil.EnvTheme), resolved.Theme)
+	theme, err := style.ParseTheme(rawTheme)
+	if err != nil {
+		return err
+	}
+	noColor, _ := root.PersistentFlags().GetBool(cmdutil.FlagNoColor)
+	style.Configure(noColor, theme)
 
 	return nil
-}
-
-func failf(format string, args ...interface{}) {
-	log.Errorf(format, args...)
-	globalTracker.Wait()
-	os.Exit(1)
 }

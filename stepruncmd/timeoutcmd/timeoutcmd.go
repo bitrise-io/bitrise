@@ -71,7 +71,15 @@ func (c *Command) Start() error {
 		return err
 	}
 
-	// Wait for the process to finish
+	// Wait reaps the process only. cmd.Wait would additionally block until the
+	// goroutines exec.Cmd spawns to copy the child's stdout/stderr have drained
+	// their pipes, which sounds better — it is what stops a large final burst
+	// being truncated — but the pipes only reach EOF once every process holding
+	// the write end exits. A step that leaves a daemon behind (ssh-agent, adb,
+	// an emulator) keeps them open, and with no per-step timeout and no
+	// BITRISE_NO_OUTPUT_TIMEOUT configured, which is the default, nothing else
+	// in the select below can fire: the step would hang forever. Truncation is
+	// the lesser failure, so this stays on Process.Wait.
 	done := make(chan error, 1)
 	go func() {
 		switch p, err := c.cmd.Process.Wait(); {

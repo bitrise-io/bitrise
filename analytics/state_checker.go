@@ -7,6 +7,11 @@ import (
 const (
 	DisabledEnvKey = "BITRISE_ANALYTICS_DISABLED"
 
+	// unprefixedDisabledEnvKey is the env var the vendored go-utils tracker itself
+	// honours to skip sending events. Checking it here too keeps IsTracking() and
+	// the Send* early-returns consistent with what actually gets sent.
+	unprefixedDisabledEnvKey = "ANALYTICS_DISABLED"
+
 	trueEnv = "true"
 )
 
@@ -23,5 +28,5 @@ func NewStateChecker(repository env.Repository) StateChecker {
 }
 
 func (s stateChecker) Enabled() bool {
-	return s.envRepository.Get(DisabledEnvKey) != trueEnv
+	return s.envRepository.Get(DisabledEnvKey) != trueEnv && s.envRepository.Get(unprefixedDisabledEnvKey) != trueEnv
 }

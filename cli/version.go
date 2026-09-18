@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/bitrise-io/bitrise/v2/models"
 	"github.com/bitrise-io/bitrise/v2/output"
@@ -13,12 +14,12 @@ import (
 
 // VersionOutputModel ...
 type VersionOutputModel struct {
-	Version       string `json:"version"`
-	FormatVersion string `json:"format_version"`
-	OS            string `json:"os"`
-	GO            string `json:"go"`
-	BuildNumber   string `json:"build_number"`
-	Commit        string `json:"commit"`
+	Version       string `json:"version" yaml:"version"`
+	FormatVersion string `json:"format_version" yaml:"format_version"`
+	OS            string `json:"os" yaml:"os"`
+	GO            string `json:"go" yaml:"go"`
+	BuildNumber   string `json:"build_number" yaml:"build_number"`
+	Commit        string `json:"commit" yaml:"commit"`
 }
 
 var versionCommand = &cobra.Command{
@@ -28,18 +29,18 @@ var versionCommand = &cobra.Command{
 }
 
 func init() {
-	versionCommand.Flags().StringP(OuputFormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
-	versionCommand.Flags().Bool("full", false, "Prints the build number as well.")
+	versionCommand.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+	versionCommand.Flags().Bool("full", false, "Also prints the format version, OS, Go version, build number, and commit.")
 }
 
 func printVersionCmd(cmd *cobra.Command, _ []string) error {
-	logCommandParameters(cmd)
+	cmdutil.LogCommandParameters(cmd)
 
 	fullVersion, _ := cmd.Flags().GetBool("full")
 
-	format, _ := cmd.Flags().GetString(OuputFormatKey)
+	format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 	if err := output.ConfigureOutputFormat(format); err != nil {
-		failf("Failed to configure output format, error: %s", err)
+		cmdutil.Failf("Failed to configure output format, error: %s", err)
 	}
 
 	versionOutput := VersionOutputModel{
@@ -67,8 +68,8 @@ commit: %s
 		} else {
 			log.Print(versionOutput.Version)
 		}
-	} else {
-		output.Print(versionOutput, output.Format)
+	} else if err := output.Print(cmd.OutOrStdout(), versionOutput, output.Format); err != nil {
+		cmdutil.Failf("Failed to print output, error: %s", err)
 	}
 
 	return nil

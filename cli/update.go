@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,25 +12,20 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v2/bitrise"
-	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v2/log"
-	"github.com/bitrise-io/bitrise/v2/plugins"
 	"github.com/bitrise-io/bitrise/v2/version"
 	"github.com/bitrise-io/go-utils/command"
-	ver "github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 )
 
-const (
-	tagsURL     = "https://api.github.com/repos/bitrise-io/bitrise/tags"
-	downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s/bitrise-%s-x86_64"
-)
+const downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s/bitrise-%s-x86_64"
 
 var updateCommand = &cobra.Command{
 	Use:   "update",
 	Short: "Updates the Bitrise CLI.",
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		logCommandParameters(cmd)
+		cmdutil.LogCommandParameters(cmd)
 
 		if err := update(cmd); err != nil {
 			log.Errorf("Update Bitrise CLI failed, error: %s", err)
@@ -44,139 +38,6 @@ var updateCommand = &cobra.Command{
 
 func init() {
 	updateCommand.Flags().String("version", "", "version to update - only for GitHub release page installations.")
-}
-
-func checkUpdate() error {
-	if configs.IsCIMode {
-		return nil
-	}
-	if configs.CheckIsCLIUpdateCheckRequired() {
-		log.Infof("Checking for new CLI version...")
-
-		newVersion, err := newCLIVersion()
-		if err != nil {
-			return fmt.Errorf("failed to check update for CLI, error: %s", err)
-		}
-		if newVersion != "" {
-			printCLIUpdateInfos(newVersion)
-		}
-
-		if err := configs.SaveCLIUpdateCheck(); err != nil {
-			return err
-		}
-	}
-
-	installedPlugins, err := plugins.InstalledPluginList()
-	if err != nil {
-		return fmt.Errorf("failed to list installed plugins: %s", err)
-	}
-	for _, plugin := range installedPlugins {
-		if configs.CheckIsPluginUpdateCheckRequired(plugin.Name) {
-			log.Infof("\nChecking for plugin (%s) new version...", plugin.Name)
-
-			if newVersion, err := plugins.CheckForNewVersion(plugin); err != nil {
-				log.Warnf("\nFailed to check for plugin (%s) new version, error: %s", plugin.Name, err)
-			} else if newVersion != "" {
-				plugins.PrintPluginUpdateInfos(newVersion, plugin)
-			}
-
-			if err := configs.SavePluginUpdateCheck(plugin.Name); err != nil {
-				log.Warnf("\nFailed to update last check for plugin (%s), error: %s", plugin.Name, err)
-			}
-		}
-	}
-	return nil
-}
-
-func printCLIUpdateInfos(newVersion string) {
-	log.Warnf("\nNew version (%s) of the Bitrise CLI available", newVersion)
-	log.Printf("Run command to update the Bitrise CLI:")
-	log.Donef("$ bitrise update")
-}
-
-func installedWithBrew() (bool, error) {
-	if runtime.GOOS != `darwin` {
-		return false, nil
-	}
-	if _, err := exec.LookPath("brew"); err != nil {
-		return false, nil
-	}
-
-	out, err := exec.Command("brew", "list", "--formula").Output()
-	if err != nil {
-		return false, err
-	}
-	formulas := strings.Split(string(out), "\n")
-	for _, f := range formulas {
-		if f == "bitrise" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func newVersionFromBrew() (string, error) {
-	if err := exec.Command("brew", "update").Run(); err != nil {
-		return "", err
-	}
-	out, err := exec.Command("brew", "outdated", "--verbose").Output()
-	if err != nil {
-		return "", err
-	}
-	formulas := strings.Split(string(out), "\n")
-	for _, f := range formulas {
-		if strings.Contains(f, "bitrise") {
-			// formula (version) < newVersion
-			return strings.Split(f, " ")[3], nil
-		}
-	}
-	return "", nil
-}
-
-func newCLIVersion() (string, error) {
-	withBrew, err := installedWithBrew()
-	if err != nil {
-		return "", err
-	}
-	if withBrew {
-		return newVersionFromBrew()
-	}
-
-	latest, err := latestTag()
-	if err != nil {
-		return "", err
-	}
-	current, err := ver.NewVersion(version.VERSION)
-	if err != nil {
-		// Dev builds (no ldflags) have VERSION="dev" which is not valid semver -> skip the update check.
-		return "", nil
-	}
-	if latest.GreaterThan(current) {
-		return latest.String(), nil
-	}
-	return "", nil
-}
-
-func latestTag() (*ver.Version, error) {
-	resp, err := http.Get(tagsURL)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Warnf(err.Error())
-		}
-	}()
-
-	var result []struct {
-		Name string `json:"name"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	return ver.NewVersion(result[0].Name)
 }
 
 func download(version string) error {
@@ -228,7 +89,7 @@ func update(cmd *cobra.Command) error {
 	versionFlag, _ := cmd.Flags().GetString("version")
 	logger.Printf("Current version: %s", version.VERSION)
 
-	withBrew, err := installedWithBrew()
+	withBrew, err := cmdutil.InstalledWithBrew()
 	if err != nil {
 		return err
 	}
@@ -266,7 +127,7 @@ func update(cmd *cobra.Command) error {
 	logger.Infof("Bitrise CLI installed from source")
 
 	if versionFlag == "" {
-		latest, err := latestTag()
+		latest, err := cmdutil.LatestTag()
 		if err != nil {
 			return err
 		}

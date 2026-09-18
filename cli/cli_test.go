@@ -1,12 +1,18 @@
 package cli
 
 import (
+	"os"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v2/cli/legacy"
-	"github.com/bitrise-io/bitrise/v2/log"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	internalconfig "github.com/bitrise-io/bitrise/v2/internal/config"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
+	"github.com/bitrise-io/bitrise/v2/log"
+	"github.com/bitrise-io/bitrise/v2/output"
 )
 
 func Test_loggerParameters(t *testing.T) {
@@ -28,38 +34,43 @@ func Test_loggerParameters(t *testing.T) {
 			wantIsRunCommand: true,
 		},
 		{
-			name:             "Output format json with one dash syntax",
-			args:             []string{"-output-format", "json"},
+			name:             "Output format json with space syntax",
+			args:             []string{"--output-format", "json"},
 			wantOutputFormat: "json",
 		},
 		{
-			name:             "Output format console with two dash syntax",
+			name:             "Output format console with space syntax",
 			args:             []string{"--output-format", "console"},
 			wantOutputFormat: "console",
 		},
 		{
-			name:             "Output format json value with one dash syntax",
-			args:             []string{"-output-format=json"},
+			name:             "Output format json value with equals syntax",
+			args:             []string{"--output-format=json"},
 			wantOutputFormat: "json",
 		},
 		{
-			name:             "Output format console value with two dash syntax",
+			name:             "Output format console value with equals syntax",
 			args:             []string{"--output-format=console"},
 			wantOutputFormat: "console",
 		},
 		{
+			name:             "Single-dash long flag is not recognised",
+			args:             []string{"-output-format", "json"},
+			wantOutputFormat: "",
+		},
+		{
 			name:             "Output format invalid syntax",
-			args:             []string{"-output-format", "--log-level"},
+			args:             []string{"--output-format", "--log-level"},
 			wantOutputFormat: "",
 		},
 		{
 			name:             "Output format invalid value",
-			args:             []string{"-output-format", "invalid"},
+			args:             []string{"--output-format", "invalid"},
 			wantOutputFormat: "",
 		},
 		{
 			name:             "Invalid flag",
-			args:             []string{"-output-format-invalid=json"},
+			args:             []string{"--output-format-invalid=json"},
 			wantOutputFormat: "",
 		},
 	}
@@ -130,6 +141,60 @@ func Test_detectPlugin(t *testing.T) {
 			args:       []string{},
 			wantPlugin: false,
 		},
+		{
+			// A value-taking global flag written with a space must not have its
+			// value ("json") mistaken for the plugin/command token.
+			name:       "leading value flag with space syntax is skipped",
+			args:       []string{"--output", "json", ":analytics"},
+			wantName:   "analytics",
+			wantArgs:   []string{},
+			wantPlugin: true,
+		},
+		{
+			name:       "leading value flag with equals syntax is skipped",
+			args:       []string{"--output=json", ":analytics", "--flag"},
+			wantName:   "analytics",
+			wantArgs:   []string{"--flag"},
+			wantPlugin: true,
+		},
+		{
+			name:       "leading theme flag with space syntax is skipped",
+			args:       []string{"--theme", "dark", ":analytics"},
+			wantName:   "analytics",
+			wantArgs:   []string{},
+			wantPlugin: true,
+		},
+		{
+			name:       "leading value shorthand with space syntax is skipped",
+			args:       []string{"-o", "json", ":analytics"},
+			wantName:   "analytics",
+			wantArgs:   []string{},
+			wantPlugin: true,
+		},
+		{
+			name:       "leading value shorthand with attached value is skipped",
+			args:       []string{"-ojson", ":analytics", "--flag"},
+			wantName:   "analytics",
+			wantArgs:   []string{"--flag"},
+			wantPlugin: true,
+		},
+		{
+			name:       "leading bool shorthand cluster is skipped",
+			args:       []string{"-q", ":analytics"},
+			wantName:   "analytics",
+			wantArgs:   []string{},
+			wantPlugin: true,
+		},
+		{
+			// A cluster is all-or-nothing: -x is not a bitrise global, so -qx
+			// is not consumed as one. plugins.ParseArgs then scans past it to
+			// the ":" token, so the plugin still runs — without the flag.
+			name:       "shorthand cluster with an unknown letter is not a global",
+			args:       []string{"-qx", ":analytics"},
+			wantName:   "analytics",
+			wantArgs:   []string{},
+			wantPlugin: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -180,10 +245,30 @@ func Test_envmanPassthrough(t *testing.T) {
 			args:      []string{"--ci"},
 			wantMatch: false,
 		},
+		{
+			name:      "leading value flag with space syntax is skipped",
+			args:      []string{"--output", "json", "envman", "add"},
+			wantArgs:  []string{"add"},
+			wantMatch: true,
+		},
+		{
+			// Shorthands are the spelling users reach for, and forwarding one
+			// into envman makes it reject a flag bitrise owns.
+			name:      "leading value shorthand with space syntax is skipped",
+			args:      []string{"-o", "json", "envman", "add"},
+			wantArgs:  []string{"add"},
+			wantMatch: true,
+		},
+		{
+			name:      "leading bool shorthand is skipped",
+			args:      []string{"-q", "envman", "add"},
+			wantArgs:  []string{"add"},
+			wantMatch: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args, isEnvman := envmanPassthrough(tt.args)
+			args, isEnvman := envmanPassthrough(newRootCommand(), tt.args)
 			assert.Equal(t, tt.wantMatch, isEnvman)
 			if tt.wantMatch {
 				assert.Equal(t, tt.wantArgs, args)
@@ -194,11 +279,14 @@ func Test_envmanPassthrough(t *testing.T) {
 
 func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 	tests := []struct {
-		name      string
-		args      []string
-		wantDebug bool
-		wantCI    bool
-		wantPR    bool
+		name       string
+		args       []string
+		wantDebug  bool
+		wantCI     bool
+		wantPR     bool
+		wantQuiet  bool
+		wantOutput string
+		wantTheme  string
 	}{
 		{
 			// A plugin's own --debug after the command token must not set bitrise's
@@ -225,33 +313,387 @@ func Test_applyGlobalFlagsFromArgs_onlyLeadingApplied(t *testing.T) {
 			args:   []string{"envman", "--pr"},
 			wantPR: false,
 		},
+		{
+			name:       "leading value flag with space syntax sets the value, not \"true\"",
+			args:       []string{"--output", "json", ":plugin"},
+			wantOutput: "json",
+		},
+		{
+			name:       "leading value flag with equals syntax",
+			args:       []string{"--output=yml", ":plugin"},
+			wantOutput: "yml",
+		},
+		{
+			name:      "leading theme flag with space syntax",
+			args:      []string{"--theme", "dark", ":plugin"},
+			wantTheme: "dark",
+		},
+		{
+			// A plugin's own --output after the command token must not set
+			// bitrise's persistent --output flag.
+			name:       "value flag after the command token is not applied to bitrise",
+			args:       []string{":plugin", "--output", "json"},
+			wantOutput: "",
+		},
+		{
+			name:       "value shorthand with space syntax",
+			args:       []string{"-o", "json", ":plugin"},
+			wantOutput: "json",
+		},
+		{
+			name:       "value shorthand with attached value",
+			args:       []string{"-oyml", ":plugin"},
+			wantOutput: "yml",
+		},
+		{
+			name:       "value shorthand with equals syntax",
+			args:       []string{"-o=json", ":plugin"},
+			wantOutput: "json",
+		},
+		{
+			name:      "bool shorthand",
+			args:      []string{"--debug", ":plugin"},
+			wantDebug: true,
+		},
+		{
+			// A cluster ending in a value flag sets every flag in it.
+			name:       "shorthand cluster of a bool and a value flag",
+			args:       []string{"-qo", "json", ":plugin"},
+			wantQuiet:  true,
+			wantOutput: "json",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			root := newRootCommand()
-			legacy.ApplyGlobalFlagsFromArgs(root, tt.args, globalFlagNames)
+			cmdutil.ApplyGlobalFlagsFromArgs(root, tt.args, cmdutil.GlobalFlagNames)
 
-			debug, _ := root.PersistentFlags().GetBool(DebugModeKey)
-			ci, _ := root.PersistentFlags().GetBool(CIKey)
-			pr, _ := root.PersistentFlags().GetBool(PRKey)
+			debug, _ := root.PersistentFlags().GetBool(cmdutil.DebugModeKey)
+			ci, _ := root.PersistentFlags().GetBool(cmdutil.CIKey)
+			pr, _ := root.PersistentFlags().GetBool(cmdutil.PRKey)
+			quiet, _ := root.PersistentFlags().GetBool(cmdutil.FlagQuiet)
+			outputVal, _ := root.PersistentFlags().GetString(cmdutil.FlagOutput)
+			themeVal, _ := root.PersistentFlags().GetString(cmdutil.FlagTheme)
 			assert.Equal(t, tt.wantDebug, debug, "debug")
 			assert.Equal(t, tt.wantCI, ci, "ci")
 			assert.Equal(t, tt.wantPR, pr, "pr")
+			assert.Equal(t, tt.wantQuiet, quiet, "quiet")
+			assert.Equal(t, tt.wantOutput, outputVal, "output")
+			assert.Equal(t, tt.wantTheme, themeVal, "theme")
 		})
 	}
 }
 
-// urfave/cli ignored an unrecognised flag that followed a positional argument;
-// the migration reproduces that via FParseErrWhitelist on every command (cobra
-// does not inherit it). Guard against a command — including a nested subcommand —
-// being added without the leniency.
-func Test_unknownFlagPassthroughEnabledOnWholeTree(t *testing.T) {
-	var check func(c *cobra.Command)
-	check = func(c *cobra.Command) {
-		assert.Truef(t, c.FParseErrWhitelist.UnknownFlags, "command %q must tolerate unknown flags", c.CommandPath())
-		for _, sub := range c.Commands() {
-			check(sub)
+// runEnvman and runPlugin call before() directly, without ever going through
+// cobra's Execute()/ExecuteC() — the only place that seeds cmd.Context() with
+// context.Background() when nil. Regression test for a panic ("cannot create
+// context from nil parent") that this caused in config.WithResolved.
+func Test_before_calledWithoutExecute_doesNotPanic(t *testing.T) {
+	root := newRootCommand()
+
+	assert.NotPanics(t, func() {
+		err := before(root, nil)
+		assert.NoError(t, err)
+	})
+}
+
+// Test_before_outputPrecedence pins the precedence documented in
+// cli/config/cmd.go: root flag > $BITRISE_OUTPUT > the "output" config key >
+// raw — env above config, matching every other resolver in cli/cmdutil.
+func Test_before_outputPrecedence(t *testing.T) {
+	t.Cleanup(func() {
+		output.SetDefault(output.FormatRaw)
+		require.NoError(t, output.ConfigureOutputFormat(output.FormatRaw))
+	})
+
+	tests := []struct {
+		name       string
+		rootFlag   string
+		configured string
+		env        string
+		want       string
+	}{
+		{name: "root flag wins over env and config", rootFlag: "raw", configured: "json", env: "yml", want: "raw"},
+		{name: "env wins over config key when no flag", configured: "json", env: "yml", want: "yml"},
+		{name: "config key used when neither flag nor env set", configured: "json", want: "json"},
+		{name: "raw default when nothing set", want: "raw"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+			t.Setenv(cmdutil.EnvOutput, tt.env) // "" clears an exported one
+			if tt.configured != "" {
+				require.NoError(t, internalconfig.Save(internalconfig.Config{Output: tt.configured}))
+			}
+
+			root := newRootCommand()
+			if tt.rootFlag != "" {
+				require.NoError(t, root.PersistentFlags().Set(cmdutil.FlagOutput, tt.rootFlag))
+			}
+			require.NoError(t, before(root, nil))
+			require.NoError(t, output.ConfigureOutputFormat(""))
+			assert.Equal(t, tt.want, output.Format)
+		})
+	}
+}
+
+// Test_ymlMergeOutputFlag_ShadowsGlobalOutputFlag guards the shorthand
+// collision called out in the master rde-migration plan: yml merge's own
+// --output/-o (an output directory) must keep working unchanged once the
+// root gains a persistent --output/-o (an output format). pflag's AddFlagSet
+// dedups on the long name only, so the root's --output is skipped for this
+// command and its -o never reaches AddFlag. The shared long name is what makes
+// this safe: a local -o under a different long name would panic there on the
+// shorthand collision.
+func Test_ymlMergeOutputFlag_ShadowsGlobalOutputFlag(t *testing.T) {
+	root := newRootCommand()
+
+	var mergeCmd *cobra.Command
+	for _, c := range root.Commands() {
+		if c.Name() == "yml" {
+			for _, sub := range c.Commands() {
+				if sub.Name() == "merge" {
+					mergeCmd = sub
+				}
+			}
 		}
 	}
-	check(newRootCommand())
+	require.NotNil(t, mergeCmd, "yml merge command must be registered")
+
+	require.NotPanics(t, func() {
+		require.NoError(t, mergeCmd.ParseFlags([]string{"-o", "/tmp/merged"}))
+	})
+
+	got, err := mergeCmd.Flags().GetString("output")
+	require.NoError(t, err)
+	assert.Equal(t, "/tmp/merged", got, "-o must resolve to yml merge's own output-directory flag")
+
+	rootOutput, _ := root.PersistentFlags().GetString(cmdutil.FlagOutput)
+	assert.Equal(t, "", rootOutput, "the global --output flag must be untouched by yml merge's local -o")
+}
+
+// Test_flagShorthands_doNotCollideAcrossTree walks every command and forces the
+// flag merge that would panic on a shorthand collision — pflag's AddFlagSet
+// skips a parent flag only when the long name matches, so a local -o/-q under a
+// different long name blows up. InitDefaultHelpFlag is included because it adds
+// --help/-h without checking whether -h is taken (unlike InitDefaultVersionFlag,
+// which falls back to no shorthand), and because cobra only inits it for the one
+// command being executed — a collision in a rarely-run subcommand would
+// otherwise surface as a runtime panic instead of a test failure.
+func Test_flagShorthands_doNotCollideAcrossTree(t *testing.T) {
+	visitCommands(newRootCommand(), func(cmd *cobra.Command) {
+		require.NotPanics(t, func() {
+			cmd.InitDefaultHelpFlag()
+			cmd.InitDefaultVersionFlag()
+			cmd.Flags()
+		}, "flag shorthand collision in %q", cmd.CommandPath())
+	})
+}
+
+// Test_rejectSingleDashLongFlags_realCommandTree exercises the guard against
+// the actual registered commands, not a synthetic tree, so it catches a
+// flag/shorthand that changes shape only in cli/root.go or cli/local/run.go.
+func Test_configureStyleFromArgs(t *testing.T) {
+	// Asserted on the values the pre-pass reads rather than on rendered
+	// output: style.New over a *bytes.Buffer is ANSI-free whatever Configure
+	// was given (see internal/style's TestNew_NonTTYWriterIsAnsiFree), so
+	// rendering here would pass no matter what these args parsed to.
+	tests := []struct {
+		name                               string
+		args                               []string
+		wantNoColor, wantTheme, wantOutput string
+	}{
+		{name: "no flags", args: []string{"run", "wf"}},
+		{name: "theme with a space", args: []string{"--theme", "none", "run"}, wantTheme: "none"},
+		{name: "theme attached", args: []string{"--theme=none", "run"}, wantTheme: "none"},
+		{name: "no-color bare", args: []string{"--no-color", "run"}, wantNoColor: "true"},
+		{name: "no-color explicitly false", args: []string{"--no-color=false", "run"}, wantNoColor: "false"},
+		{name: "both, clustered", args: []string{"-qo", "json", "run"}, wantOutput: "json"},
+
+		// An unparseable theme is still read here; configureStyleFromArgs
+		// falls back to auto when style.ParseTheme rejects it.
+		{name: "invalid theme value", args: []string{"--theme", "bogus", "run"}, wantTheme: "bogus"},
+
+		// Everything from the command token on belongs to the command, and a
+		// global's own value is consumed rather than rescanned.
+		{name: "value of another global is not a flag", args: []string{"--output", "--no-color", "run"}, wantOutput: "--no-color"},
+		{name: "trailing theme after the command token", args: []string{"run", "--theme"}},
+		{name: "flag value after the command token", args: []string{"build", "trigger", "--commit-message", "--no-color"}},
+		{name: "after the terminator", args: []string{"run", "--", "--no-color"}},
+		{name: "plugin passthrough args", args: []string{":myplugin", "--no-color"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv(cmdutil.EnvTheme, "")
+			t.Cleanup(func() { style.Configure(false, style.ThemeAuto) })
+
+			values := cmdutil.GlobalFlagValuesFromArgs(newRootCommand().PersistentFlags(), tt.args, cmdutil.GlobalFlagNames)
+			assert.Equal(t, tt.wantNoColor, values[cmdutil.FlagNoColor])
+			assert.Equal(t, tt.wantTheme, values[cmdutil.FlagTheme])
+			assert.Equal(t, tt.wantOutput, values[cmdutil.FlagOutput])
+
+			configureStyleFromArgs(newRootCommand(), tt.args)
+		})
+	}
+}
+
+// Test_configureStyleFromArgs_envFallback pins the layer below the flag: the
+// three Failf calls inside before() fire before it re-applies style from the
+// resolved config, so an env-set theme has to reach the early pass or those
+// errors ignore it.
+func Test_configureStyleFromArgs_envFallback(t *testing.T) {
+	t.Setenv(cmdutil.EnvTheme, "none")
+	t.Cleanup(func() { style.Configure(false, style.ThemeAuto) })
+
+	// No --theme flag, so the env value is what the early pass must use.
+	values := cmdutil.GlobalFlagValuesFromArgs(newRootCommand().PersistentFlags(), []string{"run"}, cmdutil.GlobalFlagNames)
+	assert.Empty(t, values[cmdutil.FlagTheme])
+
+	theme, err := style.ParseTheme(internalconfig.FirstNonEmptyString(values[cmdutil.FlagTheme], os.Getenv(cmdutil.EnvTheme)))
+	require.NoError(t, err)
+	assert.Equal(t, style.ThemeNone, theme)
+
+	configureStyleFromArgs(newRootCommand(), []string{"run"})
+}
+
+func Test_rejectSingleDashLongFlags_realCommandTree(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantFound    bool
+		wantFlagName string
+	}{
+		{
+			name:         "single-dash --config on run silently misparses without the guard",
+			args:         []string{"run", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "single-dash --inventory on run silently misparses without the guard",
+			args:         []string{"run", "-inventory", "secrets.yml"},
+			wantFound:    true,
+			wantFlagName: "inventory",
+		},
+		{
+			name:         "single-dash --workflow already errors via pflag, guard gives a clearer message",
+			args:         []string{"run", "-workflow", "primary"},
+			wantFound:    true,
+			wantFlagName: "workflow",
+		},
+		{name: "double-dash --config is untouched", args: []string{"run", "--config", "bitrise.yml"}},
+		{name: "-c shorthand with a space is untouched", args: []string{"run", "-c", "bitrise.yml"}},
+		{name: "-i shorthand with a space is untouched", args: []string{"run", "-i", "secrets.yml"}},
+		{name: "-qo shorthand cluster is untouched", args: []string{"stack", "list", "-qo", "json"}},
+
+		// pflag takes the next argument verbatim as a flag's value, dash and
+		// all, so a value that happens to spell a sibling flag's name is a
+		// legitimate invocation. build trigger has both --commit-message and
+		// --tag, which makes this reachable rather than theoretical.
+		{name: "dash-leading value of --commit-message is not a flag", args: []string{"build", "trigger", "--commit-message", "-tag"}},
+		{name: "dash-leading value of the -c shorthand is not a flag", args: []string{"run", "-c", "-config"}},
+		{name: "negative number as a flag value is untouched", args: []string{"build", "trigger", "--priority", "-1"}},
+		{name: "value after a shorthand cluster is not a flag", args: []string{"stack", "list", "-qo", "-format"}},
+
+		// ...but a genuine single-dash long flag still has to be caught when
+		// it follows a flag that took its own value.
+		{
+			name:         "single-dash long flag after a satisfied flag is still caught",
+			args:         []string{"build", "trigger", "--commit-message", "msg", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// A value-taking shorthand that opens a cluster swallows the rest of
+		// the token, so the following argument is a fresh one, not its value.
+		{
+			name:         "cluster led by a value shorthand does not consume the next token",
+			args:         []string{"run", "-oq", "-config", "bitrise.yml"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+
+		// pflag only treats "--" as a terminator when it reads it as a fresh
+		// token; as a flag's value it is literal, so scanning continues.
+		{
+			name:         "terminator as a flag value does not end the scan",
+			args:         []string{"build", "trigger", "--commit-message", "--", "-tag", "v1"},
+			wantFound:    true,
+			wantFlagName: "tag",
+		},
+
+		// -ci parses as --config=i under pflag, which is exactly the silent
+		// misparse this guard exists to catch: nobody means a config file
+		// named "i", they mean --ci.
+		{
+			name:         "two-character global spelled with one dash is caught",
+			args:         []string{"run", "-ci"},
+			wantFound:    true,
+			wantFlagName: "ci",
+		},
+
+		// pflag walks a cluster character by character and a bool consumes
+		// nothing, so a long flag typed with one dash behind an incidental
+		// bool still reaches the value-taking shorthand and misparses
+		// silently. -h is registered on every command, so this is reachable
+		// everywhere.
+		{
+			name:         "long flag behind a bool shorthand is caught",
+			args:         []string{"run", "-qconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind the help shorthand is caught",
+			args:         []string{"run", "-hconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind two bool shorthands is caught",
+			args:         []string{"run", "-qqconfig", "x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+		{
+			name:         "long flag behind a bool, with an attached value, is caught",
+			args:         []string{"run", "-qconfig=x"},
+			wantFound:    true,
+			wantFlagName: "config",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := newRootCommand()
+			target, _, err := root.Find(tt.args)
+			require.NoError(t, err)
+
+			_, flagName, found := cmdutil.DetectSingleDashLongFlag(target, tt.args)
+			assert.Equal(t, tt.wantFound, found)
+			if tt.wantFound {
+				assert.Equal(t, tt.wantFlagName, flagName)
+			}
+		})
+	}
+}
+
+// Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit relies on the fact that a
+// false positive here would call cmdutil.Failf and kill the test process —
+// completing at all is the assertion for the non-matching cases.
+func Test_rejectSingleDashLongFlags_NoMatch_DoesNotExit(t *testing.T) {
+	for _, args := range [][]string{
+		{"run", "--config", "bitrise.yml"},
+		{"run", "-c", "bitrise.yml"},
+		{"run", "-i", "secrets.yml"},
+		{"stack", "list", "-qo", "json"},
+	} {
+		rejectSingleDashLongFlags(newRootCommand(), args)
+	}
+}
+
+func visitCommands(cmd *cobra.Command, fn func(*cobra.Command)) {
+	fn(cmd)
+	for _, sub := range cmd.Commands() {
+		visitCommands(sub, fn)
+	}
 }

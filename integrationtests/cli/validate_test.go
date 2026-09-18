@@ -101,6 +101,13 @@ workflows:
 const runtimeLimit = 1000 * time.Millisecond
 const runningTimeMsg = "test case too slow: %s is %s above limit"
 
+// Config validation below is asserted against exact local-validation output, so
+// every invocation passing a config must also pass --offline: `validate` prefers
+// the online endpoint whenever a token resolves, and this subprocess inherits the
+// ambient environment (BITRISE_TOKEN, or an auth.yaml written by `auth login`).
+// Without it, the assertions would compare against server messages, and the API
+// round-trip alone can exceed runtimeLimit.
+
 func Test_ValidateTest(t *testing.T) {
 	tmpDir, err := pathutil.NormalizedOSTempDirPath("__validate_test__")
 	require.NoError(t, err)
@@ -113,7 +120,7 @@ func Test_ValidateTest(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", "trigger_params_test_bitrise.yml")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", "trigger_params_test_bitrise.yml", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err, out)
@@ -129,7 +136,7 @@ func Test_ValidateTest(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err)
@@ -146,7 +153,7 @@ func Test_ValidateTest(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err)
@@ -163,7 +170,7 @@ func Test_ValidateTest(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.Error(t, err, out)
@@ -185,7 +192,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", "trigger_params_test_bitrise.yml", "--format", "json")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", "trigger_params_test_bitrise.yml", "--format", "json", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err)
@@ -201,7 +208,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err)
@@ -218,7 +225,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.NoError(t, err)
@@ -235,7 +242,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.Error(t, err, out)
@@ -252,7 +259,7 @@ func Test_ValidateTestJSON(t *testing.T) {
 		var out string
 		var err error
 		elapsed := testhelpers.WithRunningTimeCheck(func() {
-			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json")
+			cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--format", "json", "--offline")
 			out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 		})
 		require.Error(t, err, out)
@@ -270,7 +277,7 @@ func Test_ValidToolConfigValidateTest(t *testing.T) {
 	var out string
 	var err error
 	elapsed := testhelpers.WithRunningTimeCheck(func() {
-		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 	})
 	require.NoError(t, err, out)
@@ -286,7 +293,7 @@ func Test_InvalidToolConfigValidateTest(t *testing.T) {
 	var out string
 	var err error
 	elapsed := testhelpers.WithRunningTimeCheck(func() {
-		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 	})
 	require.Error(t, err, out)
@@ -303,7 +310,7 @@ func Test_ValidMiseToolConfigValidateTest(t *testing.T) {
 	var out string
 	var err error
 	elapsed := testhelpers.WithRunningTimeCheck(func() {
-		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth)
+		cmd := command.New(testhelpers.BinPath(), "validate", "-c", configPth, "--offline")
 		out, err = cmd.RunAndReturnTrimmedCombinedOutput()
 	})
 	require.NoError(t, err, out)

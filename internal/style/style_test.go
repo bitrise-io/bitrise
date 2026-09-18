@@ -1,0 +1,243 @@
+package style
+
+import (
+	"bytes"
+	"strings"
+	"testing"
+
+	"github.com/charmbracelet/lipgloss"
+
+	"github.com/muesli/termenv"
+)
+
+func TestNew_NonTTYWriterIsAnsiFree(t *testing.T) {
+	// A *bytes.Buffer is never a TTY → lipgloss/termenv falls back to the
+	// Ascii profile and styles render as plain strings. This is the
+	// invariant that keeps tests, pipes, and JSON output ANSI-free.
+	var buf bytes.Buffer
+	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Styles built for *bytes.Buffer should not emit color")
+	}
+	for _, in := range []string{"hello", "Build:", "success"} {
+		if got := s.Header.Render(in); got != in {
+			t.Errorf("Header.Render(%q) = %q, want plain", in, got)
+		}
+		if got := s.Success.Render(in); got != in {
+			t.Errorf("Success.Render(%q) = %q, want plain", in, got)
+		}
+		if got := s.Brand.Render(in); got != in {
+			t.Errorf("Brand.Render(%q) = %q, want plain", in, got)
+		}
+		if got := s.Failure.Render(in); got != in {
+			t.Errorf("Failure.Render(%q) = %q, want plain", in, got)
+		}
+	}
+}
+
+func TestConfigure_NoColorForcesAscii(t *testing.T) {
+	t.Cleanup(func() { Configure(false, ThemeAuto) })
+	Configure(true, ThemeAuto)
+
+	var buf bytes.Buffer
+	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Configure(true, _) should force no color")
+	}
+	if got := s.Success.Render("✓"); strings.Contains(got, "\x1b[") {
+		t.Errorf("expected ANSI-free output, got %q", got)
+	}
+}
+
+func TestConfigure_ThemeNoneForcesAscii(t *testing.T) {
+	t.Cleanup(func() { Configure(false, ThemeAuto) })
+	Configure(false, ThemeNone)
+
+	var buf bytes.Buffer
+	s := New(&buf)
+	if s.HasColor() {
+		t.Fatal("Configure(_, ThemeNone) should force no color")
+	}
+}
+
+func TestParseTheme(t *testing.T) {
+	cases := []struct {
+		in      string
+		want    Theme
+		wantErr bool
+	}{
+		{"", ThemeAuto, false},
+		{"auto", ThemeAuto, false},
+		{"AUTO", ThemeAuto, false},
+		{"  dark  ", ThemeDark, false},
+		{"light", ThemeLight, false},
+		{"none", ThemeNone, false},
+		{"neon", "", true},
+		{"system", "", true},
+	}
+	for _, c := range cases {
+		t.Run(c.in, func(t *testing.T) {
+			got, err := ParseTheme(c.in)
+			if c.wantErr {
+				if err == nil {
+					t.Fatalf("ParseTheme(%q): expected error, got %q", c.in, got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseTheme(%q): unexpected error: %v", c.in, err)
+			}
+			if got != c.want {
+				t.Errorf("ParseTheme(%q) = %q, want %q", c.in, got, c.want)
+			}
+		})
+	}
+}
+
+func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	cases := map[string]lipgloss.Style{
+		"success":               s.Success,
+		"failed":                s.Failure,
+		"in-progress":           s.running,
+		"aborted":               s.aborted,
+		"aborted-with-success":  s.aborted,
+		"some-unrecognized-str": s.Dim,
+	}
+	for status, want := range cases {
+		if got := s.BuildStatus(status); got.String() != want.String() {
+			t.Errorf("BuildStatus(%q) = %q, want %q", status, got.String(), want.String())
+		}
+	}
+}
+
+func TestRainbow_NoColorReturnsPlain(t *testing.T) {
+	// On a non-TTY writer there's no color profile, so Rainbow must be a
+	// no-op: same string, no ANSI bytes.
+	var buf bytes.Buffer
+	s := New(&buf)
+	const msg = "Hello, world!"
+	got := s.Rainbow(msg, 0)
+	if got != msg {
+		t.Errorf("Rainbow on non-TTY = %q, want plain %q", got, msg)
+	}
+	if strings.Contains(got, "\x1b[") {
+		t.Errorf("Rainbow on non-TTY emitted ANSI: %q", got)
+	}
+}
+
+func TestRainbow_EmptyAndWhitespaceOnly(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+	s.r.SetColorProfile(termenv.ANSI256) // force a color profile for this test
+	if got := s.Rainbow("", 0); got != "" {
+		t.Errorf("empty: got %q, want empty", got)
+	}
+	if got := s.Rainbow("   ", 0); got != "   " {
+		t.Errorf("whitespace-only: got %q, want %q", got, "   ")
+	}
+}
+
+func TestTable_HeadersAndRows(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	headers := []string{"NUMBER", "STATUS", "BRANCH"}
+	rows := [][]string{
+		{"42", "success", "main"},
+		{"41", "in-progress", "feature/x"},
+	}
+	if err := Table(&buf, headers, rows, s.Header, nil); err != nil {
+		t.Fatalf("Table: %v", err)
+	}
+
+	out := buf.String()
+	if !strings.Contains(out, "NUMBER") || !strings.Contains(out, "STATUS") || !strings.Contains(out, "BRANCH") {
+		t.Errorf("missing headers in output:\n%s", out)
+	}
+	if !strings.Contains(out, "feature/x") {
+		t.Errorf("missing row content:\n%s", out)
+	}
+	// Three lines: header + 2 data.
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Errorf("expected 3 lines, got %d:\n%s", len(lines), out)
+	}
+}
+
+func TestTable_ColumnAlignment(t *testing.T) {
+	// Cells of varying length should be right-padded so the next column
+	// always starts at the same offset.
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	headers := []string{"A", "B"}
+	rows := [][]string{
+		{"x", "1"},
+		{"longer-cell", "2"},
+	}
+	if err := Table(&buf, headers, rows, s.Header, nil); err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("got %d lines: %q", len(lines), buf.String())
+	}
+	col := strings.Index(lines[1], "1")
+	if col == -1 || col != strings.Index(lines[2], "2") {
+		t.Errorf("columns misaligned:\n%s", buf.String())
+	}
+}
+
+func TestTable_StylerIsCalled(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	headers := []string{"X"}
+	rows := [][]string{{"a"}, {"b"}}
+
+	called := 0
+	styler := func(_, _ int, content string) string {
+		called++
+		return "<" + content + ">"
+	}
+	if err := Table(&buf, headers, rows, s.Header, styler); err != nil {
+		t.Fatal(err)
+	}
+	if called != 2 {
+		t.Errorf("styler called %d times, want 2", called)
+	}
+	out := buf.String()
+	if !strings.Contains(out, "<a>") || !strings.Contains(out, "<b>") {
+		t.Errorf("styler output not in result:\n%s", out)
+	}
+}
+
+func TestTable_FewerCellsThanHeadersDoesntPanic(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+	headers := []string{"A", "B", "C"}
+	rows := [][]string{
+		{"only-a"}, // 1 cell for 3 headers
+		{"a", "b", "c"},
+	}
+	if err := Table(&buf, headers, rows, s.Header, nil); err != nil {
+		t.Fatalf("Table: %v", err)
+	}
+	if !strings.Contains(buf.String(), "only-a") {
+		t.Errorf("first row missing:\n%s", buf.String())
+	}
+}
+
+func TestTable_EmptyHeadersIsNoop(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+	if err := Table(&buf, nil, nil, s.Header, nil); err != nil {
+		t.Fatalf("Table: %v", err)
+	}
+	if buf.Len() != 0 {
+		t.Errorf("expected no output for empty headers, got %q", buf.String())
+	}
+}

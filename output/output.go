@@ -3,10 +3,9 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"gopkg.in/yaml.v2"
-
-	"github.com/bitrise-io/bitrise/v2/log"
 )
 
 const (
@@ -23,40 +22,82 @@ const (
 // Format ...
 var Format = FormatRaw
 
-// ConfigureOutputFormat ...
-func ConfigureOutputFormat(outFmt string) error {
-	switch outFmt {
-	case FormatRaw, FormatJSON, FormatYML:
-		// valid
-		Format = outFmt
-	case "":
-		// default
-		Format = FormatRaw
+// defaultFormat is what ConfigureOutputFormat("") resolves to. It starts as
+// FormatRaw so behaviour is unchanged until something calls SetDefault.
+var defaultFormat = FormatRaw
+
+// SetDefault sets the format ConfigureOutputFormat falls back to when a
+// command's own --format flag is unset. This is what lets a root-persistent
+// --output flag (or the "output" config key) take effect without touching
+// any per-command --format call site.
+func SetDefault(format string) {
+	defaultFormat = format
+}
+
+// Default returns the format set by SetDefault. Commands that render through
+// their own logger instead of ConfigureOutputFormat need it to honour the
+// root-persistent --output flag.
+func Default() string {
+	return defaultFormat
+}
+
+// ParseFormat validates a format string without mutating any global state,
+// accepting "human" as an alias for FormatRaw.
+func ParseFormat(s string) (string, error) {
+	switch s {
+	case FormatRaw, "human":
+		return FormatRaw, nil
+	case FormatJSON, FormatYML:
+		return s, nil
 	default:
-		// invalid
-		return fmt.Errorf("invalid output format: %s", outFmt)
+		return "", fmt.Errorf("invalid output format: %s", s)
 	}
+}
+
+// ConfigureOutputFormat sets the global Format from a command's --format flag
+// value, falling back to the resolved default (see SetDefault) when empty.
+func ConfigureOutputFormat(outFmt string) error {
+	if outFmt == "" {
+		outFmt = defaultFormat
+	}
+	parsed, err := ParseFormat(outFmt)
+	if err != nil {
+		return err
+	}
+	Format = parsed
 	return nil
 }
 
-// Print ...
-func Print(outModel interface{}, format string) {
+// Render writes result via renderRaw for FormatRaw, or via Print otherwise —
+// the "raw table/text vs. json/yml" branch every command needs, in one place.
+func Render[T any](w io.Writer, format string, result T, renderRaw func(io.Writer, T) error) error {
+	if format == FormatRaw {
+		return renderRaw(w, result)
+	}
+	return Print(w, result, format)
+}
+
+// Print marshals outModel per format and writes it to w, indented. Returns an
+// error instead of logging it, so a marshaling failure surfaces as a non-zero
+// exit rather than a silently successful command.
+func Print(w io.Writer, outModel interface{}, format string) error {
 	switch format {
 	case FormatJSON:
-		serBytes, err := json.Marshal(outModel)
-		if err != nil {
-			log.Errorf("[.print] ERROR: %s", err)
-			return
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(outModel); err != nil {
+			return fmt.Errorf("marshal json output: %w", err)
 		}
-		log.Printf("%s", serBytes)
 	case FormatYML:
 		serBytes, err := yaml.Marshal(outModel)
 		if err != nil {
-			log.Errorf("[output.print] ERROR: %s", err)
-			return
+			return fmt.Errorf("marshal yml output: %w", err)
 		}
-		log.Printf("%s", serBytes)
+		if _, err := w.Write(serBytes); err != nil {
+			return fmt.Errorf("write yml output: %w", err)
+		}
 	default:
-		log.Errorf("[output.print] Invalid output format: %s", format)
+		return fmt.Errorf("invalid output format: %s", format)
 	}
+	return nil
 }

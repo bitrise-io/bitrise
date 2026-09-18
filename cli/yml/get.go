@@ -1,0 +1,67 @@
+package yml
+
+import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/spf13/cobra"
+
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	internalyml "github.com/bitrise-io/bitrise/v2/internal/yml"
+	"github.com/bitrise-io/bitrise/v2/output"
+)
+
+// NewGetCommand returns the `yml get` subcommand.
+func NewGetCommand() *cobra.Command {
+	var buildSlug string
+
+	cmd := &cobra.Command{
+		Use:   "get",
+		Short: "Print the bitrise.yml stored on Bitrise",
+		Long: `Print the bitrise.yml configuration stored on Bitrise for an app.
+
+When --build is provided, prints the bitrise.yml that a specific build ran with
+instead of the app's current stored configuration.`,
+		Example: `  bitrise yml get --app my-app-id
+  bitrise yml get --app my-app-id --build abc123
+  bitrise yml get --app my-app-id --format json`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			cmdutil.LogCommandParameters(cmd)
+
+			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
+			if err := output.ConfigureOutputFormat(format); err != nil {
+				return err
+			}
+
+			client, err := cmdutil.NewAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			appSlug, err := cmdutil.ResolveAndLookupAppSlug(cmd, client)
+			if err != nil {
+				return err
+			}
+
+			result, err := internalyml.NewService(client).Get(cmd.Context(), appSlug, buildSlug)
+			if err != nil {
+				return err
+			}
+
+			return output.Render(cmd.OutOrStdout(), output.Format, result, func(w io.Writer, result internalyml.GetResult) error {
+				content := result.Content
+				if content != "" && !strings.HasSuffix(content, "\n") {
+					content += "\n"
+				}
+				_, err := fmt.Fprint(w, content)
+				return err
+			})
+		},
+	}
+
+	cmd.Flags().StringVar(&buildSlug, "build", "", "build ID to retrieve the yml for")
+	cmdutil.AddAppFlag(cmd.Flags(), "app ID to retrieve the bitrise.yml for (or set BITRISE_APP_ID; inside a build, defaults to the app the build runs for)")
+	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
+
+	return cmd
+}

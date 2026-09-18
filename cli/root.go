@@ -1,0 +1,141 @@
+package cli
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/bitrise-io/bitrise/v2/cli/api"
+	"github.com/bitrise-io/bitrise/v2/cli/app"
+	"github.com/bitrise-io/bitrise/v2/cli/auth"
+	"github.com/bitrise-io/bitrise/v2/cli/build"
+	"github.com/bitrise-io/bitrise/v2/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v2/cli/config"
+	"github.com/bitrise-io/bitrise/v2/cli/local"
+	"github.com/bitrise-io/bitrise/v2/cli/plugin"
+	"github.com/bitrise-io/bitrise/v2/cli/purr"
+	"github.com/bitrise-io/bitrise/v2/cli/rde"
+	"github.com/bitrise-io/bitrise/v2/cli/stack"
+	"github.com/bitrise-io/bitrise/v2/cli/step"
+	"github.com/bitrise-io/bitrise/v2/cli/user"
+	"github.com/bitrise-io/bitrise/v2/cli/yml"
+	"github.com/bitrise-io/bitrise/v2/configs"
+	"github.com/bitrise-io/bitrise/v2/internal/style"
+	"github.com/bitrise-io/bitrise/v2/output"
+	"github.com/bitrise-io/bitrise/v2/version"
+	"github.com/spf13/cobra"
+)
+
+func newRootCommand() *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:               filepath.Base(os.Args[0]),
+		Short:             "Bitrise Automations Workflow Runner",
+		Version:           version.VERSION,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
+		PersistentPreRunE: before,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if err := cmd.Help(); err != nil {
+				return err
+			}
+			return errors.New("")
+		},
+	}
+
+	rootCmd.SetVersionTemplate("{{.Version}}\n")
+
+	// --debug, --ci and --pr are bound to their env vars: analytics report them as
+	// set when sourced from the env, and the flag/env value is resolved by the mode
+	// resolvers — for --debug additionally in Run() before cobra parses, so the
+	// logger can be configured up front.
+	rootCmd.PersistentFlags().Bool(cmdutil.DebugModeKey, false, "If true it enables DEBUG mode.")
+	rootCmd.PersistentFlags().Bool(cmdutil.CIKey, false, "If true it indicates that we're used by another tool so don't require any user input!")
+	rootCmd.PersistentFlags().Bool(cmdutil.PRKey, false, "If true bitrise runs in pull request mode.")
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.DebugModeKey, configs.DebugModeEnvKey)
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.CIKey, configs.CIModeEnvKey)
+
+	// --output does not reach the local commands that predate this vocabulary
+	// (yml validate, local workflow-list, plugin list/info); they keep their
+	// own --format.
+	rootCmd.PersistentFlags().StringP(cmdutil.FlagOutput, "o", "",
+		fmt.Sprintf("Output format for commands that support it. Accepted: %s (default), %s, %s (alias %q).", output.FormatRaw, output.FormatJSON, output.FormatYML, "human"))
+	rootCmd.PersistentFlags().BoolP(cmdutil.FlagQuiet, "q", false, "Suppress non-error diagnostic messages.")
+	rootCmd.PersistentFlags().Bool(cmdutil.FlagNoColor, false, "Disable ANSI colors (the NO_COLOR env var is also honored).")
+	rootCmd.PersistentFlags().String(cmdutil.FlagTheme, "",
+		fmt.Sprintf("Color theme. Accepted: %s.", strings.Join(style.Themes, ", ")))
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.FlagOutput, cmdutil.EnvOutput)
+	cmdutil.SetFlagEnvVar(rootCmd.PersistentFlags(), cmdutil.FlagTheme, cmdutil.EnvTheme)
+
+	_ = rootCmd.RegisterFlagCompletionFunc(cmdutil.FlagOutput, func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{output.FormatRaw, output.FormatJSON, output.FormatYML, "human"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	_ = rootCmd.RegisterFlagCompletionFunc(cmdutil.FlagTheme, func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return style.Themes, cobra.ShellCompDirectiveNoFileComp
+	})
+
+	rootCmd.AddCommand(
+		local.NewCmd(),
+		yml.NewCmd(),
+		step.NewCmd(),
+		auth.NewCmd(),
+		stack.NewCmd(),
+		user.NewCmd(),
+		app.NewCmd(),
+		build.NewCmd(),
+		api.NewCmd(),
+		config.NewCmd(),
+
+		versionCommand,
+		updateCommand,
+		plugin.NewCmd(),
+		envmanCommand,
+		purr.NewCmd(),
+		rde.NewCmd(),
+
+		// Deprecated, kept for backward compatibility but hidden (see local/trigger.go).
+		cmdutil.AsHidden(local.NewTriggerCommand()),
+	)
+
+	// Backward-compatible hidden aliases: the old top-level command names keep
+	// working while the canonical versions live under the local/yml/step groups.
+	rootCmd.AddCommand(
+		cmdutil.AsHidden(local.NewRunCommand()),
+		cmdutil.AsHidden(local.NewInitCommand()),
+		cmdutil.AsHidden(local.NewSetupCommand()),
+		cmdutil.AsHidden(local.NewToolsCommand()),
+		cmdutil.AsHidden(local.NewWorkflowListCommand()),
+		cmdutil.AsHidden(yml.NewValidateCommand()),
+		cmdutil.AsHidden(yml.NewMergeCommand()),
+		cmdutil.AsHidden(step.NewShareCommand()),
+		step.NewLegacyStepsCommand(),
+	)
+
+	// Register the help command eagerly so it shows up in the command list
+	// regardless of how help is reached.
+	rootCmd.InitDefaultHelpCmd()
+
+	// Render cobra's native help for every command, and append the installed
+	// plugin list to the root help (cobra has no notion of bitrise plugins).
+	defaultHelp := rootCmd.HelpFunc()
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		defaultHelp(cmd, args)
+		if cmd == rootCmd {
+			printInstalledPlugins(cmd.OutOrStdout())
+		}
+	})
+
+	return rootCmd
+}
+
+// NewRootCommandForDocs returns the fully wired root command with a stable
+// Use ("bitrise"), for tools/gendocs. The normal root command derives Use
+// from os.Args[0] to support a renamed/aliased binary, which would make
+// generated doc filenames and command names depend on whatever name `go run`
+// gives its temp binary, so the doc generator needs a pinned name instead.
+func NewRootCommandForDocs() *cobra.Command {
+	root := newRootCommand()
+	root.Use = "bitrise"
+	return root
+}
