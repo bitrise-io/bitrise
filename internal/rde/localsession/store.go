@@ -230,7 +230,7 @@ func Load(repoPath, rdeSessionID string) (Record, error) {
 
 	legacyDir, lerr := legacySessionsDir(repoPath)
 	if lerr != nil {
-		return Record{}, err
+		return Record{}, lerr
 	}
 	return readRecord(filepath.Join(legacyDir, rdeSessionID+".json"))
 }
