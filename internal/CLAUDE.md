@@ -12,10 +12,11 @@ per command. A command whose work an existing method already does calls it inste
 gaining a wrapper that only forwards.
 
 - A collection returns a wrapper for a stable top-level object,
-  `StacksResult{Items []Stack}`. A single-item fetch returns the bare item.
+  `StacksResult{Items []Stack}`; a single-item fetch returns the bare item.
+  `internal/rde` predates the rule and returns bare slices, wrapping in the command.
 - Normalize the wire shape here, not in the command: `stack-report` becomes
   `stack_report`. `TestStacksResult_JSONShape` pins it.
-- Nothing found returns `fmt.Errorf("stack %q not found", id)`.
+- Nothing found returns an error.
 
 **IMPORTANT: every struct that can reach `output.Print` needs a `yaml` tag beside each
 `json` tag** - same name, same `omitempty`:

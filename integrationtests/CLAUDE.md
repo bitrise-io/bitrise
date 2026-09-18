@@ -17,13 +17,10 @@ cd integrationtests
 INTEGRATION_TEST_BINARY_PATH=/tmp/bitrise go test --tags linux_and_mac -p 1 ./...
 ```
 
-`testhelpers.BinPath()` reads that env var and otherwise falls back to `bitrise` on
-`PATH` with a warning. Docker suites run via `make docker-step-based-test` and
-`make docker-with-group-test`.
+Docker suites run via `make docker-step-based-test` and `make docker-with-group-test`.
 
-`-p 1` is required because `bitrise local run` shares machine state across packages
-(steplib cache, `~/.bitrise`, temp and plugin dirs). The constraint comes from the
-runner, so it applies even to suites that spawn no workflows.
+`-p 1` is required for a whole-suite run because `bitrise local run` shares machine
+state across packages (steplib cache, `~/.bitrise`, temp and plugin dirs).
 
 ## Isolating a new test
 

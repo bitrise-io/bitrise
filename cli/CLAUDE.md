@@ -16,14 +16,9 @@ that only dispatches uses `RunE: cmdutil.RequireKnownSubcommand`.
 Leaves use `RunE`, never `Run`, and always set `Args`:
 
 - `cobra.NoArgs` when it takes none
-- `cmdutil.RequireArgs("STACK_ID")` when the positional arg is the only identifier
+- `cobra.ExactArgs(1)` when the positional arg is the only identifier (`build view`)
 - `cobra.MaximumNArgs(1)` when a flag, env var or config can supply it instead
   (`app view`)
-
-`RequireArgs` enforces a lower bound only. It rejects no extra argument (nothing caps
-one today) and checks no values, so guard an empty string in `RunE` where it is
-meaningless, as `cli/rde/session/create.go` does. `build view` uses
-`cobra.ExactArgs(1)` where `RequireArgs` would fit; follow the rule, not that file.
 
 RunE body, in this order:
 
@@ -81,10 +76,10 @@ func printStackText(w io.Writer, st internalstack.Stack) error {
 }
 ```
 
-Name it `print<Thing>Text`, keep it below the constructor in the same file, and move it
-to the group's `utils.go` only when a second command renders the same type
-(`cli/build/utils.go`). A resource with a page on app.bitrise.io also gets `--web`
-(`app view`, `build view`); stacks have none.
+Name it `print<Thing>Text` (older files use `print<Thing>Human`), keep it below the
+constructor in the same file, and move it to the group's `utils.go` only when a second
+command renders the same type (`cli/build/utils.go`). A resource with a page on
+app.bitrise.io also gets `--web` (`app view`, `build view`); stacks have none.
 
 ## Flags
 
@@ -94,8 +89,7 @@ to the group's `utils.go` only when a second command renders the same type
   `yml validate`, `rde template create/update`), `--field` (`api`, no `--format` at
   all) or `--follow` (`rde session logs`).
 - Use the constants: `cmdutil.FlagWorkspace`, `FlagApp`, `FlagOutput`, `FlagQuiet`,
-  `FlagNoColor`, `FlagTheme`, `FormatKey`. Each doc comment covers precedence and env
-  var. `cmdutil.IsQuiet(cmd)` reads `--quiet`.
+  `FlagNoColor`, `FlagTheme`, `FormatKey`. `cmdutil.IsQuiet(cmd)` reads `--quiet`.
 
 ## Vocabulary and help
 
@@ -105,10 +99,10 @@ to the group's `utils.go` only when a second command renders the same type
 - **Workspace**, never organization, org or owner. `rde template`'s `OWNER` column is
   the creator's email, a different thing.
 - Singular nouns. CRUD verbs: `create`, `update`, `delete`, `list`, `view`. `build`
-  (and `local`) uses `trigger` instead of `create` to start a run, and `abort`
-  instead of `cancel` to stop one.
-- `Use`, `Short` and `Example` always. Add `Long` only for an example, a precedence
-  rule or a surprise - cobra already prints the flags.
+  uses `trigger` instead of `create` to start a run, and `abort` instead of `cancel`
+  to stop one.
+- `Use` and `Short` always, `Example` on leaves. Add `Long` only for an example, a
+  precedence rule or a surprise - cobra already prints the flags.
 
 ## Tests
 
