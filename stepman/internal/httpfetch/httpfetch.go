@@ -32,9 +32,9 @@ type Client interface {
 	// the final path.
 	Download(ctx context.Context, destPath, url string) error
 	// DownloadWithHash behaves like Download but also verifies that the
-	// downloaded content matches expectedHash ("sha256-<hex>"). The temp file
-	// is removed and an error is returned if the hash does not match, so a
-	// mismatched file never appears at destPath.
+	// downloaded content's SHA256 digest, hex-encoded, matches expectedHash.
+	// The temp file is removed and an error is returned if the digest does
+	// not match, so a mismatched file never appears at destPath.
 	DownloadWithHash(ctx context.Context, destPath, url, expectedHash string) error
 }
 
@@ -160,9 +160,9 @@ func (c *client) DownloadWithHash(ctx context.Context, destPath, url, expectedHa
 }
 
 // download fetches url into a temp file alongside destPath and atomically
-// renames it into place. When expectedHash is non-empty the content is verified
-// against it ("sha256-<hex>") before the rename, so a mismatched or partial
-// file never lands at destPath.
+// renames it into place. When expectedHash is non-empty, the content's SHA256
+// digest (hex-encoded) is verified against it before the rename, so a
+// mismatched or partial file never lands at destPath.
 func (c *client) download(ctx context.Context, destPath, url, expectedHash string) error {
 	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		return fmt.Errorf("create dest dir for %s: %w", destPath, err)
@@ -177,7 +177,7 @@ func (c *client) download(ctx context.Context, destPath, url, expectedHash strin
 	defer func() { _ = os.Remove(tmpPath) }()
 
 	if expectedHash != "" && hash != expectedHash {
-		return fmt.Errorf("hash mismatch (%s) expected %s, got %s", url, expectedHash, hash)
+		return fmt.Errorf("SHA256 hash mismatch (%s): expected %s, got %s", url, expectedHash, hash)
 	}
 	if err := os.Rename(tmpPath, destPath); err != nil {
 		return fmt.Errorf("rename %s to %s: %w", tmpPath, destPath, err)
@@ -186,7 +186,7 @@ func (c *client) download(ctx context.Context, destPath, url, expectedHash strin
 }
 
 // fetchToTemp streams url into a new temp file under dir and returns its path
-// and sha256 hash ("sha256-<hex>"). On error the temp file is removed and
+// and its SHA256 digest, hex-encoded. On error the temp file is removed and
 // path/hash are empty; on success the caller owns cleanup.
 func (c *client) fetchToTemp(ctx context.Context, dir, url string) (path string, hash string, err error) {
 	// Place the temp file alongside destPath so the final rename stays on
@@ -224,5 +224,5 @@ func (c *client) fetchToTemp(ctx context.Context, dir, url string) (path string,
 	if _, copyErr := io.Copy(io.MultiWriter(tmp, h), body); copyErr != nil {
 		return "", "", fmt.Errorf("write to %s: %w", tmp.Name(), copyErr)
 	}
-	return tmp.Name(), "sha256-" + hex.EncodeToString(h.Sum(nil)), nil
+	return tmp.Name(), hex.EncodeToString(h.Sum(nil)), nil
 }

@@ -82,6 +82,8 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 	}
 	stepModel := stepInfo.Step
 	version := stepInfo.Version
+	resolvedID := id
+	resolvedID.Version = version
 
 	// Place the step.yml at destinationStepYML once, up front.
 	if !useSteplibAPI {
@@ -94,7 +96,7 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 		}
 	}
 
-	execPath, err := downloadPrecompiled(log, stepModel, id, destination, fetcher, opts)
+	execPath, err := downloadPrecompiled(log, stepModel, resolvedID, destination, fetcher, opts)
 	if execPath != "" {
 		return ResolvedStep{ExecPath: execPath, StepInfo: stepInfo}, err
 	}
@@ -127,7 +129,7 @@ func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.Ca
 		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {
 			log.Debugf("Downloading executable for %s", platform)
 			downloadStart := time.Now()
-			execPath, err := activateStepExecutable(context.Background(), fetcher, id.IDorURI, executableForPlatform, destination, log, opts.storageURLs())
+			execPath, err := activateStepExecutable(context.Background(), fetcher, id.SteplibSource, id.IDorURI, id.Version, platform, executableForPlatform, destination, log, opts.storageURLs())
 			if err == nil {
 				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
 

@@ -92,6 +92,7 @@ func TestActivateStep_NoExecutable_ActivatesSource(t *testing.T) {
 // source. The binary transfer is faked; asserting the download URL/hash is the
 // job of activate_executable_test.go.
 func TestActivateStep_ChoosesExecutable(t *testing.T) {
+	redirectCacheDir(t)
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 	srv := serveHelloStepInventoryWithExecutables(t, &models.Executables{
 		platform: models.Executable{
@@ -110,7 +111,7 @@ func TestActivateStep_ChoosesExecutable(t *testing.T) {
 	resolved, err := ActivateStep(id, destination, filepath.Join(t.TempDir(), "current_step.yml"), log, useBinary, true, library, newFakeExecutableFetcher(t))
 	require.NoError(t, err)
 
-	assert.Equal(t, filepath.Join(destination, "hello-step"), resolved.ExecPath)
+	assert.Equal(t, filepath.Join(destination, "hello-step"), resolved.ExecPath, "executable activation must serve the path from the caller's destination dir, not the shared cache")
 	require.FileExists(t, resolved.ExecPath)
 	require.NoFileExists(t, filepath.Join(destination, "activated_marker.txt"),
 		"executable activation must not fall back to source")
@@ -119,6 +120,7 @@ func TestActivateStep_ChoosesExecutable(t *testing.T) {
 // If the executable download fails, ActivateStep falls back to source activation
 // rather than erroring.
 func TestActivateStep_ExecutableDownloadFails_FallsBackToSource(t *testing.T) {
+	redirectCacheDir(t)
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 	srv := serveHelloStepInventoryWithExecutables(t, &models.Executables{
 		platform: models.Executable{

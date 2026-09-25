@@ -170,6 +170,10 @@ func (f *fakeExecutableFetcher) DownloadWithHash(_ context.Context, destPath, ur
 	if f.downloadErr != nil {
 		return f.downloadErr
 	}
+	// Mirrors the real httpfetch.Client, which creates destPath's parent dirs.
+	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
+		return err
+	}
 	return os.WriteFile(destPath, []byte("stub binary"), 0o644)
 }
 

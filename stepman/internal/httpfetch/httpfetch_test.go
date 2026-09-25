@@ -18,7 +18,7 @@ import (
 
 func sha256Hash(b []byte) string {
 	sum := sha256.Sum256(b)
-	return "sha256-" + hex.EncodeToString(sum[:])
+	return hex.EncodeToString(sum[:])
 }
 
 func newClient() Client {
