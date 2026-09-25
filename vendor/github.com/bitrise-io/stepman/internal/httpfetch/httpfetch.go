@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 
+	_ "github.com/bartventer/httpcache/store/memcache"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -31,10 +32,19 @@ type Client interface {
 	// the final path.
 	Download(ctx context.Context, destPath, url string) error
 	// DownloadWithHash behaves like Download but also verifies that the
-	// downloaded content matches expectedHash ("sha256-<hex>"). The temp file
-	// is removed and an error is returned if the hash does not match, so a
-	// mismatched file never appears at destPath.
+	// downloaded content's SHA256 digest, hex-encoded, matches expectedHash.
+	// The temp file is removed and an error is returned if the digest does
+	// not match, so a mismatched file never appears at destPath.
 	DownloadWithHash(ctx context.Context, destPath, url, expectedHash string) error
+}
+
+// Clients are a pair of caching and passthrough clients.
+// They share one connection pool, for performance.
+type Clients struct {
+	// Caching reads through a HTTP cache that honours Cache-Control and revalidates with ETags.
+	Caching Client
+	// Passthrough fetches step archives and precompiled executables, uncached.
+	Passthrough Client
 }
 
 // Logger is the minimal logging interface Client needs; the retry adapter only
@@ -52,18 +62,55 @@ type client struct {
 	httpClient *http.Client
 }
 
-// NewClient returns a Client backed by a retryablehttp client, so callers get
-// transient-failure retries by default. Use NewWithClient to supply a specific
-// *http.Client (e.g. a test server's client).
-func NewClient(logger Logger) Client {
+// newRetryingClient returns an *http.Client that retries transient failures.
+func newRetryingClient(logger Logger) *http.Client {
 	rc := retryablehttp.NewClient()
 	rc.Logger = &retryhttpLogger{l: logger}
 	rc.ErrorHandler = retryablehttp.PassthroughErrorHandler
-	return &client{httpClient: rc.StandardClient()}
+	return rc.StandardClient()
 }
 
-// NewWithClient returns a Client backed by the given httpClient, which must be
-// non-nil. Prefer NewClient unless you need a specific transport.
+// NewClient returns a Client backed by a retryablehttp client.
+func NewClient(logger Logger) Client {
+	return &client{httpClient: newRetryingClient(logger)}
+}
+
+// NewCachingClient returns a caching and a passthrough Client. Both run over the
+// same retrying transport, so they share one connection pool.
+func NewCachingClient(logger Logger) (Clients, error) {
+	// The cache is layered above the retries, so a 500 is retried before it is stored.
+	passthrough := newRetryingClient(logger)
+	caching, err := NewCachingWithClient(logger, passthrough)
+	if err != nil {
+		return Clients{}, err
+	}
+
+	return Clients{
+		Caching:     caching,
+		Passthrough: &client{httpClient: passthrough},
+	}, nil
+}
+
+// NewCachingWithClient returns a caching Client.
+// Prefer NewCachingClient unless you need a specific transport.
+func NewCachingWithClient(logger Logger, httpClient *http.Client) (Client, error) {
+	upstream := httpClient.Transport
+	if upstream == nil {
+		upstream = http.DefaultTransport // what net/http itself uses for a nil Transport
+	}
+
+	cached, err := newCachingTransport(logger, upstream)
+	if err != nil {
+		return nil, err
+	}
+
+	caching := *httpClient
+	caching.Transport = cached
+	return &client{httpClient: &caching}, nil
+}
+
+// NewWithClient returns a Client backed by the given httpClient.
+// Prefer NewClient unless you need a specific transport.
 func NewWithClient(httpClient *http.Client) Client {
 	return &client{httpClient: httpClient}
 }
@@ -90,8 +137,7 @@ func (c *client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 
 // StatusError is returned by Get when the server responds with a non-2xx
 // status, so callers can branch on the code (e.g. treat 404 as "not found")
-// via errors.As. Body holds a bounded snippet of the response body, which
-// usually explains the failure (a 404 page, S3's XML error, …).
+// via errors.As.
 type StatusError struct {
 	URL  string
 	Code int
@@ -114,9 +160,9 @@ func (c *client) DownloadWithHash(ctx context.Context, destPath, url, expectedHa
 }
 
 // download fetches url into a temp file alongside destPath and atomically
-// renames it into place. When expectedHash is non-empty the content is verified
-// against it ("sha256-<hex>") before the rename, so a mismatched or partial
-// file never lands at destPath.
+// renames it into place. When expectedHash is non-empty, the content's SHA256
+// digest (hex-encoded) is verified against it before the rename, so a
+// mismatched or partial file never lands at destPath.
 func (c *client) download(ctx context.Context, destPath, url, expectedHash string) error {
 	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		return fmt.Errorf("create dest dir for %s: %w", destPath, err)
@@ -131,7 +177,7 @@ func (c *client) download(ctx context.Context, destPath, url, expectedHash strin
 	defer func() { _ = os.Remove(tmpPath) }()
 
 	if expectedHash != "" && hash != expectedHash {
-		return fmt.Errorf("hash mismatch (%s) expected %s, got %s", url, expectedHash, hash)
+		return fmt.Errorf("SHA256 hash mismatch (%s): expected %s, got %s", url, expectedHash, hash)
 	}
 	if err := os.Rename(tmpPath, destPath); err != nil {
 		return fmt.Errorf("rename %s to %s: %w", tmpPath, destPath, err)
@@ -140,7 +186,7 @@ func (c *client) download(ctx context.Context, destPath, url, expectedHash strin
 }
 
 // fetchToTemp streams url into a new temp file under dir and returns its path
-// and sha256 hash ("sha256-<hex>"). On error the temp file is removed and
+// and its SHA256 digest, hex-encoded. On error the temp file is removed and
 // path/hash are empty; on success the caller owns cleanup.
 func (c *client) fetchToTemp(ctx context.Context, dir, url string) (path string, hash string, err error) {
 	// Place the temp file alongside destPath so the final rename stays on
@@ -178,5 +224,5 @@ func (c *client) fetchToTemp(ctx context.Context, dir, url string) (path string,
 	if _, copyErr := io.Copy(io.MultiWriter(tmp, h), body); copyErr != nil {
 		return "", "", fmt.Errorf("write to %s: %w", tmp.Name(), copyErr)
 	}
-	return tmp.Name(), "sha256-" + hex.EncodeToString(h.Sum(nil)), nil
+	return tmp.Name(), hex.EncodeToString(h.Sum(nil)), nil
 }
