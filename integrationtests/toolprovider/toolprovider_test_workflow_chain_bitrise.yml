@@ -15,4 +15,8 @@ workflows:
       - script@1:
           title: Test activated tool
           inputs:
-            - content: set -ex; node --version | grep -q "22"
+            - content: |
+                set -ex
+                # Print node version for debug first, then test
+                node --version
+                node --version | grep -Eq "^v22\\."
