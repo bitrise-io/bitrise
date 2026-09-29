@@ -26,8 +26,12 @@ func NewTriggerCommand() *cobra.Command {
 		commitHash    string
 		commitMessage string
 		envJSON       string
+		envNoExpand   []string
 		priority      int
 		pullRequestID int
+		stack         string
+		machineType   string
+		licensePool   string
 		wait          bool
 		watch         bool
 		interval      time.Duration
@@ -43,6 +47,14 @@ The app is resolved via --app ID, BITRISE_APP_ID, or "bitrise config set app_id 
 If neither --workflow nor --pipeline is given, Bitrise selects the
 appropriate workflow from the trigger map.
 
+--branch defaults to "main" unless --tag or --commit-hash is given.
+
+--env values are expanded ($VAR references are replaced) on the build machine.
+List keys in --env-no-expand to pass their values verbatim.
+
+--priority overrides the priority set in bitrise.yml and the trigger map,
+including an explicit 0. Omit it to keep those.
+
 --wait blocks until the build finishes without streaming logs; with --format
 json/yml the final build record is written to stdout.
 
@@ -57,6 +69,9 @@ logs stream as plain text there instead.`,
   bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
   bitrise build trigger --app my-app-id --workflow primary --branch-dest main --pull-request-id 42
   bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
+  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":"$5"}' --env-no-expand PRICE
+  bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
+  bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
   bitrise build trigger --app my-app-id --workflow primary --wait
   bitrise build trigger --app my-app-id --workflow primary --watch`,
 		Args: cobra.NoArgs,
@@ -77,20 +92,31 @@ logs stream as plain text there instead.`,
 				return err
 			}
 
-			// Default to branch "main" for branch builds when no tag is given.
-			if branch == "" && tag == "" {
+			if branch == "" && tag == "" && commitHash == "" {
 				branch = "main"
 			}
 
-			var envs []internalbuild.TriggerEnv
+			var raw map[string]string
 			if envJSON != "" {
-				var raw map[string]string
 				if err := json.Unmarshal([]byte(envJSON), &raw); err != nil {
 					return fmt.Errorf("--env: invalid JSON object: %w", err)
 				}
-				for k, v := range raw {
-					envs = append(envs, internalbuild.TriggerEnv{Key: k, Value: v})
+			}
+			noExpand := make(map[string]bool, len(envNoExpand))
+			for _, k := range envNoExpand {
+				if _, ok := raw[k]; !ok {
+					return fmt.Errorf("--env-no-expand: %q is not set in --env", k)
 				}
+				noExpand[k] = true
+			}
+			var envs []internalbuild.TriggerEnv
+			for k, v := range raw {
+				envs = append(envs, internalbuild.TriggerEnv{Key: k, Value: v, IsExpand: !noExpand[k]})
+			}
+
+			var priorityOverride *int
+			if cmd.Flags().Changed("priority") {
+				priorityOverride = &priority
 			}
 
 			svc := internalbuild.NewService(client)
@@ -105,7 +131,10 @@ logs stream as plain text there instead.`,
 				CommitHash:    commitHash,
 				CommitMessage: commitMessage,
 				PullRequestID: pullRequestID,
-				Priority:      priority,
+				Priority:      priorityOverride,
+				Stack:         stack,
+				MachineTypeID: machineType,
+				LicensePoolID: licensePool,
 				Environments:  envs,
 			})
 			if err != nil {
@@ -163,14 +192,18 @@ logs stream as plain text there instead.`,
 
 	cmd.Flags().StringVar(&workflow, "workflow", "", "workflow ID to trigger (mutually exclusive with --pipeline)")
 	cmd.Flags().StringVar(&pipeline, "pipeline", "", "pipeline ID to trigger (mutually exclusive with --workflow)")
-	cmd.Flags().StringVar(&branch, "branch", "", `branch to build (default "main" for branch builds)`)
+	cmd.Flags().StringVar(&branch, "branch", "", `branch to build (default "main" unless --tag or --commit-hash is given)`)
 	cmd.Flags().StringVar(&branchDest, "branch-dest", "", "target branch for pull-request builds")
 	cmd.Flags().StringVar(&tag, "tag", "", "tag to build")
 	cmd.Flags().StringVar(&commitHash, "commit-hash", "", "commit hash to build")
 	cmd.Flags().StringVar(&commitMessage, "commit-message", "", "commit message to record")
 	cmd.Flags().StringVar(&envJSON, "env", "", `environment variables as a JSON object, e.g. '{"KEY":"value"}'`)
-	cmd.Flags().IntVar(&priority, "priority", 0, "build priority (-1 = low, 0 = normal, 1 = high)")
+	cmd.Flags().StringSliceVar(&envNoExpand, "env-no-expand", nil, "keys from --env whose values are passed verbatim, without expanding $VAR references (repeatable or comma-separated)")
+	cmd.Flags().IntVar(&priority, "priority", 0, "build priority from -100 to 100, overrides the bitrise.yml and trigger map priority (available on certain plans only)")
 	cmd.Flags().IntVar(&pullRequestID, "pull-request-id", 0, "pull request ID for PR builds")
+	cmd.Flags().StringVar(&stack, "stack", "", "stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')")
+	cmd.Flags().StringVar(&machineType, "machine-type", "", "machine type ID to run the build on, overrides the workflow's machine type")
+	cmd.Flags().StringVar(&licensePool, "license-pool", "", "license pool ID to run the build with")
 	cmd.Flags().BoolVar(&wait, "wait", false, "block until the build finishes without streaming logs (exit code reflects build outcome)")
 	cmd.Flags().BoolVar(&watch, "watch", false, "wait for the build to finish, showing progress (exit code reflects build outcome)")
 	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait or --watch is active")
@@ -178,10 +211,6 @@ logs stream as plain text there instead.`,
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 	cmd.MarkFlagsMutuallyExclusive("workflow", "pipeline")
 	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
-
-	_ = cmd.RegisterFlagCompletionFunc("priority", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{"-1\tlow priority", "0\tnormal priority", "1\thigh priority"}, cobra.ShellCompDirectiveNoFileComp
-	})
 
 	return cmd
 }

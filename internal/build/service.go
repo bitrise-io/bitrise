@@ -44,8 +44,9 @@ type Build struct {
 
 // TriggerEnv is an environment variable to inject into a triggered build.
 type TriggerEnv struct {
-	Key   string
-	Value string
+	Key      string
+	Value    string
+	IsExpand bool
 }
 
 // TriggerRequest describes a build to start.
@@ -59,7 +60,10 @@ type TriggerRequest struct {
 	CommitHash    string
 	CommitMessage string
 	PullRequestID int
-	Priority      int
+	Priority      *int
+	Stack         string
+	MachineTypeID string
+	LicensePoolID string
 	Environments  []TriggerEnv
 }
 
@@ -112,7 +116,7 @@ func (s *Service) Trigger(ctx context.Context, req TriggerRequest) (Build, error
 	}
 	envs := make([]bitriseapi.TriggerBuildEnv, 0, len(req.Environments))
 	for _, e := range req.Environments {
-		envs = append(envs, bitriseapi.TriggerBuildEnv{MappedTo: e.Key, Value: e.Value, IsExpand: true})
+		envs = append(envs, bitriseapi.TriggerBuildEnv{MappedTo: e.Key, Value: e.Value, IsExpand: e.IsExpand})
 	}
 	resp, err := s.client.TriggerBuild(ctx, req.AppSlug, bitriseapi.TriggerBuildRequest{
 		HookInfo: bitriseapi.TriggerBuildHookInfo{Type: "bitrise"},
@@ -126,6 +130,9 @@ func (s *Service) Trigger(ctx context.Context, req TriggerRequest) (Build, error
 			CommitMessage: req.CommitMessage,
 			PullRequestID: req.PullRequestID,
 			Priority:      req.Priority,
+			Stack:         req.Stack,
+			MachineTypeID: req.MachineTypeID,
+			LicensePoolID: req.LicensePoolID,
 			Environments:  envs,
 		},
 	})

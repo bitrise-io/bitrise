@@ -140,6 +140,10 @@ type TriggerBuildEnv struct {
 // TriggerBuildParams holds the build-specific parameters of a trigger
 // request. Most fields are optional; the API derives defaults from the
 // app's trigger map and bitrise.yml when omitted.
+//
+// Priority is a pointer so an explicit 0 is sent: the API treats a present
+// priority as an override of the bitrise.yml and trigger map priority, and
+// an absent one as "use those".
 type TriggerBuildParams struct {
 	WorkflowID    string            `json:"workflow_id,omitempty"`
 	PipelineID    string            `json:"pipeline_id,omitempty"`
@@ -149,7 +153,10 @@ type TriggerBuildParams struct {
 	CommitHash    string            `json:"commit_hash,omitempty"`
 	CommitMessage string            `json:"commit_message,omitempty"`
 	PullRequestID int               `json:"pull_request_id,omitempty"`
-	Priority      int               `json:"priority,omitempty"`
+	Priority      *int              `json:"priority,omitempty"`
+	Stack         string            `json:"stack,omitempty"`
+	MachineTypeID string            `json:"machine_type_id,omitempty"`
+	LicensePoolID string            `json:"license_pool_id,omitempty"`
 	Environments  []TriggerBuildEnv `json:"environments,omitempty"`
 }
 

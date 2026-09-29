@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 
@@ -186,6 +187,95 @@ func TestTriggerCmd_DefaultsBranchToMain(t *testing.T) {
 	assert.Equal(t, "main", gotBranch)
 }
 
+func TestTriggerCmd_CommitHashDoesNotDefaultBranch(t *testing.T) {
+	var bp map[string]any
+	srv := newBodyCapturingServer(t, &bp)
+
+	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("commit-hash", "abc123"))
+	require.NoError(t, cmd.RunE(cmd, nil))
+
+	assert.Equal(t, "abc123", bp["commit_hash"])
+	assert.NotContains(t, bp, "branch")
+}
+
+func TestTriggerCmd_Priority(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      []string
+		wantSent  bool
+		wantValue float64
+	}{
+		{name: "omitted", args: nil, wantSent: false},
+		{name: "explicit zero", args: []string{"--priority", "0"}, wantSent: true, wantValue: 0},
+		{name: "high", args: []string{"--priority", "50"}, wantSent: true, wantValue: 50},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var bp map[string]any
+			srv := newBodyCapturingServer(t, &bp)
+
+			cmd, _ := newTestTriggerCmd(t, srv.URL)
+			cmd.SetArgs(append([]string{"--app", "my-app", "--workflow", "primary"}, tt.args...))
+			require.NoError(t, cmd.Execute())
+
+			got, ok := bp["priority"]
+			require.Equal(t, tt.wantSent, ok)
+			if tt.wantSent {
+				assert.Equal(t, tt.wantValue, got)
+			}
+		})
+	}
+}
+
+func TestTriggerCmd_EnvNoExpand(t *testing.T) {
+	var bp map[string]any
+	srv := newBodyCapturingServer(t, &bp)
+
+	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	cmd.SetArgs([]string{"--app", "my-app", "--workflow", "primary",
+		"--env", `{"API_URL":"https://example.com","PRICE":"$5","TAG":"$BITRISE_GIT_TAG"}`,
+		"--env-no-expand", "PRICE", "--env-no-expand", "TAG"})
+	require.NoError(t, cmd.Execute())
+
+	envs, _ := bp["environments"].([]any)
+	require.Len(t, envs, 3)
+	gotExpand := map[string]any{}
+	for _, e := range envs {
+		env, _ := e.(map[string]any)
+		key, _ := env["mapped_to"].(string)
+		gotExpand[key] = env["is_expand"]
+	}
+	assert.Equal(t, map[string]any{"API_URL": true, "PRICE": false, "TAG": false}, gotExpand)
+}
+
+func TestTriggerCmd_EnvNoExpandUnknownKey(t *testing.T) {
+	srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {
+		t.Error("no request expected")
+	})
+
+	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	cmd.SetArgs([]string{"--app", "my-app", "--env", `{"A":"1"}`, "--env-no-expand", "B"})
+
+	err := cmd.Execute()
+	require.EqualError(t, err, `--env-no-expand: "B" is not set in --env`)
+}
+
+func TestTriggerCmd_MachineFlags(t *testing.T) {
+	var bp map[string]any
+	srv := newBodyCapturingServer(t, &bp)
+
+	cmd, _ := newTestTriggerCmd(t, srv.URL)
+	cmd.SetArgs([]string{"--app", "my-app", "--workflow", "primary",
+		"--stack", "osx-xcode-16.0.x", "--machine-type", "g2-m1.4core", "--license-pool", "pool-1"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Equal(t, "osx-xcode-16.0.x", bp["stack"])
+	assert.Equal(t, "g2-m1.4core", bp["machine_type_id"])
+	assert.Equal(t, "pool-1", bp["license_pool_id"])
+}
+
 func TestTriggerCmd_RequiresApp(t *testing.T) {
 	t.Setenv(cmdutil.EnvAppID, "")
 	t.Setenv(cmdutil.EnvAppIDLegacy, "")
@@ -219,4 +309,21 @@ func newTestTriggerCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd, &out
+}
+
+func newBodyCapturingServer(t *testing.T, bp *map[string]any) *httptest.Server {
+	t.Helper()
+	return newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
+			return
+		}
+		var body struct {
+			BuildParams map[string]any `json:"build_params"`
+		}
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		*bp = body.BuildParams
+		w.WriteHeader(http.StatusCreated)
+		_, _ = io.WriteString(w, `{"build_slug":"x","build_number":1}`)
+	})
 }

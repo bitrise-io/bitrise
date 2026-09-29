@@ -264,13 +264,15 @@ func TestService_Trigger_EnvsAndPriorityAndPR(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
+	priority := 1
 	_, err := svc.Trigger(context.Background(), TriggerRequest{
 		AppSlug:       "my-app",
 		Workflow:      "primary",
 		PullRequestID: 42,
-		Priority:      1,
+		Priority:      &priority,
 		Environments: []TriggerEnv{
-			{Key: "MY_VAR", Value: "hello"},
+			{Key: "MY_VAR", Value: "hello", IsExpand: true},
+			{Key: "RAW", Value: "$5", IsExpand: false},
 		},
 	})
 	require.NoError(t, err)
@@ -281,11 +283,63 @@ func TestService_Trigger_EnvsAndPriorityAndPR(t *testing.T) {
 	assert.Equal(t, float64(42), bp["pull_request_id"])
 	assert.Equal(t, float64(1), bp["priority"])
 	envs, _ := bp["environments"].([]any)
-	require.Len(t, envs, 1)
+	require.Len(t, envs, 2)
 	env, _ := envs[0].(map[string]any)
 	assert.Equal(t, "MY_VAR", env["mapped_to"])
 	assert.Equal(t, "hello", env["value"])
 	assert.Equal(t, true, env["is_expand"])
+	raw, _ := envs[1].(map[string]any)
+	assert.Equal(t, "RAW", raw["mapped_to"])
+	assert.Equal(t, false, raw["is_expand"])
+}
+
+func TestService_Trigger_PriorityZeroIsSent(t *testing.T) {
+	var gotBody []byte
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"build_slug":"z-1","build_number":1}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	zero := 0
+	_, err := svc.Trigger(context.Background(), TriggerRequest{AppSlug: "my-app", Workflow: "primary", Priority: &zero})
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	bp, _ := sent["build_params"].(map[string]any)
+	got, ok := bp["priority"]
+	require.True(t, ok, "priority 0 must be present in the body")
+	assert.Equal(t, float64(0), got)
+}
+
+func TestService_Trigger_MachineFields(t *testing.T) {
+	var gotBody []byte
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotBody, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"build_slug":"m-1","build_number":1}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Trigger(context.Background(), TriggerRequest{
+		AppSlug:       "my-app",
+		Workflow:      "primary",
+		Stack:         "osx-xcode-16.0.x",
+		MachineTypeID: "g2-m1.4core",
+		LicensePoolID: "pool-1",
+	})
+	require.NoError(t, err)
+
+	var sent map[string]any
+	require.NoError(t, json.Unmarshal(gotBody, &sent))
+	bp, _ := sent["build_params"].(map[string]any)
+	assert.Equal(t, "osx-xcode-16.0.x", bp["stack"])
+	assert.Equal(t, "g2-m1.4core", bp["machine_type_id"])
+	assert.Equal(t, "pool-1", bp["license_pool_id"])
+	_, hasPriority := bp["priority"]
+	assert.False(t, hasPriority, "priority must be omitted when not given")
 }
 
 func TestService_Log_Streams(t *testing.T) {
