@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -28,6 +29,9 @@ func NewTriggerCommand() *cobra.Command {
 		envJSON       string
 		priority      int
 		pullRequestID int
+		stack         string
+		machineType   string
+		licensePool   string
 		wait          bool
 		watch         bool
 		interval      time.Duration
@@ -57,6 +61,9 @@ logs stream as plain text there instead.`,
   bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
   bitrise build trigger --app my-app-id --workflow primary --branch-dest main --pull-request-id 42
   bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
+  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":{"value":"$5","is_expand":false}}'
+  bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
+  bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
   bitrise build trigger --app my-app-id --workflow primary --wait
   bitrise build trigger --app my-app-id --workflow primary --watch`,
 		Args: cobra.NoArgs,
@@ -77,20 +84,18 @@ logs stream as plain text there instead.`,
 				return err
 			}
 
-			// Default to branch "main" for branch builds when no tag is given.
-			if branch == "" && tag == "" {
+			if branch == "" && tag == "" && commitHash == "" {
 				branch = "main"
 			}
 
-			var envs []internalbuild.TriggerEnv
-			if envJSON != "" {
-				var raw map[string]string
-				if err := json.Unmarshal([]byte(envJSON), &raw); err != nil {
-					return fmt.Errorf("--env: invalid JSON object: %w", err)
-				}
-				for k, v := range raw {
-					envs = append(envs, internalbuild.TriggerEnv{Key: k, Value: v})
-				}
+			envs, err := parseEnvFlag(envJSON)
+			if err != nil {
+				return err
+			}
+
+			var priorityOverride *int
+			if cmd.Flags().Changed("priority") {
+				priorityOverride = &priority
 			}
 
 			svc := internalbuild.NewService(client)
@@ -105,7 +110,10 @@ logs stream as plain text there instead.`,
 				CommitHash:    commitHash,
 				CommitMessage: commitMessage,
 				PullRequestID: pullRequestID,
-				Priority:      priority,
+				Priority:      priorityOverride,
+				Stack:         stack,
+				MachineTypeID: machineType,
+				LicensePoolID: licensePool,
 				Environments:  envs,
 			})
 			if err != nil {
@@ -163,14 +171,17 @@ logs stream as plain text there instead.`,
 
 	cmd.Flags().StringVar(&workflow, "workflow", "", "workflow ID to trigger (mutually exclusive with --pipeline)")
 	cmd.Flags().StringVar(&pipeline, "pipeline", "", "pipeline ID to trigger (mutually exclusive with --workflow)")
-	cmd.Flags().StringVar(&branch, "branch", "", `branch to build (default "main" for branch builds)`)
+	cmd.Flags().StringVar(&branch, "branch", "", `branch to build (default "main" unless --tag or --commit-hash is given)`)
 	cmd.Flags().StringVar(&branchDest, "branch-dest", "", "target branch for pull-request builds")
 	cmd.Flags().StringVar(&tag, "tag", "", "tag to build")
 	cmd.Flags().StringVar(&commitHash, "commit-hash", "", "commit hash to build")
 	cmd.Flags().StringVar(&commitMessage, "commit-message", "", "commit message to record")
-	cmd.Flags().StringVar(&envJSON, "env", "", `environment variables as a JSON object, e.g. '{"KEY":"value"}'`)
-	cmd.Flags().IntVar(&priority, "priority", 0, "build priority (-1 = low, 0 = normal, 1 = high)")
+	cmd.Flags().StringVar(&envJSON, "env", "", `environment variables as a JSON object, e.g. '{"KEY":"value"}'; $VAR references in values are expanded, use '{"KEY":{"value":"$5","is_expand":false}}' to pass a value verbatim`)
+	cmd.Flags().IntVar(&priority, "priority", 0, "build priority from -100 to 100, overrides the bitrise.yml and trigger map priority even when 0; omit to keep those (available on certain plans only)")
 	cmd.Flags().IntVar(&pullRequestID, "pull-request-id", 0, "pull request ID for PR builds")
+	cmd.Flags().StringVar(&stack, "stack", "", "stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')")
+	cmd.Flags().StringVar(&machineType, "machine-type", "", "machine type ID to run the build on, overrides the workflow's machine type")
+	cmd.Flags().StringVar(&licensePool, "license-pool", "", "license pool ID to run the build with")
 	cmd.Flags().BoolVar(&wait, "wait", false, "block until the build finishes without streaming logs (exit code reflects build outcome)")
 	cmd.Flags().BoolVar(&watch, "watch", false, "wait for the build to finish, showing progress (exit code reflects build outcome)")
 	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait or --watch is active")
@@ -179,9 +190,37 @@ logs stream as plain text there instead.`,
 	cmd.MarkFlagsMutuallyExclusive("workflow", "pipeline")
 	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
 
-	_ = cmd.RegisterFlagCompletionFunc("priority", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{"-1\tlow priority", "0\tnormal priority", "1\thigh priority"}, cobra.ShellCompDirectiveNoFileComp
-	})
-
 	return cmd
+}
+
+func parseEnvFlag(envJSON string) ([]internalbuild.TriggerEnv, error) {
+	if envJSON == "" {
+		return nil, nil
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(envJSON), &raw); err != nil {
+		return nil, fmt.Errorf("--env: invalid JSON object: %w", err)
+	}
+
+	envs := make([]internalbuild.TriggerEnv, 0, len(raw))
+	for key, rawValue := range raw {
+		env := internalbuild.TriggerEnv{Key: key, IsExpand: true}
+		if err := json.Unmarshal(rawValue, &env.Value); err != nil {
+			var item struct {
+				Value    *string `json:"value"`
+				IsExpand *bool   `json:"is_expand"`
+			}
+			dec := json.NewDecoder(bytes.NewReader(rawValue))
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(&item); err != nil || item.Value == nil {
+				return nil, fmt.Errorf(`--env: %q must be a string or {"value":"...","is_expand":false}`, key)
+			}
+			env.Value = *item.Value
+			if item.IsExpand != nil {
+				env.IsExpand = *item.IsExpand
+			}
+		}
+		envs = append(envs, env)
+	}
+	return envs, nil
 }

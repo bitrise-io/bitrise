@@ -33,6 +33,9 @@ bitrise build trigger [flags]
   bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
   bitrise build trigger --app my-app-id --workflow primary --branch-dest main --pull-request-id 42
   bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
+  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":{"value":"$5","is_expand":false}}'
+  bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
+  bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
   bitrise build trigger --app my-app-id --workflow primary --wait
   bitrise build trigger --app my-app-id --workflow primary --watch
 ```
@@ -41,17 +44,20 @@ bitrise build trigger [flags]
 
 ```
       --app string              app ID (or set BITRISE_APP_ID)
-      --branch string           branch to build (default "main" for branch builds)
+      --branch string           branch to build (default "main" unless --tag or --commit-hash is given)
       --branch-dest string      target branch for pull-request builds
       --commit-hash string      commit hash to build
       --commit-message string   commit message to record
-      --env string              environment variables as a JSON object, e.g. '{"KEY":"value"}'
+      --env string              environment variables as a JSON object, e.g. '{"KEY":"value"}'; $VAR references in values are expanded, use '{"KEY":{"value":"$5","is_expand":false}}' to pass a value verbatim
   -f, --format string           Output format. Accepted: raw (default), json, yml
   -h, --help                    help for trigger
       --interval duration       polling interval when --wait or --watch is active (default 3s)
+      --license-pool string     license pool ID to run the build with
+      --machine-type string     machine type ID to run the build on, overrides the workflow's machine type
       --pipeline string         pipeline ID to trigger (mutually exclusive with --workflow)
-      --priority int            build priority (-1 = low, 0 = normal, 1 = high)
+      --priority int            build priority from -100 to 100, overrides the bitrise.yml and trigger map priority even when 0; omit to keep those (available on certain plans only)
       --pull-request-id int     pull request ID for PR builds
+      --stack string            stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')
       --tag string              tag to build
       --wait                    block until the build finishes without streaming logs (exit code reflects build outcome)
       --watch                   wait for the build to finish, showing progress (exit code reflects build outcome)
