@@ -229,37 +229,49 @@ func TestTriggerCmd_Priority(t *testing.T) {
 	}
 }
 
-func TestTriggerCmd_EnvNoExpand(t *testing.T) {
+func TestTriggerCmd_EnvIsExpand(t *testing.T) {
 	var bp map[string]any
 	srv := newBodyCapturingServer(t, &bp)
 
 	cmd, _ := newTestTriggerCmd(t, srv.URL)
 	cmd.SetArgs([]string{"--app", "my-app", "--workflow", "primary",
-		"--env", `{"API_URL":"https://example.com","PRICE":"$5","TAG":"$BITRISE_GIT_TAG"}`,
-		"--env-no-expand", "PRICE", "--env-no-expand", "TAG"})
+		"--env", `{"API_URL":"https://example.com","PRICE":{"value":"$5","is_expand":false},"HOME_DIR":{"value":"$HOME"}}`})
 	require.NoError(t, cmd.Execute())
 
 	envs, _ := bp["environments"].([]any)
 	require.Len(t, envs, 3)
-	gotExpand := map[string]any{}
+	got := map[string][2]any{}
 	for _, e := range envs {
 		env, _ := e.(map[string]any)
 		key, _ := env["mapped_to"].(string)
-		gotExpand[key] = env["is_expand"]
+		got[key] = [2]any{env["value"], env["is_expand"]}
 	}
-	assert.Equal(t, map[string]any{"API_URL": true, "PRICE": false, "TAG": false}, gotExpand)
+	assert.Equal(t, map[string][2]any{
+		"API_URL":  {"https://example.com", true},
+		"PRICE":    {"$5", false},
+		"HOME_DIR": {"$HOME", true},
+	}, got)
 }
 
-func TestTriggerCmd_EnvNoExpandUnknownKey(t *testing.T) {
-	srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {
-		t.Error("no request expected")
-	})
+func TestTriggerCmd_EnvInvalidValue(t *testing.T) {
+	tests := map[string]string{
+		"number":        `{"A":1}`,
+		"missing value": `{"A":{"is_expand":false}}`,
+		"unknown field": `{"A":{"value":"x","is_sensitive":true}}`,
+	}
+	for name, envJSON := range tests {
+		t.Run(name, func(t *testing.T) {
+			srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {
+				t.Error("no request expected")
+			})
 
-	cmd, _ := newTestTriggerCmd(t, srv.URL)
-	cmd.SetArgs([]string{"--app", "my-app", "--env", `{"A":"1"}`, "--env-no-expand", "B"})
+			cmd, _ := newTestTriggerCmd(t, srv.URL)
+			cmd.SetArgs([]string{"--app", "my-app", "--env", envJSON})
 
-	err := cmd.Execute()
-	require.EqualError(t, err, `--env-no-expand: "B" is not set in --env`)
+			err := cmd.Execute()
+			require.EqualError(t, err, `--env: "A" must be a string or {"value":"...","is_expand":false}`)
+		})
+	}
 }
 
 func TestTriggerCmd_MachineFlags(t *testing.T) {

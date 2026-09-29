@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -26,7 +27,6 @@ func NewTriggerCommand() *cobra.Command {
 		commitHash    string
 		commitMessage string
 		envJSON       string
-		envNoExpand   []string
 		priority      int
 		pullRequestID int
 		stack         string
@@ -47,14 +47,6 @@ The app is resolved via --app ID, BITRISE_APP_ID, or "bitrise config set app_id 
 If neither --workflow nor --pipeline is given, Bitrise selects the
 appropriate workflow from the trigger map.
 
---branch defaults to "main" unless --tag or --commit-hash is given.
-
---env values are expanded ($VAR references are replaced) on the build machine.
-List keys in --env-no-expand to pass their values verbatim.
-
---priority overrides the priority set in bitrise.yml and the trigger map,
-including an explicit 0. Omit it to keep those.
-
 --wait blocks until the build finishes without streaming logs; with --format
 json/yml the final build record is written to stdout.
 
@@ -69,7 +61,7 @@ logs stream as plain text there instead.`,
   bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
   bitrise build trigger --app my-app-id --workflow primary --branch-dest main --pull-request-id 42
   bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
-  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":"$5"}' --env-no-expand PRICE
+  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":{"value":"$5","is_expand":false}}'
   bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
   bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
   bitrise build trigger --app my-app-id --workflow primary --wait
@@ -96,22 +88,9 @@ logs stream as plain text there instead.`,
 				branch = "main"
 			}
 
-			var raw map[string]string
-			if envJSON != "" {
-				if err := json.Unmarshal([]byte(envJSON), &raw); err != nil {
-					return fmt.Errorf("--env: invalid JSON object: %w", err)
-				}
-			}
-			noExpand := make(map[string]bool, len(envNoExpand))
-			for _, k := range envNoExpand {
-				if _, ok := raw[k]; !ok {
-					return fmt.Errorf("--env-no-expand: %q is not set in --env", k)
-				}
-				noExpand[k] = true
-			}
-			var envs []internalbuild.TriggerEnv
-			for k, v := range raw {
-				envs = append(envs, internalbuild.TriggerEnv{Key: k, Value: v, IsExpand: !noExpand[k]})
+			envs, err := parseEnvFlag(envJSON)
+			if err != nil {
+				return err
 			}
 
 			var priorityOverride *int
@@ -197,9 +176,8 @@ logs stream as plain text there instead.`,
 	cmd.Flags().StringVar(&tag, "tag", "", "tag to build")
 	cmd.Flags().StringVar(&commitHash, "commit-hash", "", "commit hash to build")
 	cmd.Flags().StringVar(&commitMessage, "commit-message", "", "commit message to record")
-	cmd.Flags().StringVar(&envJSON, "env", "", `environment variables as a JSON object, e.g. '{"KEY":"value"}'`)
-	cmd.Flags().StringSliceVar(&envNoExpand, "env-no-expand", nil, "keys from --env whose values are passed verbatim, without expanding $VAR references (repeatable or comma-separated)")
-	cmd.Flags().IntVar(&priority, "priority", 0, "build priority from -100 to 100, overrides the bitrise.yml and trigger map priority (available on certain plans only)")
+	cmd.Flags().StringVar(&envJSON, "env", "", `environment variables as a JSON object, e.g. '{"KEY":"value"}'; $VAR references in values are expanded, use '{"KEY":{"value":"$5","is_expand":false}}' to pass a value verbatim`)
+	cmd.Flags().IntVar(&priority, "priority", 0, "build priority from -100 to 100, overrides the bitrise.yml and trigger map priority even when 0; omit to keep those (available on certain plans only)")
 	cmd.Flags().IntVar(&pullRequestID, "pull-request-id", 0, "pull request ID for PR builds")
 	cmd.Flags().StringVar(&stack, "stack", "", "stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')")
 	cmd.Flags().StringVar(&machineType, "machine-type", "", "machine type ID to run the build on, overrides the workflow's machine type")
@@ -213,4 +191,36 @@ logs stream as plain text there instead.`,
 	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
 
 	return cmd
+}
+
+func parseEnvFlag(envJSON string) ([]internalbuild.TriggerEnv, error) {
+	if envJSON == "" {
+		return nil, nil
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(envJSON), &raw); err != nil {
+		return nil, fmt.Errorf("--env: invalid JSON object: %w", err)
+	}
+
+	envs := make([]internalbuild.TriggerEnv, 0, len(raw))
+	for key, rawValue := range raw {
+		env := internalbuild.TriggerEnv{Key: key, IsExpand: true}
+		if err := json.Unmarshal(rawValue, &env.Value); err != nil {
+			var item struct {
+				Value    *string `json:"value"`
+				IsExpand *bool   `json:"is_expand"`
+			}
+			dec := json.NewDecoder(bytes.NewReader(rawValue))
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(&item); err != nil || item.Value == nil {
+				return nil, fmt.Errorf(`--env: %q must be a string or {"value":"...","is_expand":false}`, key)
+			}
+			env.Value = *item.Value
+			if item.IsExpand != nil {
+				env.IsExpand = *item.IsExpand
+			}
+		}
+		envs = append(envs, env)
+	}
+	return envs, nil
 }

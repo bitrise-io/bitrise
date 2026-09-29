@@ -11,14 +11,6 @@ The app is resolved via --app ID, BITRISE_APP_ID, or "bitrise config set app_id 
 If neither --workflow nor --pipeline is given, Bitrise selects the
 appropriate workflow from the trigger map.
 
---branch defaults to "main" unless --tag or --commit-hash is given.
-
---env values are expanded ($VAR references are replaced) on the build machine.
-List keys in --env-no-expand to pass their values verbatim.
-
---priority overrides the priority set in bitrise.yml and the trigger map,
-including an explicit 0. Omit it to keep those.
-
 --wait blocks until the build finishes without streaming logs; with --format
 json/yml the final build record is written to stdout.
 
@@ -41,7 +33,7 @@ bitrise build trigger [flags]
   bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
   bitrise build trigger --app my-app-id --workflow primary --branch-dest main --pull-request-id 42
   bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
-  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":"$5"}' --env-no-expand PRICE
+  bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://example.com","PRICE":{"value":"$5","is_expand":false}}'
   bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
   bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
   bitrise build trigger --app my-app-id --workflow primary --wait
@@ -56,15 +48,14 @@ bitrise build trigger [flags]
       --branch-dest string      target branch for pull-request builds
       --commit-hash string      commit hash to build
       --commit-message string   commit message to record
-      --env string              environment variables as a JSON object, e.g. '{"KEY":"value"}'
-      --env-no-expand strings   keys from --env whose values are passed verbatim, without expanding $VAR references (repeatable or comma-separated)
+      --env string              environment variables as a JSON object, e.g. '{"KEY":"value"}'; $VAR references in values are expanded, use '{"KEY":{"value":"$5","is_expand":false}}' to pass a value verbatim
   -f, --format string           Output format. Accepted: raw (default), json, yml
   -h, --help                    help for trigger
       --interval duration       polling interval when --wait or --watch is active (default 3s)
       --license-pool string     license pool ID to run the build with
       --machine-type string     machine type ID to run the build on, overrides the workflow's machine type
       --pipeline string         pipeline ID to trigger (mutually exclusive with --workflow)
-      --priority int            build priority from -100 to 100, overrides the bitrise.yml and trigger map priority (available on certain plans only)
+      --priority int            build priority from -100 to 100, overrides the bitrise.yml and trigger map priority even when 0; omit to keep those (available on certain plans only)
       --pull-request-id int     pull request ID for PR builds
       --stack string            stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')
       --tag string              tag to build
