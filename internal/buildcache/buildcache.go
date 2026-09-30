@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -24,11 +25,20 @@ const (
 	EnvActivateAll = "BITRISE_BUILD_CACHE_ACTIVATE_ALL"
 	// EnvHostCacheURL serves release tarballs by bare name, e.g. http://192.168.64.1:59020/build-cache-cli-releases.
 	EnvHostCacheURL = "BITRISE_BUILD_CACHE_CLI_HOST_CACHE_URL"
+	// EnvCLIVersion and EnvCLISHA256 carry the VM setup's own pin, so there is no second one to bump here.
+	EnvCLIVersion = "BITRISE_BUILD_CACHE_CLI_VERSION"
+	EnvCLISHA256  = "BITRISE_BUILD_CACHE_CLI_SHA256"
 
 	servicesTokenKey    = "BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN"
 	buildCacheEnvPrefix = "BITRISE_BUILD_CACHE_"
 
 	activationTimeout = 2 * time.Minute
+)
+
+// The version ends up in a path and a URL.
+var (
+	versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+[0-9A-Za-z.+-]*$`)
+	sha256Pattern  = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
 // ActivateIfEnabled reports whether it ran; it never fails the build, problems are logged as warnings.
@@ -61,10 +71,15 @@ func enabled(buildEnvs []envmanModels.EnvironmentItemModel) bool {
 }
 
 func activateAll(ctx context.Context, logger log.Logger, buildEnvs []envmanModels.EnvironmentItemModel) error {
-	installDir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", Version)
-	versioned, err := newInstaller(logger, os.Getenv(EnvHostCacheURL)).install(ctx, installDir)
+	version, checksum := os.Getenv(EnvCLIVersion), os.Getenv(EnvCLISHA256)
+	if !versionPattern.MatchString(version) || !sha256Pattern.MatchString(checksum) {
+		return fmt.Errorf("%s (%q) and %s (%q) must be set by the VM setup", EnvCLIVersion, version, EnvCLISHA256, checksum)
+	}
+
+	installDir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", version)
+	versioned, err := newInstaller(logger, os.Getenv(EnvHostCacheURL), version, checksum).install(ctx, installDir)
 	if err != nil {
-		return fmt.Errorf("install bitrise-build-cache %s: %w", Version, err)
+		return fmt.Errorf("install bitrise-build-cache %s: %w", version, err)
 	}
 	// Generated configs name the CLI bare when it is on PATH, which survives upgrades.
 	bin := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)

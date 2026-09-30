@@ -22,16 +22,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 )
 
-const Version = "3.14.1"
-
-// checksums come from the release's checksums.txt.
-var checksums = map[string]string{
-	"darwin_amd64": "8b0b67da9ee3409f9138bc8c8401202d3c625180e3d445ca854c2c46ad076029",
-	"darwin_arm64": "afe2dbc666c1001b4ce45dee6e660936d4aa60512c3c978ff88e43b5d50d86a1",
-	"linux_amd64":  "4a399c51e85ca45ac2dd984e16d5b16112edc139422fd2a8102db8721f14e432",
-	"linux_arm64":  "af00aa9ad60c07cda06b1ecffa69c3f0ad98d220ce83948f93f841a59bb43f22",
-}
-
 // garFilesURL is the fallback when the host VM cache is unset or fails.
 const garFilesURL = "https://artifactregistry.googleapis.com/v1/projects/ip-build-cache-prod/locations/us-central1/repositories/build-cache-cli-releases/files"
 
@@ -46,17 +36,18 @@ type installer struct {
 	client       *retryablehttp.Client
 	hostCacheURL string
 	garFilesURL  string
-	checksums    map[string]string
+	version      string
+	checksum     string
 }
 
-func newInstaller(logger log.Logger, hostCacheURL string) installer {
+func newInstaller(logger log.Logger, hostCacheURL, version, checksum string) installer {
 	client := retryablehttp.NewClient()
 	client.Logger = &log.HTTPLogAdaptor{Logger: logger}
 	client.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	client.RetryMax = 2
 	client.RetryWaitMax = 2 * time.Second
 	client.HTTPClient.Timeout = time.Minute
-	return installer{logger: logger, client: client, hostCacheURL: hostCacheURL, garFilesURL: garFilesURL, checksums: checksums}
+	return installer{logger: logger, client: client, hostCacheURL: hostCacheURL, garFilesURL: garFilesURL, version: version, checksum: checksum}
 }
 
 func (i installer) install(ctx context.Context, dir string) (string, error) {
@@ -65,45 +56,39 @@ func (i installer) install(ctx context.Context, dir string) (string, error) {
 		return bin, nil
 	}
 
-	platform := runtime.GOOS + "_" + runtime.GOARCH
-	checksum, ok := i.checksums[platform]
-	if !ok {
-		return "", fmt.Errorf("no release for %s", platform)
-	}
-
 	var errs []error
-	for n, url := range i.urls(platform) {
+	for n, url := range i.urls(runtime.GOOS + "_" + runtime.GOARCH) {
 		fromHostCache := i.hostCacheURL != "" && n == 0
-		if err := i.downloadBinary(ctx, url, checksum, bin, fromHostCache); err != nil {
+		if err := i.downloadBinary(ctx, url, bin, fromHostCache); err != nil {
 			i.logger.Warnf("Downloading bitrise-build-cache from %s failed: %s", url, err)
 			errs = append(errs, err)
 			continue
 		}
-		i.logger.Infof("Installed bitrise-build-cache %s from %s", Version, url)
+		i.logger.Infof("Installed bitrise-build-cache %s from %s", i.version, url)
 		return bin, nil
 	}
 	return "", errors.Join(errs...)
 }
 
 func (i installer) urls(platform string) []string {
-	tarball := fmt.Sprintf("bitrise-build-cache_%s_%s.tar.gz", Version, platform)
+	tarball := fmt.Sprintf("bitrise-build-cache_%s_%s.tar.gz", i.version, platform)
 	var urls []string
 	if i.hostCacheURL != "" {
 		urls = append(urls, strings.TrimSuffix(i.hostCacheURL, "/")+"/"+tarball)
 	}
-	gar := fmt.Sprintf("%s/bitrise-build-cache_%s.tar.gz:%s:%s:download?alt=media", i.garFilesURL, platform, Version, tarball)
+	gar := fmt.Sprintf("%s/bitrise-build-cache_%s.tar.gz:%s:%s:download?alt=media", i.garFilesURL, platform, i.version, tarball)
 	return append(urls, gar)
 }
 
 // downloadBinary verifies before extracting, so a partial or tampered download never reaches bin.
-func (i installer) downloadBinary(ctx context.Context, url, checksum, bin string, fromHostCache bool) error {
+func (i installer) downloadBinary(ctx context.Context, url, bin string, fromHostCache bool) error {
 	req, err := retryablehttp.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
 	if fromHostCache {
 		// Same header the preboot scripts send to the host VM cache.
-		req.Header.Set("Digest", "sha-256="+checksum)
+		req.Header.Set("Digest", "sha-256="+i.checksum)
 	}
 
 	resp, err := i.client.Do(req)
@@ -122,8 +107,8 @@ func (i installer) downloadBinary(ctx context.Context, url, checksum, bin string
 		return fmt.Errorf("read response: %w", err)
 	}
 	sum := sha256.Sum256(tarball)
-	if got := hex.EncodeToString(sum[:]); got != checksum {
-		return fmt.Errorf("checksum validation failed: expected %s, got %s", checksum, got)
+	if got := hex.EncodeToString(sum[:]); got != i.checksum {
+		return fmt.Errorf("checksum validation failed: expected %s, got %s", i.checksum, got)
 	}
 
 	return extractBinary(tarball, bin)

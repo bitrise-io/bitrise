@@ -12,7 +12,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -21,6 +20,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const testVersion = "3.14.1"
 
 func TestInstall_FromHostCache(t *testing.T) {
 	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho host\n")
@@ -85,19 +86,18 @@ func TestInstall_AlreadyInstalled(t *testing.T) {
 
 func TestURLs(t *testing.T) {
 	gar := "https://artifactregistry.googleapis.com/v1/projects/ip-build-cache-prod/locations/us-central1/repositories/build-cache-cli-releases/files/" +
-		"bitrise-build-cache_linux_amd64.tar.gz:" + Version + ":bitrise-build-cache_" + Version + "_linux_amd64.tar.gz:download?alt=media"
+		"bitrise-build-cache_linux_amd64.tar.gz:" + testVersion + ":bitrise-build-cache_" + testVersion + "_linux_amd64.tar.gz:download?alt=media"
 
-	assert.Equal(t, []string{gar}, newInstaller(testLogger(), "").urls("linux_amd64"))
+	assert.Equal(t, []string{gar}, newInstaller(testLogger(), "", testVersion, "").urls("linux_amd64"))
 	assert.Equal(t, []string{
-		"http://192.168.64.1:59020/build-cache-cli-releases/bitrise-build-cache_" + Version + "_linux_amd64.tar.gz",
+		"http://192.168.64.1:59020/build-cache-cli-releases/bitrise-build-cache_" + testVersion + "_linux_amd64.tar.gz",
 		gar,
-	}, newInstaller(testLogger(), "http://192.168.64.1:59020/build-cache-cli-releases/").urls("linux_amd64"))
+	}, newInstaller(testLogger(), "http://192.168.64.1:59020/build-cache-cli-releases/", testVersion, "").urls("linux_amd64"))
 }
 
 func testInstaller(hostCacheURL, garURL, checksum string) installer {
-	i := newInstaller(testLogger(), hostCacheURL)
+	i := newInstaller(testLogger(), hostCacheURL, testVersion, checksum)
 	i.garFilesURL = garURL
-	i.checksums = map[string]string{runtime.GOOS + "_" + runtime.GOARCH: checksum}
 	return i
 }
 

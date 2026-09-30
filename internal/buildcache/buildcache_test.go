@@ -47,9 +47,7 @@ func TestTools(t *testing.T) {
 }
 
 func TestActivateAll_RunsEveryToolWithCacheEnvs(t *testing.T) {
-	if _, ok := checksums[runtime.GOOS+"_"+runtime.GOARCH]; !ok {
-		t.Skip("no release for this platform")
-	}
+	setPin(t)
 	t.Setenv("HOME", t.TempDir())
 	out := filepath.Join(t.TempDir(), "calls")
 	installFakeCLI(t, `echo "$1 $2 $BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN ${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
@@ -67,13 +65,11 @@ func TestActivateAll_RunsEveryToolWithCacheEnvs(t *testing.T) {
 
 	target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", Version, binaryName), target)
+	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", "3.14.1", binaryName), target)
 }
 
 func TestActivateAll_ReportsEveryFailure(t *testing.T) {
-	if _, ok := checksums[runtime.GOOS+"_"+runtime.GOARCH]; !ok {
-		t.Skip("no release for this platform")
-	}
+	setPin(t)
 	t.Setenv("HOME", t.TempDir())
 	installFakeCLI(t, `[ "$2" = bazel ] && exit 3; exit 0`)
 
@@ -84,7 +80,20 @@ func TestActivateAll_ReportsEveryFailure(t *testing.T) {
 	assert.NotContains(t, err.Error(), "activate gradle")
 }
 
+func TestActivateAll_RequiresPin(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	for _, pin := range [][2]string{{"", ""}, {"3.14.1", ""}, {"../3.14.1", strings.Repeat("a", 64)}, {"3.14.1", "not-a-sha"}} {
+		t.Setenv(EnvCLIVersion, pin[0])
+		t.Setenv(EnvCLISHA256, pin[1])
+
+		err := activateAll(context.Background(), testLogger(), nil)
+
+		require.ErrorContains(t, err, "must be set by the VM setup")
+	}
+}
+
 func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
+	setPin(t)
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(analytics.StepExecutionIDEnvKey, "outer-step")
@@ -98,9 +107,15 @@ func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
 
 func installFakeCLI(t *testing.T, script string) {
 	t.Helper()
-	dir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", Version)
+	dir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", os.Getenv(EnvCLIVersion))
 	require.NoError(t, os.MkdirAll(dir, 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, binaryName), []byte("#!/bin/sh\n"+script+"\n"), 0o755))
+}
+
+func setPin(t *testing.T) {
+	t.Helper()
+	t.Setenv(EnvCLIVersion, "3.14.1")
+	t.Setenv(EnvCLISHA256, strings.Repeat("a", 64))
 }
 
 func buildEnvs(kv ...string) []envmanModels.EnvironmentItemModel {
