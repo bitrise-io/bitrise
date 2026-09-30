@@ -79,6 +79,7 @@ func (i installer) install(ctx context.Context, dir string) (string, error) {
 			errs = append(errs, err)
 			continue
 		}
+		i.logger.Infof("Installed bitrise-build-cache %s from %s", Version, url)
 		return bin, nil
 	}
 	return "", errors.Join(errs...)
