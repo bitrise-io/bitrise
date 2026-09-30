@@ -31,11 +31,11 @@ const (
 	activationTimeout = 2 * time.Minute
 )
 
-// ActivateIfEnabled never fails the build: problems are logged as warnings.
-func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentItemModel) {
+// ActivateIfEnabled reports whether it ran; it never fails the build, problems are logged as warnings.
+func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentItemModel) bool {
 	// A nested `bitrise run` inherits the step execution ID; the outer run already activated.
 	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" || !enabled(buildEnvs) {
-		return
+		return false
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), activationTimeout)
@@ -45,6 +45,7 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	if err := activateAll(ctx, logger, buildEnvs); err != nil {
 		logger.Warnf("Bitrise Build Cache activation failed, continuing without it: %s", err)
 	}
+	return true
 }
 
 func enabled(buildEnvs []envmanModels.EnvironmentItemModel) bool {

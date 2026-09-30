@@ -308,7 +308,17 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		}
 	}
 
-	buildcache.ActivateIfEnabled(r.logger, environments)
+	if buildcache.ActivateIfEnabled(r.logger, environments) {
+		// Its envman exports would otherwise only be collected after the first step.
+		exported, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+		if err != nil {
+			log.Warnf("Failed to read Build Cache exports: %s", err)
+		}
+		environments = append(environments, exported...)
+		if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
+			log.Warnf("Failed to clear output envstore: %s", err)
+		}
+	}
 
 	buildRunStartModel := models.BuildRunStartModel{
 		EventName:   string(plugins.WillStartRun),
