@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/cli/docker"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/envfile"
+	"github.com/bitrise-io/bitrise/v3/internal/buildcache"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/bitrise/v3/plugins"
@@ -306,6 +307,8 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 			}
 		}
 	}
+
+	buildcache.ActivateIfEnabled(r.logger, environments)
 
 	buildRunStartModel := models.BuildRunStartModel{
 		EventName:   string(plugins.WillStartRun),
