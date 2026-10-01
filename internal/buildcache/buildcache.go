@@ -1,15 +1,14 @@
-// Package buildcache installs the bitrise-build-cache CLI and activates it with the build's envs, which plugins never see.
+// Package buildcache installs the bitrise-build-cache CLI and runs `activate all --auto` with the build's envs, which plugins never see.
+// Which tools to activate, and whether the workspace is enabled at all, are the CLI's decisions.
 package buildcache
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
@@ -90,13 +89,11 @@ func activateAll(ctx context.Context, logger log.Logger, buildEnvs []envmanModel
 	// exec keeps the last value of a duplicated key, so build envs win.
 	env := append(os.Environ(), cacheEnvs(buildEnvs)...)
 
-	var errs []error
-	for _, tool := range tools(runtime.GOOS) {
-		if err := run(ctx, logger, bin, env, "activate", tool); err != nil {
-			errs = append(errs, fmt.Errorf("activate %s: %w", tool, err))
-		}
+	if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
+		return fmt.Errorf("activate all: %w", err)
 	}
-	return errors.Join(errs...)
+
+	return nil
 }
 
 // cacheEnvs keeps the build's other secrets out of the CLI's environment.
@@ -112,15 +109,6 @@ func cacheEnvs(buildEnvs []envmanModels.EnvironmentItemModel) []string {
 		}
 	}
 	return envs
-}
-
-// tools stands in for `activate all` until the bitrise-build-cache CLI ships it.
-func tools(goos string) []string {
-	tools := []string{"gradle", "bazel"}
-	if goos == "darwin" {
-		tools = append(tools, "xcode")
-	}
-	return append(tools, "react-native")
 }
 
 func run(ctx context.Context, logger log.Logger, bin string, env []string, args ...string) error {

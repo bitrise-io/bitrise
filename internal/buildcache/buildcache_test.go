@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -41,43 +40,32 @@ func TestCacheEnvs(t *testing.T) {
 	assert.Equal(t, []string{"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth", servicesTokenKey + "=jwt"}, cacheEnvs(envs))
 }
 
-func TestTools(t *testing.T) {
-	assert.Equal(t, []string{"gradle", "bazel", "xcode", "react-native"}, tools("darwin"))
-	assert.Equal(t, []string{"gradle", "bazel", "react-native"}, tools("linux"))
-}
-
-func TestActivateAll_RunsEveryToolWithCacheEnvs(t *testing.T) {
+func TestActivateAll_RunsTheCLIOnceWithCacheEnvsOnly(t *testing.T) {
 	setPin(t)
 	t.Setenv("HOME", t.TempDir())
 	out := filepath.Join(t.TempDir(), "calls")
-	installFakeCLI(t, `echo "$1 $2 $BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN ${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
+	installFakeCLI(t, `echo "$@ $BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN ${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
 
 	err := activateAll(context.Background(), testLogger(), buildEnvs(servicesTokenKey, "jwt", "BITRISE_BUILD_API_TOKEN", "secret"))
 
 	require.NoError(t, err)
 	calls, err := os.ReadFile(out)
 	require.NoError(t, err)
-	var want []string
-	for _, tool := range tools(runtime.GOOS) {
-		want = append(want, "activate "+tool+" jwt absent")
-	}
-	assert.Equal(t, want, strings.Split(strings.TrimSpace(string(calls)), "\n"))
+	assert.Equal(t, "activate all --auto jwt absent", strings.TrimSpace(string(calls)))
 
 	target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", "3.14.1", binaryName), target)
 }
 
-func TestActivateAll_ReportsEveryFailure(t *testing.T) {
+func TestActivateAll_ReportsAFailingCLI(t *testing.T) {
 	setPin(t)
 	t.Setenv("HOME", t.TempDir())
-	installFakeCLI(t, `[ "$2" = bazel ] && exit 3; exit 0`)
+	installFakeCLI(t, "exit 3")
 
 	err := activateAll(context.Background(), testLogger(), nil)
 
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "activate bazel: exit status 3")
-	assert.NotContains(t, err.Error(), "activate gradle")
+	require.ErrorContains(t, err, "activate all: exit status 3")
 }
 
 func TestActivateAll_RequiresPin(t *testing.T) {
