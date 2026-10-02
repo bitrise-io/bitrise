@@ -29,6 +29,8 @@ const (
 	binaryName = "bitrise-build-cache"
 	// Tarballs are ~8MB; this only stops a misbehaving server.
 	maxTarballBytes = 64 << 20
+	// Per source, retries included, so a blackholed host cache still leaves time for GAR.
+	attemptTimeout = 30 * time.Second
 )
 
 type installer struct {
@@ -38,6 +40,7 @@ type installer struct {
 	garFilesURL  string
 	version      string
 	checksum     string
+	attempt      time.Duration
 }
 
 func newInstaller(logger log.Logger, hostCacheURL, version, checksum string) installer {
@@ -47,7 +50,7 @@ func newInstaller(logger log.Logger, hostCacheURL, version, checksum string) ins
 	client.RetryMax = 2
 	client.RetryWaitMax = 2 * time.Second
 	client.HTTPClient.Timeout = time.Minute
-	return installer{logger: logger, client: client, hostCacheURL: hostCacheURL, garFilesURL: garFilesURL, version: version, checksum: checksum}
+	return installer{logger: logger, client: client, hostCacheURL: hostCacheURL, garFilesURL: garFilesURL, version: version, checksum: checksum, attempt: attemptTimeout}
 }
 
 func (i installer) install(ctx context.Context, dir string) (string, error) {
@@ -59,7 +62,10 @@ func (i installer) install(ctx context.Context, dir string) (string, error) {
 	var errs []error
 	for n, url := range i.urls(runtime.GOOS + "_" + runtime.GOARCH) {
 		fromHostCache := i.hostCacheURL != "" && n == 0
-		if err := i.downloadBinary(ctx, url, bin, fromHostCache); err != nil {
+		attemptCtx, cancel := context.WithTimeout(ctx, i.attempt)
+		err := i.downloadBinary(attemptCtx, url, bin, fromHostCache)
+		cancel()
+		if err != nil {
 			i.logger.Warnf("Downloading bitrise-build-cache from %s failed: %s", url, err)
 			errs = append(errs, err)
 			continue
@@ -166,12 +172,15 @@ func link(target, name string) error {
 	if err := os.MkdirAll(filepath.Dir(name), 0o755); err != nil {
 		return err
 	}
-	tmp := name + ".tmp"
-	_ = os.Remove(tmp)
+	tmp := fmt.Sprintf("%s.tmp-%d-%d", name, os.Getpid(), time.Now().UnixNano())
 	if err := os.Symlink(target, tmp); err != nil {
 		return err
 	}
-	return os.Rename(tmp, name)
+	if err := os.Rename(tmp, name); err != nil {
+		_ = os.Remove(tmp)
+		return err
+	}
+	return nil
 }
 
 func isExecutable(p string) bool {

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +61,88 @@ func TestInstall_FallsBackToGAR(t *testing.T) {
 	assertExecutable(t, bin, "#!/bin/sh\necho gar\n")
 }
 
+func TestInstall_HostCacheServerErrorFallsBackToGAR(t *testing.T) {
+	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho gar\n")
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/host/") {
+			http.Error(w, "boom", http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = w.Write(tarball)
+	}))
+	defer srv.Close()
+
+	bin, err := testInstaller(srv.URL+"/host", srv.URL+"/gar", checksum).install(context.Background(), t.TempDir())
+
+	require.NoError(t, err)
+	assertExecutable(t, bin, "#!/bin/sh\necho gar\n")
+}
+
+func TestInstall_BlackholedHostCacheStillTriesGAR(t *testing.T) {
+	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho gar\n")
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/host/") {
+			select {
+			case <-release:
+			case <-r.Context().Done():
+			}
+			return
+		}
+		_, _ = w.Write(tarball)
+	}))
+	defer srv.Close()
+	defer close(release)
+	i := testInstaller(srv.URL+"/host", srv.URL+"/gar", checksum)
+	i.attempt = 300 * time.Millisecond
+
+	start := time.Now()
+	bin, err := i.install(context.Background(), t.TempDir())
+
+	require.NoError(t, err)
+	assertExecutable(t, bin, "#!/bin/sh\necho gar\n")
+	assert.Less(t, time.Since(start), 5*time.Second)
+}
+
+func TestExtractBinary_IgnoresEntriesOutsideTheArchiveRoot(t *testing.T) {
+	for _, name := range []string{"../" + binaryName, "bin/" + binaryName, "/etc/" + binaryName} {
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		tw := tar.NewWriter(gz)
+		require.NoError(t, tw.WriteHeader(&tar.Header{Name: name, Mode: 0o755, Size: 1, Typeflag: tar.TypeReg}))
+		_, err := tw.Write([]byte("x"))
+		require.NoError(t, err)
+		require.NoError(t, tw.Close())
+		require.NoError(t, gz.Close())
+		dir := t.TempDir()
+
+		err = extractBinary(buf.Bytes(), filepath.Join(dir, binaryName))
+
+		require.ErrorContains(t, err, "not found in tarball", name)
+		assert.NoFileExists(t, filepath.Join(dir, binaryName))
+	}
+}
+
+func TestLink(t *testing.T) {
+	dir := t.TempDir()
+	name := filepath.Join(dir, "tools", binaryName)
+
+	require.NoError(t, link("/v1/bin", name))
+	require.NoError(t, link("/v1/bin", name))
+	got, err := os.Readlink(name)
+	require.NoError(t, err)
+	assert.Equal(t, "/v1/bin", got)
+
+	require.NoError(t, link("/v2/bin", name))
+	got, err = os.Readlink(name)
+	require.NoError(t, err)
+	assert.Equal(t, "/v2/bin", got)
+
+	entries, err := os.ReadDir(filepath.Dir(name))
+	require.NoError(t, err)
+	assert.Len(t, entries, 1)
+}
+
 func TestInstall_ChecksumMismatch(t *testing.T) {
 	tarball, _ := releaseTarball(t, "tampered")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -98,6 +181,7 @@ func TestURLs(t *testing.T) {
 func testInstaller(hostCacheURL, garURL, checksum string) installer {
 	i := newInstaller(testLogger(), hostCacheURL, testVersion, checksum)
 	i.garFilesURL = garURL
+	i.client.RetryWaitMin = time.Millisecond
 	return i
 }
 

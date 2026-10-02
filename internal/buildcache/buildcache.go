@@ -35,10 +35,16 @@ const (
 	buildHubVMTokenURLKey = "BITRISEIO_BUILD_HUB_VM_TOKEN_URL"
 	buildCacheEnvPrefix   = "BITRISE_BUILD_CACHE_"
 
-	activationTimeout = 2 * time.Minute
+	activationTimeout = 3 * time.Minute
 
 	envDisableHostsOverride = "BITRISE_DEN_DISABLE_HOSTS_OVERRIDE"
 	envMavenCentralProxy    = "BITRISE_MAVENCENTRAL_PROXY_ENABLED"
+)
+
+var (
+	commandTimeout = 45 * time.Second
+	// Bounds how long a descendant that keeps the output pipe open can block a finished command.
+	commandWaitDelay = 5 * time.Second
 )
 
 // The version ends up in a path and a URL.
@@ -47,7 +53,7 @@ var (
 	sha256Pattern  = regexp.MustCompile(`^[0-9a-f]{64}$`)
 )
 
-// ActivateIfEnabled reports whether it ran; it never fails the build, problems are logged as warnings.
+// ActivateIfEnabled reports whether activation was attempted; it never fails the build, problems are logged as warnings.
 func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentItemModel) bool {
 	// A nested `bitrise run` inherits the step execution ID; the outer run already activated.
 	if os.Getenv(analytics.StepExecutionIDEnvKey) != "" {
@@ -93,17 +99,15 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	return true
 }
 
+// enabled lets the last build env win (secrets, app, workflow order), then the process env.
 func enabled(buildEnvs []envmanModels.EnvironmentItemModel, name string) bool {
-	if os.Getenv(name) == "true" {
-		return true
-	}
-	for _, env := range buildEnvs {
-		if key, value, err := env.GetKeyValuePair(); err == nil && key == name && value == "true" {
-			return true
+	for i := len(buildEnvs) - 1; i >= 0; i-- {
+		if key, value, err := buildEnvs[i].GetKeyValuePair(); err == nil && key == name {
+			return value == "true"
 		}
 	}
 
-	return false
+	return os.Getenv(name) == "true"
 }
 
 // installCLI puts the pinned CLI on the tools PATH and returns the linked binary.
@@ -127,7 +131,7 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	return bin, nil
 }
 
-// cacheEnvs keeps the build's other secrets out of the CLI's environment.
+// cacheEnvs selects the build envs the CLI needs; the rest of the build envs are not added to its environment.
 func cacheEnvs(buildEnvs []envmanModels.EnvironmentItemModel) []string {
 	var envs []string
 	for _, env := range buildEnvs {
@@ -147,8 +151,12 @@ func isCacheCredential(key string) bool {
 }
 
 func run(ctx context.Context, logger log.Logger, bin string, env []string, args ...string) error {
+	ctx, cancel := context.WithTimeout(ctx, commandTimeout)
+	defer cancel()
+
 	cmd := exec.CommandContext(ctx, bin, args...)
 	cmd.Env = env
+	cmd.WaitDelay = commandWaitDelay
 	writer := logwriter.NewLogWriter(logger)
 	cmd.Stdout = writer
 	cmd.Stderr = writer

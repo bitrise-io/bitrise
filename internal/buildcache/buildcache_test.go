@@ -2,10 +2,14 @@ package buildcache
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/configs"
@@ -26,6 +30,15 @@ func TestEnabled(t *testing.T) {
 	t.Run("build env", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "")
 		assert.True(t, enabled(buildEnvs(EnvActivateAll, "true"), EnvActivateAll))
+	})
+	t.Run("the last build env wins", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		assert.False(t, enabled(buildEnvs(EnvActivateAll, "true", EnvActivateAll, "false"), EnvActivateAll))
+		assert.True(t, enabled(buildEnvs(EnvActivateAll, "false", EnvActivateAll, "true"), EnvActivateAll))
+	})
+	t.Run("a build env beats the process env", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "true")
+		assert.False(t, enabled(buildEnvs(EnvActivateAll, "false"), EnvActivateAll))
 	})
 	t.Run("the two opt-ins are independent", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "")
@@ -52,14 +65,9 @@ func TestCacheEnvs(t *testing.T) {
 }
 
 func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
-	setPin(t)
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv(analytics.StepExecutionIDEnvKey, "")
-	t.Setenv(envDisableHostsOverride, "")
+	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
-	t.Setenv(servicesTokenKey, "")
-	t.Setenv(envMavenCentralProxy, "")
 	t.Setenv("BITRISE_BUILD_API_TOKEN", "")
 	out := filepath.Join(t.TempDir(), "calls")
 	installFakeCLI(t, `echo "$@ proxy=$BITRISE_MAVENCENTRAL_PROXY_ENABLED jwt=$BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN api=${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
@@ -80,10 +88,7 @@ func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
 }
 
 func TestActivateIfEnabled_MirrorsOnly(t *testing.T) {
-	setPin(t)
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv(analytics.StepExecutionIDEnvKey, "")
-	t.Setenv(envDisableHostsOverride, "")
+	isolate(t)
 	t.Setenv(EnvActivateAll, "")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 	out := filepath.Join(t.TempDir(), "calls")
@@ -97,9 +102,7 @@ func TestActivateIfEnabled_MirrorsOnly(t *testing.T) {
 }
 
 func TestActivateIfEnabled_HostsOverrideDisabledSkipsMirrors(t *testing.T) {
-	setPin(t)
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv(analytics.StepExecutionIDEnvKey, "")
+	isolate(t)
 	t.Setenv(EnvActivateAll, "")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 	t.Setenv(envDisableHostsOverride, "true")
@@ -111,10 +114,7 @@ func TestActivateIfEnabled_HostsOverrideDisabledSkipsMirrors(t *testing.T) {
 }
 
 func TestActivateIfEnabled_AFailingCommandDoesNotStopTheOther(t *testing.T) {
-	setPin(t)
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv(analytics.StepExecutionIDEnvKey, "")
-	t.Setenv(envDisableHostsOverride, "")
+	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 	out := filepath.Join(t.TempDir(), "calls")
@@ -125,6 +125,87 @@ func TestActivateIfEnabled_AFailingCommandDoesNotStopTheOther(t *testing.T) {
 	calls, err := os.ReadFile(out)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"gradle-mirrors", "all"}, strings.Split(strings.TrimSpace(string(calls)), "\n"))
+}
+
+func TestActivateIfEnabled_HostsOverrideDisabledStillRunsAll(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvActivateGradleMirrors, "true")
+	t.Setenv(envDisableHostsOverride, "true")
+	out := filepath.Join(t.TempDir(), "calls")
+	installFakeCLI(t, `echo "$2" >> `+out)
+
+	require.True(t, ActivateIfEnabled(testLogger(), nil))
+
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, "all", strings.TrimSpace(string(calls)))
+}
+
+func TestActivateIfEnabled_InstallsOnceForBothCommands(t *testing.T) {
+	isolate(t)
+	out := filepath.Join(t.TempDir(), "calls")
+	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho \"$2\" >> "+out+"\n")
+	var downloads atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		downloads.Add(1)
+		_, _ = w.Write(tarball)
+	}))
+	defer srv.Close()
+	t.Setenv(EnvCLISHA256, checksum)
+	t.Setenv(EnvHostCacheURL, srv.URL)
+	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvActivateGradleMirrors, "true")
+
+	require.True(t, ActivateIfEnabled(testLogger(), nil))
+
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"gradle-mirrors", "all"}, strings.Split(strings.TrimSpace(string(calls)), "\n"))
+	assert.EqualValues(t, 1, downloads.Load())
+}
+
+func TestActivateIfEnabled_InstallFailureIsAttemptedButRunsNothing(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvCLIVersion, "")
+	t.Setenv(EnvActivateAll, "true")
+
+	assert.True(t, ActivateIfEnabled(testLogger(), nil))
+}
+
+func TestActivateIfEnabled_AHangingCommandDoesNotStarveTheNext(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvActivateGradleMirrors, "true")
+	setTimeouts(t, time.Second, 200*time.Millisecond)
+	out := filepath.Join(t.TempDir(), "calls")
+	installFakeCLI(t, `if [ "$2" = gradle-mirrors ]; then sleep 30 & wait; fi; echo "$2" >> `+out)
+
+	start := time.Now()
+	require.True(t, ActivateIfEnabled(testLogger(), nil))
+
+	assert.Less(t, time.Since(start), 5*time.Second)
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, "all", strings.TrimSpace(string(calls)))
+}
+
+func TestRun_ReturnsWhenADescendantKeepsTheOutputOpen(t *testing.T) {
+	setTimeouts(t, 10*time.Second, 200*time.Millisecond)
+	bin := filepath.Join(t.TempDir(), "daemonizing")
+	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nsleep 30 &\n"), 0o755))
+
+	start := time.Now()
+	_ = run(context.Background(), testLogger(), bin, os.Environ())
+
+	assert.Less(t, time.Since(start), 5*time.Second)
+}
+
+func setTimeouts(t *testing.T, command, waitDelay time.Duration) {
+	t.Helper()
+	oldCommand, oldWait := commandTimeout, commandWaitDelay
+	commandTimeout, commandWaitDelay = command, waitDelay
+	t.Cleanup(func() { commandTimeout, commandWaitDelay = oldCommand, oldWait })
 }
 
 func TestInstallCLI_RequiresPin(t *testing.T) {
@@ -140,8 +221,7 @@ func TestInstallCLI_RequiresPin(t *testing.T) {
 }
 
 func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
-	setPin(t)
-	t.Setenv("HOME", t.TempDir())
+	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 	t.Setenv(analytics.StepExecutionIDEnvKey, "outer-step")
@@ -160,9 +240,18 @@ func installFakeCLI(t *testing.T, script string) {
 	require.NoError(t, os.WriteFile(filepath.Join(dir, binaryName), []byte("#!/bin/sh\n"+script+"\n"), 0o755))
 }
 
-func setPin(t *testing.T) {
+// isolate clears every env var the package reads, so a CI or VM export cannot leak into a test.
+func isolate(t *testing.T) {
 	t.Helper()
-	t.Setenv(EnvCLIVersion, "3.14.1")
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv(analytics.StepExecutionIDEnvKey, "")
+	for _, key := range []string{
+		EnvActivateAll, EnvActivateGradleMirrors, EnvHostCacheURL, envDisableHostsOverride, envMavenCentralProxy,
+		servicesTokenKey, buildHubVMTokenKey, buildHubVMTokenURLKey,
+	} {
+		t.Setenv(key, "")
+	}
+	t.Setenv(EnvCLIVersion, testVersion)
 	t.Setenv(EnvCLISHA256, strings.Repeat("a", 64))
 }
 

@@ -313,10 +313,11 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 		exported, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
 		if err != nil {
 			log.Warnf("Failed to read Build Cache exports: %s", err)
-		}
-		environments = append(environments, exported...)
-		if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
-			log.Warnf("Failed to clear output envstore: %s", err)
+		} else {
+			environments = append(environments, exported...)
+			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
+				log.Warnf("Failed to clear output envstore: %s", err)
+			}
 		}
 	}
 
