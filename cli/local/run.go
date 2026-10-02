@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/cli/docker"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/envfile"
+	"github.com/bitrise-io/bitrise/v3/internal/buildcache"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/bitrise/v3/plugins"
@@ -303,6 +304,19 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 			// or if the system installed version is not sufficient
 			if err := aToolkit.Bootstrap(); err != nil {
 				return models.BuildRunResultsModel{}, fmt.Errorf("failed to bootstrap %s toolkit: %w", toolkitName, err)
+			}
+		}
+	}
+
+	if buildcache.ActivateIfEnabled(r.logger, environments) {
+		// Its envman exports would otherwise only be collected after the first step.
+		exported, err := bitrise.CollectEnvironmentsFromFile(configs.OutputEnvstorePath)
+		if err != nil {
+			log.Warnf("Failed to read Build Cache exports: %s", err)
+		} else {
+			environments = append(environments, exported...)
+			if err := tools.EnvmanClear(configs.OutputEnvstorePath); err != nil {
+				log.Warnf("Failed to clear output envstore: %s", err)
 			}
 		}
 	}
