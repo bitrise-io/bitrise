@@ -58,6 +58,8 @@ func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
 	t.Setenv(envDisableHostsOverride, "")
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
+	t.Setenv(servicesTokenKey, "")
+	t.Setenv(envMavenCentralProxy, "")
 	t.Setenv("BITRISE_BUILD_API_TOKEN", "")
 	out := filepath.Join(t.TempDir(), "calls")
 	installFakeCLI(t, `echo "$@ proxy=$BITRISE_MAVENCENTRAL_PROXY_ENABLED jwt=$BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN api=${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
