@@ -4,6 +4,7 @@ package buildcache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -161,6 +162,10 @@ func run(ctx context.Context, logger log.Logger, bin string, env []string, args 
 	cmd.Stdout = writer
 	cmd.Stderr = writer
 	err := cmd.Run()
+	// Run reports this only for a command that exited cleanly but left a daemon on the output pipe.
+	if errors.Is(err, exec.ErrWaitDelay) {
+		err = nil
+	}
 	if closeErr := writer.Close(); closeErr != nil {
 		logger.Warnf("Failed to flush bitrise-build-cache output: %s", closeErr)
 	}

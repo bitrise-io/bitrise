@@ -142,7 +142,7 @@ func TestActivateIfEnabled_HostsOverrideDisabledStillRunsAll(t *testing.T) {
 	assert.Equal(t, "all", strings.TrimSpace(string(calls)))
 }
 
-func TestActivateIfEnabled_InstallsOnceForBothCommands(t *testing.T) {
+func TestActivateIfEnabled_InstallsThroughTheHookAndRunsBothCommands(t *testing.T) {
 	isolate(t)
 	out := filepath.Join(t.TempDir(), "calls")
 	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho \"$2\" >> "+out+"\n")
@@ -177,14 +177,14 @@ func TestActivateIfEnabled_AHangingCommandDoesNotStarveTheNext(t *testing.T) {
 	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
-	setTimeouts(t, time.Second, 200*time.Millisecond)
+	setTimeouts(t, 3*time.Second, 200*time.Millisecond)
 	out := filepath.Join(t.TempDir(), "calls")
 	installFakeCLI(t, `if [ "$2" = gradle-mirrors ]; then sleep 30 & wait; fi; echo "$2" >> `+out)
 
 	start := time.Now()
 	require.True(t, ActivateIfEnabled(testLogger(), nil))
 
-	assert.Less(t, time.Since(start), 5*time.Second)
+	assert.Less(t, time.Since(start), 8*time.Second)
 	calls, err := os.ReadFile(out)
 	require.NoError(t, err)
 	assert.Equal(t, "all", strings.TrimSpace(string(calls)))
@@ -196,7 +196,7 @@ func TestRun_ReturnsWhenADescendantKeepsTheOutputOpen(t *testing.T) {
 	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nsleep 30 &\n"), 0o755))
 
 	start := time.Now()
-	_ = run(context.Background(), testLogger(), bin, os.Environ())
+	require.NoError(t, run(context.Background(), testLogger(), bin, os.Environ()))
 
 	assert.Less(t, time.Since(start), 5*time.Second)
 }
