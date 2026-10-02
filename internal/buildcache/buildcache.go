@@ -28,8 +28,10 @@ const (
 	EnvCLIVersion = "BITRISE_BUILD_CACHE_CLI_VERSION"
 	EnvCLISHA256  = "BITRISE_BUILD_CACHE_CLI_SHA256"
 
-	servicesTokenKey    = "BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN"
-	buildCacheEnvPrefix = "BITRISE_BUILD_CACHE_"
+	servicesTokenKey      = "BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN"
+	buildHubVMTokenKey    = "BITRISEIO_BUILD_HUB_VM_TOKEN"
+	buildHubVMTokenURLKey = "BITRISEIO_BUILD_HUB_VM_TOKEN_URL"
+	buildCacheEnvPrefix   = "BITRISE_BUILD_CACHE_"
 
 	activationTimeout = 2 * time.Minute
 )
@@ -104,11 +106,15 @@ func cacheEnvs(buildEnvs []envmanModels.EnvironmentItemModel) []string {
 		if err != nil {
 			continue
 		}
-		if key == servicesTokenKey || strings.HasPrefix(key, buildCacheEnvPrefix) {
+		if isCacheCredential(key) || strings.HasPrefix(key, buildCacheEnvPrefix) {
 			envs = append(envs, key+"="+value)
 		}
 	}
 	return envs
+}
+
+func isCacheCredential(key string) bool {
+	return key == servicesTokenKey || key == buildHubVMTokenKey || key == buildHubVMTokenURLKey
 }
 
 func run(ctx context.Context, logger log.Logger, bin string, env []string, args ...string) error {

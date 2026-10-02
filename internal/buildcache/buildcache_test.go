@@ -33,15 +33,23 @@ func TestCacheEnvs(t *testing.T) {
 	envs := buildEnvs(
 		"BITRISE_BUILD_CACHE_AUTH_TOKEN", "auth",
 		servicesTokenKey, "jwt",
+		buildHubVMTokenKey, "vm",
+		buildHubVMTokenURLKey, "https://hub",
 		"BITRISE_BUILD_API_TOKEN", "unrelated",
 		"GRADLE_ENCRYPTION_KEY", "unrelated",
 	)
 
-	assert.Equal(t, []string{"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth", servicesTokenKey + "=jwt"}, cacheEnvs(envs))
+	assert.Equal(t, []string{
+		"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth",
+		servicesTokenKey + "=jwt",
+		buildHubVMTokenKey + "=vm",
+		buildHubVMTokenURLKey + "=https://hub",
+	}, cacheEnvs(envs))
 }
 
 func TestActivateAll_RunsTheCLIOnceWithCacheEnvsOnly(t *testing.T) {
 	setPin(t)
+	t.Setenv("BITRISE_BUILD_API_TOKEN", "")
 	t.Setenv("HOME", t.TempDir())
 	out := filepath.Join(t.TempDir(), "calls")
 	installFakeCLI(t, `echo "$@ $BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN ${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
