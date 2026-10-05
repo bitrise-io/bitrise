@@ -37,7 +37,7 @@ type Eligibility struct {
 // The version check comes first, so a build that cannot be compared against the
 // releases costs no request and no cache write.
 func IsEligible(e Eligibility) bool {
-	if !IsComparable(e.CurrentVersion) {
+	if !isComparable(e.CurrentVersion) {
 		return false
 	}
 	if e.CIMode || e.Quiet || !e.StderrIsTTY {
