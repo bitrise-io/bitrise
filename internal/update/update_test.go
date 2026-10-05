@@ -19,6 +19,7 @@ func TestResolve(t *testing.T) {
 		current      string
 		wantUpdate   *Available
 		wantNewMajor *Available
+		wantRequests int64
 	}{
 		{
 			name:         "the newest release of the major updates, a higher major is reported apart",
@@ -26,12 +27,14 @@ func TestResolve(t *testing.T) {
 			current:      "2.45.0",
 			wantUpdate:   available("2.46.0"),
 			wantNewMajor: available("3.0.0"),
+			wantRequests: 1,
 		},
 		{
-			name:       "the max semver wins over the list order",
-			pages:      [][]Release{{release("v2.45.0"), release("v2.46.1"), release("v2.46.0")}},
-			current:    "2.44.0",
-			wantUpdate: available("2.46.1"),
+			name:         "the max semver wins over the list order",
+			pages:        [][]Release{{release("v2.45.0"), release("v2.46.1"), release("v2.46.0")}},
+			current:      "2.44.0",
+			wantUpdate:   available("2.46.1"),
+			wantRequests: 1,
 		},
 		{
 			name: "drafts and pre-releases are skipped",
@@ -40,28 +43,33 @@ func TestResolve(t *testing.T) {
 				draft("v2.46.0"),
 				release("v2.45.1"),
 			}},
-			current:    "2.45.0",
-			wantUpdate: available("2.45.1"),
+			current:      "2.45.0",
+			wantUpdate:   available("2.45.1"),
+			wantRequests: 1,
 		},
 		{
-			name:    "a tag that is not MAJOR.MINOR.PATCH is skipped",
-			pages:   [][]Release{{release("v2.46.0-rc1"), release("v2.46"), release("latest")}},
-			current: "2.45.0",
+			name:         "a tag that is not MAJOR.MINOR.PATCH is skipped",
+			pages:        [][]Release{{release("v2.46.0-rc1"), release("v2.46"), release("latest")}},
+			current:      "2.45.0",
+			wantRequests: 1,
 		},
 		{
-			name:    "an empty release list offers nothing",
-			pages:   [][]Release{{}},
-			current: "2.45.0",
+			name:         "an empty release list offers nothing",
+			pages:        [][]Release{{}},
+			current:      "2.45.0",
+			wantRequests: 1,
 		},
 		{
-			name:    "the newest release of the major being the running one offers nothing",
-			pages:   [][]Release{{release("v2.46.0"), release("v2.45.0")}},
-			current: "2.46.0",
+			name:         "the newest release of the major being the running one offers nothing",
+			pages:        [][]Release{{release("v2.46.0"), release("v2.45.0")}},
+			current:      "2.46.0",
+			wantRequests: 1,
 		},
 		{
-			name:    "a release older than the running one offers nothing",
-			pages:   [][]Release{{release("v2.45.0")}},
-			current: "2.46.0",
+			name:         "a release older than the running one offers nothing",
+			pages:        [][]Release{{release("v2.45.0")}},
+			current:      "2.46.0",
+			wantRequests: 1,
 		},
 		{
 			name:         "a full page without the running major is followed by the next page",
@@ -69,18 +77,20 @@ func TestResolve(t *testing.T) {
 			current:      "2.44.0",
 			wantUpdate:   available("2.45.0"),
 			wantNewMajor: available(fmt.Sprintf("3.%d.0", releasesPerPage-1)),
+			wantRequests: 2,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, _ := newReleasesClient(t, tt.pages)
+			client, requests := newReleasesClient(t, tt.pages)
 
 			versions, err := Resolve(t.Context(), client, tt.current)
 
 			require.NoError(t, err)
 			require.Equal(t, tt.wantUpdate, versions.Update)
 			require.Equal(t, tt.wantNewMajor, versions.NewMajor)
+			require.Equal(t, tt.wantRequests, requests.Load())
 		})
 	}
 }
