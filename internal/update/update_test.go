@@ -130,7 +130,7 @@ func TestResolve_RequestError(t *testing.T) {
 		w.WriteHeader(http.StatusForbidden)
 	}))
 	t.Cleanup(srv.Close)
-	client := NewClient(WithReleasesURL(srv.URL), WithHTTPClient(srv.Client()))
+	client := NewClient(WithReleasesURL(srv.URL))
 
 	_, err := Resolve(t.Context(), client, "2.45.0")
 
@@ -155,7 +155,7 @@ func newReleasesClient(t *testing.T, pages [][]Release) (*Client, *atomic.Int64)
 	}))
 	t.Cleanup(srv.Close)
 
-	return NewClient(WithReleasesURL(srv.URL), WithHTTPClient(srv.Client())), &requests
+	return NewClient(WithReleasesURL(srv.URL)), &requests
 }
 
 func majorReleases(major, count int) []Release {
