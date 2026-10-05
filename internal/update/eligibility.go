@@ -3,7 +3,7 @@ package update
 import (
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/log/corelog"
 	"github.com/bitrise-io/bitrise/v3/output"
 )
 
@@ -47,7 +47,9 @@ func IsEligible(e Eligibility) bool {
 	if e.CIMode || e.Quiet || !e.StderrIsTTY {
 		return false
 	}
-	if isMachineReadableOutput(e.OutputFormat) || e.LogFormat == string(log.JSONLogger) {
+	// corelog is the leaf that owns the logger type names; the log package above it
+	// would pull the workflow models into this one.
+	if isMachineReadableOutput(e.OutputFormat) || e.LogFormat == string(corelog.JSONLogger) {
 		return false
 	}
 	// `update` reports the versions it found itself, and the process still carries
