@@ -1,6 +1,8 @@
 package update
 
 import (
+	"strings"
+
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/output"
 )
@@ -19,8 +21,9 @@ const (
 // own, no network.
 type Eligibility struct {
 	CurrentVersion string
-	// Command is the name of the command that ran, cobra's cmd.Name().
-	Command string
+	// CommandPath is the path of the command that ran, cobra's
+	// cmd.CommandPath(), for example "bitrise yml update".
+	CommandPath string
 	// OutputFormat is the value of the root --output flag.
 	OutputFormat string
 	// LogFormat is the value of `run --output-format`, empty for the commands
@@ -49,7 +52,7 @@ func IsEligible(e Eligibility) bool {
 	}
 	// `update` reports the versions it found itself, and the process still carries
 	// the version it started with after a successful one.
-	if e.Command == updateCommandName {
+	if isSelfUpdateCommand(e.CommandPath) {
 		return false
 	}
 	if e.LookupEnv != nil {
@@ -64,4 +67,13 @@ func IsEligible(e Eligibility) bool {
 
 func isMachineReadableOutput(format string) bool {
 	return format == output.FormatJSON || format == output.FormatYML
+}
+
+// isSelfUpdateCommand matches the root's own `update` by its depth rather than
+// by the whole path: the first segment is the binary name, which the user can
+// rename, and every other `update` belongs to a command group that updates
+// something else.
+func isSelfUpdateCommand(commandPath string) bool {
+	segments := strings.Fields(commandPath)
+	return len(segments) == 2 && segments[1] == updateCommandName
 }
