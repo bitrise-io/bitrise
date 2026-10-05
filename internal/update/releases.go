@@ -83,7 +83,9 @@ func (c *Client) ReleasesPage(ctx context.Context, page int) ([]Release, error) 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit))
+		// One byte over the limit, so a longer body still trips Truncate and the
+		// cut gets marked.
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit+1))
 		return nil, fmt.Errorf("GitHub releases API %d: %s", resp.StatusCode, stringutil.Truncate(string(body), errorBodyLimit))
 	}
 
