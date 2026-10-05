@@ -3,6 +3,7 @@ package update
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -43,6 +44,14 @@ func TestReleasesPage_Errors(t *testing.T) {
 				_, _ = w.Write([]byte(`{"message":"API rate limit exceeded"}`))
 			},
 			wantErr: "GitHub releases API 403: {\"message\":\"API rate limit exceeded\"}",
+		},
+		{
+			name: "a long error body is cut",
+			handler: func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(strings.Repeat("a", errorBodyLimit+10)))
+			},
+			wantErr: "GitHub releases API 500: " + strings.Repeat("a", errorBodyLimit) + "…",
 		},
 		{
 			name: "malformed JSON",
