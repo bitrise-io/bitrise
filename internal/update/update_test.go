@@ -79,6 +79,13 @@ func TestResolve(t *testing.T) {
 			wantNewMajor: available(fmt.Sprintf("3.%d.0", releasesPerPage-1)),
 			wantRequests: 2,
 		},
+		{
+			name:         "a full page carrying the running major is not followed by the next page",
+			pages:        [][]Release{majorReleases(2, releasesPerPage), {release("v2.100.0")}},
+			current:      "2.44.0",
+			wantUpdate:   available(fmt.Sprintf("2.%d.0", releasesPerPage-1)),
+			wantRequests: 1,
+		},
 	}
 
 	for _, tt := range tests {
