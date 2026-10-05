@@ -56,6 +56,8 @@ func Resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 	for page := 1; page <= maxReleasePages; page++ {
 		releases, err := client.ReleasesPage(ctx, page)
 		if err != nil {
+			// The pages already read go with it: cached as a successful check, a
+			// partial result would hide a release until the next check is due.
 			return Versions{}, err
 		}
 		candidates = append(candidates, usableReleases(releases)...)
