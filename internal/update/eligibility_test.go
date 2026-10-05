@@ -51,16 +51,12 @@ func TestIsEligible(t *testing.T) {
 		},
 		{
 			name:   "JSON log format",
-			adjust: func(e *Eligibility) { e.Command, e.LogFormat = "run", "json" },
+			adjust: func(e *Eligibility) { e.CommandPath, e.LogFormat = "bitrise local run", "json" },
 		},
 		{
 			name:   "console log format",
-			adjust: func(e *Eligibility) { e.Command, e.LogFormat = "run", "console" },
+			adjust: func(e *Eligibility) { e.CommandPath, e.LogFormat = "bitrise local run", "console" },
 			want:   true,
-		},
-		{
-			name:   "the update command",
-			adjust: func(e *Eligibility) { e.Command = updateCommandName },
 		},
 		{
 			name:   "opted out",
@@ -84,18 +80,56 @@ func TestIsEligible(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := Eligibility{
-				CurrentVersion: "2.45.0",
-				Command:        "list",
-				StderrIsTTY:    true,
-				LookupEnv:      noEnv,
-			}
+			e := eligibleRun()
 			if tt.adjust != nil {
 				tt.adjust(&e)
 			}
 
 			require.Equal(t, tt.want, IsEligible(e))
 		})
+	}
+}
+
+// TestIsEligible_UpdateCommands lists every command path of the CLI that ends in
+// `update`: only the CLI's own update says nothing about a new version itself.
+func TestIsEligible_UpdateCommands(t *testing.T) {
+	tests := []struct {
+		commandPath string
+		want        bool
+	}{
+		{commandPath: "bitrise update"},
+		{commandPath: "bitrise yml update", want: true},
+		{commandPath: "bitrise plugin update", want: true},
+		{commandPath: "bitrise rde template update", want: true},
+		{commandPath: "bitrise rde saved-input update", want: true},
+		{commandPath: "bitrise rde session update", want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.commandPath, func(t *testing.T) {
+			e := eligibleRun()
+			e.CommandPath = tt.commandPath
+
+			require.Equal(t, tt.want, IsEligible(e))
+		})
+	}
+}
+
+// TestIsEligible_RenamedBinary pins that the rule reads the command, not the
+// name the binary was installed under.
+func TestIsEligible_RenamedBinary(t *testing.T) {
+	e := eligibleRun()
+	e.CommandPath = "bitrise-cli update"
+
+	require.False(t, IsEligible(e))
+}
+
+func eligibleRun() Eligibility {
+	return Eligibility{
+		CurrentVersion: "2.45.0",
+		CommandPath:    "bitrise build list",
+		StderrIsTTY:    true,
+		LookupEnv:      noEnv,
 	}
 }
 
