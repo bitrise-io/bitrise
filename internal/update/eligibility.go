@@ -1,6 +1,7 @@
 package update
 
 import (
+	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/output"
 )
 
@@ -43,7 +44,7 @@ func IsEligible(e Eligibility) bool {
 	if e.CIMode || e.Quiet || !e.StderrIsTTY {
 		return false
 	}
-	if isMachineReadable(e.OutputFormat) || isMachineReadable(e.LogFormat) {
+	if isMachineReadableOutput(e.OutputFormat) || e.LogFormat == string(log.JSONLogger) {
 		return false
 	}
 	// `update` reports the versions it found itself, and the process still carries
@@ -61,6 +62,6 @@ func IsEligible(e Eligibility) bool {
 	return true
 }
 
-func isMachineReadable(format string) bool {
+func isMachineReadableOutput(format string) bool {
 	return format == output.FormatJSON || format == output.FormatYML
 }
