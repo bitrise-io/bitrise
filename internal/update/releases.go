@@ -53,11 +53,6 @@ func WithReleasesURL(releasesURL string) Option {
 	return func(c *Client) { c.releasesURL = releasesURL }
 }
 
-// WithHTTPClient overrides the default *http.Client.
-func WithHTTPClient(hc *http.Client) Option {
-	return func(c *Client) { c.httpClient = hc }
-}
-
 // ReleasesPage returns one page of releases, newest first. page is 1-based.
 func (c *Client) ReleasesPage(ctx context.Context, page int) ([]Release, error) {
 	u, err := url.Parse(c.releasesURL)
