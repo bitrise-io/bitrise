@@ -36,6 +36,12 @@ type Client struct {
 
 type Option func(*Client)
 
+// WithReleasesURL overrides the GitHub endpoint the client reads - tests point
+// it at an httptest server.
+func WithReleasesURL(releasesURL string) Option {
+	return func(c *Client) { c.releasesURL = releasesURL }
+}
+
 func NewClient(opts ...Option) *Client {
 	c := &Client{
 		releasesURL: defaultReleasesURL,
@@ -45,12 +51,6 @@ func NewClient(opts ...Option) *Client {
 		opt(c)
 	}
 	return c
-}
-
-// WithReleasesURL overrides the GitHub endpoint the client reads - tests point
-// it at an httptest server.
-func WithReleasesURL(releasesURL string) Option {
-	return func(c *Client) { c.releasesURL = releasesURL }
 }
 
 // ReleasesPage returns one page of releases, newest first. page is 1-based.
