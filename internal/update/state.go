@@ -49,9 +49,8 @@ func (s State) NeedsCheck(now time.Time, currentVersion string) bool {
 	return s.CheckedVersion != currentVersion || now.Sub(s.CheckedAt) >= checkInterval
 }
 
-// SaveState writes the state atomically, so an exit mid-write cannot leave half
-// a file behind. Call it only after a check succeeded, so a failed request is
-// retried on the next run instead of silencing the notice for a day.
+// SaveState records a check. Call it only after a check succeeded, so a failed
+// request is retried on the next run instead of silencing the notice for a day.
 func SaveState(s State) error {
 	path, err := statePath()
 	if err != nil {

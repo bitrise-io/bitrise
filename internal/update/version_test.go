@@ -24,7 +24,7 @@ func TestIsComparable(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.version, func(t *testing.T) {
-			require.Equal(t, tt.want, IsComparable(tt.version))
+			require.Equal(t, tt.want, isComparable(tt.version))
 		})
 	}
 }

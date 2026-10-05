@@ -34,20 +34,9 @@ type Client struct {
 	httpClient  *http.Client
 }
 
-type ClientOption func(*Client)
+type Option func(*Client)
 
-// WithReleasesURL overrides the GitHub endpoint the client reads - tests point
-// it at an httptest server.
-func WithReleasesURL(releasesURL string) ClientOption {
-	return func(c *Client) { c.releasesURL = releasesURL }
-}
-
-// WithHTTPClient overrides the default *http.Client.
-func WithHTTPClient(hc *http.Client) ClientOption {
-	return func(c *Client) { c.httpClient = hc }
-}
-
-func NewClient(opts ...ClientOption) *Client {
+func NewClient(opts ...Option) *Client {
 	c := &Client{
 		releasesURL: defaultReleasesURL,
 		httpClient:  &http.Client{Timeout: requestTimeout},
@@ -56,6 +45,17 @@ func NewClient(opts ...ClientOption) *Client {
 		opt(c)
 	}
 	return c
+}
+
+// WithReleasesURL overrides the GitHub endpoint the client reads - tests point
+// it at an httptest server.
+func WithReleasesURL(releasesURL string) Option {
+	return func(c *Client) { c.releasesURL = releasesURL }
+}
+
+// WithHTTPClient overrides the default *http.Client.
+func WithHTTPClient(hc *http.Client) Option {
+	return func(c *Client) { c.httpClient = hc }
 }
 
 // ReleasesPage returns one page of releases, newest first. page is 1-based.

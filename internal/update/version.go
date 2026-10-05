@@ -6,11 +6,11 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
-// IsComparable reports whether a running CLI version can be compared against
+// isComparable reports whether a running CLI version can be compared against
 // the published releases. Only a clean MAJOR.MINOR.PATCH qualifies: a plain
 // `go build` reports "dev" and a goreleaser snapshot reports
 // "<next patch>-next", and neither of those builds corresponds to a release.
-func IsComparable(version string) bool {
+func isComparable(version string) bool {
 	_, err := parseVersion(version)
 	return err == nil
 }
