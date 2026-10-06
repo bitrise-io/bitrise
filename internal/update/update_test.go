@@ -137,6 +137,101 @@ func TestResolve_RequestError(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestResolveTarget(t *testing.T) {
+	tests := []struct {
+		name         string
+		pages        [][]Release
+		current      string
+		requested    string
+		want         Target
+		wantRequests int64
+	}{
+		{
+			name:         "the newest release of the running major is installed, a higher major only reported",
+			pages:        [][]Release{{release("v3.0.0"), release("v2.46.0"), release("v2.45.0")}},
+			current:      "2.45.0",
+			want:         Target{Version: "2.46.0", NewMajor: available("3.0.0")},
+			wantRequests: 1,
+		},
+		{
+			name:         "the newest release of the running major being the running one is up to date",
+			pages:        [][]Release{{release("v2.46.0"), release("v2.45.0")}},
+			current:      "2.46.0",
+			want:         Target{Version: "2.46.0", UpToDate: true},
+			wantRequests: 1,
+		},
+		{
+			name:         "a higher major is reported even when the running major has nothing newer",
+			pages:        [][]Release{{release("v3.0.0"), release("v2.46.0")}},
+			current:      "2.46.0",
+			want:         Target{Version: "2.46.0", UpToDate: true, NewMajor: available("3.0.0")},
+			wantRequests: 1,
+		},
+		{
+			name:      "a requested version crossing a major is installed",
+			pages:     [][]Release{{release("v2.46.0")}},
+			current:   "2.45.0",
+			requested: "3.0.0",
+			want:      Target{Version: "3.0.0"},
+		},
+		{
+			name:      "a requested version keeps its pre-release",
+			current:   "2.45.0",
+			requested: "3.0.0-rc.1",
+			want:      Target{Version: "3.0.0-rc.1"},
+		},
+		{
+			name:      "a requested version is accepted with the tag's v prefix",
+			current:   "2.45.0",
+			requested: "v2.31.0",
+			want:      Target{Version: "2.31.0"},
+		},
+		{
+			name:      "a requested version below the running one is installed",
+			current:   "2.46.0",
+			requested: "2.31.0",
+			want:      Target{Version: "2.31.0"},
+		},
+		{
+			name:      "a requested version naming the running one is up to date",
+			current:   "2.46.0",
+			requested: "v2.46.0",
+			want:      Target{Version: "2.46.0", UpToDate: true},
+		},
+		{
+			name:      "a requested version is installed on a build that has no comparable version",
+			current:   "dev",
+			requested: "2.31.0",
+			want:      Target{Version: "2.31.0"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client, requests := newReleasesClient(t, tt.pages)
+
+			target, err := ResolveTarget(t.Context(), client, tt.current, tt.requested)
+
+			require.NoError(t, err)
+			require.Equal(t, tt.want, target)
+			require.Equal(t, tt.wantRequests, requests.Load())
+		})
+	}
+}
+
+func TestResolveTarget_InvalidRequestedVersionIsRejectedWithoutAskingGitHub(t *testing.T) {
+	for _, requested := range []string{"invalid", "latest", "2.46", "2.46.0.1", "vv2.46.0"} {
+		t.Run(requested, func(t *testing.T) {
+			client, requests := newReleasesClient(t, [][]Release{{release("v2.46.0")}})
+
+			_, err := ResolveTarget(t.Context(), client, "2.45.0", requested)
+
+			require.ErrorContains(t, err, "expected MAJOR.MINOR.PATCH")
+			require.Zero(t, requests.Load())
+		})
+	}
+}
+
 // newReleasesClient serves pages[page-1] for every requested page, and counts
 // the requests it answered.
 func newReleasesClient(t *testing.T, pages [][]Release) (*Client, *atomic.Int64) {
