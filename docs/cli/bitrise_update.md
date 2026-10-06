@@ -2,6 +2,13 @@
 
 Updates the Bitrise CLI.
 
+### Synopsis
+
+Updates the Bitrise CLI to the newest release inside the current major version.
+
+A newer major version is never installed on its own, because it can contain breaking
+changes. It is reported instead, together with the command that installs it.
+
 ```
 bitrise update [flags]
 ```
@@ -10,7 +17,7 @@ bitrise update [flags]
 
 ```
   -h, --help             help for update
-      --version string   version to update - only for GitHub release page installations.
+      --version string   exact version to install, instead of the newest one in the current major version - only for GitHub release page installations.
 ```
 
 ### Options inherited from parent commands
