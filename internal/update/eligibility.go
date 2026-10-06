@@ -15,8 +15,7 @@ const (
 	updateCommandName = "update"
 )
 
-// Eligibility is passed as a struct so the policy stays a pure function: no
-// cobra, no environment of its own, no network.
+// Eligibility is passed as a struct so the policy stays a pure function.
 type Eligibility struct {
 	CurrentVersion string
 	// CommandPath is cobra's cmd.CommandPath(), e.g. "bitrise yml update".
@@ -32,8 +31,6 @@ type Eligibility struct {
 	LookupEnv func(string) (string, bool)
 }
 
-// The version check comes first, so a build that cannot be compared against the
-// releases costs no request and no cache write.
 func IsEligible(e Eligibility) bool {
 	if !isComparable(e.CurrentVersion) {
 		return false
@@ -46,8 +43,8 @@ func IsEligible(e Eligibility) bool {
 	if isMachineReadableOutput(e.OutputFormat) || e.LogFormat == string(corelog.JSONLogger) {
 		return false
 	}
-	// `update` reports the versions it found itself, and the process still carries
-	// the version it started with after a successful one.
+	// After a successful update the running process still reports the version it
+	// started with.
 	if isSelfUpdateCommand(e.CommandPath) {
 		return false
 	}

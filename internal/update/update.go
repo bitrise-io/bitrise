@@ -1,11 +1,6 @@
 // Package update discovers the published Bitrise CLI releases, decides whether
 // the running build may be told about them, and keeps the result of the last
 // check in its own state file.
-//
-// The releases list is read rather than the tags list: tag order is not part of
-// the GitHub API contract, while the releases list is documented as created-at
-// descending, carries the draft and pre-release flags, and gives the release
-// notes URL.
 package update
 
 import (

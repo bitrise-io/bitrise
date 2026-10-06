@@ -14,6 +14,8 @@ import (
 )
 
 const (
+	// The GitHub releases list is documented as created-at descending, and carries
+	// the draft and pre-release flags.
 	defaultReleasesURL = "https://api.github.com/repos/bitrise-io/bitrise/releases"
 	releasesPerPage    = 100
 	requestTimeout     = 30 * time.Second
