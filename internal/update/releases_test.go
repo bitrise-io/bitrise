@@ -17,7 +17,7 @@ func TestReleasesPage(t *testing.T) {
 		_, _ = w.Write([]byte(`[{"tag_name":"v2.46.0","html_url":"https://example.com/v2.46.0","draft":false,"prerelease":true}]`))
 	}))
 	t.Cleanup(srv.Close)
-	client := NewClient(WithReleasesURL(srv.URL))
+	client := testClient(srv.URL)
 
 	releases, err := client.ReleasesPage(t.Context(), 2)
 
@@ -66,7 +66,7 @@ func TestReleasesPage_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			srv := httptest.NewServer(tt.handler)
 			t.Cleanup(srv.Close)
-			client := NewClient(WithReleasesURL(srv.URL))
+			client := testClient(srv.URL)
 
 			_, err := client.ReleasesPage(t.Context(), 1)
 
@@ -79,9 +79,13 @@ func TestReleasesPage_UnreachableHost(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 	addr := srv.URL
 	srv.Close()
-	client := NewClient(WithReleasesURL(addr))
+	client := testClient(addr)
 
 	_, err := client.ReleasesPage(t.Context(), 1)
 
 	require.ErrorContains(t, err, "request releases")
+}
+
+func testClient(releasesURL string) *Client {
+	return &Client{releasesURL: releasesURL, httpClient: &http.Client{Timeout: requestTimeout}}
 }
