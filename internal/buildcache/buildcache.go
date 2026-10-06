@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/log/logwriter"
+	"github.com/bitrise-io/bitrise/v3/tools"
 	envmanModels "github.com/bitrise-io/envman/v2/models"
 )
 
@@ -61,8 +63,18 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 		return false
 	}
 
-	all := enabled(buildEnvs, EnvActivateAll)
-	mirrors := enabled(buildEnvs, EnvActivateGradleMirrors)
+	values, err := evaluate(buildEnvs)
+	if err != nil {
+		// Only a build that opted in at the VM level has reason to see this.
+		if os.Getenv(EnvActivateAll) == "true" || os.Getenv(EnvActivateGradleMirrors) == "true" {
+			logger.Warnf("Bitrise Build Cache activation skipped, could not evaluate the build envs: %s", err)
+		}
+
+		return false
+	}
+
+	all := enabled(values, EnvActivateAll)
+	mirrors := enabled(values, EnvActivateGradleMirrors)
 	if mirrors && os.Getenv(envDisableHostsOverride) == "true" {
 		logger.Infof("Skipping the Gradle mirrors because %s is true", envDisableHostsOverride)
 		mirrors = false
@@ -91,7 +103,7 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	}
 	if all {
 		// exec keeps the last value of a duplicated key, so build envs win.
-		env := append(os.Environ(), cacheEnvs(buildEnvs)...)
+		env := append(os.Environ(), cacheEnvs(values)...)
 		if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
 			logger.Warnf("Bitrise Build Cache activation failed, continuing without it: activate all: %s", err)
 		}
@@ -100,15 +112,54 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	return true
 }
 
-// enabled lets the last build env win (secrets, app, workflow order), then the process env.
-func enabled(buildEnvs []envmanModels.EnvironmentItemModel, name string) bool {
-	for i := len(buildEnvs) - 1; i >= 0; i-- {
-		if key, value, err := buildEnvs[i].GetKeyValuePair(); err == nil && key == name {
-			return value == "true"
-		}
+// enabled lets the evaluated build envs win (the last declaration, as a step would see it), then the process env.
+func enabled(values map[string]string, name string) bool {
+	if value, ok := values[name]; ok {
+		return value == "true"
 	}
 
 	return os.Getenv(name) == "true"
+}
+
+// evaluate resolves the ordered build envs the way a step sees them: expansion per is_expand, skip_if_empty, and unset.
+func evaluate(buildEnvs []envmanModels.EnvironmentItemModel) (map[string]string, error) {
+	// Defaults (is_expand is true) go on copies, so the caller's items stay as declared.
+	items := make([]envmanModels.EnvironmentItemModel, 0, len(buildEnvs))
+	for _, env := range buildEnvs {
+		item := envmanModels.EnvironmentItemModel{}
+		for key, value := range env {
+			item[key] = value
+		}
+		if err := item.FillMissingDefaults(); err != nil {
+			return nil, fmt.Errorf("apply the env defaults: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	values, err := tools.ExpandEnvItems(items, os.Environ())
+	if err != nil {
+		return nil, fmt.Errorf("expand the build envs: %w", err)
+	}
+
+	unset := map[string]bool{}
+	for _, item := range items {
+		key, _, err := item.GetKeyValuePair()
+		if err != nil {
+			continue
+		}
+		opts, err := item.GetOptions()
+		if err != nil {
+			continue
+		}
+		unset[key] = opts.Unset != nil && *opts.Unset
+	}
+	for key, isUnset := range unset {
+		if isUnset {
+			values[key] = ""
+		}
+	}
+
+	return values, nil
 }
 
 // installCLI puts the pinned CLI on the tools PATH and returns the linked binary.
@@ -132,18 +183,21 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	return bin, nil
 }
 
-// cacheEnvs selects the build envs the CLI needs; the rest of the build envs are not added to its environment.
-func cacheEnvs(buildEnvs []envmanModels.EnvironmentItemModel) []string {
-	var envs []string
-	for _, env := range buildEnvs {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			continue
-		}
+// cacheEnvs selects the evaluated build envs the CLI needs; the rest of the build envs are not added to its environment.
+func cacheEnvs(values map[string]string) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
 		if isCacheCredential(key) || strings.HasPrefix(key, buildCacheEnvPrefix) {
-			envs = append(envs, key+"="+value)
+			keys = append(keys, key)
 		}
 	}
+	sort.Strings(keys)
+
+	envs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		envs = append(envs, key+"="+values[key])
+	}
+
 	return envs
 }
 

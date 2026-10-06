@@ -29,21 +29,116 @@ func TestEnabled(t *testing.T) {
 	})
 	t.Run("build env", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "")
-		assert.True(t, enabled(buildEnvs(EnvActivateAll, "true"), EnvActivateAll))
+		assert.True(t, enabled(eval(t, buildEnvs(EnvActivateAll, "true")), EnvActivateAll))
 	})
 	t.Run("the last build env wins", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "")
-		assert.False(t, enabled(buildEnvs(EnvActivateAll, "true", EnvActivateAll, "false"), EnvActivateAll))
-		assert.True(t, enabled(buildEnvs(EnvActivateAll, "false", EnvActivateAll, "true"), EnvActivateAll))
+		assert.False(t, enabled(eval(t, buildEnvs(EnvActivateAll, "true", EnvActivateAll, "false")), EnvActivateAll))
+		assert.True(t, enabled(eval(t, buildEnvs(EnvActivateAll, "false", EnvActivateAll, "true")), EnvActivateAll))
 	})
 	t.Run("a build env beats the process env", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "true")
-		assert.False(t, enabled(buildEnvs(EnvActivateAll, "false"), EnvActivateAll))
+		assert.False(t, enabled(eval(t, buildEnvs(EnvActivateAll, "false")), EnvActivateAll))
 	})
 	t.Run("the two opt-ins are independent", func(t *testing.T) {
 		t.Setenv(EnvActivateAll, "")
-		assert.False(t, enabled(buildEnvs(EnvActivateGradleMirrors, "true"), EnvActivateAll))
+		assert.False(t, enabled(eval(t, buildEnvs(EnvActivateGradleMirrors, "true")), EnvActivateAll))
 	})
+}
+
+func TestEnabled_EvaluatesTheDeclarationsLikeAStep(t *testing.T) {
+	flag := func(value string, opts *envmanModels.EnvironmentItemOptionsModel) envmanModels.EnvironmentItemModel {
+		item := envmanModels.EnvironmentItemModel{EnvActivateAll: value}
+		if opts != nil {
+			item[envmanModels.OptionsKey] = *opts
+		}
+
+		return item
+	}
+	yes, no := true, false
+
+	t.Run("a reference to an earlier declaration", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		items := []envmanModels.EnvironmentItemModel{{"CACHE_ENABLED": "true"}, flag("$CACHE_ENABLED", nil)}
+
+		assert.True(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("a reference to the process env", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		t.Setenv("CACHE_ENABLED_FROM_PROCESS", "true")
+
+		assert.True(t, enabled(eval(t, []envmanModels.EnvironmentItemModel{flag("$CACHE_ENABLED_FROM_PROCESS", nil)}), EnvActivateAll))
+	})
+	t.Run("a reference that resolves to false turns it off", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "true")
+		items := []envmanModels.EnvironmentItemModel{{"CACHE_ENABLED": "false"}, flag("$CACHE_ENABLED", nil)}
+
+		assert.False(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("is_expand false keeps the value literal", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		items := []envmanModels.EnvironmentItemModel{{"CACHE_ENABLED": "true"}, flag("$CACHE_ENABLED", &envmanModels.EnvironmentItemOptionsModel{IsExpand: &no})}
+
+		assert.False(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("skip_if_empty leaves the earlier declaration in force", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		items := []envmanModels.EnvironmentItemModel{flag("true", nil), flag("", &envmanModels.EnvironmentItemOptionsModel{SkipIfEmpty: &yes})}
+
+		assert.True(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("unset turns it off even when the process env has it on", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "true")
+		items := []envmanModels.EnvironmentItemModel{flag("true", &envmanModels.EnvironmentItemOptionsModel{Unset: &yes})}
+
+		assert.False(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("an unset beats an earlier declaration", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		items := []envmanModels.EnvironmentItemModel{flag("true", nil), flag("true", &envmanModels.EnvironmentItemOptionsModel{Unset: &yes})}
+
+		assert.False(t, enabled(eval(t, items), EnvActivateAll))
+	})
+	t.Run("a later declaration after an unset is in force again", func(t *testing.T) {
+		t.Setenv(EnvActivateAll, "")
+		items := []envmanModels.EnvironmentItemModel{flag("true", &envmanModels.EnvironmentItemOptionsModel{Unset: &yes}), flag("true", nil)}
+
+		assert.True(t, enabled(eval(t, items), EnvActivateAll))
+	})
+}
+
+func TestCacheEnvs_ForwardsTheEvaluatedValues(t *testing.T) {
+	no := false
+	items := []envmanModels.EnvironmentItemModel{
+		{"CACHE_TOKEN": "secret-token"},
+		{"BITRISE_BUILD_CACHE_AUTH_TOKEN": "$CACHE_TOKEN"},
+		{"BITRISE_BUILD_CACHE_USERNAME": "$NOT_EXPANDED", envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{IsExpand: &no}},
+		{"UNRELATED": "x"},
+	}
+
+	assert.Equal(t, []string{
+		"BITRISE_BUILD_CACHE_AUTH_TOKEN=secret-token",
+		"BITRISE_BUILD_CACHE_USERNAME=$NOT_EXPANDED",
+	}, cacheEnvs(eval(t, items)))
+}
+
+func TestActivateIfEnabled_AReferencedOptInAndTokenReachTheCLI(t *testing.T) {
+	isolate(t)
+	t.Setenv(analytics.StepExecutionIDEnvKey, "")
+	out := filepath.Join(t.TempDir(), "calls")
+	installFakeCLI(t, `echo "$@ token=$BITRISE_BUILD_CACHE_AUTH_TOKEN" >> `+out)
+	items := []envmanModels.EnvironmentItemModel{
+		{"WANT_CACHE": "true"},
+		{"MY_TOKEN": "tok-1"},
+		{EnvActivateAll: "$WANT_CACHE"},
+		{"BITRISE_BUILD_CACHE_AUTH_TOKEN": "$MY_TOKEN"},
+	}
+
+	require.True(t, ActivateIfEnabled(testLogger(), items))
+
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, "activate all --auto token=tok-1", strings.TrimSpace(string(calls)))
 }
 
 func TestCacheEnvs(t *testing.T) {
@@ -57,11 +152,11 @@ func TestCacheEnvs(t *testing.T) {
 	)
 
 	assert.Equal(t, []string{
-		"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth",
 		servicesTokenKey + "=jwt",
 		buildHubVMTokenKey + "=vm",
 		buildHubVMTokenURLKey + "=https://hub",
-	}, cacheEnvs(envs))
+		"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth",
+	}, cacheEnvs(eval(t, envs)))
 }
 
 func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
@@ -253,6 +348,15 @@ func isolate(t *testing.T) {
 	}
 	t.Setenv(EnvCLIVersion, testVersion)
 	t.Setenv(EnvCLISHA256, strings.Repeat("a", 64))
+}
+
+func eval(t *testing.T, items []envmanModels.EnvironmentItemModel) map[string]string {
+	t.Helper()
+
+	values, err := evaluate(items)
+	require.NoError(t, err)
+
+	return values
 }
 
 func buildEnvs(kv ...string) []envmanModels.EnvironmentItemModel {
