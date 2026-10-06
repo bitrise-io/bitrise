@@ -20,7 +20,6 @@ const (
 	errorBodyLimit     = 500
 )
 
-// Release is the part of a GitHub release the CLI reads.
 type Release struct {
 	TagName    string `json:"tag_name"`
 	HTMLURL    string `json:"html_url"`
@@ -28,7 +27,6 @@ type Release struct {
 	Prerelease bool   `json:"prerelease"`
 }
 
-// Client reads the published releases of the Bitrise CLI repository.
 type Client struct {
 	releasesURL string
 	httpClient  *http.Client
@@ -36,8 +34,7 @@ type Client struct {
 
 type Option func(*Client)
 
-// WithReleasesURL overrides the GitHub endpoint the client reads - tests point
-// it at an httptest server.
+// Tests point the client at an httptest server.
 func WithReleasesURL(releasesURL string) Option {
 	return func(c *Client) { c.releasesURL = releasesURL }
 }

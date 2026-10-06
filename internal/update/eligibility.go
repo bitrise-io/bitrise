@@ -8,36 +8,30 @@ import (
 )
 
 const (
-	// EnvNoUpdateNotifier and EnvNoCLIUpdateNotifier opt out of the notice.
-	// Either one counts, set to any value, empty included.
+	// Either one opts out, set to any value, empty included.
 	EnvNoUpdateNotifier    = "BITRISE_NO_UPDATE_NOTIFIER"
 	EnvNoCLIUpdateNotifier = "BITRISE_CLI_NO_UPDATE_NOTIFIER"
 
 	updateCommandName = "update"
 )
 
-// Eligibility is everything the notice policy decides on. It is passed as a
-// struct so the policy stays a pure function: no cobra, no environment of its
-// own, no network.
+// Eligibility is passed as a struct so the policy stays a pure function: no
+// cobra, no environment of its own, no network.
 type Eligibility struct {
 	CurrentVersion string
-	// CommandPath is the path of the command that ran, cobra's
-	// cmd.CommandPath(), for example "bitrise yml update".
+	// CommandPath is cobra's cmd.CommandPath(), e.g. "bitrise yml update".
 	CommandPath string
 	// OutputFormat is the value of the root --output flag.
 	OutputFormat string
-	// LogFormat is the value of `run --output-format`, empty for the commands
-	// that do not have it.
+	// LogFormat is `run --output-format`, empty for commands without it.
 	LogFormat   string
 	Quiet       bool
 	StderrIsTTY bool
 	CIMode      bool
-	// LookupEnv reads the opt-out variables, os.LookupEnv in production. A nil
-	// value reads as none of them being set.
+	// A nil LookupEnv reads as none of the opt-out variables being set.
 	LookupEnv func(string) (string, bool)
 }
 
-// IsEligible reports whether the update notice may be checked for and printed.
 // The version check comes first, so a build that cannot be compared against the
 // releases costs no request and no cache write.
 func IsEligible(e Eligibility) bool {
@@ -71,10 +65,8 @@ func isMachineReadableOutput(format string) bool {
 	return format == output.FormatJSON || format == output.FormatYML
 }
 
-// isSelfUpdateCommand matches the root's own `update` by its depth rather than
-// by the whole path: the first segment is the binary name, which the user can
-// rename, and every other `update` belongs to a command group that updates
-// something else.
+// Matched by depth, not by the whole path: the first segment is the binary name,
+// which the user can rename.
 func isSelfUpdateCommand(commandPath string) bool {
 	segments := strings.Fields(commandPath)
 	return len(segments) == 2 && segments[1] == updateCommandName
