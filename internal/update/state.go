@@ -14,12 +14,15 @@ const (
 	checkInterval = 24 * time.Hour
 )
 
-// State has its own file rather than a place in config.yml, so the config schema
-// stays stable and a state file that fails to load is free to be ignored.
+// State is the content of the update check state file.
 type State struct {
+	CLI CheckState `yaml:"cli"`
+}
+
+type CheckState struct {
 	CheckedAt time.Time `yaml:"checked_at"`
-	// Once the CLI has been updated, the findings below describe a build that is
-	// no longer running.
+	// Once an update has been installed, the findings below describe a version that
+	// is no longer running.
 	CheckedVersion string   `yaml:"checked_version"`
 	Versions       Versions `yaml:"versions,omitempty"`
 }
@@ -42,7 +45,7 @@ func LoadState() State {
 	return s
 }
 
-func (s State) NeedsCheck(now time.Time, currentVersion string) bool {
+func (s CheckState) NeedsCheck(now time.Time, currentVersion string) bool {
 	return s.CheckedVersion != currentVersion || now.Sub(s.CheckedAt) >= checkInterval
 }
 
