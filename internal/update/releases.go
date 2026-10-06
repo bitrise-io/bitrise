@@ -32,22 +32,11 @@ type Client struct {
 	httpClient  *http.Client
 }
 
-type Option func(*Client)
-
-// Tests point the client at an httptest server.
-func WithReleasesURL(releasesURL string) Option {
-	return func(c *Client) { c.releasesURL = releasesURL }
-}
-
-func NewClient(opts ...Option) *Client {
-	c := &Client{
+func NewClient() *Client {
+	return &Client{
 		releasesURL: defaultReleasesURL,
 		httpClient:  &http.Client{Timeout: requestTimeout},
 	}
-	for _, opt := range opts {
-		opt(c)
-	}
-	return c
 }
 
 // ReleasesPage returns one page of releases, newest first. page is 1-based.
