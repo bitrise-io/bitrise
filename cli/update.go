@@ -40,48 +40,6 @@ func init() {
 	updateCommand.Flags().String("version", "", "version to update - only for GitHub release page installations.")
 }
 
-func download(version string) error {
-	path, err := exec.LookPath(os.Args[0])
-	if err != nil {
-		return err
-	}
-	url := fmt.Sprintf(downloadURL, version, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
-
-	tmpfile, err := os.CreateTemp("", "bitrise")
-	if err != nil {
-		return fmt.Errorf("can't create temporary file: %s", err)
-	}
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("error while downloading url (%s), error: %v", url, err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Warnf(err.Error())
-		}
-	}()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("can't download url (%s), status: %s", url, http.StatusText(resp.StatusCode))
-	}
-
-	_, err = io.Copy(tmpfile, resp.Body)
-	if err != nil {
-		return fmt.Errorf("error while writing to temp file, error: %v", err)
-	}
-
-	if err := os.Remove(path); err != nil {
-		return fmt.Errorf("can't remove file (%s), error: %s", path, err)
-	}
-
-	if err := CopyFile(tmpfile.Name(), path, true); err != nil {
-		return err
-	}
-	log.Donef("Bitrise CLI is successfully updated!")
-
-	return nil
-}
-
 func update(cmd *cobra.Command) error {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	logger.Infof("Updating Bitrise CLI...")
@@ -147,6 +105,48 @@ func update(cmd *cobra.Command) error {
 	}
 
 	return bitrise.RunSetup(logger, versionFlag, bitrise.SetupModeDefault, false, false)
+}
+
+func download(version string) error {
+	path, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return err
+	}
+	url := fmt.Sprintf(downloadURL, version, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
+
+	tmpfile, err := os.CreateTemp("", "bitrise")
+	if err != nil {
+		return fmt.Errorf("can't create temporary file: %s", err)
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error while downloading url (%s), error: %v", url, err)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Warnf(err.Error())
+		}
+	}()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("can't download url (%s), status: %s", url, http.StatusText(resp.StatusCode))
+	}
+
+	_, err = io.Copy(tmpfile, resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while writing to temp file, error: %v", err)
+	}
+
+	if err := os.Remove(path); err != nil {
+		return fmt.Errorf("can't remove file (%s), error: %s", path, err)
+	}
+
+	if err := CopyFile(tmpfile.Name(), path, true); err != nil {
+		return err
+	}
+	log.Donef("Bitrise CLI is successfully updated!")
+
+	return nil
 }
 
 // CopyFile ...
