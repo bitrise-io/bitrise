@@ -21,16 +21,13 @@ import (
 // release cannot walk the whole release history.
 const maxReleasePages = 5
 
-// Available names a release the running CLI can move to, with the URL of its
-// release notes.
 type Available struct {
 	Version string `yaml:"version"`
 	URL     string `yaml:"url"`
 }
 
-// Versions is what a check found. NewMajor is kept apart from Update because a
-// major version can break the user, so it is reported and never installed
-// implicitly.
+// NewMajor is kept apart from Update because a major version can break the user,
+// so it is reported and never installed implicitly.
 type Versions struct {
 	Update   *Available `yaml:"update,omitempty"`
 	NewMajor *Available `yaml:"new_major,omitempty"`
@@ -42,8 +39,8 @@ type usableRelease struct {
 }
 
 // Resolve returns the newest release inside currentVersion's major, and
-// separately the newest release above that major. Drafts, pre-releases and tags
-// that are not a clean MAJOR.MINOR.PATCH are never offered.
+// separately the newest release above it. Drafts, pre-releases and tags that are
+// not a clean MAJOR.MINOR.PATCH are never offered.
 func Resolve(ctx context.Context, client *Client, currentVersion string) (Versions, error) {
 	current, err := parseVersion(currentVersion)
 	if err != nil {
