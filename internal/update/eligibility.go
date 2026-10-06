@@ -43,8 +43,7 @@ func IsEligible(e Eligibility) bool {
 	if isMachineReadableOutput(e.OutputFormat) || e.LogFormat == string(corelog.JSONLogger) {
 		return false
 	}
-	// After a successful update the running process still reports the version it
-	// started with.
+	// After a successful update the process still reports its old version.
 	if isSelfUpdateCommand(e.CommandPath) {
 		return false
 	}
