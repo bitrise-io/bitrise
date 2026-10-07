@@ -19,6 +19,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/cli/docker"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/envfile"
+	"github.com/bitrise-io/bitrise/v3/internal/buildcache"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/bitrise/v3/plugins"
@@ -305,6 +306,15 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 				return models.BuildRunResultsModel{}, fmt.Errorf("failed to bootstrap %s toolkit: %w", toolkitName, err)
 			}
 		}
+	}
+
+	if buildcache.ActivateIfEnabled(r.logger, environments) {
+		// Its envman exports would otherwise only be collected after the first step.
+		exported, err := collectAndClearExports(configs.OutputEnvstorePath, tools.EnvmanClear)
+		if err != nil {
+			log.Warnf("Failed to read Build Cache exports: %s", err)
+		}
+		environments = append(environments, exported...)
 	}
 
 	buildRunStartModel := models.BuildRunStartModel{
@@ -616,6 +626,17 @@ func isContainerDebugLoggingEnabled(Secrets []envmanModels.EnvironmentItemModel)
 		}
 	}
 	return false
+}
+
+// collectAndClearExports always clears the store, so a file the build cache CLI left half-written
+// cannot fail the first step's own collection.
+func collectAndClearExports(path string, clear func(string) error) ([]envmanModels.EnvironmentItemModel, error) {
+	exported, err := bitrise.CollectEnvironmentsFromFile(path)
+	if clearErr := clear(path); clearErr != nil {
+		log.Warnf("Failed to clear output envstore: %s", clearErr)
+	}
+
+	return exported, err
 }
 
 func envsToMap(envs []envmanModels.EnvironmentItemModel) map[string]string {
