@@ -26,6 +26,10 @@ type Available struct {
 type Versions struct {
 	Update   *Available `yaml:"update,omitempty"`
 	NewMajor *Available `yaml:"new_major,omitempty"`
+	// CurrentMajorFound is false when the pages read held no release of the
+	// running major, which a nil Update cannot be told apart from on its own. The
+	// caller must not report "up to date" in that case.
+	CurrentMajorFound bool `yaml:"current_major_found"`
 }
 
 type usableRelease struct {
@@ -58,7 +62,9 @@ func Resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 		}
 	}
 
-	return selectVersions(candidates, current), nil
+	versions := selectVersions(candidates, current)
+	versions.CurrentMajorFound = hasMajor(candidates, current.Major())
+	return versions, nil
 }
 
 func usableReleases(releases []Release) []usableRelease {
