@@ -30,16 +30,16 @@ func (f fakeVersionProvider) ListReleasedVersions(toolName provider.ToolID) ([]s
 }
 
 func TestListToolVersions(t *testing.T) {
-	t.Run("returns sorted versions from provider", func(t *testing.T) {
+	t.Run("returns provider order reversed without sorting", func(t *testing.T) {
 		fp := fakeVersionProvider{
 			versions: map[provider.ToolID][]string{
-				"nodejs": {"1.0.0", "3.0.0", "2.0.0"},
+				"elixir": {"1.19.5-otp-28", "1.20.4", "1.20.4-otp-28", "1.20.4-otp-29"},
 			},
 		}
 
-		versions, err := ListToolVersions("nodejs", "", fp)
+		versions, err := ListToolVersions("elixir", "", fp)
 		require.NoError(t, err)
-		assert.Equal(t, []string{"3.0.0", "2.0.0", "1.0.0"}, versions)
+		assert.Equal(t, []string{"1.20.4-otp-29", "1.20.4-otp-28", "1.20.4", "1.19.5-otp-28"}, versions)
 	})
 
 	t.Run("returns error from provider", func(t *testing.T) {
@@ -94,30 +94,6 @@ func TestListToolVersions(t *testing.T) {
 		_, err := ListToolVersions("nonexistent", "", fp)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not a supported tool")
-	})
-
-	t.Run("sorts pre-release versions after their release", func(t *testing.T) {
-		fp := fakeVersionProvider{
-			versions: map[provider.ToolID][]string{
-				"nodejs": {"1.0.0", "2.0.0-rc.1", "2.0.0", "1.0.0-beta.1"},
-			},
-		}
-
-		versions, err := ListToolVersions("nodejs", "", fp)
-		require.NoError(t, err)
-		assert.Equal(t, []string{"2.0.0", "2.0.0-rc.1", "1.0.0", "1.0.0-beta.1"}, versions)
-	})
-
-	t.Run("places non-semver versions after semver", func(t *testing.T) {
-		fp := fakeVersionProvider{
-			versions: map[provider.ToolID][]string{
-				"nodejs": {"nightly", "2.0.0", "1.0.0", "3.15.0a8", "latest"},
-			},
-		}
-
-		versions, err := ListToolVersions("nodejs", "", fp)
-		require.NoError(t, err)
-		assert.Equal(t, []string{"3.15.0a8", "2.0.0", "1.0.0", "nightly", "latest"}, versions)
 	})
 
 	t.Run("filters by version prefix", func(t *testing.T) {
