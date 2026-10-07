@@ -37,6 +37,7 @@ const (
 	buildHubVMTokenKey    = "BITRISEIO_BUILD_HUB_VM_TOKEN"
 	buildHubVMTokenURLKey = "BITRISEIO_BUILD_HUB_VM_TOKEN_URL"
 	buildCacheEnvPrefix   = "BITRISE_BUILD_CACHE_"
+	gradleUserHomeKey     = "GRADLE_USER_HOME"
 
 	activationTimeout = 3 * time.Minute
 
@@ -97,6 +98,9 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	if mirrors {
 		// The mirrors' init script re-reads this at build time, so a build can still switch them off.
 		env := append(os.Environ(), envMavenCentralProxy+"=true")
+		if home, ok := values[gradleUserHomeKey]; ok {
+			env = append(env, gradleUserHomeKey+"="+home)
+		}
 		if err := run(ctx, logger, bin, env, "activate", "gradle-mirrors", "-d"); err != nil {
 			logger.Warnf("activating bitrise-build-cache gradle-mirrors failed: %s", err)
 		}
@@ -193,10 +197,11 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 }
 
 // cacheEnvs selects the evaluated build envs the CLI needs; the rest of the build envs are not added to its environment.
+// GRADLE_USER_HOME decides where the CLI writes the Gradle init scripts.
 func cacheEnvs(values map[string]string) []string {
 	keys := make([]string, 0, len(values))
 	for key := range values {
-		if isCacheCredential(key) || strings.HasPrefix(key, buildCacheEnvPrefix) {
+		if isCacheCredential(key) || key == gradleUserHomeKey || strings.HasPrefix(key, buildCacheEnvPrefix) {
 			keys = append(keys, key)
 		}
 	}
