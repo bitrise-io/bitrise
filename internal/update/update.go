@@ -32,7 +32,6 @@ type Versions struct {
 	CurrentMajorFound bool `yaml:"current_major_found"`
 }
 
-// Target is what `bitrise update` installs.
 type Target struct {
 	// Version is the release to install, or the running one when UpToDate.
 	Version  string
@@ -45,10 +44,9 @@ type usableRelease struct {
 	url     string
 }
 
-// ResolveTarget decides what `bitrise update` installs. requested is the raw
-// --version value, and is installed as named, so it is the only way to cross a
-// major version or to install a pre-release. An empty requested resolves to the
-// newest release inside the running major.
+// requested is the raw --version value, and is installed as named, so it is the
+// only way to cross a major version or to install a pre-release. An empty
+// requested resolves to the newest release inside the running major.
 func ResolveTarget(ctx context.Context, client *Client, currentVersion, requested string) (Target, error) {
 	if requested != "" {
 		wanted, err := parseRequestedVersion(requested)
@@ -98,8 +96,7 @@ func Resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 	return versions, nil
 }
 
-// isRunningVersion reports whether wanted is the version already running. A
-// current version that does not parse is a dev build, which no release matches.
+// A current version that does not parse is not a release, so no release matches it.
 func isRunningVersion(wanted *semver.Version, currentVersion string) bool {
 	current, err := parseVersion(currentVersion)
 	if err != nil {

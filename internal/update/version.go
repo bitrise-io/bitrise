@@ -20,8 +20,7 @@ func parseVersion(version string) (*semver.Version, error) {
 	return v, nil
 }
 
-// parseRequestedVersion parses a version the user named explicitly. The `v`
-// prefix is accepted because that is how the releases are tagged, and a
+// The `v` prefix is accepted because that is how the releases are tagged, and a
 // pre-release is kept, since naming one is the only way to install it.
 func parseRequestedVersion(raw string) (*semver.Version, error) {
 	v, err := semver.StrictNewVersion(strings.TrimPrefix(raw, "v"))
