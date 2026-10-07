@@ -181,6 +181,11 @@ func TestListToolVersions(t *testing.T) {
 			{"flutter", "1.7.8", []string{"1.7.8+hotfix.4-stable", "1.7.80"}, []string{"1.7.8+hotfix.4-stable"}},
 			{"ruby", "truffleruby", []string{"truffleruby-24.1.0", "truffleruby+graalvm-24.1.0"}, []string{"truffleruby-24.1.0"}},
 			{"nodejs", "22", []string{"22-", "22.1.0"}, []string{"22.1.0"}},
+			{"nodejs", "v22", []string{"22.1.0", "v22.0.0", "220.0.0"}, []string{"v22.0.0", "22.1.0"}},
+			{"golang", "1.22", []string{"v1.22.0", "1.220.0"}, []string{"v1.22.0"}},
+			{"java", "temurin-21.0.5", []string{"temurin-21.0.5+11.0.LTS", "temurin-21.0.50"}, []string{"temurin-21.0.5+11.0.LTS"}},
+			{"java", "temurin-", []string{"temurin-21.0.5+11.0.LTS", "zulu-21.52.203.0"}, []string{"temurin-21.0.5+11.0.LTS"}},
+			{"java", "21", []string{"21.0.2", "v21.0.1"}, []string{"21.0.2"}},
 		}
 		for _, tt := range tests {
 			fp := fakeVersionProvider{versions: map[provider.ToolID][]string{provider.ToolID(tt.tool): tt.versions}}
