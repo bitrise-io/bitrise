@@ -25,7 +25,8 @@ const downloadURL = "https://github.com/bitrise-io/bitrise/releases/download/v%s
 var updateCommand = &cobra.Command{
 	Use:   "update",
 	Short: "Updates the Bitrise CLI.",
-	Long: `Updates the Bitrise CLI to the newest release inside the current major version.
+	Long: `Updates a Bitrise CLI installed from the GitHub release page to the newest
+release inside the current major version.
 
 A newer major version is never installed on its own, because it can contain breaking
 changes. It is reported instead, together with the command that installs it.`,
@@ -130,12 +131,12 @@ func newMajorNotice(newMajor update.Available) string {
 	return b.String()
 }
 
-func download(version string) error {
+func download(releaseVersion string) error {
 	path, err := exec.LookPath(os.Args[0])
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf(downloadURL, version, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
+	url := fmt.Sprintf(downloadURL, releaseVersion, strings.ToUpper(runtime.GOOS[:1])+runtime.GOOS[1:])
 
 	tmpfile, err := os.CreateTemp("", "bitrise")
 	if err != nil {

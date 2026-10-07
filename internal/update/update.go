@@ -41,8 +41,7 @@ type usableRelease struct {
 }
 
 // requested is the raw --version value, and is installed as named, so it is the
-// only way to cross a major version or to install a pre-release. An empty
-// requested resolves to the newest release inside the running major.
+// only way to cross a major version.
 func ResolveTarget(ctx context.Context, client *Client, currentVersion, requested string) (Target, error) {
 	if requested != "" {
 		wanted, err := parseRequestedVersion(requested)
@@ -53,7 +52,7 @@ func ResolveTarget(ctx context.Context, client *Client, currentVersion, requeste
 	}
 
 	if !isComparable(currentVersion) {
-		return Target{}, fmt.Errorf("this Bitrise CLI was not installed from a release (version %q), so there is no release to compare it against. Use bitrise update --version X.Y.Z to install a specific release", currentVersion)
+		return Target{}, fmt.Errorf("this Bitrise CLI was not installed from a release (version %q), so it cannot be compared against the published releases. Use bitrise update --version X.Y.Z to install a specific release", currentVersion)
 	}
 
 	versions, err := Resolve(ctx, client, currentVersion)

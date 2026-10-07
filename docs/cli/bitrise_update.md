@@ -4,7 +4,8 @@ Updates the Bitrise CLI.
 
 ### Synopsis
 
-Updates the Bitrise CLI to the newest release inside the current major version.
+Updates a Bitrise CLI installed from the GitHub release page to the newest
+release inside the current major version.
 
 A newer major version is never installed on its own, because it can contain breaking
 changes. It is reported instead, together with the command that installs it.
