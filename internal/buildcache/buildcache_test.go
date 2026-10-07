@@ -177,6 +177,7 @@ func TestCacheEnvs(t *testing.T) {
 		buildHubVMTokenURLKey, "https://hub",
 		"BITRISE_BUILD_API_TOKEN", "unrelated",
 		"GRADLE_ENCRYPTION_KEY", "unrelated",
+		gradleUserHomeKey, "/work/gradle",
 	)
 
 	assert.Equal(t, []string{
@@ -184,6 +185,7 @@ func TestCacheEnvs(t *testing.T) {
 		buildHubVMTokenKey + "=vm",
 		buildHubVMTokenURLKey + "=https://hub",
 		"BITRISE_BUILD_CACHE_AUTH_TOKEN=auth",
+		gradleUserHomeKey + "=/work/gradle",
 	}, cacheEnvs(eval(t, envs)))
 }
 
@@ -393,4 +395,19 @@ func buildEnvs(kv ...string) []envmanModels.EnvironmentItemModel {
 		envs = append(envs, envmanModels.EnvironmentItemModel{kv[i]: kv[i+1]})
 	}
 	return envs
+}
+
+func TestActivateIfEnabled_BothCommandsSeeABuildDeclaredGradleUserHome(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvActivateGradleMirrors, "true")
+	t.Setenv(gradleUserHomeKey, "")
+	out := filepath.Join(t.TempDir(), "calls")
+	installFakeCLI(t, `echo "$@ home=${GRADLE_USER_HOME:-unset}" >> `+out)
+
+	require.True(t, ActivateIfEnabled(testLogger(), buildEnvs(gradleUserHomeKey, "/work/gradle")))
+
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, "activate gradle-mirrors -d home=/work/gradle\nactivate all --auto home=/work/gradle", strings.TrimSpace(string(calls)))
 }
