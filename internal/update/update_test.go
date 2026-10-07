@@ -233,7 +233,7 @@ func TestResolveTarget_NotComparableCurrentVersionIsRejectedWithoutAskingGitHub(
 }
 
 func TestResolveTarget_InvalidRequestedVersionIsRejectedWithoutAskingGitHub(t *testing.T) {
-	for _, requested := range []string{"invalid", "latest", "2.46", "2.46.0.1", "vv2.46.0"} {
+	for _, requested := range []string{"invalid", "latest", "2.46", "2.46.0.1", "vv2.46.0", "2.46.0+build.7"} {
 		t.Run(requested, func(t *testing.T) {
 			client, requests := newReleasesClient(t, [][]Release{{release("v2.46.0")}})
 

@@ -24,7 +24,7 @@ func parseVersion(version string) (*semver.Version, error) {
 // pre-release is kept, since naming one is the only way to install it.
 func parseRequestedVersion(raw string) (*semver.Version, error) {
 	v, err := semver.StrictNewVersion(strings.TrimPrefix(raw, "v"))
-	if err != nil {
+	if err != nil || v.Metadata() != "" {
 		return nil, fmt.Errorf("invalid version %q: expected MAJOR.MINOR.PATCH, for example 2.46.0", raw)
 	}
 	return v, nil
