@@ -107,6 +107,21 @@ func TestEnabled_EvaluatesTheDeclarationsLikeAStep(t *testing.T) {
 	})
 }
 
+func TestEnabled_AnUnsetDeclarationIsGoneForLaterReferences(t *testing.T) {
+	t.Setenv(EnvActivateAll, "")
+	t.Setenv(EnvActivateGradleMirrors, "")
+	yes := true
+	items := []envmanModels.EnvironmentItemModel{
+		{EnvActivateAll: "true", envmanModels.OptionsKey: envmanModels.EnvironmentItemOptionsModel{Unset: &yes}},
+		{EnvActivateGradleMirrors: "$" + EnvActivateAll},
+	}
+
+	values := eval(t, items)
+
+	assert.False(t, enabled(values, EnvActivateAll))
+	assert.False(t, enabled(values, EnvActivateGradleMirrors), "a step would see the first variable as unset when expanding the second")
+}
+
 func TestCacheEnvs_ForwardsTheEvaluatedValues(t *testing.T) {
 	no := false
 	items := []envmanModels.EnvironmentItemModel{
@@ -139,6 +154,19 @@ func TestActivateIfEnabled_AReferencedOptInAndTokenReachTheCLI(t *testing.T) {
 	calls, err := os.ReadFile(out)
 	require.NoError(t, err)
 	assert.Equal(t, "activate all --auto token=tok-1", strings.TrimSpace(string(calls)))
+}
+
+func TestActivateIfEnabled_RunsTheVersionedBinaryNotTheSharedLink(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvActivateAll, "true")
+	out := filepath.Join(t.TempDir(), "path")
+	installFakeCLI(t, `echo "$0" >> `+out)
+
+	require.True(t, ActivateIfEnabled(testLogger(), nil))
+
+	got, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName), strings.TrimSpace(string(got)))
 }
 
 func TestCacheEnvs(t *testing.T) {

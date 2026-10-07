@@ -133,6 +133,9 @@ func evaluate(buildEnvs []envmanModels.EnvironmentItemModel) (map[string]string,
 		if err := item.FillMissingDefaults(); err != nil {
 			return nil, fmt.Errorf("apply the env defaults: %w", err)
 		}
+		if err := blankIfUnset(item); err != nil {
+			return nil, err
+		}
 		items = append(items, item)
 	}
 
@@ -141,28 +144,34 @@ func evaluate(buildEnvs []envmanModels.EnvironmentItemModel) (map[string]string,
 		return nil, fmt.Errorf("expand the build envs: %w", err)
 	}
 
-	unset := map[string]bool{}
-	for _, item := range items {
-		key, _, err := item.GetKeyValuePair()
-		if err != nil {
-			continue
-		}
-		opts, err := item.GetOptions()
-		if err != nil {
-			continue
-		}
-		unset[key] = opts.Unset != nil && *opts.Unset
-	}
-	for key, isUnset := range unset {
-		if isUnset {
-			values[key] = ""
-		}
-	}
-
 	return values, nil
 }
 
-// installCLI puts the pinned CLI on the tools PATH and returns the linked binary.
+// blankIfUnset turns an unset declaration into an empty value that is not skipped, so the helper's ordered
+// expansion sees the variable as gone for every later declaration, as a step would.
+func blankIfUnset(item envmanModels.EnvironmentItemModel) error {
+	key, _, err := item.GetKeyValuePair()
+	if err != nil {
+		return fmt.Errorf("read a build env: %w", err)
+	}
+	opts, err := item.GetOptions()
+	if err != nil {
+		return fmt.Errorf("read the options of %s: %w", key, err)
+	}
+	if opts.Unset == nil || !*opts.Unset {
+		return nil
+	}
+
+	keep := false
+	opts.SkipIfEmpty = &keep
+	item[key] = ""
+	item[envmanModels.OptionsKey] = opts
+
+	return nil
+}
+
+// installCLI puts the pinned CLI on the tools PATH and returns its versioned path, which the activations run from,
+// so another run relinking the shared name cannot swap the binary that was verified.
 func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	version, checksum := os.Getenv(EnvCLIVersion), os.Getenv(EnvCLISHA256)
 	if !versionPattern.MatchString(version) || !sha256Pattern.MatchString(checksum) {
@@ -180,7 +189,7 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 		return "", fmt.Errorf("link bitrise-build-cache onto PATH: %w", err)
 	}
 
-	return bin, nil
+	return versioned, nil
 }
 
 // cacheEnvs selects the evaluated build envs the CLI needs; the rest of the build envs are not added to its environment.
