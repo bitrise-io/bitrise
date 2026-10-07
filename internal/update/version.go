@@ -7,6 +7,11 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
+func isComparable(version string) bool {
+	_, err := parseVersion(version)
+	return err == nil
+}
+
 // Only a clean MAJOR.MINOR.PATCH corresponds to a published release: a plain
 // `go build` reports "dev" and a goreleaser snapshot "<next patch>-next".
 func parseVersion(version string) (*semver.Version, error) {
