@@ -52,6 +52,10 @@ func ResolveTarget(ctx context.Context, client *Client, currentVersion, requeste
 		return Target{Version: wanted.String(), UpToDate: isRunningVersion(wanted, currentVersion)}, nil
 	}
 
+	if !isComparable(currentVersion) {
+		return Target{}, fmt.Errorf("this Bitrise CLI was not installed from a release (version %q), so there is no release to compare it against. Use bitrise update --version X.Y.Z to install a specific release", currentVersion)
+	}
+
 	versions, err := Resolve(ctx, client, currentVersion)
 	if err != nil {
 		return Target{}, err

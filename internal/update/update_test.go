@@ -219,6 +219,19 @@ func TestResolveTarget(t *testing.T) {
 	}
 }
 
+func TestResolveTarget_NotComparableCurrentVersionIsRejectedWithoutAskingGitHub(t *testing.T) {
+	for _, current := range []string{"dev", "2.46.1-next"} {
+		t.Run(current, func(t *testing.T) {
+			client, requests := newReleasesClient(t, [][]Release{{release("v2.46.0")}})
+
+			_, err := ResolveTarget(t.Context(), client, current, "")
+
+			require.ErrorContains(t, err, "bitrise update --version X.Y.Z")
+			require.Zero(t, requests.Load())
+		})
+	}
+}
+
 func TestResolveTarget_InvalidRequestedVersionIsRejectedWithoutAskingGitHub(t *testing.T) {
 	for _, requested := range []string{"invalid", "latest", "2.46", "2.46.0.1", "vv2.46.0"} {
 		t.Run(requested, func(t *testing.T) {
