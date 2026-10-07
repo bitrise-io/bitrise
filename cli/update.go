@@ -64,15 +64,15 @@ func runUpdate(cmd *cobra.Command) error {
 			return errors.New("it seems you installed Bitrise CLI with Homebrew. Version flag is only supported for GitHub release page installations")
 		}
 
-		cmd := command.New("brew", "upgrade", "bitrise")
+		brewCmd := command.New("brew", "upgrade", "bitrise")
 
-		logger.Printf("$ %s", cmd.PrintableCommandArgs())
+		logger.Printf("$ %s", brewCmd.PrintableCommandArgs())
 
 		var out bytes.Buffer
-		cmd.SetStdout(&out)
-		cmd.SetStderr(&out)
+		brewCmd.SetStdout(&out)
+		brewCmd.SetStderr(&out)
 
-		if err := cmd.Run(); err != nil {
+		if err := brewCmd.Run(); err != nil {
 			output := out.String()
 			if strings.Contains(output, "already installed") {
 				logger.Donef("Bitrise CLI is already up-to-date")
