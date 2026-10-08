@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 )
 
