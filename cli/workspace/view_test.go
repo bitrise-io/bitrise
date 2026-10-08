@@ -30,22 +30,20 @@ func TestViewCmd_PositionalArg(t *testing.T) {
 	assert.Regexp(t, `ID:\s+a-ws`, out.String())
 }
 
-func TestViewCmd_WorkspaceFlagByName(t *testing.T) {
-	var gotPath string
+func TestViewCmd_WorkspaceFlagByName_SkipsSecondFetch(t *testing.T) {
+	var paths []string
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/organizations" {
-			_, _ = w.Write([]byte(`{"data":[{"slug":"acme","name":"Acme Corp"}]}`))
-			return
-		}
-		gotPath = r.URL.Path
-		_, _ = w.Write([]byte(`{"data":{"slug":"acme","name":"Acme Corp"}}`))
+		paths = append(paths, r.URL.Path)
+		_, _ = w.Write([]byte(`{"data":[{"slug":"acme","name":"Acme Corp"}]}`))
 	})
 
-	cmd, _ := newTestCmd(t, NewViewCommand(), srv.URL)
+	cmd, out := newTestCmd(t, NewViewCommand(), srv.URL)
 	require.NoError(t, cmd.Flags().Set(cmdutil.FlagWorkspace, "Acme Corp"))
 	require.NoError(t, runView(cmd, nil, false, unusedBrowser(t)))
 
-	assert.Equal(t, "/organizations/acme", gotPath)
+	assert.Equal(t, []string{"/organizations"}, paths, "a name match already holds the workspace")
+	assert.Regexp(t, `Name:\s+Acme Corp`, out.String())
+	assert.Regexp(t, `ID:\s+acme`, out.String())
 }
 
 func TestViewCmd_EnvSkipsNameResolution(t *testing.T) {
@@ -102,7 +100,20 @@ func TestViewCmd_NotFound(t *testing.T) {
 
 	cmd, _ := newTestCmd(t, NewViewCommand(), srv.URL)
 	err := runView(cmd, []string{"missing-ws"}, false, unusedBrowser(t))
-	require.EqualError(t, err, `workspace "missing-ws" not found`)
+	require.EqualError(t, err, `viewing workspace failed: workspace "missing-ws" not found`)
+}
+
+func TestViewCmd_WrapsAPIError(t *testing.T) {
+	srv := newViewFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"message":"boom"}`))
+	})
+
+	cmd, _ := newTestCmd(t, NewViewCommand(), srv.URL)
+	err := runView(cmd, []string{"a-ws"}, false, unusedBrowser(t))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "viewing workspace failed")
+	assert.Contains(t, err.Error(), "boom")
 }
 
 func TestViewCmd_JSON(t *testing.T) {
