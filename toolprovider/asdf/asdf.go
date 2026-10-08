@@ -118,12 +118,40 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	}
 }
 
-func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID, prefix string) ([]string, error) {
 	err := a.InstallPlugin(provider.ToolRequest{ToolName: toolName})
 	if err != nil {
 		return nil, fmt.Errorf("install tool plugin %s: %w", toolName, err)
 	}
-	return a.listReleased(toolName)
+
+	versions, err := a.listReleased(toolName)
+	if err != nil {
+		return nil, err
+	}
+	return releasedVersionsWithPrefix(versions, prefix), nil
+}
+
+// releasedVersionsWithPrefix lists versions the way ResolveVersion picks among them:
+// semver newest first, then the rest in reverse text order, keeping every version that
+// starts with prefix.
+//
+// The match is a plain string prefix, unlike mise's line matching, so 22.1 also covers
+// 22.10.0, and the prefix is used as given, so 22. stays 22. That is deliberate: the
+// listing shows what this provider would install for the prefix, and asdf's resolver
+// matches the same way. It also takes the first match without skipping prereleases.
+func releasedVersionsWithPrefix(versions []string, prefix string) []string {
+	sorted := logicallySortedVersions(versions)
+	if prefix == "" {
+		return sorted
+	}
+
+	var matching []string
+	for _, v := range sorted {
+		if strings.HasPrefix(v, prefix) {
+			matching = append(matching, v)
+		}
+	}
+	return matching
 }
 
 // ResolveLatestVersion resolves a tool to its latest version without installing it.
