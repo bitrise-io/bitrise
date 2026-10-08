@@ -2,14 +2,14 @@
 
 One `bitrise` binary, two halves: the local workflow runner (`bitrise local run`,
 steps, tool provisioning, plugins) and the cloud commands (`app`, `build`, `stack`,
-`auth`, `config`, `user`, `yml`, `api`, `rde`, `purr`). Cobra only - the `urfave/cli`
-entry in `go.mod` is indirect and imported nowhere.
+`auth`, `config`, `user`, `workspace`, `yml`, `api`, `rde`, `purr`). Cobra only - the
+`urfave/cli` entry in `go.mod` is indirect and imported nowhere.
 
 ## Layering
 
 ```
 cli/<group>/        cobra only: flags, arg validation, rendering
-internal/<domain>/  service layer: stack, build, app, rde, yml, user, api
+internal/<domain>/  service layer: stack, build, app, rde, yml, user, workspace, api
 internal/bitriseapi, internal/rdeapi, internal/webclient   HTTP clients
 ```
 

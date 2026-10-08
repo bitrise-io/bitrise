@@ -172,6 +172,13 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`user create`](docs/cli/bitrise_user_create.md) | Create a new Bitrise account |
 | [`user me`](docs/cli/bitrise_user_me.md) | Show the currently authenticated user |
 
+### [`workspace`](docs/cli/bitrise_workspace.md) — List and inspect workspaces.
+
+| Command | Description |
+|---|---|
+| [`workspace list`](docs/cli/bitrise_workspace_list.md) | List workspaces the authenticated user belongs to |
+| [`workspace view`](docs/cli/bitrise_workspace_view.md) | Show details of a single workspace |
+
 ### [`yml`](docs/cli/bitrise_yml.md) — Work with bitrise.yml files.
 
 | Command | Description |
