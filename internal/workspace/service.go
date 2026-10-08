@@ -40,7 +40,7 @@ func (s *Service) List(ctx context.Context) (WorkspacesResult, error) {
 	sorted := Sort(orgs)
 	items := make([]Workspace, len(sorted))
 	for i, o := range sorted {
-		items[i] = fromAPI(o)
+		items[i] = FromOrganization(o)
 	}
 	return WorkspacesResult{Items: items}, nil
 }
@@ -56,9 +56,11 @@ func (s *Service) View(ctx context.Context, workspaceSlug string) (Workspace, er
 		}
 		return Workspace{}, err
 	}
-	return fromAPI(o), nil
+	return FromOrganization(o), nil
 }
 
-func fromAPI(o bitriseapi.Organization) Workspace {
+// FromOrganization converts an Organization the caller already holds, e.g. one
+// the name resolver matched from GET /organizations, without a second fetch.
+func FromOrganization(o bitriseapi.Organization) Workspace {
 	return Workspace{ID: o.Slug, Name: o.Name}
 }

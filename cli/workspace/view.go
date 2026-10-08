@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 	internalworkspace "github.com/bitrise-io/bitrise/v3/internal/workspace"
 	"github.com/bitrise-io/bitrise/v3/output"
 )
@@ -50,13 +51,13 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 		return fmt.Errorf("failed to configure output format: %w", err)
 	}
 
-	workspaceSlug, err := resolveWorkspaceSlug(cmd, args)
+	org, complete, err := resolveWorkspace(cmd, args)
 	if err != nil {
 		return err
 	}
 
 	if web {
-		url := fmt.Sprintf("%s/workspaces/%s", cmdutil.ResolveWebBaseURL(cmd), workspaceSlug)
+		url := fmt.Sprintf("%s/workspaces/%s", cmdutil.ResolveWebBaseURL(cmd), org.Slug)
 		if err := openBrowser(url); err != nil {
 			return err
 		}
@@ -64,34 +65,39 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 		return err
 	}
 
-	client, err := cmdutil.NewAPIClient(cmd)
-	if err != nil {
-		return err
-	}
-	ws, err := internalworkspace.NewService(client).View(cmd.Context(), workspaceSlug)
-	if err != nil {
-		return err
+	ws := internalworkspace.FromOrganization(org)
+	if !complete {
+		client, err := cmdutil.NewAPIClient(cmd)
+		if err != nil {
+			return err
+		}
+		ws, err = internalworkspace.NewService(client).View(cmd.Context(), org.Slug)
+		if err != nil {
+			return fmt.Errorf("viewing workspace failed: %w", err)
+		}
 	}
 
 	return output.Render(cmd.OutOrStdout(), output.Format, ws, printWorkspaceText)
 }
 
-// resolveWorkspaceSlug resolves only a user-provided value (positional arg or
+// resolveWorkspace resolves only a user-provided value (positional arg or
 // --workspace) by name: an ambient value (env/config) is already a canonical
 // slug, and ResolveWorkspaceID handles the sole-workspace and picker cases.
-func resolveWorkspaceSlug(cmd *cobra.Command, args []string) (string, error) {
+// complete reports that a name match already returned the whole workspace.
+func resolveWorkspace(cmd *cobra.Command, args []string) (org bitriseapi.Organization, complete bool, err error) {
 	value, _ := cmd.Flags().GetString(cmdutil.FlagWorkspace)
 	if len(args) > 0 {
 		value = args[0]
 	}
 	if value == "" {
-		return cmdutil.ResolveWorkspaceID(cmd)
+		slug, err := cmdutil.ResolveWorkspaceID(cmd)
+		return bitriseapi.Organization{Slug: slug}, false, err
 	}
 	client, err := cmdutil.NewAPIClient(cmd)
 	if err != nil {
-		return "", err
+		return bitriseapi.Organization{}, false, err
 	}
-	return cmdutil.NewResolver(client).WorkspaceSlug(cmd.Context(), value)
+	return cmdutil.NewResolver(client).ResolveWorkspace(cmd.Context(), value)
 }
 
 func printWorkspaceText(w io.Writer, ws internalworkspace.Workspace) error {
