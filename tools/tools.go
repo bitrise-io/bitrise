@@ -11,9 +11,9 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
-	envman "github.com/bitrise-io/envman/v2/cli"
-	envmanEnv "github.com/bitrise-io/envman/v2/env"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envman "github.com/bitrise-io/bitrise/v3/envman/cli"
+	envmanEnv "github.com/bitrise-io/bitrise/v3/envman/env"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/hashicorp/go-retryablehttp"

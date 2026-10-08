@@ -12,7 +12,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/models"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
