@@ -156,6 +156,21 @@ func TestViewCmd_Web_ResolvesUserProvidedName(t *testing.T) {
 	assert.Equal(t, "https://app.bitrise.io/workspaces/acme", gotURL)
 }
 
+func TestViewCmd_Web_EscapesID(t *testing.T) {
+	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
+	srv := newViewFakeServer(t, func(_ http.ResponseWriter, r *http.Request) {
+		t.Fatalf("unexpected request: %s", r.URL.Path)
+	})
+	cmd, _ := newTestCmd(t, NewViewCommand(), srv.URL)
+
+	var gotURL string
+	require.NoError(t, runView(cmd, []string{"acme/x#y"}, true, func(url string) error {
+		gotURL = url
+		return nil
+	}))
+	assert.Equal(t, "https://app.bitrise.io/workspaces/acme%2Fx%23y", gotURL)
+}
+
 func TestViewCmd_RejectsMultipleArgs(t *testing.T) {
 	cmd := NewViewCommand()
 	cmd.SetArgs([]string{"ws-1", "ws-2"})

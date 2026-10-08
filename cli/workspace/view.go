@@ -3,6 +3,7 @@ package workspace
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -57,11 +58,11 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	}
 
 	if web {
-		url := fmt.Sprintf("%s/workspaces/%s", cmdutil.ResolveWebBaseURL(cmd), org.Slug)
-		if err := openBrowser(url); err != nil {
+		webURL := fmt.Sprintf("%s/workspaces/%s", cmdutil.ResolveWebBaseURL(cmd), url.PathEscape(org.Slug))
+		if err := openBrowser(webURL); err != nil {
 			return err
 		}
-		_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened %s\n", url)
+		_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened %s\n", webURL)
 		return err
 	}
 
