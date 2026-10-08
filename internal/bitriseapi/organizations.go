@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 )
 
 // Organization is a workspace the authenticated user belongs to.
@@ -30,4 +31,10 @@ func (c *Client) Organizations(ctx context.Context) ([]Organization, error) {
 		return nil, fmt.Errorf("decode organizations response: %w", err)
 	}
 	return envelope.Data, nil
+}
+
+// Organization returns a single workspace the authenticated user belongs to.
+// Endpoint: GET /organizations/{org-slug}.
+func (c *Client) Organization(ctx context.Context, orgSlug string) (Organization, error) {
+	return getEnvelope[Organization](ctx, c, "/organizations/"+url.PathEscape(orgSlug), nil)
 }
