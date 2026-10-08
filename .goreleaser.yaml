@@ -5,7 +5,25 @@ before:
   - go mod tidy
 
 builds:
-- env:
+- id: bitrise
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+  ldflags:
+  - -w -s # strip debug info and symbol table
+  - -X github.com/bitrise-io/bitrise/v3/version.VERSION={{ .Version }}
+  - -X github.com/bitrise-io/bitrise/v3/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/bitrise/v3/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
+
+- id: envman
+  main: ./envman
+  binary: envman
+  env:
   - CGO_ENABLED=0
   goos:
   - linux
@@ -23,6 +41,7 @@ archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
 - formats: [ binary ]
   id: default
+  ids: [ bitrise ]
   # Name format should match the curl install script
   name_template: >-
     {{ .ProjectName }}-
@@ -32,6 +51,7 @@ archives:
 
 - formats: [ binary ]
   id: s3
+  ids: [ bitrise ]
   name_template: "{{ .ProjectName }}-cli-{{ .Os }}-{{ .Arch }}-v{{ .Version }}"
 
 blobs:

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/bitrise/v3/envman/envman"
-	"github.com/bitrise-io/bitrise/v3/envman/version"
+	"github.com/bitrise-io/bitrise/v3/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -81,7 +81,7 @@ func Run() {
 	app := cli.NewApp()
 	app.Name = path.Base(os.Args[0])
 	app.Usage = "Environment variable manager"
-	app.Version = version.Version
+	app.Version = version.VERSION
 
 	app.Author = ""
 	app.Email = ""
