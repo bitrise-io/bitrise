@@ -1,10 +1,11 @@
-// Package models re-exports the published envman/v2 models.
+// Package models aliases the types of the published envman/v2 models.
 //
 // Stepman's StepModel uses envman/v2 models for step inputs and outputs, so bitrise and the in-repo envman
-// must share the exact same types
-//
-// TODO: Once stepman is moved into this repository, as a part of STEP-2545, restore the full model code
-// here (see commit 4f6d3680).
+// must share the exact same types: EnvironmentItemModel stores an EnvironmentItemOptionsModel struct inside
+// a map, and a struct of a different (even identical) type fails GetOptions at runtime.
+// The methods of these types come from envman/v2 through the aliases.
+// Once stepman is moved into this repository (STEP-2546), restore the type definitions here and the methods
+// in models_methods.go (see commit 13e2aea9).
 package models
 
 import envmanModels "github.com/bitrise-io/envman/v2/models"
@@ -15,20 +16,3 @@ type (
 	EnvsSerializeModel          = envmanModels.EnvsSerializeModel
 	EnvsJSONListModel           = envmanModels.EnvsJSONListModel
 )
-
-const (
-	OptionsKey = envmanModels.OptionsKey
-
-	DefaultIsExpand          = envmanModels.DefaultIsExpand
-	DefaultIsSensitive       = envmanModels.DefaultIsSensitive
-	DefaultSkipIfEmpty       = envmanModels.DefaultSkipIfEmpty
-	DefaultIsRequired        = envmanModels.DefaultIsRequired
-	DefaultIsDontChangeValue = envmanModels.DefaultIsDontChangeValue
-	DefaultIsTemplate        = envmanModels.DefaultIsTemplate
-	DefaultUnset             = envmanModels.DefaultUnset
-)
-
-// NewEnvJSONList ...
-func NewEnvJSONList(jsonStr string) (EnvsJSONListModel, error) {
-	return envmanModels.NewEnvJSONList(jsonStr)
-}
