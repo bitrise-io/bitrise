@@ -3,7 +3,6 @@ package asdf
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 
@@ -49,7 +48,7 @@ func (a *AsdfToolProvider) listInstalled(toolName provider.ToolID) ([]string, er
 	}
 
 	installedVersions := parseAsdfListOutput(output)
-	filteredVersions, err := filterAliasVersions(string(toolName), installedVersions)
+	filteredVersions, err := a.filterAliasVersions(string(toolName), installedVersions)
 	if err != nil {
 		return nil, fmt.Errorf("filter alias versions: %w", err)
 	}
@@ -113,18 +112,19 @@ func parseAsdfListOutput(output string) []string {
 	return versions
 }
 
-func filterAliasVersions(tool string, versions []string) ([]string, error) {
+func (a *AsdfToolProvider) filterAliasVersions(tool string, versions []string) ([]string, error) {
 	// Filter out versions that are symlinks created by the asdf-alias plugin.
 	var filtered []string
 	for _, v := range versions {
-		out, err := exec.Command("asdf", "where", tool, v).Output()
+		out, err := a.ExecEnv.RunAsdf("where", tool, v)
 		if err != nil {
 			return nil, fmt.Errorf("asdf where %s %s: %w", tool, v, err)
 		}
 
-		fileInfo, err := os.Lstat(strings.TrimSpace(string(out)))
+		installPath := lastLine(out)
+		fileInfo, err := os.Lstat(installPath)
 		if err != nil {
-			return nil, fmt.Errorf("lstat %s: %w", strings.TrimSpace(string(out)), err)
+			return nil, fmt.Errorf("lstat %s: %w", installPath, err)
 		}
 
 		if fileInfo.Mode()&os.ModeSymlink == 0 {
@@ -132,4 +132,19 @@ func filterAliasVersions(tool string, versions []string) ([]string, error) {
 		}
 	}
 	return filtered, nil
+}
+
+// lastLine returns the last line of a command output that has content. Output is combined stdout
+// and stderr, so a warning printed by asdf or by a plugin would otherwise end up in the parsed value.
+// The mise provider carries the same helper as extractLastLine. Both become unnecessary once
+// ExecEnv stops combining stdout and stderr, which is tracked by the TODO on StripMiseLogLines.
+func lastLine(output string) string {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" {
+			return line
+		}
+	}
+	return ""
 }

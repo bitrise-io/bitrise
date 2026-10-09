@@ -90,7 +90,6 @@ func TestPrependPaths(t *testing.T) {
 	}
 }
 
-
 func TestConvertToEnvMap(t *testing.T) {
 	// Use a static PATH for the duraton of tests
 	t.Setenv("PATH", "/usr/bin:/bin")
@@ -241,7 +240,7 @@ func TestConvertToEnvMap(t *testing.T) {
 			// 	pathPtr = &tt.pathEnv
 			// }
 
-			result := ConvertToEnvMap(tt.activations) 
+			result := ConvertToEnvMap(tt.activations)
 
 			assert.Equal(t, tt.expected, result)
 		})
