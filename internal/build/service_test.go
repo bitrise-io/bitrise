@@ -418,6 +418,65 @@ func TestService_Abort_NotFound(t *testing.T) {
 	require.EqualError(t, err, `build "missing" not found`)
 }
 
+func TestService_Rebuild_BodyAndResponse(t *testing.T) {
+	var gotMethod, gotPath string
+	var gotBody []byte
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotBody, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"build_slug":"new-build","build_number":8,"build_url":"https://app.bitrise.io/build/new-build","triggered_workflow":"deploy"}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	b, err := svc.Rebuild(context.Background(), RebuildRequest{AppSlug: "my-app", BuildSlug: "src-build", RemoteAccess: true})
+	require.NoError(t, err)
+	assert.Equal(t, http.MethodPost, gotMethod)
+	assert.Equal(t, "/apps/my-app/builds/src-build/rebuild", gotPath)
+	assert.JSONEq(t, `{"is_remote":true}`, string(gotBody))
+	assert.Equal(t, "new-build", b.Slug)
+	assert.Equal(t, "my-app", b.AppSlug)
+	assert.Equal(t, 8, b.BuildNumber)
+	assert.Equal(t, "deploy", b.Workflow)
+	assert.Equal(t, "https://app.bitrise.io/build/new-build", b.BuildURL)
+}
+
+func TestService_Rebuild_NotFound(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Rebuild(context.Background(), RebuildRequest{AppSlug: "my-app", BuildSlug: "missing"})
+	require.EqualError(t, err, `build "missing" not found`)
+}
+
+func TestService_Rebuild_PassesServerRejectionThrough(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error_msg":"Build not finished yet, can't rebuild it."}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Rebuild(context.Background(), RebuildRequest{AppSlug: "my-app", BuildSlug: "running"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Build not finished yet, can't rebuild it.")
+}
+
+func TestService_Rebuild_RequiresSlugs(t *testing.T) {
+	srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {
+		t.Error("no request expected")
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Rebuild(context.Background(), RebuildRequest{BuildSlug: "b"})
+	require.EqualError(t, err, "app ID is required")
+	_, err = svc.Rebuild(context.Background(), RebuildRequest{AppSlug: "my-app"})
+	require.EqualError(t, err, "build ID is required")
+}
+
 func TestService_NilClientFails(t *testing.T) {
 	svc := NewService(nil)
 	_, err := svc.List(context.Background(), ListOptions{AppSlug: "x"})
