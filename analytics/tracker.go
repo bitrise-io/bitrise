@@ -3,7 +3,6 @@ package analytics
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/bitrise-io/bitrise/v3/configs"
@@ -47,8 +46,6 @@ const (
 	appSlugProperty               = "app_slug"
 	parentStepExecutionIDProperty = "parent_step_execution_id"
 	cliVersionProperty            = "cli_version"
-	envmanVersionProperty         = "envman_version"
-	stepmanVersionProperty        = "stepman_version"
 	statusProperty                = "status"
 	inputsProperty                = "inputs"
 	errorMessageProperty          = "error_message"
@@ -82,10 +79,6 @@ const (
 	StepExecutionIDEnvKey = "BITRISE_STEP_EXECUTION_ID"
 	stackRevIDKey         = "BITRISE_STACK_REV_ID"
 	macStackRevIDKey      = "BITRISE_OSX_STACK_REV_ID"
-
-	bitriseVersionKey = "bitrise"
-	envmanVersionKey  = "envman"
-	stepmanVersionKey = "stepman"
 )
 
 type Input struct {
@@ -160,24 +153,6 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 	appSlug := t.envRepository.Get(appSlugEnvKey)
 	parentStepExecutionID := t.envRepository.Get(StepExecutionIDEnvKey)
 
-	var bitriseVersion string
-	var envmanVersion string
-	var stepmanVersion string
-	currentVersionMap, err := version.ToolVersionMap(os.Args[0])
-	if err == nil {
-		if bv, ok := currentVersionMap[bitriseVersionKey]; ok {
-			bitriseVersion = bv.String()
-		}
-		if ev, ok := currentVersionMap[envmanVersionKey]; ok {
-			envmanVersion = ev.String()
-		}
-		if sv, ok := currentVersionMap[stepmanVersionKey]; ok {
-			stepmanVersion = sv.String()
-		}
-	} else {
-		t.SendCLIWarning(fmt.Sprintf("Couldn't get tool versions: %s", err.Error()))
-	}
-
 	stateProperties := analytics.Properties{
 		workflowNameProperty:        name,
 		ciModeProperty:              isCI,
@@ -192,9 +167,7 @@ func (t tracker) SendWorkflowStarted(properties analytics.Properties, name strin
 	stateProperties.AppendIfNotEmpty(buildSlugProperty, buildSlug)
 	stateProperties.AppendIfNotEmpty(appSlugProperty, appSlug)
 	stateProperties.AppendIfNotEmpty(parentStepExecutionIDProperty, parentStepExecutionID)
-	stateProperties.AppendIfNotEmpty(cliVersionProperty, bitriseVersion)
-	stateProperties.AppendIfNotEmpty(envmanVersionProperty, envmanVersion)
-	stateProperties.AppendIfNotEmpty(stepmanVersionProperty, stepmanVersion)
+	stateProperties.AppendIfNotEmpty(cliVersionProperty, version.VERSION)
 
 	t.tracker.Enqueue(workflowStartedEventName, properties, stateProperties)
 }

@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/bitrise-io/bitrise/v3/tools"
-	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
@@ -66,38 +65,6 @@ func (infos PluginInfos) JSON() string {
 	return string(bytes) + "\n"
 }
 
-func validateRequirements(requirements []Requirement, currentVersionMap map[string]ver.Version) error {
-	var err error
-
-	for _, requirement := range requirements {
-		currentVersion := currentVersionMap[requirement.Tool]
-
-		var minVersionPtr *ver.Version
-		if requirement.MinVersion == "" {
-			return fmt.Errorf("plugin requirement min version is required")
-		}
-
-		minVersionPtr, err = ver.NewVersion(requirement.MinVersion)
-		if err != nil {
-			return fmt.Errorf("failed to parse plugin required min version (%s) for tool (%s), error: %s", requirement.MinVersion, requirement.Tool, err)
-		}
-
-		var maxVersionPtr *ver.Version
-		if requirement.MaxVersion != "" {
-			maxVersionPtr, err = ver.NewVersion(requirement.MaxVersion)
-			if err != nil {
-				return fmt.Errorf("failed to parse plugin requirement version (%s) for tool (%s), error: %s", requirement.MaxVersion, requirement.Tool, err)
-			}
-		}
-
-		if err := validateVersion(currentVersion, *minVersionPtr, maxVersionPtr); err != nil {
-			return fmt.Errorf("checking plugin tool (%s) requirements failed, error: %s", requirement.Tool, err)
-		}
-	}
-
-	return nil
-}
-
 func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
 	if err = yaml.Unmarshal(bytes, &plugin); err != nil {
 		return Plugin{}, err
@@ -105,7 +72,7 @@ func parsePluginFromBytes(bytes []byte) (plugin Plugin, err error) {
 	return plugin, nil
 }
 
-func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
+func validatePlugin(plugin Plugin, pluginDefinitionPth string) error {
 	// Validate plugin
 	if plugin.Name == "" {
 		return errors.New("missing name")
@@ -125,19 +92,6 @@ func validatePlugin(plugin Plugin, pluginDefinitionPth, binPath string) error {
 			return err
 		} else if !exist {
 			return fmt.Errorf("no executable defined, nor bitrise-plugin.sh exist at: %s", pluginScriptPth)
-		}
-	}
-	// ---
-
-	// Ensure dependencies
-	if len(plugin.Requirements) > 0 {
-		currentVersionMap, err := version.ToolVersionMap(binPath)
-		if err != nil {
-			return fmt.Errorf("check Bitrise tool versions: %s\nhint: run `bitrise setup --clean` and try again", err)
-		}
-	
-		if err := validateRequirements(plugin.Requirements, currentVersionMap); err != nil {
-			return fmt.Errorf("validate requirements: %s", err)
 		}
 	}
 	// ---
@@ -172,7 +126,6 @@ func (plugin Plugin) String() string {
 	pluginStr += fmt.Sprintf("\n  Description: %s", plugin.Description)
 	return pluginStr
 }
-
 
 // ExecutableURL ...
 func (plugin Plugin) ExecutableURL() string {

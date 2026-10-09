@@ -14,7 +14,6 @@ import (
 	"github.com/bitrise-io/bitrise/v3/progress"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	ver "github.com/hashicorp/go-version"
 )
 
 //=======================================
@@ -26,15 +25,6 @@ func validatePath(pth string) error {
 		return fmt.Errorf("failed to check path (%s), error: %s", pth, err)
 	} else if !exist {
 		return fmt.Errorf("no file found at (%s)", pth)
-	}
-	return nil
-}
-
-func validateVersion(current, requiredMin ver.Version, requiredMax *ver.Version) error {
-	if current.LessThan(&requiredMin) {
-		return fmt.Errorf("current version (%s) is less then min version (%s)  ", current.String(), requiredMin.String())
-	} else if requiredMax != nil && current.GreaterThan(requiredMax) {
-		return fmt.Errorf("current version (%s) is greater than max version (%s)  ", current.String(), (*requiredMax).String())
 	}
 	return nil
 }
@@ -127,7 +117,7 @@ func installLocalPlugin(pluginSourceURI, pluginLocalPth string) (Plugin, error) 
 		return Plugin{}, fmt.Errorf("failed to parse bitrise-plugin.yml (%s), error: %s", tmpPluginYMLPath, err)
 	}
 
-	if err := validatePlugin(newPlugin, pluginSourceURI, os.Args[0]); err != nil {
+	if err := validatePlugin(newPlugin, tmpPluginYMLPath); err != nil {
 		return Plugin{}, fmt.Errorf("plugin validation failed, error: %s", err)
 	}
 	// ---
