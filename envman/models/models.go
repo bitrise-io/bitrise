@@ -1,32 +1,18 @@
+// Package models aliases the types of the published envman/v2 models.
+//
+// Stepman's StepModel uses envman/v2 models for step inputs and outputs, so bitrise and the in-repo envman
+// must share the exact same types: EnvironmentItemModel stores an EnvironmentItemOptionsModel struct inside
+// a map, and a struct of a different (even identical) type fails GetOptions at runtime.
+// The methods of these types come from envman/v2 through the aliases.
+// Once stepman is moved into this repository (STEP-2546), restore the type definitions here and the methods
+// in models_methods.go (see commit 13e2aea9).
 package models
 
-// EnvironmentItemOptionsModel ...
-type EnvironmentItemOptionsModel struct {
-	// These fields are processed by envman at envman run
-	IsExpand    *bool `json:"is_expand,omitempty" yaml:"is_expand,omitempty"`
-	SkipIfEmpty *bool `json:"skip_if_empty,omitempty" yaml:"skip_if_empty,omitempty"`
-	// These fields used only by bitrise
-	Title             *string  `json:"title,omitempty" yaml:"title,omitempty"`
-	Description       *string  `json:"description,omitempty" yaml:"description,omitempty"`
-	Summary           *string  `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Category          *string  `json:"category,omitempty" yaml:"category,omitempty"`
-	ValueOptions      []string `json:"value_options,omitempty" yaml:"value_options,omitempty"`
-	IsRequired        *bool    `json:"is_required,omitempty" yaml:"is_required,omitempty"`
-	IsDontChangeValue *bool    `json:"is_dont_change_value,omitempty" yaml:"is_dont_change_value,omitempty"`
-	IsTemplate        *bool    `json:"is_template,omitempty" yaml:"is_template,omitempty"`
-	IsSensitive       *bool    `json:"is_sensitive,omitempty" yaml:"is_sensitive,omitempty"`
-	Unset             *bool    `json:"unset,omitempty" yaml:"unset,omitempty"`
-	//
-	Meta map[string]interface{} `json:"meta,omitempty" yaml:"meta,omitempty"`
-}
+import envmanModels "github.com/bitrise-io/envman/v2/models"
 
-// EnvironmentItemModel ...
-type EnvironmentItemModel map[string]interface{}
-
-// EnvsSerializeModel ...
-type EnvsSerializeModel struct {
-	Envs []EnvironmentItemModel `json:"envs" yaml:"envs"`
-}
-
-// EnvsJSONListModel ...
-type EnvsJSONListModel map[string]string
+type (
+	EnvironmentItemOptionsModel = envmanModels.EnvironmentItemOptionsModel
+	EnvironmentItemModel        = envmanModels.EnvironmentItemModel
+	EnvsSerializeModel          = envmanModels.EnvsSerializeModel
+	EnvsJSONListModel           = envmanModels.EnvsJSONListModel
+)

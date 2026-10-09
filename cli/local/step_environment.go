@@ -5,8 +5,8 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/bitrise"
 	"github.com/bitrise-io/bitrise/v3/models"
-	"github.com/bitrise-io/envman/v2/env"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/env"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/v2/parseutil"
 )
 

@@ -10,7 +10,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/envfile"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/goinp/goinp"
 )
 
