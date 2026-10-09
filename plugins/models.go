@@ -33,13 +33,6 @@ type ExecutableModel struct {
 	Linux    string `yaml:"linux,omitempty"`
 }
 
-// Requirement ...
-type Requirement struct {
-	Tool       string `yaml:"tool"`
-	MinVersion string `yaml:"min_version"`
-	MaxVersion string `yaml:"max_version"`
-}
-
 // Plugin ...
 type Plugin struct {
 	Name          string          `yaml:"name,omitempty"`
@@ -47,7 +40,6 @@ type Plugin struct {
 	Executable    ExecutableModel `yaml:"executable,omitempty"`
 	TriggerEvent  string          `yaml:"trigger,omitempty"`
 	TriggerEvents []string        `yaml:"triggers,omitempty"`
-	Requirements  []Requirement   `yaml:"requirements,omitempty"`
 }
 
 // PluginInfoModel ...
