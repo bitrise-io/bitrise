@@ -11,10 +11,8 @@ type ToolProvider interface {
 
 	ActivateEnv(result ToolInstallResult) (EnvironmentActivation, error)
 
-	// ListReleasedVersions returns the released versions newest first, in the order this
-	// provider resolves them. A non-empty prefix keeps only the versions this provider
-	// would consider when resolving that prefix. Whether prereleases are skipped among
-	// them depends on the provider.
+	// ListReleasedVersions returns released versions newest first, in the order this
+	// provider resolves them, limited to prefix when it is set.
 	ListReleasedVersions(toolName ToolID, prefix string) ([]string, error)
 }
 

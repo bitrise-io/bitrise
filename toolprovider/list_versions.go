@@ -8,9 +8,7 @@ import (
 )
 
 // ListToolVersions resolves aliases, validates the tool name against
-// SupportedTools, and returns the released versions newest first, in the order
-// the provider resolves them.
-// If versionPrefix is set, only the versions the provider would consider for it are returned.
+// SupportedTools, and returns the provider's released versions newest first.
 func ListToolVersions(toolName string, versionPrefix string, tp provider.ToolProvider) ([]string, error) {
 	canonicalName := string(alias.GetCanonicalToolID(provider.ToolID(toolName)))
 	if !IsSupported(toolName) {

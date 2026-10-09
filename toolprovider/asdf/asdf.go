@@ -131,14 +131,8 @@ func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID, prefix
 	return releasedVersionsWithPrefix(versions, prefix), nil
 }
 
-// releasedVersionsWithPrefix lists versions the way ResolveVersion picks among them:
-// semver newest first, then the rest in reverse text order, keeping every version that
-// starts with prefix.
-//
-// The match is a plain string prefix, unlike mise's line matching, so 22.1 also covers
-// 22.10.0, and the prefix is used as given, so 22. stays 22. That is deliberate: the
-// listing shows what this provider would install for the prefix, and asdf's resolver
-// matches the same way. It also takes the first match without skipping prereleases.
+// releasedVersionsWithPrefix sorts and matches like ResolveVersion: semver newest first,
+// and a plain string prefix, so 22.1 also covers 22.10.0.
 func releasedVersionsWithPrefix(versions []string, prefix string) []string {
 	sorted := logicallySortedVersions(versions)
 	if prefix == "" {
