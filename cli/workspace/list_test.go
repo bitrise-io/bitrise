@@ -25,10 +25,7 @@ func TestListCmd_HumanTable(t *testing.T) {
 	require.NoError(t, cmd.RunE(cmd, nil))
 
 	assert.Equal(t, "/organizations", gotPath)
-	assert.Contains(t, out.String(), "ID")
-	assert.Contains(t, out.String(), "NAME")
-	assert.Less(t, bytes.Index(out.Bytes(), []byte("Alpha")), bytes.Index(out.Bytes(), []byte("Bravo")))
-	assert.Contains(t, out.String(), "a-ws")
+	assert.Equal(t, "ID    NAME\na-ws  Alpha\nb-ws  Bravo\n", out.String())
 }
 
 func TestListCmd_JSON(t *testing.T) {

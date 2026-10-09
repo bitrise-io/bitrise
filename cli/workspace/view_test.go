@@ -46,6 +46,20 @@ func TestViewCmd_WorkspaceFlagByName_SkipsSecondFetch(t *testing.T) {
 	assert.Regexp(t, `ID:\s+acme`, out.String())
 }
 
+func TestViewCmd_PositionalSlug_SkipsSecondFetch(t *testing.T) {
+	var paths []string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		_, _ = w.Write([]byte(`{"data":[{"slug":"acme","name":"Acme Corp"}]}`))
+	})
+
+	cmd, out := newTestCmd(t, NewViewCommand(), srv.URL)
+	require.NoError(t, runView(cmd, []string{"acme"}, false, unusedBrowser(t)))
+
+	assert.Equal(t, []string{"/organizations"}, paths, "the workspace list already holds the workspace")
+	assert.Equal(t, "Name: Acme Corp\nID:   acme\n", out.String())
+}
+
 func TestViewCmd_EnvSkipsNameResolution(t *testing.T) {
 	t.Setenv(cmdutil.EnvWorkspaceID, "env-ws")
 	var paths []string

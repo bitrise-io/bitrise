@@ -258,6 +258,37 @@ func TestResolveWorkspace_NameMatch_ReturnsFull(t *testing.T) {
 	assert.Equal(t, "My Workspace", org.Name)
 }
 
+func TestResolveWorkspace_SlugMatch_ReturnsFull(t *testing.T) {
+	var calls int
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		calls++
+		_, _ = w.Write([]byte(`{"data":[{"slug":"abc12345","name":"My Workspace"}]}`))
+	})
+	c := cache.New()
+	r := New(newAPIClient(t, srv.URL), c)
+
+	org, complete, err := r.ResolveWorkspace(context.Background(), "abc12345")
+	require.NoError(t, err)
+	assert.True(t, complete, "expected complete=true on slug match")
+	assert.Equal(t, bitriseapi.Organization{Slug: "abc12345", Name: "My Workspace"}, org)
+	assert.Equal(t, 1, calls)
+	_, cached := c.LookupWorkspace("abc12345")
+	assert.False(t, cached, "the name cache must not learn a slug as a name")
+}
+
+func TestResolveWorkspace_SlugMatchWinsOverName(t *testing.T) {
+	srv := newFakeServer(t, organizationsBody(`{"data":[
+		{"slug":"other","name":"acme"},
+		{"slug":"acme","name":"Acme Corp"}
+	]}`))
+	r := New(newAPIClient(t, srv.URL), nil)
+
+	org, complete, err := r.ResolveWorkspace(context.Background(), "acme")
+	require.NoError(t, err)
+	assert.True(t, complete)
+	assert.Equal(t, "acme", org.Slug)
+}
+
 func TestResolveWorkspace_NoMatch_Passthrough(t *testing.T) {
 	srv := newFakeServer(t, organizationsBody(`{"data":[]}`))
 	r := New(newAPIClient(t, srv.URL), nil)
