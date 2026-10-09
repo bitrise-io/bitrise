@@ -30,6 +30,7 @@ bitrise build [flags]
 * [bitrise build abort](bitrise_build_abort.md)	 - Abort a running or queued build
 * [bitrise build list](bitrise_build_list.md)	 - List builds for an app
 * [bitrise build log](bitrise_build_log.md)	 - Print the build log
+* [bitrise build rebuild](bitrise_build_rebuild.md)	 - Start a new build with the parameters of a finished build
 * [bitrise build trigger](bitrise_build_trigger.md)	 - Start a new build
 * [bitrise build view](bitrise_build_view.md)	 - Show details of a single build
 * [bitrise build watch](bitrise_build_watch.md)	 - Stream logs for a running build

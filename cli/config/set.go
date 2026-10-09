@@ -21,7 +21,7 @@ func NewSetCommand() *cobra.Command {
 Valid keys: %s`,
 			strings.Join(internalconfig.Keys, ", "),
 		),
-		Example: `  bitrise config set api_base_url https://staging-api.bitrise.io/v0.1`,
+		Example: `  bitrise config set api_base_url https://api.example.com/v0.1`,
 		Args:    cobra.MatchAll(cobra.ExactArgs(2), validKeyArg),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
