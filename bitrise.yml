@@ -20,6 +20,7 @@ pipelines:
       run_unit_tests_linux: {}
       run_integration_tests_macos: {}
       run_integration_tests_linux: {}
+      run_envman_integration_tests_linux: {}
       run_with_group_based_containerization_integration_tests_linux: {}
       run_step_based_containerization_integration_tests_linux: {}
       test_binary_build_macos: {}
@@ -172,6 +173,15 @@ workflows:
       bitrise.io:
         stack: ubuntu-noble-24.04-bitrise-2025-android
         machine_type_id: g2.linux.x-large
+
+  run_envman_integration_tests_linux:
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
+        inputs:
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_envman_integration_tests: {}
 
   run_with_group_based_containerization_integration_tests_linux:
     steps:
@@ -559,6 +569,40 @@ step_bundles:
 
             # Exit with the original test exit code
             exit $test_exit_code
+    - deploy-to-bitrise-io@2: {}
+
+  run_envman_integration_tests:
+    steps:
+    - script@1:
+        title: Run envman integration tests
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -exo pipefail
+
+            # Build the standalone envman binary under test
+            current_envman="$(pwd)/_tmp/test_envman"
+            export CGO_ENABLED=0
+            go build -o "$current_envman" ./envman
+
+            export PR="" PULL_REQUEST_ID=""
+            export INTEGRATION_TEST_BINARY_PATH="$current_envman"
+
+            # Prevent this script's content from being added to the test process environment
+            unset content
+
+            test_log="${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.log"
+
+            test_exit_code=0
+            go test -v ./envman/_tests/integration/... 2>&1 | tee "$test_log" || test_exit_code=$?
+
+            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.xml"
+            exit $test_exit_code
+    - custom-test-results-export@1:
+        inputs:
+        - test_name: Envman integration tests on Linux
+        - base_path: $BITRISE_DEPLOY_DIR/envman_integration_tests_linux.xml
+        - search_pattern: "*"
     - deploy-to-bitrise-io@2: {}
 
   test_binary_build:
