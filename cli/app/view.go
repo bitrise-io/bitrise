@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -71,11 +72,11 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	}
 
 	if web {
-		url := fmt.Sprintf("%s/app/%s", cmdutil.ResolveWebBaseURL(cmd), appSlug)
-		if err := openBrowser(url); err != nil {
+		webURL := fmt.Sprintf("%s/app/%s", cmdutil.ResolveWebBaseURL(cmd), url.PathEscape(appSlug))
+		if err := openBrowser(webURL); err != nil {
 			return err
 		}
-		_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened %s\n", url)
+		_, err := fmt.Fprintf(cmd.ErrOrStderr(), "Opened %s\n", webURL)
 		return err
 	}
 

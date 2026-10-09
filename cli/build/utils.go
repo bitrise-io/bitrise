@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 
@@ -136,7 +137,7 @@ func printAbortText(w io.Writer, r internalbuild.AbortResult) error {
 // service's Build.BuildURL isn't populated by the API (only the trigger
 // response provides one; view/list/watch build the URL themselves instead).
 func buildWebURL(webBaseURL, appSlug, buildSlug string) string {
-	return fmt.Sprintf("%s/app/%s/build/%s", webBaseURL, appSlug, buildSlug)
+	return fmt.Sprintf("%s/app/%s/build/%s", webBaseURL, url.PathEscape(appSlug), url.PathEscape(buildSlug))
 }
 
 // writeDetachNotice writes the standard Ctrl-C detach message to w. resumeCmd

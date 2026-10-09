@@ -35,5 +35,6 @@ bitrise [flags]
 * [bitrise update](bitrise_update.md)	 - Updates the Bitrise CLI.
 * [bitrise user](bitrise_user.md)	 - Create and manage your Bitrise account.
 * [bitrise version](bitrise_version.md)	 - Prints the version
+* [bitrise workspace](bitrise_workspace.md)	 - List and inspect workspaces.
 * [bitrise yml](bitrise_yml.md)	 - Work with bitrise.yml files.
 

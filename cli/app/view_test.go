@@ -122,6 +122,20 @@ func TestViewCmd_Web_ResolvesUserProvidedName(t *testing.T) {
 	assert.Equal(t, "My App Name", gotTitle)
 }
 
+func TestViewCmd_Web_EscapesID(t *testing.T) {
+	cmd, _ := newTestViewCmd(t, "https://unused.test")
+	t.Setenv(cmdutil.EnvWebBaseURL, "https://app.bitrise.io")
+	t.Setenv(cmdutil.EnvAppID, "acme/x#y")
+
+	var gotURL string
+	err := runView(cmd, nil, true, func(url string) error {
+		gotURL = url
+		return nil
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "https://app.bitrise.io/app/acme%2Fx%23y", gotURL)
+}
+
 func TestViewCmd_RejectsMultipleArgs(t *testing.T) {
 	cmd := NewViewCommand()
 	cmd.SetArgs([]string{"app-1", "app-2"})
