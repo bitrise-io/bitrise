@@ -118,12 +118,34 @@ func (a *AsdfToolProvider) InstallTool(tool provider.ToolRequest) (provider.Tool
 	}
 }
 
-func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+func (a *AsdfToolProvider) ListReleasedVersions(toolName provider.ToolID, prefix string) ([]string, error) {
 	err := a.InstallPlugin(provider.ToolRequest{ToolName: toolName})
 	if err != nil {
 		return nil, fmt.Errorf("install tool plugin %s: %w", toolName, err)
 	}
-	return a.listReleased(toolName)
+
+	versions, err := a.listReleased(toolName)
+	if err != nil {
+		return nil, err
+	}
+	return releasedVersionsWithPrefix(versions, prefix), nil
+}
+
+// releasedVersionsWithPrefix sorts and matches like ResolveVersion: semver newest first,
+// and a plain string prefix, so 22.1 also covers 22.10.0.
+func releasedVersionsWithPrefix(versions []string, prefix string) []string {
+	sorted := logicallySortedVersions(versions)
+	if prefix == "" {
+		return sorted
+	}
+
+	var matching []string
+	for _, v := range sorted {
+		if strings.HasPrefix(v, prefix) {
+			matching = append(matching, v)
+		}
+	}
+	return matching
 }
 
 // ResolveLatestVersion resolves a tool to its latest version without installing it.

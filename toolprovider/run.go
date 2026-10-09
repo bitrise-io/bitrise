@@ -90,7 +90,7 @@ func installTools(toolRequests []provider.ToolRequest, providerID string, useFas
 		}
 
 		canonicalToolID := alias.GetCanonicalToolID(req.ToolName)
-		versions, err := toolProvider.ListReleasedVersions(canonicalToolID)
+		versions, err := toolProvider.ListReleasedVersions(canonicalToolID, "")
 		if err != nil {
 			return nil, fmt.Errorf("list versions for %s: %w", canonicalToolID, err)
 		}

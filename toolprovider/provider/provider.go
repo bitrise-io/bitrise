@@ -11,7 +11,9 @@ type ToolProvider interface {
 
 	ActivateEnv(result ToolInstallResult) (EnvironmentActivation, error)
 
-	ListReleasedVersions(toolName ToolID) ([]string, error)
+	// ListReleasedVersions returns released versions newest first, in the order this
+	// provider resolves them, limited to prefix when it is set.
+	ListReleasedVersions(toolName ToolID, prefix string) ([]string, error)
 }
 
 type ToolID string

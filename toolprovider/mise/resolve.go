@@ -111,38 +111,36 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 	return false, nil
 }
 
-// listRemoteVersions fetches all available remote versions for a tool.
-func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID) ([]string, error) {
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", string(toolName))
-	if err != nil {
-		return nil, fmt.Errorf("mise ls-remote %s: %w", toolName, err)
-	}
-
-	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
-	if err != nil {
-		return nil, fmt.Errorf("parsing mise ls-remote %s output: %w", toolName, err)
-	}
-	return versions, nil
-}
-
 // versionExistsRemote checks if a version exists in the remote registry.
 // version can be fuzzy (e.g., "20") or concrete (e.g., "20.18.1")
 func versionExistsRemote(execEnv execenv.ExecEnv, toolName provider.ToolID, version string) (bool, error) {
-	versionString := string(toolName)
-	if version != "" && version != "latest" {
-		versionString = fmt.Sprintf("%s@%s", toolName, version)
+	versions, err := listRemoteVersions(execEnv, toolName, version)
+	if err != nil {
+		return false, err
+	}
+	return len(versions) > 0, nil
+}
+
+// listRemoteVersions lists a tool's remote versions in mise's order, oldest first.
+// mise matches a prefix as a plain string prefix, so 22.1 also covers 22.10.0.
+// Limitation: mise's resolver matches by version line and tries v spellings, so a
+// prefixed list can hold versions mise would not resolve that prefix to.
+func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID, prefix string) ([]string, error) {
+	query := string(toolName)
+	if prefix != "" && prefix != "latest" {
+		query = fmt.Sprintf("%s@%s", toolName, prefix)
 	}
 
-	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", versionString)
+	output, err := execEnv.RunMiseWithTimeout(execenv.DefaultTimeout, "ls-remote", "--quiet", "--json", query)
 	if err != nil {
-		return false, fmt.Errorf("mise ls-remote %s: %w", versionString, err)
+		return nil, fmt.Errorf("mise ls-remote %s: %w", query, err)
 	}
 
 	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
 	if err != nil {
-		return false, fmt.Errorf("parsing mise ls-remote %s output: %w", versionString, err)
+		return nil, fmt.Errorf("parsing mise ls-remote %s output: %w", query, err)
 	}
-	return len(versions) > 0, nil
+	return versions, nil
 }
 
 func parseRemoteVersionsJSON(raw string) ([]string, error) {
@@ -155,7 +153,8 @@ func parseRemoteVersionsJSON(raw string) ([]string, error) {
 	if err := json.Unmarshal([]byte(raw), &entries); err != nil {
 		return nil, err
 	}
-	versions := make([]string, 0, len(entries))
+	// nil, so --format json prints null when there are no versions.
+	var versions []string
 	for _, e := range entries {
 		if e.Version != "" {
 			versions = append(versions, e.Version)

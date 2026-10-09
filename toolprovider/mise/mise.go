@@ -6,6 +6,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
@@ -252,12 +253,21 @@ func (m *MiseToolProvider) ResolveLatestVersion(tool provider.ToolRequest) (stri
 	return concreteVersion, nil
 }
 
-func (m *MiseToolProvider) ListReleasedVersions(toolName provider.ToolID) ([]string, error) {
+func (m *MiseToolProvider) ListReleasedVersions(toolName provider.ToolID, prefix string) ([]string, error) {
 	err := m.InstallPlugin(provider.ToolRequest{ToolName: toolName})
 	if err != nil {
 		return nil, fmt.Errorf("install tool plugin %s: %w", toolName, err)
 	}
-	return listRemoteVersions(m.ExecEnv, toolName)
+
+	versions, err := listRemoteVersions(m.ExecEnv, toolName, prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	// mise resolves to the last stable match in its list, so reversed it reads in resolution order.
+	// Sorting would not: semver puts 1.20.4 above 1.20.4-otp-29.
+	slices.Reverse(versions)
+	return versions, nil
 }
 
 func GetMiseVersion() string {

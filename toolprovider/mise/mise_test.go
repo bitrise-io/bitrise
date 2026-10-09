@@ -89,3 +89,13 @@ func TestNewToolProvider_ExtraEnvs(t *testing.T) {
 		})
 	}
 }
+
+func TestListReleasedVersions(t *testing.T) {
+	fake := newFakeExecEnv()
+	fake.setResponse(miseLsRemoteCmd("elixir", "1.20"), `[{"version":"1.20.4"},{"version":"1.20.4-otp-28"},{"version":"1.20.4-otp-29"}]`)
+	p := &MiseToolProvider{ExecEnv: fake}
+
+	versions, err := p.ListReleasedVersions("elixir", "1.20")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"1.20.4-otp-29", "1.20.4-otp-28", "1.20.4"}, versions, "mise's order reversed, not sorted")
+}
