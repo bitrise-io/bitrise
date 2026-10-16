@@ -14,6 +14,22 @@ pipelines:
       pull_request:
       - source_branch: "*"
     workflows:
+  diag_env:
+    steps:
+    - script@1:
+        title: Diagnose concurrent git clones and mise cache
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -x
+            id; echo "HOME=$HOME"; uname -a; nproc 2>/dev/null || sysctl -n hw.ncpu
+            cat ~/.gitconfig; git config --global --list --show-origin
+            env | grep -i -E "git|proxy|mise|asdf|xdg" | sed -E 's/(TOKEN|PASS|KEY|SECRET)=.*/\1=<redacted>/'
+            ls -la ~/.cache/mise 2>/dev/null | head; ls ~ ; ls -la ~/.asdf 2>/dev/null | head -5
+            work=$(mktemp -d)
+            clone() { HOME=$2 git clone https://github.com/nodenv/node-build.git "$work/$1" --branch main >"$work/$1.log" 2>&1; echo "clone $1 exit=$?"; tail -3 "$work/$1.log"; }
+            for i in 1 2 3 4 5 6; do clone empty$i "$(mktemp -d)" & done; wait
+            for i in 1 2 3 4 5 6; do clone real$i "$HOME" & done; wait
       run_lint: {}
       run_docs_check: {}
       run_unit_tests_macos: {}
