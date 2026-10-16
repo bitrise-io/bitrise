@@ -24,17 +24,18 @@ func TestAsdfInstallGolangVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testEnv, err := createTestEnv(t, asdfInstallation{
-			flavor:  flavorAsdfClassic,
-			version: "0.14.0",
-			plugins: []string{"golang"},
-		})
-		require.NoError(t, err)
-
-		asdfProvider := asdf.AsdfToolProvider{
-			ExecEnv: testEnv.toExecEnv(),
-		}
 		t.Run(tt.name, func(t *testing.T) {
+			testEnv, err := createTestEnv(t, asdfInstallation{
+				flavor:  flavorAsdfClassic,
+				version: "0.14.0",
+				plugins: []string{"golang"},
+			})
+			require.NoError(t, err)
+
+			asdfProvider := asdf.AsdfToolProvider{
+				ExecEnv: testEnv.toExecEnv(),
+			}
+
 			request := provider.ToolRequest{
 				ToolName:           "golang",
 				UnparsedVersion:    tt.requestedVersion,
