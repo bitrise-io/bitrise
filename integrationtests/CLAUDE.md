@@ -19,9 +19,10 @@ INTEGRATION_TEST_BINARY_PATH=/tmp/bitrise go test --tags linux_and_mac ./...
 
 Docker suites run via `make docker-step-based-test` and `make docker-with-group-test`.
 
-Packages run in parallel, and the `toolprovider/mise` and `toolprovider/asdf` tests run
-in parallel within their package too. Every bitrise process of a run shares the
-machine's HOME (`~/.stepman`, `~/.bitrise`) and the binary under test.
+Packages run in parallel, and the toolprovider tests run in parallel within their
+packages too. Every bitrise process of a run shares the machine's HOME (`~/.stepman`,
+`~/.bitrise`, the mise data dir) and the binary under test. Concurrent `bitrise tools`
+runs can share the mise data dir because mise locks each install of a tool version.
 
 ## Isolating a new test
 
