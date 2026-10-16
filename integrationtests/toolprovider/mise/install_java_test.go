@@ -12,6 +12,8 @@ import (
 )
 
 func TestMiseInstallJavaVersion(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name               string
 		requestedVersion   string

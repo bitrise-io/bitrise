@@ -65,6 +65,8 @@ func TestMiseInstallNixpkgsRuby(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			miseInstallDir := t.TempDir()
 			miseDataDir := t.TempDir()
 			miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, true, false, isolatedEnvs(t))
