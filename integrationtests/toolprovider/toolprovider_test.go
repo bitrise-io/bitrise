@@ -23,18 +23,24 @@ import (
 // }
 
 func TestMiseToolProvider(t *testing.T) {
+	t.Parallel()
+
 	cmd := command.New(testhelpers.BinPath(), "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 }
 
 func TestMiseNodeCorepack(t *testing.T) {
+	t.Parallel()
+
 	cmd := command.New(testhelpers.BinPath(), "run", "node_corepack_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)
 }
 
 func TestWorkflowChaining(t *testing.T) {
+	t.Parallel()
+
 	cmd := command.New(testhelpers.BinPath(), "run", "toolprovider_test", "--config", "toolprovider_test_workflow_chain_bitrise.yml")
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, out)

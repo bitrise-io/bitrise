@@ -30,6 +30,8 @@ type setupCommandCase struct {
 }
 
 func TestToolsSetupCommand(t *testing.T) {
+	t.Parallel()
+
 	cases := []setupCommandCase{
 		{
 			name:         "setup from .tool-versions file",
@@ -298,6 +300,8 @@ v18.16.0
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			tmpDir := t.TempDir()
 			configPath := filepath.Join(tmpDir, tc.fileName)
 
@@ -336,6 +340,8 @@ v18.16.0
 }
 
 func TestToolsSetupCommand_MultipleConfigs(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 
 	bitriseYml1 := filepath.Join(tmpDir, "bitrise1.yml")
@@ -364,6 +370,8 @@ workflows:
 }
 
 func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, ".tool-versions")
 	err := os.WriteFile(configPath, []byte("go 1.21.13\n"), 0644)
@@ -383,6 +391,8 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 }
 
 func TestToolsSetupCommand_GlobalToolsWithoutWorkflow(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "bitrise.yml")
 
@@ -418,6 +428,8 @@ workflows:
 }
 
 func TestToolsSetupCommandNoArg(t *testing.T) {
+	t.Parallel()
+
 	cases := []setupCommandCase{
 		{
 			name:         "setup from .tool-versions file",
@@ -433,6 +445,8 @@ func TestToolsSetupCommandNoArg(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			tmpDir := t.TempDir()
 			configPath := filepath.Join(tmpDir, tc.fileName)
 
