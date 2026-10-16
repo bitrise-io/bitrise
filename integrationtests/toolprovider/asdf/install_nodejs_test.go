@@ -12,6 +12,8 @@ import (
 )
 
 func TestAsdfInstallNodeVersion(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name               string
 		requestedVersion   string
@@ -25,6 +27,8 @@ func TestAsdfInstallNodeVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			testEnv, err := createTestEnv(t, asdfInstallation{
 				flavor:  flavorAsdfClassic,
 				version: "0.14.0",
@@ -51,6 +55,8 @@ func TestAsdfInstallNodeVersion(t *testing.T) {
 }
 
 func TestCorepackWithNewNodeInstall(t *testing.T) {
+	t.Parallel()
+
 	testEnv, err := createTestEnv(t, asdfInstallation{
 		flavor:  flavorAsdfClassic,
 		version: "0.14.0",
