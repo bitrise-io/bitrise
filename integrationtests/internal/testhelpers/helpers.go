@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +31,29 @@ func BinPath() string {
 	}
 	binPathStr = pth
 	return pth
+}
+
+// IsolatedHome creates a HOME for a bitrise process in which ~/.bitrise and ~/.stepman
+// start out empty. A test needs it when it changes state that other tests read from those
+// dirs, such as the steplib cache or the agent config, because the packages run in parallel.
+// Every other entry links to the real HOME, so the tools that steps run keep working: on the
+// stacks, asdf, rbenv and mise keep their installs and global versions in HOME.
+func IsolatedHome(t *testing.T) string {
+	realHomeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+	entries, err := os.ReadDir(realHomeDir)
+	require.NoError(t, err)
+
+	homeDir := t.TempDir()
+	for _, entry := range entries {
+		if entry.Name() == ".bitrise" || entry.Name() == ".stepman" {
+			continue
+		}
+		err := os.Symlink(filepath.Join(realHomeDir, entry.Name()), filepath.Join(homeDir, entry.Name()))
+		require.NoError(t, err)
+	}
+
+	return homeDir
 }
 
 func ToBase64(str string) string {
