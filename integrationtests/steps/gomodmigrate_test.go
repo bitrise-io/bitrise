@@ -5,8 +5,6 @@ package steps
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
@@ -21,14 +19,11 @@ func Test_GoModMigration(t *testing.T) {
 
 	for _, mode := range moduleModes {
 		t.Run(fmt.Sprintf("Go module modes, GO111MODULE='%s'", mode), func(t *testing.T) {
-			homeDir, err := os.UserHomeDir()
-			require.NoError(t, err, "failed to get HOME dir")
-
-			err = os.RemoveAll(filepath.Join(homeDir, ".bitrise", "toolkits", "go", "cache"))
-			require.NoError(t, err, "faield to clean Step binary cache")
+			// An empty Step binary cache, so the Go step is built from scratch.
+			homeDir := testhelpers.IsolatedHome(t)
 
 			cmd := command.New(testhelpers.BinPath(), "--debug", "run", workflow, "--config", configPth).
-				AppendEnvs("GO111MODULE=" + mode)
+				AppendEnvs("HOME="+homeDir, "GO111MODULE="+mode)
 			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 			require.NoError(t, err, "Bitrise CLI failed, output: %s", out)
 		})
