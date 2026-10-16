@@ -418,9 +418,21 @@ step_bundles:
 
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
+            cd ./integrationtests
+            # The mise and asdf packages give every test its own temp dirs, so they run in parallel,
+            # next to the rest of the suite.
+            isolated_pkgs=(./toolprovider/mise/... ./toolprovider/asdf/...)
             # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
-            cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
-            test_exit_code=$?
+            shared_pkgs=$(go list --tags linux_and_mac ./... | grep -v -e /toolprovider/mise -e /toolprovider/asdf)
+            go test -v --tags linux_and_mac "${isolated_pkgs[@]}" > ./isolated.log 2>&1 &
+            isolated_pid=$!
+            go test -v --tags linux_and_mac -p 1 $shared_pkgs 2>&1 | tee ./shared.log
+            shared_exit_code=${PIPESTATUS[0]}
+            wait $isolated_pid
+            isolated_exit_code=$?
+            cat ./isolated.log
+            cat ./shared.log ./isolated.log > "./${test_log_file_name}.log"
+            test_exit_code=$(( shared_exit_code != 0 ? shared_exit_code : isolated_exit_code ))
             set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"

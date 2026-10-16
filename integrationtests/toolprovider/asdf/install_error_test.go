@@ -12,6 +12,8 @@ import (
 )
 
 func TestNoMatchingVersionError(t *testing.T) {
+	parallel(t)
+
 	testEnv, err := createTestEnv(t, asdfInstallation{
 		flavor:  flavorAsdfClassic,
 		version: "0.14.0",
@@ -40,6 +42,8 @@ func TestNoMatchingVersionError(t *testing.T) {
 }
 
 func TestNewToolPluginError(t *testing.T) {
+	parallel(t)
+
 	testEnv, err := createTestEnv(t, asdfInstallation{
 		flavor:  flavorAsdfClassic,
 		version: "0.14.0",

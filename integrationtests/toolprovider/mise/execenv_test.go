@@ -13,6 +13,8 @@ import (
 )
 
 func TestExecEnv_RunMiseWithTimeout(t *testing.T) {
+	t.Parallel()
+
 	testTimeout := 1 * time.Second
 
 	miseInstallDir := t.TempDir()

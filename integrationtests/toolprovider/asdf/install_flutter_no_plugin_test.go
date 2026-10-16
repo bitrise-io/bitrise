@@ -12,6 +12,8 @@ import (
 )
 
 func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
+	parallel(t)
+
 	tests := []struct {
 		name               string
 		requestedVersion   string
@@ -24,16 +26,19 @@ func TestAsdfInstallFlutterNoPlugin(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		testEnv, err := createTestEnv(t, asdfInstallation{
-			flavor:  flavorAsdfClassic,
-			version: "0.14.0",
-		})
-		require.NoError(t, err)
-
-		asdfProvider := asdf.AsdfToolProvider{
-			ExecEnv: testEnv.toExecEnv(),
-		}
 		t.Run(tt.name, func(t *testing.T) {
+			parallel(t)
+
+			testEnv, err := createTestEnv(t, asdfInstallation{
+				flavor:  flavorAsdfClassic,
+				version: "0.14.0",
+			})
+			require.NoError(t, err)
+
+			asdfProvider := asdf.AsdfToolProvider{
+				ExecEnv: testEnv.toExecEnv(),
+			}
+
 			request := provider.ToolRequest{
 				ToolName:           "flutter",
 				UnparsedVersion:    tt.requestedVersion,
