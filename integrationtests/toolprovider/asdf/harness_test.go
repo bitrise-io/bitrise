@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"al.essio.dev/pkg/shellescape"
@@ -28,6 +29,10 @@ const (
 )
 
 const cacheDir = "bitrise-asdf-test-cache"
+
+// installMu serializes install: parallel tests share the asdf checkouts cached under cacheDir,
+// and a test must not see a checkout another test is still cloning.
+var installMu sync.Mutex
 
 type asdfInstallation struct {
 	flavor  flavor
@@ -138,6 +143,9 @@ func (te *testEnv) runCommand(extraEnvs map[string]string, args ...string) (stri
 }
 
 func install(t *testing.T, install asdfInstallation) (string, error) {
+	installMu.Lock()
+	defer installMu.Unlock()
+
 	installDir := filepath.Join(os.TempDir(), cacheDir, fmt.Sprintf("asdf-v%s", install.version))
 	_, err := os.Stat(installDir)
 	if err == nil {
