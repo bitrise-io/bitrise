@@ -14,14 +14,6 @@ import (
 // TestMiseInstallWithLatestKeyword tests that the "latest" keyword works for various tools
 // without failing. We don't assert specific versions since "latest" changes over time.
 func TestMiseInstallWithLatestKeyword(t *testing.T) {
-	miseInstallDir := t.TempDir()
-	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
-	require.NoError(t, err)
-
-	err = miseProvider.Bootstrap()
-	require.NoError(t, err)
-
 	tests := []struct {
 		name     string
 		toolName provider.ToolID
@@ -33,6 +25,14 @@ func TestMiseInstallWithLatestKeyword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			miseInstallDir := t.TempDir()
+			miseDataDir := t.TempDir()
+			miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+			require.NoError(t, err)
+
+			err = miseProvider.Bootstrap()
+			require.NoError(t, err)
+
 			request := provider.ToolRequest{
 				ToolName:           tt.toolName,
 				UnparsedVersion:    "latest",
