@@ -100,7 +100,7 @@ func versionExistsLocal(execEnv execenv.ExecEnv, toolName provider.ToolID, versi
 		// Parse JSON array returned by mise and check if the provided version is installed (when version is not empty).
 		installedExists, err := parseInstalledVersionsJSON(trimmed, version)
 		if err != nil {
-			return false, fmt.Errorf("parsing mise ls --installed %s output: %w", toolName, err)
+			return false, fmt.Errorf("parsing mise ls --installed %s output %q: %w", toolName, trimmed, err)
 		}
 
 		if installedExists {
@@ -136,9 +136,10 @@ func listRemoteVersions(execEnv execenv.ExecEnv, toolName provider.ToolID, prefi
 		return nil, fmt.Errorf("mise ls-remote %s: %w", query, err)
 	}
 
-	versions, err := parseRemoteVersionsJSON(StripMiseLogLines(strings.TrimSpace(string(output))))
+	stripped := StripMiseLogLines(strings.TrimSpace(string(output)))
+	versions, err := parseRemoteVersionsJSON(stripped)
 	if err != nil {
-		return nil, fmt.Errorf("parsing mise ls-remote %s output: %w", query, err)
+		return nil, fmt.Errorf("parsing mise ls-remote %s output %q: %w", query, stripped, err)
 	}
 	return versions, nil
 }
