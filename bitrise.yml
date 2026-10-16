@@ -383,6 +383,19 @@ step_bundles:
   run_integration_tests:
     steps:
     - script@1:
+        title: "TEMPORARY: diagnose concurrent git clones"
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # Six concurrent clones like the asdf nodejs plugin makes, once with an empty HOME (as
+            # the asdf test harness runs them) and once with the real HOME.
+            nproc 2>/dev/null || sysctl -n hw.ncpu
+            work=$(mktemp -d)
+            clone() { HOME=$2 git clone https://github.com/nodenv/node-build.git "$work/$1" --branch main >"$work/$1.log" 2>&1; echo "clone $1 exit=$?"; tail -3 "$work/$1.log"; }
+            for i in 1 2 3 4 5 6; do clone empty$i "$(mktemp -d)" & done; wait
+            for i in 1 2 3 4 5 6; do clone real$i "$HOME" & done; wait
+            rm -rf "$work"
+    - script@1:
         title: Run integration tests
         inputs:
         - content: |-
@@ -418,21 +431,8 @@ step_bundles:
 
             # Run tests and generate report
             set +e  # Temporarily disable exit on error
-            cd ./integrationtests
-            # The mise and asdf packages give every test its own temp dirs, so they run in parallel,
-            # next to the rest of the suite.
-            isolated_pkgs=(./toolprovider/mise/... ./toolprovider/asdf/...)
-            # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
-            shared_pkgs=$(go list --tags linux_and_mac ./... | grep -v -e /toolprovider/mise -e /toolprovider/asdf)
-            go test -v --tags linux_and_mac "${isolated_pkgs[@]}" > ./isolated.log 2>&1 &
-            isolated_pid=$!
-            go test -v --tags linux_and_mac -p 1 $shared_pkgs 2>&1 | tee ./shared.log
-            shared_exit_code=${PIPESTATUS[0]}
-            wait $isolated_pid
-            isolated_exit_code=$?
-            cat ./isolated.log
-            cat ./shared.log ./isolated.log > "./${test_log_file_name}.log"
-            test_exit_code=$(( shared_exit_code != 0 ? shared_exit_code : isolated_exit_code ))
+            cd ./integrationtests && go test -v --tags linux_and_mac ./... 2>&1 | tee "./${test_log_file_name}.log"
+            test_exit_code=${PIPESTATUS[0]}
             set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
