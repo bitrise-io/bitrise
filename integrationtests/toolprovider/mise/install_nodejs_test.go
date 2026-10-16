@@ -12,6 +12,8 @@ import (
 )
 
 func TestMiseInstallNodeVersion(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name               string
 		requestedVersion   string
@@ -25,6 +27,8 @@ func TestMiseInstallNodeVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			miseInstallDir := t.TempDir()
 			miseDataDir := t.TempDir()
 			miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
