@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	ver "github.com/hashicorp/go-version"

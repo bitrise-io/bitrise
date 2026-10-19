@@ -66,7 +66,7 @@ func (f fakeToolProvider) ActivateEnv(provider.ToolInstallResult) (provider.Envi
 	return f.activation, f.activationErr
 }
 
-func (f fakeToolProvider) ListReleasedVersions(provider.ToolID) ([]string, error) {
+func (f fakeToolProvider) ListReleasedVersions(provider.ToolID, string) ([]string, error) {
 	return nil, nil
 }
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bitrise-io/bitrise/v3/version"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	stepmanModels "github.com/bitrise-io/stepman/models"
 )
 

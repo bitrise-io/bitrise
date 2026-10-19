@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/models"
 )
 
 func envListToMap(envs []string) (map[string]string, error) {

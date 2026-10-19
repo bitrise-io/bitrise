@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v3/analytics/analyticstest"
-	"github.com/bitrise-io/envman/v2/envman"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/envman"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/stretchr/testify/require"
 )
 

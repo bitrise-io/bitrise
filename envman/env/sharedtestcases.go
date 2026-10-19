@@ -1,8 +1,6 @@
 package env
 
-import (
-	"github.com/bitrise-io/envman/v2/models"
-)
+import "github.com/bitrise-io/bitrise/v3/envman/models"
 
 // EnvmanSharedTestCases are test cases used as unit and integration tests.
 var EnvmanSharedTestCases = []struct {
