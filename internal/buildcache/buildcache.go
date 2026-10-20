@@ -16,10 +16,10 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/configs"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/log/logwriter"
 	"github.com/bitrise-io/bitrise/v3/tools"
-	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 )
 
 const (
@@ -32,6 +32,8 @@ const (
 	// EnvCLIVersion and EnvCLISHA256 carry the VM setup's own pin, so there is no second one to bump here.
 	EnvCLIVersion = "BITRISE_BUILD_CACHE_CLI_VERSION"
 	EnvCLISHA256  = "BITRISE_BUILD_CACHE_CLI_SHA256"
+	// EnvCLIPath points at a CLI the VM setup already installed; it is reused when it reports the pinned version.
+	EnvCLIPath = "BITRISE_BUILD_CACHE_CLI_PATH"
 
 	servicesTokenKey      = "BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN"
 	buildHubVMTokenKey    = "BITRISEIO_BUILD_HUB_VM_TOKEN"
@@ -47,6 +49,7 @@ const (
 
 var (
 	commandTimeout = 45 * time.Second
+	versionTimeout = 5 * time.Second
 	// Bounds how long a descendant that keeps the output pipe open can block a finished command.
 	commandWaitDelay = 5 * time.Second
 )
@@ -174,12 +177,30 @@ func blankIfUnset(item envmanModels.EnvironmentItemModel) error {
 	return nil
 }
 
-// installCLI puts the pinned CLI on the tools PATH and returns its versioned path, which the activations run from,
-// so another run relinking the shared name cannot swap the binary that was verified.
+// installCLI puts the pinned CLI on the tools PATH and returns the path the activations run from.
+// A pre-installed CLI is taken on its reported version alone: its tarball checksum is not available,
+// and it comes from the same VM's own setup. Otherwise the versioned install is used, so another run
+// relinking the shared name cannot swap the binary that was verified.
 func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	version, checksum := os.Getenv(EnvCLIVersion), os.Getenv(EnvCLISHA256)
-	if !versionPattern.MatchString(version) || !sha256Pattern.MatchString(checksum) {
-		return "", fmt.Errorf("%s (%q) and %s (%q) must be set by the VM setup", EnvCLIVersion, version, EnvCLISHA256, checksum)
+	if !versionPattern.MatchString(version) {
+		return "", fmt.Errorf("%s (%q) must be set by the VM setup", EnvCLIVersion, version)
+	}
+
+	if preinstalled := os.Getenv(EnvCLIPath); preinstalled != "" {
+		if err := verifyPreinstalled(ctx, preinstalled, version); err != nil {
+			logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: %s", EnvCLIPath, preinstalled, version, err)
+		} else if err := link(preinstalled, toolsLinkPath()); err != nil {
+			logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: link onto PATH: %s", EnvCLIPath, preinstalled, version, err)
+		} else {
+			logger.Infof("Using bitrise-build-cache %s from %s", version, preinstalled)
+
+			return preinstalled, nil
+		}
+	}
+
+	if !sha256Pattern.MatchString(checksum) {
+		return "", fmt.Errorf("%s (%q) must be set by the VM setup", EnvCLISHA256, checksum)
 	}
 
 	installDir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", version)
@@ -188,12 +209,36 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 		return "", fmt.Errorf("install bitrise-build-cache %s: %w", version, err)
 	}
 	// Generated configs name the CLI bare when it is on PATH, which survives upgrades.
-	bin := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
-	if err := link(versioned, bin); err != nil {
+	if err := link(versioned, toolsLinkPath()); err != nil {
 		return "", fmt.Errorf("link bitrise-build-cache onto PATH: %w", err)
 	}
 
 	return versioned, nil
+}
+
+func toolsLinkPath() string {
+	return filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+}
+
+func verifyPreinstalled(ctx context.Context, bin, version string) error {
+	if !isExecutable(bin) {
+		return errors.New("not an executable file")
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, versionTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, bin, "version")
+	cmd.WaitDelay = commandWaitDelay
+	out, err := cmd.Output()
+	if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
+		return fmt.Errorf("`version` failed: %w", err)
+	}
+	if got := strings.TrimPrefix(strings.TrimSpace(string(out)), "v"); got != version {
+		return fmt.Errorf("reports version %q, want %s", got, version)
+	}
+
+	return nil
 }
 
 // cacheEnvs selects the evaluated build envs the CLI needs; the rest of the build envs are not added to its environment.
