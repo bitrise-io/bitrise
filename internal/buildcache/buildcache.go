@@ -178,9 +178,8 @@ func blankIfUnset(item envmanModels.EnvironmentItemModel) error {
 }
 
 // installCLI puts the pinned CLI on the tools PATH and returns the path the activations run from.
-// A pre-installed CLI is taken on its reported version alone: its tarball checksum is not available,
-// and it comes from the same VM's own setup. Otherwise the versioned install is used, so another run
-// relinking the shared name cannot swap the binary that was verified.
+// A pre-installed CLI is trusted on its reported version alone, as its tarball checksum is not available.
+// Both paths return a concrete file, not the shared link, so relinking cannot swap the binary that was verified.
 func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	version, checksum := os.Getenv(EnvCLIVersion), os.Getenv(EnvCLISHA256)
 	if !versionPattern.MatchString(version) {
@@ -218,8 +217,8 @@ func toolsLinkPath() string {
 	return filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
 }
 
-// usePreinstalled links the CLI onto the tools PATH and returns its absolute, symlink-free path, so a relative
-// value cannot leave a dangling link and the tools entry never ends up pointing at itself.
+// usePreinstalled ensures the tools entry resolves to the CLI and returns its absolute, symlink-free path,
+// so a relative value cannot leave a dangling link and the entry never points at itself.
 func usePreinstalled(ctx context.Context, path, version string) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
@@ -227,7 +226,7 @@ func usePreinstalled(ctx context.Context, path, version string) (string, error) 
 	}
 	bin, err := filepath.EvalSymlinks(abs)
 	if err != nil {
-		return "", errors.New("not an executable file")
+		return "", fmt.Errorf("resolve the path: %w", err)
 	}
 	if err := verifyPreinstalled(ctx, bin, version); err != nil {
 		return "", err
