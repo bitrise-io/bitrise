@@ -17,19 +17,19 @@ import (
 const maxReleasePages = 5
 
 type Available struct {
-	Version string `yaml:"version"`
-	URL     string `yaml:"url"`
+	Version string
+	URL     string
 }
 
 // NewMajor is kept apart from Update because a major version can break the user,
 // so it is reported and never installed implicitly.
 type Versions struct {
-	Update   *Available `yaml:"update,omitempty"`
-	NewMajor *Available `yaml:"new_major,omitempty"`
+	Update   *Available
+	NewMajor *Available
 	// CurrentMajorFound is false when the pages read held no release of the
 	// running major, which a nil Update cannot be told apart from on its own. The
 	// caller must not report "up to date" in that case.
-	CurrentMajorFound bool `yaml:"current_major_found"`
+	CurrentMajorFound bool
 }
 
 type usableRelease struct {
@@ -37,10 +37,10 @@ type usableRelease struct {
 	url     string
 }
 
-// Resolve returns the newest release inside currentVersion's major, and
+// resolve returns the newest release inside currentVersion's major, and
 // separately the newest release above it. Drafts, pre-releases and tags that are
 // not a clean MAJOR.MINOR.PATCH are never offered.
-func Resolve(ctx context.Context, client *Client, currentVersion string) (Versions, error) {
+func resolve(ctx context.Context, client *Client, currentVersion string) (Versions, error) {
 	current, err := parseVersion(currentVersion)
 	if err != nil {
 		return Versions{}, fmt.Errorf("current version is not comparable: %w", err)
