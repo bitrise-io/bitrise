@@ -569,7 +569,7 @@ func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
 	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
 	setVersionTimeout(t, 200*time.Millisecond)
 	hanging := filepath.Join(t.TempDir(), binaryName)
-	require.NoError(t, os.WriteFile(hanging, []byte("#!/bin/sh\nsleep 1 &\nwait\n"), 0o755))
+	require.NoError(t, os.WriteFile(hanging, []byte("#!/bin/sh\nsleep 10 &\nwait\n"), 0o755))
 	t.Setenv(EnvCLIPath, hanging)
 
 	start := time.Now()
@@ -583,9 +583,9 @@ func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
 func TestInstallCLI_APreinstalledCLILeavingADescendantOnItsOutputIsReused(t *testing.T) {
 	isolate(t)
 	installFakeCLI(t, "")
-	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
+	setTimeouts(t, 3*time.Second, 300*time.Millisecond)
 	bin := filepath.Join(t.TempDir(), binaryName)
-	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nif [ \"$1\" = version ]; then echo "+testVersion+"; sleep 1 & exit 0; fi\n"), 0o755))
+	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nif [ \"$1\" = version ]; then echo "+testVersion+"; sleep 3 & exit 0; fi\n"), 0o755))
 	t.Setenv(EnvCLIPath, bin)
 	want, err := filepath.EvalSymlinks(bin)
 	require.NoError(t, err)
