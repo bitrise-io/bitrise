@@ -55,13 +55,17 @@ func ResolveTarget(ctx context.Context, client *Client, currentVersion, requeste
 		return Target{Version: wanted.String(), UpToDate: isRunningVersion(wanted, currentVersion)}, nil
 	}
 
-	if !isComparable(currentVersion) {
+	current, err := parseVersion(currentVersion)
+	if err != nil {
 		return Target{}, fmt.Errorf("this Bitrise CLI was not installed from a release (version %q), so it cannot be compared against the published releases. Use bitrise update --version X.Y.Z to install a specific release", currentVersion)
 	}
 
 	versions, err := resolve(ctx, client, currentVersion)
 	if err != nil {
 		return Target{}, err
+	}
+	if !versions.CurrentMajorFound {
+		return Target{}, fmt.Errorf("no Bitrise CLI %d.x release was found, so it cannot be told whether %s is the newest one. Use bitrise update --version X.Y.Z to install a specific release", current.Major(), currentVersion)
 	}
 	if versions.Update == nil {
 		return Target{Version: currentVersion, UpToDate: true, NewMajor: versions.NewMajor}, nil

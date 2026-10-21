@@ -255,6 +255,25 @@ func TestResolveTarget_InvalidRequestedVersionIsRejectedWithoutAskingGitHub(t *t
 	}
 }
 
+func TestResolve_MajorMissingFromTheReadPagesIsNotUpToDate(t *testing.T) {
+	client, _ := newReleasesClient(t, [][]Release{{release("v3.0.0"), release("v2.45.0")}})
+
+	versions, err := resolve(t.Context(), client, "1.2.3")
+
+	require.NoError(t, err)
+	require.Nil(t, versions.Update)
+	require.False(t, versions.CurrentMajorFound)
+	require.Equal(t, available("3.0.0"), versions.NewMajor)
+}
+
+func TestResolveTarget_MajorMissingFromTheReadPagesIsNotReportedAsUpToDate(t *testing.T) {
+	client, _ := newReleasesClient(t, [][]Release{{release("v3.0.0"), release("v2.45.0")}})
+
+	_, err := ResolveTarget(t.Context(), client, "1.2.3", "")
+
+	require.ErrorContains(t, err, "no Bitrise CLI 1.x release was found")
+}
+
 // newReleasesClient serves pages[page-1] for every requested page, and counts
 // the requests it answered.
 func newReleasesClient(t *testing.T, pages [][]Release) (*Client, *atomic.Int64) {
@@ -306,15 +325,4 @@ func available(version string) *Available {
 
 func releaseNotesURL(tag string) string {
 	return "https://github.com/bitrise-io/bitrise/releases/tag/" + tag
-}
-
-func TestResolve_MajorMissingFromTheReadPagesIsNotUpToDate(t *testing.T) {
-	client, _ := newReleasesClient(t, [][]Release{{release("v3.0.0"), release("v2.45.0")}})
-
-	versions, err := resolve(t.Context(), client, "1.2.3")
-
-	require.NoError(t, err)
-	require.Nil(t, versions.Update)
-	require.False(t, versions.CurrentMajorFound)
-	require.Equal(t, available("3.0.0"), versions.NewMajor)
 }
