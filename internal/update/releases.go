@@ -57,7 +57,7 @@ func (c *Client) ReleasesPage(ctx context.Context, page int) ([]Release, error) 
 		return nil, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("X-GitHub-Api-Version", "2026-03-10")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
