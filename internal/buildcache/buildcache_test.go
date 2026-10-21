@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -365,6 +366,8 @@ func TestActivateIfEnabled_ReusesThePreinstalledCLI(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "calls")
 	bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, out)
 	t.Setenv(EnvCLIPath, bin)
+	bin, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
 	var downloads atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { downloads.Add(1) }))
 	defer srv.Close()
@@ -420,12 +423,70 @@ func TestInstallCLI_PreinstalledPath(t *testing.T) {
 			require.NoError(t, err)
 			want := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName)
 			if tt.reuse {
-				want = bin
+				want, err = filepath.EvalSymlinks(bin)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, want, got)
 			target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 			require.NoError(t, err)
 			assert.Equal(t, want, target)
+		})
+	}
+}
+
+func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T) (envPath, realBin string)
+	}{
+		{"relative", func(t *testing.T) (string, string) {
+			dir := t.TempDir()
+			bin := fakeCLIAt(t, filepath.Join(dir, binaryName), testVersion, "/dev/null")
+			t.Chdir(dir)
+
+			return "./" + binaryName, bin
+		}},
+		{"a symlink to the CLI", func(t *testing.T) (string, string) {
+			dir := t.TempDir()
+			bin := fakeCLIAt(t, filepath.Join(dir, binaryName), testVersion, "/dev/null")
+			alias := filepath.Join(dir, "alias")
+			require.NoError(t, os.Symlink(bin, alias))
+
+			return alias, bin
+		}},
+		{"the CLI already at the tools entry", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			bin := fakeCLIAt(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
+		}},
+		{"the tools entry linked to the CLI", func(t *testing.T) (string, string) {
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			tools := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+			require.NoError(t, os.Symlink(bin, tools))
+
+			return tools, bin
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isolate(t)
+			installFakeCLI(t, "")
+			envPath, realBin := tt.setup(t)
+			t.Setenv(EnvCLIPath, envPath)
+			wantBin, err := filepath.EvalSymlinks(realBin)
+			require.NoError(t, err)
+
+			got, err := installCLI(context.Background(), testLogger())
+
+			require.NoError(t, err)
+			assert.Equal(t, wantBin, got)
+			tools := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+			resolved, err := filepath.EvalSymlinks(tools)
+			require.NoError(t, err, "the tools entry must resolve to a file")
+			assert.Equal(t, wantBin, resolved)
+			assert.NoError(t, exec.Command(tools, "version").Run(), "the tools entry must run")
 		})
 	}
 }

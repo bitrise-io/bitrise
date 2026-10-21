@@ -188,15 +188,13 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 	}
 
 	if preinstalled := os.Getenv(EnvCLIPath); preinstalled != "" {
-		if err := verifyPreinstalled(ctx, preinstalled, version); err != nil {
-			logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: %s", EnvCLIPath, preinstalled, version, err)
-		} else if err := link(preinstalled, toolsLinkPath()); err != nil {
-			logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: link onto PATH: %s", EnvCLIPath, preinstalled, version, err)
-		} else {
-			logger.Infof("Using bitrise-build-cache %s from %s", version, preinstalled)
+		bin, err := usePreinstalled(ctx, preinstalled, version)
+		if err == nil {
+			logger.Infof("Using bitrise-build-cache %s from %s", version, bin)
 
-			return preinstalled, nil
+			return bin, nil
 		}
+		logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: %s", EnvCLIPath, preinstalled, version, err)
 	}
 
 	if !sha256Pattern.MatchString(checksum) {
@@ -218,6 +216,37 @@ func installCLI(ctx context.Context, logger log.Logger) (string, error) {
 
 func toolsLinkPath() string {
 	return filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+}
+
+// usePreinstalled links the CLI onto the tools PATH and returns its absolute, symlink-free path, so a relative
+// value cannot leave a dangling link and the tools entry never ends up pointing at itself.
+func usePreinstalled(ctx context.Context, path, version string) (string, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolve the path: %w", err)
+	}
+	bin, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		return "", errors.New("not an executable file")
+	}
+	if err := verifyPreinstalled(ctx, bin, version); err != nil {
+		return "", err
+	}
+
+	if tools := toolsLinkPath(); !sameFile(tools, bin) {
+		if err := link(bin, tools); err != nil {
+			return "", fmt.Errorf("link onto PATH: %w", err)
+		}
+	}
+
+	return bin, nil
+}
+
+func sameFile(a, b string) bool {
+	infoA, errA := os.Stat(a)
+	infoB, errB := os.Stat(b)
+
+	return errA == nil && errB == nil && os.SameFile(infoA, infoB)
 }
 
 func verifyPreinstalled(ctx context.Context, bin, version string) error {
