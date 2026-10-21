@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -334,6 +335,13 @@ func setTimeouts(t *testing.T, command, waitDelay time.Duration) {
 	t.Cleanup(func() { commandTimeout, commandWaitDelay = oldCommand, oldWait })
 }
 
+func setVersionTimeout(t *testing.T, timeout time.Duration) {
+	t.Helper()
+	old := versionTimeout
+	versionTimeout = timeout
+	t.Cleanup(func() { versionTimeout = old })
+}
+
 func TestInstallCLI_RequiresPin(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	for _, pin := range [][2]string{{"", ""}, {"3.14.1", ""}, {"../3.14.1", strings.Repeat("a", 64)}, {"3.14.1", "not-a-sha"}} {
@@ -410,6 +418,23 @@ func TestInstallCLI_PreinstalledPath(t *testing.T) {
 			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "3.0.0", "/dev/null")
 		}, false},
 		{"version command fails", func(*testing.T) string { return failing }, false},
+		{"usable with a trailing slash", func(t *testing.T) string {
+			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null") + "/"
+		}, true},
+		{"a symlink loop", func(t *testing.T) string {
+			loop := filepath.Join(t.TempDir(), "loop")
+			require.NoError(t, os.Symlink(loop, loop))
+
+			return loop
+		}, false},
+		{"a FIFO", func(t *testing.T) string {
+			fifo := filepath.Join(t.TempDir(), "fifo")
+			if err := syscall.Mkfifo(fifo, 0o755); err != nil {
+				t.Skipf("mkfifo is unavailable: %s", err)
+			}
+
+			return fifo
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -423,7 +448,7 @@ func TestInstallCLI_PreinstalledPath(t *testing.T) {
 			require.NoError(t, err)
 			want := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName)
 			if tt.reuse {
-				want, err = filepath.EvalSymlinks(bin)
+				want, err = filepath.EvalSymlinks(filepath.Clean(bin))
 				require.NoError(t, err)
 			}
 			assert.Equal(t, want, got)
@@ -467,6 +492,28 @@ func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
 			require.NoError(t, os.Symlink(bin, tools))
 
 			return tools, bin
+		}},
+		{"the tools entry linked to an older CLI", func(t *testing.T) (string, string) {
+			old := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "3.0.0", "/dev/null")
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			require.NoError(t, os.Symlink(old, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)))
+
+			return bin, bin
+		}},
+		{"the tools entry a file of another version", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			fakeCLIAt(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName), "3.0.0", "/dev/null")
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
+		}},
+		{"the tools entry a dangling link", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			require.NoError(t, os.Symlink(filepath.Join(t.TempDir(), "gone"), filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)))
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
 		}},
 	}
 	for _, tt := range tests {
@@ -519,12 +566,10 @@ func TestInstallCLI_PreinstalledPathDoesNotRelaxThePin(t *testing.T) {
 func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
 	isolate(t)
 	installFakeCLI(t, "")
-	setTimeouts(t, 3*time.Second, 200*time.Millisecond)
-	oldTimeout := versionTimeout
-	versionTimeout = 300 * time.Millisecond
-	t.Cleanup(func() { versionTimeout = oldTimeout })
+	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
+	setVersionTimeout(t, 200*time.Millisecond)
 	hanging := filepath.Join(t.TempDir(), binaryName)
-	require.NoError(t, os.WriteFile(hanging, []byte("#!/bin/sh\nsleep 30 &\nwait\n"), 0o755))
+	require.NoError(t, os.WriteFile(hanging, []byte("#!/bin/sh\nsleep 1 &\nwait\n"), 0o755))
 	t.Setenv(EnvCLIPath, hanging)
 
 	start := time.Now()
@@ -533,6 +578,22 @@ func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
 	require.NoError(t, err)
 	assert.Less(t, time.Since(start), 5*time.Second)
 	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName), got)
+}
+
+func TestInstallCLI_APreinstalledCLILeavingADescendantOnItsOutputIsReused(t *testing.T) {
+	isolate(t)
+	installFakeCLI(t, "")
+	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
+	bin := filepath.Join(t.TempDir(), binaryName)
+	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nif [ \"$1\" = version ]; then echo "+testVersion+"; sleep 1 & exit 0; fi\n"), 0o755))
+	t.Setenv(EnvCLIPath, bin)
+	want, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
+
+	got, err := installCLI(context.Background(), testLogger())
+
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
 }
 
 // fakeCLIAt writes a CLI that prints version for `version` and appends its path and arguments to out otherwise.
