@@ -100,7 +100,7 @@ func TestResolve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			client, requests := newReleasesClient(t, tt.pages)
 
-			versions, err := Resolve(t.Context(), client, tt.current)
+			versions, err := resolve(t.Context(), client, tt.current)
 
 			require.NoError(t, err)
 			require.Equal(t, tt.wantUpdate, versions.Update)
@@ -114,7 +114,7 @@ func TestResolve(t *testing.T) {
 func TestResolve_NotComparableCurrentVersionSendsNoRequest(t *testing.T) {
 	client, requests := newReleasesClient(t, [][]Release{{release("v2.46.0")}})
 
-	_, err := Resolve(t.Context(), client, "dev")
+	_, err := resolve(t.Context(), client, "dev")
 
 	require.Error(t, err)
 	require.Zero(t, requests.Load())
@@ -127,7 +127,7 @@ func TestResolve_PagingIsBounded(t *testing.T) {
 	}
 	client, requests := newReleasesClient(t, pages)
 
-	versions, err := Resolve(t.Context(), client, "2.44.0")
+	versions, err := resolve(t.Context(), client, "2.44.0")
 
 	require.NoError(t, err)
 	require.Nil(t, versions.Update)
@@ -142,7 +142,7 @@ func TestResolve_RequestError(t *testing.T) {
 	t.Cleanup(srv.Close)
 	client := testClient(srv.URL)
 
-	_, err := Resolve(t.Context(), client, "2.45.0")
+	_, err := resolve(t.Context(), client, "2.45.0")
 
 	require.Error(t, err)
 }
@@ -311,7 +311,7 @@ func releaseNotesURL(tag string) string {
 func TestResolve_MajorMissingFromTheReadPagesIsNotUpToDate(t *testing.T) {
 	client, _ := newReleasesClient(t, [][]Release{{release("v3.0.0"), release("v2.45.0")}})
 
-	versions, err := Resolve(t.Context(), client, "1.2.3")
+	versions, err := resolve(t.Context(), client, "1.2.3")
 
 	require.NoError(t, err)
 	require.Nil(t, versions.Update)
