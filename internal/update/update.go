@@ -1,6 +1,5 @@
-// Package update discovers the published Bitrise CLI releases, decides whether
-// the running build may be told about them, and keeps the result of the last
-// check in its own state file.
+// Package update discovers the published Bitrise CLI releases and works out
+// which one the running build should update to.
 package update
 
 import (
