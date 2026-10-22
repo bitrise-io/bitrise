@@ -289,6 +289,53 @@ func (c *Client) BuildLog(ctx context.Context, appSlug, buildSlug string, w io.W
 	return manifest, nil
 }
 
+// BuildLogSummary is the step-level summary of a build's execution, returned
+// by GET /apps/{app-slug}/builds/{build-slug}/log/summary. Until the build's
+// log is archived, IsLogArchived is false and the summary covers only the
+// steps that have started so far.
+type BuildLogSummary struct {
+	IsLogArchived bool           `json:"is_log_archived"`
+	Execution     BuildExecution `json:"execution"`
+}
+
+// BuildExecution holds the workflows of a build in execution order, utility
+// workflows (IDs starting with _) included.
+type BuildExecution struct {
+	Workflows []BuildExecutionWorkflow `json:"workflows"`
+}
+
+// BuildExecutionWorkflow is one workflow run within a build.
+type BuildExecutionWorkflow struct {
+	WorkflowID string               `json:"workflow_id"`
+	Steps      []BuildExecutionStep `json:"steps"`
+}
+
+// BuildExecutionStep is one step run within a workflow. StatusReason is set
+// when the step was skipped; Errors when it failed.
+type BuildExecutionStep struct {
+	UUID         string           `json:"uuid"`
+	StepID       string           `json:"step_id"`
+	Title        string           `json:"title,omitempty"`
+	Version      string           `json:"version,omitempty"`
+	Status       string           `json:"status"`
+	StatusReason string           `json:"status_reason,omitempty"`
+	StartedAt    time.Time        `json:"started_at,omitempty"`
+	FinishedAt   time.Time        `json:"finished_at,omitempty"`
+	Errors       []BuildStepError `json:"errors,omitempty"`
+}
+
+// BuildStepError is one error a failed step reported.
+type BuildStepError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// BuildLogSummary fetches the step-level summary of a build.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
+func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string) (BuildLogSummary, error) {
+	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", nil)
+}
+
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to
 // be a presigned URL from BuildLogResponse.ExpiringRawLogURL — no auth
 // header is sent to it.
