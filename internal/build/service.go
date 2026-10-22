@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
@@ -92,6 +94,50 @@ type ListOptions struct {
 type ListResult struct {
 	Items      []Build `json:"items" yaml:"items"`
 	NextCursor string  `json:"next_cursor,omitempty" yaml:"next_cursor,omitempty"`
+}
+
+// Step is one step run of a build. Workflow is the workflow it ran in, so a
+// flat list keeps the grouping. ID is the step run's UUID, not the step's
+// library ID, which is StepID.
+type Step struct {
+	ID           string      `json:"id" yaml:"id"`
+	Workflow     string      `json:"workflow" yaml:"workflow"`
+	StepID       string      `json:"step_id" yaml:"step_id"`
+	Title        string      `json:"title,omitempty" yaml:"title,omitempty"`
+	Version      string      `json:"version,omitempty" yaml:"version,omitempty"`
+	Status       string      `json:"status" yaml:"status"`
+	StatusReason string      `json:"status_reason,omitempty" yaml:"status_reason,omitempty"`
+	StartedAt    *time.Time  `json:"started_at,omitempty" yaml:"started_at,omitempty"`
+	FinishedAt   *time.Time  `json:"finished_at,omitempty" yaml:"finished_at,omitempty"`
+	Errors       []StepError `json:"errors,omitempty" yaml:"errors,omitempty"`
+}
+
+// StepError is one error a failed step reported.
+type StepError struct {
+	Code    int    `json:"code" yaml:"code"`
+	Message string `json:"message" yaml:"message"`
+}
+
+// StepStatuses lists every status a step can have in the summary, as
+// build-log-service defines them (domain.StepStatus). Besides the results the
+// Bitrise CLI reports, a step is started while it runs, and when the build is
+// aborted, the running step becomes aborted and the steps after it not_started.
+var StepStatuses = []string{
+	"not_started", "started", "success", "failed", "failed_skippable", "skipped", "skipped_with_run_if",
+	"preparation_failed", "aborted", "aborted_with_custom_timeout", "aborted_with_no_output",
+}
+
+// FailedStepStatuses are the statuses the "failed" filter matches: every way
+// a step can fail the build. failed_skippable is not one, the build went on,
+// and neither is aborted, which means the build itself was aborted.
+var FailedStepStatuses = []string{"failed", "preparation_failed", "aborted_with_custom_timeout", "aborted_with_no_output"}
+
+// StepsResult is the steps of a build, in execution order. Complete is false
+// until the build's log is archived, which happens a little after the build
+// finishes: until then Items lists only the steps that have started so far.
+type StepsResult struct {
+	Items    []Step `json:"items" yaml:"items"`
+	Complete bool   `json:"complete" yaml:"complete"`
 }
 
 // Service exposes build operations to the cmd layer.
@@ -241,6 +287,57 @@ func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Write
 	return nil
 }
 
+// Steps returns the steps of a build across all its workflows, in execution
+// order. A non-empty status keeps only the steps with that status, except
+// "failed", which keeps every step that failed the build (FailedStepStatuses).
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
+func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) (StepsResult, error) {
+	if s.client == nil {
+		return StepsResult{}, fmt.Errorf("API client not configured")
+	}
+	if appSlug == "" {
+		return StepsResult{}, fmt.Errorf("app ID is required")
+	}
+	if buildSlug == "" {
+		return StepsResult{}, fmt.Errorf("build ID is required")
+	}
+	if status != "" && !slices.Contains(StepStatuses, status) {
+		return StepsResult{}, fmt.Errorf("unknown step status %q (expected: %s)", status, strings.Join(StepStatuses, ", "))
+	}
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+	if err != nil {
+		var apiErr *bitriseapi.APIError
+		if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
+			return StepsResult{}, err
+		}
+		// A build that has not started running yet has no summary either, so
+		// the 404 alone doesn't say whether the build exists.
+		b, buildErr := s.client.Build(ctx, appSlug, buildSlug)
+		if buildErr != nil {
+			if errors.As(buildErr, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+				return StepsResult{}, fmt.Errorf("build %q not found", buildSlug)
+			}
+			return StepsResult{}, fmt.Errorf("no step summary for build %q, and looking up the build failed: %w", buildSlug, buildErr)
+		}
+		if statusString(b.Status) == "in-progress" {
+			return StepsResult{Items: []Step{}}, nil
+		}
+		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)
+	}
+	items := []Step{}
+	for _, wf := range summary.Execution.Workflows {
+		for _, st := range wf.Steps {
+			matches := status == "" || st.Status == status ||
+				(status == "failed" && slices.Contains(FailedStepStatuses, st.Status))
+			if !matches {
+				continue
+			}
+			items = append(items, stepFromAPI(st, wf.WorkflowID))
+		}
+	}
+	return StepsResult{Items: items, Complete: summary.IsLogArchived}, nil
+}
+
 // AbortRequest describes a build-abort operation.
 type AbortRequest struct {
 	AppSlug             string
@@ -355,6 +452,30 @@ func fromAPI(b bitriseapi.Build, appSlug string) Build {
 	if !b.FinishedAt.IsZero() {
 		t := b.FinishedAt.UTC()
 		out.FinishedAt = &t
+	}
+	return out
+}
+
+func stepFromAPI(st bitriseapi.BuildExecutionStep, workflow string) Step {
+	out := Step{
+		ID:           st.UUID,
+		Workflow:     workflow,
+		StepID:       st.StepID,
+		Title:        st.Title,
+		Version:      st.Version,
+		Status:       st.Status,
+		StatusReason: st.StatusReason,
+	}
+	if !st.StartedAt.IsZero() {
+		t := st.StartedAt.UTC()
+		out.StartedAt = &t
+	}
+	if !st.FinishedAt.IsZero() {
+		t := st.FinishedAt.UTC()
+		out.FinishedAt = &t
+	}
+	for _, e := range st.Errors {
+		out.Errors = append(out.Errors, StepError{Code: e.Code, Message: e.Message})
 	}
 	return out
 }
