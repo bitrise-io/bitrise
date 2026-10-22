@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 
 	"github.com/bitrise-io/bitrise/v3/internal/bitriseapi"
 )
@@ -369,6 +370,179 @@ func TestService_Log_RequiresSlugs(t *testing.T) {
 	assert.Error(t, svc.Log(context.Background(), "a", "", io.Discard))
 }
 
+func TestService_Steps_FlattensWorkflowsInOrder(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(stepsSummaryJSON))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "")
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/b-1/log/summary", gotPath)
+	require.Len(t, got.Items, 3)
+	assert.Equal(t, []string{"s-1", "s-2", "s-3"}, []string{got.Items[0].ID, got.Items[1].ID, got.Items[2].ID})
+	assert.Equal(t, "_setup", got.Items[0].Workflow)
+	assert.Equal(t, "primary", got.Items[1].Workflow)
+
+	failed := got.Items[1]
+	assert.Equal(t, "script", failed.StepID)
+	assert.Equal(t, "Tests", failed.Title)
+	assert.Equal(t, "failed", failed.Status)
+	assert.Equal(t, []StepError{{Code: 1, Message: "exit status 1"}}, failed.Errors)
+	require.NotNil(t, failed.StartedAt)
+	assert.Equal(t, time.Date(2026, 10, 19, 13, 26, 48, 0, time.UTC), *failed.StartedAt)
+
+	assert.True(t, got.Complete)
+
+	skipped := got.Items[2]
+	assert.Equal(t, "skipped", skipped.Status)
+	assert.Contains(t, skipped.StatusReason, "previous Step failed")
+	assert.Nil(t, skipped.StartedAt)
+	assert.Nil(t, skipped.FinishedAt)
+}
+
+func TestService_Steps_FiltersByStatus(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(stepsSummaryJSON))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "failed")
+	require.NoError(t, err)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, "s-2", got.Items[0].ID)
+
+	got, err = svc.Steps(context.Background(), "my-app", "b-1", "preparation_failed")
+	require.NoError(t, err)
+	assert.Empty(t, got.Items)
+	assert.NotNil(t, got.Items, "an empty result must render as [] not null")
+}
+
+func TestService_Steps_FailedMatchesEveryWayOfFailingTheBuild(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": true, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "ok", "status": "success"},
+  {"uuid": "failed", "status": "failed"},
+  {"uuid": "prep", "status": "preparation_failed"},
+  {"uuid": "timeout", "status": "aborted_with_custom_timeout"},
+  {"uuid": "no-output", "status": "aborted_with_no_output"},
+  {"uuid": "skippable", "status": "failed_skippable"},
+  {"uuid": "aborted", "status": "aborted", "started_at": "2026-10-19T14:15:26Z", "finished_at": "2026-10-19T14:16:56.687Z"},
+  {"uuid": "after-abort", "status": "not_started", "started_at": null, "finished_at": null}
+]}]}}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	for status, want := range map[string][]string{
+		"failed":             {"failed", "prep", "timeout", "no-output"},
+		"preparation_failed": {"prep"},
+		"failed_skippable":   {"skippable"},
+		"aborted":            {"aborted"},
+		"not_started":        {"after-abort"},
+	} {
+		got, err := svc.Steps(context.Background(), "my-app", "b-1", status)
+		require.NoError(t, err)
+		var ids []string
+		for _, st := range got.Items {
+			ids = append(ids, st.ID)
+		}
+		assert.Equal(t, want, ids, "status %q", status)
+	}
+}
+
+func TestService_Steps_IncompleteWhileLogNotArchived(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": false, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "git-clone", "status": "success"},
+  {"uuid": "s-2", "step_id": "script", "status": "started", "started_at": "2026-10-20T11:56:50Z"}
+]}]}}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "")
+	require.NoError(t, err)
+	assert.False(t, got.Complete)
+	require.Len(t, got.Items, 2)
+	assert.Equal(t, "started", got.Items[1].Status)
+	assert.Nil(t, got.Items[1].FinishedAt)
+}
+
+func TestService_Steps_RequiresSlugs(t *testing.T) {
+	svc := NewService(newAPIClient(t, "https://unused.test"))
+
+	_, err := svc.Steps(context.Background(), "", "b-1", "")
+	require.EqualError(t, err, "app ID is required")
+	_, err = svc.Steps(context.Background(), "my-app", "", "")
+	require.EqualError(t, err, "build ID is required")
+}
+
+func TestService_Steps_NotFound(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Steps(context.Background(), "my-app", "missing", "")
+	require.EqualError(t, err, `build "missing" not found`)
+}
+
+func TestService_Steps_NoSummaryYetForRunningBuild(t *testing.T) {
+	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":0}}`)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "")
+	require.NoError(t, err)
+	assert.False(t, got.Complete)
+	assert.NotNil(t, got.Items)
+	assert.Empty(t, got.Items)
+}
+
+func TestService_Steps_NoSummaryForFinishedBuild(t *testing.T) {
+	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":3}}`)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "")
+	require.EqualError(t, err, `build "b-1" has no step summary`)
+}
+
+func TestService_Steps_NoSummaryAndBuildLookupFails(t *testing.T) {
+	srv := newSummaryNotFoundServer(t, http.StatusInternalServerError, `{"message":"boom"}`)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "")
+	require.ErrorContains(t, err, `no step summary for build "b-1", and looking up the build failed`)
+}
+
+func TestService_Steps_RejectsUnknownStatus(t *testing.T) {
+	svc := NewService(newAPIClient(t, "https://unused.test"))
+
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "aborted-with-success")
+	require.ErrorContains(t, err, `unknown step status "aborted-with-success" (expected: not_started, started, success`)
+}
+
+func TestStepsResult_JSONShape(t *testing.T) {
+	started := time.Date(2026, 10, 19, 13, 26, 48, 0, time.UTC)
+	res := StepsResult{Items: []Step{{
+		ID: "s-2", Workflow: "primary", StepID: "script", Title: "Tests", Version: "1.2.1",
+		Status: "aborted_with_custom_timeout", StartedAt: &started, Errors: []StepError{{Code: 0, Message: "This Step timed out after 1m."}},
+	}}, Complete: true}
+
+	b, err := json.Marshal(res)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"complete":true,"items":[{"id":"s-2","workflow":"primary","step_id":"script","title":"Tests","version":"1.2.1",
+		"status":"aborted_with_custom_timeout","started_at":"2026-10-19T13:26:48Z","errors":[{"code":0,"message":"This Step timed out after 1m."}]}]}`, string(b))
+
+	y, err := yaml.Marshal(res)
+	require.NoError(t, err)
+	assert.Contains(t, string(y), "step_id: script")
+	assert.Contains(t, string(y), "started_at:")
+	assert.Contains(t, string(y), "code: 0")
+	assert.Contains(t, string(y), "complete: true")
+}
+
 func TestService_Abort_BodyAndResponse(t *testing.T) {
 	var gotMethod, gotPath string
 	var gotBody []byte
@@ -535,4 +709,38 @@ func newAPIClient(t *testing.T, baseURL string) *bitriseapi.Client {
 	c, err := bitriseapi.New(baseURL, "t")
 	require.NoError(t, err)
 	return c
+}
+
+const stepsSummaryJSON = `{
+  "is_log_archived": true,
+  "execution": {
+    "workflows": [
+      {"workflow_id": "_setup", "steps": [
+        {"uuid": "s-1", "step_id": "git-clone", "title": "Git clone", "status": "success",
+         "started_at": "2026-10-19T13:25:35Z", "finished_at": "2026-10-19T13:25:38.793Z"}
+      ]},
+      {"workflow_id": "primary", "steps": [
+        {"uuid": "s-2", "step_id": "script", "title": "Tests", "version": "1.2.1", "status": "failed",
+         "started_at": "2026-10-19T13:26:48Z", "finished_at": "2026-10-19T13:28:33.328Z",
+         "errors": [{"code": 1, "message": "exit status 1"}]},
+        {"uuid": "s-3", "step_id": "save-cache", "title": "Save cache", "status": "skipped",
+         "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."}
+      ]}
+    ]
+  }
+}`
+
+// newSummaryNotFoundServer answers the step summary with 404 and the build
+// lookup with buildStatusCode and buildBody.
+func newSummaryNotFoundServer(t *testing.T, buildStatusCode int, buildBody string) *httptest.Server {
+	t.Helper()
+	return newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps/my-app/builds/b-1" {
+			w.WriteHeader(buildStatusCode)
+			_, _ = w.Write([]byte(buildBody))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
 }
