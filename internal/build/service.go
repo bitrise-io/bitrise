@@ -290,6 +290,38 @@ func (s *Service) Abort(ctx context.Context, req AbortRequest) (AbortResult, err
 	}, nil
 }
 
+// RebuildRequest describes a build-rebuild operation.
+type RebuildRequest struct {
+	AppSlug      string
+	BuildSlug    string
+	RemoteAccess bool
+}
+
+// Rebuild starts a new build with the parameters and workflow of a finished
+// build. The returned Build carries only what the API answers with; branch
+// and commit are left for a follow-up View.
+// Endpoint: POST /apps/{app-slug}/builds/{build-slug}/rebuild.
+func (s *Service) Rebuild(ctx context.Context, req RebuildRequest) (Build, error) {
+	if s.client == nil {
+		return Build{}, fmt.Errorf("API client not configured")
+	}
+	if req.AppSlug == "" {
+		return Build{}, fmt.Errorf("app ID is required")
+	}
+	if req.BuildSlug == "" {
+		return Build{}, fmt.Errorf("build ID is required")
+	}
+	resp, err := s.client.RebuildBuild(ctx, req.AppSlug, req.BuildSlug, bitriseapi.RebuildBuildRequest{IsRemote: req.RemoteAccess})
+	if err != nil {
+		var apiErr *bitriseapi.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+			return Build{}, fmt.Errorf("build %q not found", req.BuildSlug)
+		}
+		return Build{}, err
+	}
+	return triggerRespToBuild(resp, TriggerRequest{AppSlug: req.AppSlug}), nil
+}
+
 // fromAPI maps a bitriseapi.Build (wire shape) into the CLI's Build type.
 // appSlug comes from the request, not the response, since the API doesn't
 // echo it back.

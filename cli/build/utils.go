@@ -148,8 +148,8 @@ func writeDetachNotice(w io.Writer, resumeCmd string) error {
 	return err
 }
 
-// runWatch is the shared implementation for `build watch` and
-// `build trigger --watch`. It prints a header/footer to stderr and streams
+// runWatch is the shared implementation for `build watch` and the --watch
+// flag of `build trigger` and `build rebuild`. It prints a header/footer to stderr and streams
 // log content to logWriter. In --format json/yml it renders the final build
 // record to cmd.OutOrStdout() instead of the text footer, so stdout stays a
 // clean single record.
@@ -181,6 +181,58 @@ func runWatch(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Bu
 			footer += fmt.Sprintf("%s\n", url)
 		}
 		if _, err := fmt.Fprint(stderr, footer); err != nil {
+			return err
+		}
+	}
+
+	// The exit code reflects the build outcome in every mode, including
+	// --format json/yml: stdout already carries the build record above.
+	if finalBuild.Status != "success" && finalBuild.Status != "aborted-with-success" {
+		return fmt.Errorf("build %s", finalBuild.Status)
+	}
+	return nil
+}
+
+// runAfterTrigger finishes `build trigger` and `build rebuild` once the new
+// build exists: it prints the build, or with --watch/--wait follows it to the
+// end and turns its outcome into the exit code.
+func runAfterTrigger(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Build, wait, watch bool, interval time.Duration) error {
+	if !wait && !watch {
+		return output.Render(cmd.OutOrStdout(), output.Format, b, printTriggerText)
+	}
+
+	if watch {
+		logWriter := io.Writer(cmd.OutOrStdout())
+		if output.Format == output.FormatJSON || output.Format == output.FormatYML {
+			logWriter = cmd.ErrOrStderr()
+		}
+		return runWatch(cmd, svc, b, interval, logWriter, output.Format)
+	}
+
+	// --wait: silent block until the build finishes; no log output.
+	header := fmt.Sprintf("Waiting for build #%d to finish\n", b.BuildNumber)
+	if url := buildDetailURL(cmd, b); url != "" {
+		header += fmt.Sprintf("%s\n", url)
+	}
+	if _, err := fmt.Fprint(cmd.ErrOrStderr(), header); err != nil {
+		return err
+	}
+
+	finalBuild, err := svc.WaitForCompletion(cmd.Context(), b.AppSlug, b.Slug, interval)
+	if errors.Is(err, context.Canceled) {
+		return writeDetachNotice(cmd.ErrOrStderr(), "build watch "+b.Slug)
+	}
+	if err != nil {
+		return err
+	}
+
+	if output.Format == output.FormatJSON || output.Format == output.FormatYML {
+		if err := output.Render(cmd.OutOrStdout(), output.Format, finalBuild, printBuildText); err != nil {
+			return err
+		}
+	} else {
+		footer := fmt.Sprintf("Build #%d finished: %s%s\n", finalBuild.BuildNumber, finalBuild.Status, buildElapsed(finalBuild))
+		if _, err := fmt.Fprint(cmd.ErrOrStderr(), footer); err != nil {
 			return err
 		}
 	}
