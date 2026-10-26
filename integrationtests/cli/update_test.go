@@ -6,6 +6,7 @@ package cli
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
@@ -43,12 +44,24 @@ func Test_Update(t *testing.T) {
 // The binary under test is the one the update replaces, so the rest of the suite
 // needs it put back, failure or not.
 func keepBinary(t *testing.T) {
-	original, err := os.ReadFile(testhelpers.BinPath())
+	path := testhelpers.BinPath()
+	original, err := os.ReadFile(path)
 	require.NoError(t, err)
-	info, err := os.Stat(testhelpers.BinPath())
+	info, err := os.Stat(path)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		require.NoError(t, os.WriteFile(testhelpers.BinPath(), original, info.Mode().Perm()))
+		// Renamed over the binary rather than written into it, so the restored CLI
+		// gets its own inode and macOS cannot match it against the code signature it
+		// cached for the one that ran.
+		restored, err := os.CreateTemp(filepath.Dir(path), ".bitrise-restore-")
+		require.NoError(t, err)
+		defer func() { _ = os.Remove(restored.Name()) }()
+
+		_, err = restored.Write(original)
+		require.NoError(t, err)
+		require.NoError(t, restored.Close())
+		require.NoError(t, os.Chmod(restored.Name(), info.Mode().Perm()))
+		require.NoError(t, os.Rename(restored.Name(), path))
 	})
 }
