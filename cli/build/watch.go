@@ -2,7 +2,6 @@ package build
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,7 +27,8 @@ pipeable and carries only the final build record). On a terminal with the
 default raw format, an interactive status display is shown instead of raw
 log lines.
 
-Ctrl-C detaches the CLI without affecting the running build.
+Ctrl-C detaches the CLI without affecting the running build, and exits
+non-zero.
 
 BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 "bitrise config set app_id ID").`,
@@ -61,13 +61,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 				return err
 			}
 
-			// In structured output modes, logs go to stderr so stdout carries
-			// only the final build record and stays pipeable.
-			logWriter := io.Writer(cmd.OutOrStdout())
-			if output.Format == output.FormatJSON || output.Format == output.FormatYML {
-				logWriter = cmd.ErrOrStderr()
-			}
-			return runWatch(cmd, svc, b, interval, logWriter, output.Format)
+			return runWatch(cmd, svc, b, interval)
 		},
 	}
 
