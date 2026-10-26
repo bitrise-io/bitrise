@@ -6,6 +6,7 @@ package toolprovider
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 )
 
 type setupCommandCase struct {
@@ -377,17 +379,30 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 	err := os.WriteFile(configPath, []byte("go 1.21.13\n"), 0644)
 	require.NoError(t, err)
 
-	cmd := command.New(testhelpers.BinPath(), "tools", "setup",
-		"--config", configPath)
+	envstorePath := filepath.Join(tmpDir, "envstore.yml")
+	require.NoError(t, os.WriteFile(envstorePath, nil, 0644))
+
+	cmd := command.New(testhelpers.BinPath(), "tools", "setup", "--config", configPath)
+	cmd.AppendEnvs("ENVMAN_ENVSTORE_PATH=" + envstorePath)
 	cmd.SetDir(tmpDir)
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	require.NoError(t, err, "tools setup should succeed: %s", out)
 
-	// Output should NOT contain the envman error
-	assert.NotContains(t, out, "Failed to expose tool envs with envman",
-		"Should not fail to expose envs with envman (envman should be properly initialized)")
-	assert.NotContains(t, out, "No file found at path",
-		"Should not fail with envman file not found error")
+	content, err := os.ReadFile(envstorePath)
+	require.NoError(t, err)
+
+	var envstore struct {
+		Envs []map[string]string `yaml:"envs"`
+	}
+	require.NoError(t, yaml.Unmarshal(content, &envstore), string(content))
+
+	envs := map[string]string{}
+	for _, item := range envstore.Envs {
+		maps.Copy(envs, item)
+	}
+	assert.Contains(t, envs["GOROOT"], "go/1.21.13")
+	assert.Contains(t, envs["GOBIN"], "go/1.21.13/bin")
+	assert.Contains(t, envs["PATH"], "go/1.21.13/bin")
 }
 
 func TestToolsSetupCommand_GlobalToolsWithoutWorkflow(t *testing.T) {
