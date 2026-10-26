@@ -20,6 +20,9 @@ record is written to stdout; otherwise, on a terminal, an interactive status
 display is shown instead of raw log lines, and when stdout isn't a terminal,
 logs stream as plain text there instead.
 
+Ctrl-C during --wait or --watch detaches without affecting the running build,
+and exits non-zero.
+
 ```
 bitrise build trigger [flags]
 ```

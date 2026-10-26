@@ -6,7 +6,8 @@ Start a new build with the parameters of a finished build
 
 Start a new build of a finished build with the same parameters and workflow.
 
-BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.
+BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").
 
 --wait and --watch behave as in "bitrise build trigger".
 
