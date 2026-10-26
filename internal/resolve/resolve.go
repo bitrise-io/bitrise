@@ -79,13 +79,16 @@ func (r *Resolver) WorkspaceSlug(ctx context.Context, value string) (string, err
 }
 
 // ResolveWorkspace is like WorkspaceSlug but returns the full
-// bitriseapi.Organization when value was matched by a name query, so the
-// caller can skip a second lookup. complete=false means value was not
-// resolved by name: org.Slug holds the resolved slug (from cache or
-// passthrough) and the caller must fetch full data.
+// bitriseapi.Organization when value matched a workspace in the fetched
+// list, by slug or by name, so the caller can skip a second lookup.
+// complete=false means value was not found in the list: org.Slug holds the
+// resolved slug (from cache or passthrough) and the caller must fetch full
+// data.
 //
 // Unlike ResolveApp, GET /organizations has no server-side name filter, so
-// this always fetches the full workspace list and filters client-side.
+// this always fetches the full workspace list and filters client-side. That
+// list already holds a workspace passed by slug, so a slug match wins over a
+// name match.
 func (r *Resolver) ResolveWorkspace(ctx context.Context, value string) (org bitriseapi.Organization, complete bool, err error) {
 	if value == "" {
 		return bitriseapi.Organization{}, false, nil
@@ -101,6 +104,9 @@ func (r *Resolver) ResolveWorkspace(ctx context.Context, value string) (org bitr
 	}
 	var matches []bitriseapi.Organization
 	for _, o := range orgs {
+		if o.Slug == value {
+			return o, true, nil
+		}
 		if strings.EqualFold(o.Name, value) {
 			matches = append(matches, o)
 		}
