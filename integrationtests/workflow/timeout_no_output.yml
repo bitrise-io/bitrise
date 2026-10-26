@@ -1,6 +1,11 @@
 format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
+app:
+  envs:
+  # A step's no_output_timeout overrides it, so only output_slows_down_app_env uses it.
+  - BITRISE_NO_OUTPUT_TIMEOUT: "12"
+
 workflows:
   output_consistent:
     steps:
@@ -22,6 +27,20 @@ workflows:
     - script@1:
         title: Output is slower and slower
         no_output_timeout: 12
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            for i in {1..5}
+            do
+              DURATION=$((5*i))
+              echo "🏃‍step output (sleeping ${DURATION}s)"
+              sleep $DURATION
+            done
+
+  output_slows_down_app_env:
+    steps:
+    - script@1:
+        title: Output is slower and slower, timeout set by app env
         inputs:
         - content: |-
             #!/usr/bin/env bash
