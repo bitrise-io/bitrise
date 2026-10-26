@@ -1,8 +1,8 @@
-// Package workspace holds the rules for picking a workspace when the user
-// didn't name one. It is a leaf package so both the CLI layer
-// (cli/cmdutil.ResolveWorkspaceID) and a domain service (internal/app's app
-// creation) can share one definition — and one error message — without
-// internal/* depending on cli/*.
+// Package workspace holds the workspace service and the rules for picking a
+// workspace when the user didn't name one. It is a leaf package so both the
+// CLI layer (cli/cmdutil.ResolveWorkspaceID) and a domain service
+// (internal/app's app creation) can share one definition — and one error
+// message — without internal/* depending on cli/*.
 package workspace
 
 import (
