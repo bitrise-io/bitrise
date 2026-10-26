@@ -226,6 +226,12 @@ func TestResolveTarget(t *testing.T) {
 			want:      Target{Version: "2.46.0", UpToDate: true},
 		},
 		{
+			name:      "a requested version naming the running pre-release is up to date",
+			current:   "3.0.0-rc.1",
+			requested: "3.0.0-rc.1",
+			want:      Target{Version: "3.0.0-rc.1", UpToDate: true},
+		},
+		{
 			name:      "a requested version is installed on a build that has no comparable version",
 			current:   "dev",
 			requested: "2.31.0",

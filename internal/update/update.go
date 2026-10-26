@@ -105,8 +105,9 @@ func resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 }
 
 // A current version that does not parse is not a release, so no release matches it.
+// It is parsed the same way as the requested one, so a running pre-release can match.
 func isRunningVersion(wanted *semver.Version, currentVersion string) bool {
-	current, err := parseVersion(currentVersion)
+	current, err := parseRequestedVersion(currentVersion)
 	if err != nil {
 		return false
 	}
