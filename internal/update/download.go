@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultDownloadURL = "https://github.com/bitrise-io/bitrise/releases/download"
-	downloadTimeout    = 5 * time.Minute
+	downloadTimeout    = 2 * time.Minute
 )
 
 type Downloader struct {
