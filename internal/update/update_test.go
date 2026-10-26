@@ -135,6 +135,23 @@ func TestResolve_PagingIsBounded(t *testing.T) {
 	require.EqualValues(t, maxReleasePages, requests.Load())
 }
 
+// Releases of a major are created in ascending version order, so a higher version
+// published before a lower one of the same major is out of reach of the paging.
+func TestResolve_HigherVersionPublishedBeforeALowerOneOfItsMajorIsNotFound(t *testing.T) {
+	pages := [][]Release{
+		append(majorReleases(3, releasesPerPage-1), release("v2.45.1")),
+		{release("v2.46.0")},
+	}
+	client, requests := newReleasesClient(t, pages)
+
+	versions, err := resolve(t.Context(), client, "2.45.1")
+
+	require.NoError(t, err)
+	require.Nil(t, versions.Update)
+	require.True(t, versions.CurrentMajorFound)
+	require.EqualValues(t, 1, requests.Load())
+}
+
 func TestResolve_RequestError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
@@ -207,6 +224,12 @@ func TestResolveTarget(t *testing.T) {
 			current:   "2.46.0",
 			requested: "v2.46.0",
 			want:      Target{Version: "2.46.0", UpToDate: true},
+		},
+		{
+			name:      "a requested version naming the running pre-release is up to date",
+			current:   "3.0.0-rc.1",
+			requested: "3.0.0-rc.1",
+			want:      Target{Version: "3.0.0-rc.1", UpToDate: true},
 		},
 		{
 			name:      "a requested version is installed on a build that has no comparable version",

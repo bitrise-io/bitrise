@@ -81,8 +81,10 @@ func resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 		return Versions{}, fmt.Errorf("current version is not comparable: %w", err)
 	}
 
-	// The newest release of each major is on page 1 by construction, so a further
-	// page is only worth asking for while nothing of the current major has shown up.
+	// Development is linear and an older major is never patched, so the releases of
+	// a major are created in ascending version order. The first page holding the
+	// running major therefore holds its newest release, and a further page is only
+	// worth asking for until then.
 	var candidates []usableRelease
 	for page := 1; page <= maxReleasePages; page++ {
 		releases, err := client.ReleasesPage(ctx, page)
@@ -103,8 +105,9 @@ func resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 }
 
 // A current version that does not parse is not a release, so no release matches it.
+// It is parsed the same way as the requested one, so a running pre-release can match.
 func isRunningVersion(wanted *semver.Version, currentVersion string) bool {
-	current, err := parseVersion(currentVersion)
+	current, err := parseRequestedVersion(currentVersion)
 	if err != nil {
 		return false
 	}
