@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -388,37 +389,16 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 // runs while preparing that step's own environment, so a build already oversized
 // on its first step could never lift the limit from inside the run.
 //
-// Precedence is process env < secret < app env; the highest-precedence valid
-// value wins. Invalid values are skipped as they are considered, so a malformed
-// higher-precedence value never discards a valid lower-precedence one.
+// Precedence is that of resolveBuildEnvOverrides.
 func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) {
-	targets := map[string]struct{}{
-		envman.EnvBytesLimitInKBEnvKey:     {},
-		envman.EnvListBytesLimitInKBEnvKey: {},
-	}
-	resolved := map[string]string{}
-
-	consider := func(key, value string) {
-		if _, ok := targets[key]; !ok || value == "" {
-			return
-		}
+	keys := []string{envman.EnvBytesLimitInKBEnvKey, envman.EnvListBytesLimitInKBEnvKey}
+	resolved := resolveBuildEnvOverrides(keys, environments, func(key, value string) bool {
 		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
 			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
-			return
+			return false
 		}
-		resolved[key] = value
-	}
-
-	for key := range targets {
-		consider(key, os.Getenv(key))
-	}
-	for _, env := range environments {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			continue
-		}
-		consider(key, value)
-	}
+		return true
+	})
 
 	for key, value := range resolved {
 		if err := os.Setenv(key, value); err != nil {
@@ -509,7 +489,7 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 	}
 
 	isSteplibOfflineMode := cmdutil.IsSteplibOfflineMode()
-	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
+	noOutputTimeout := readNoOutputTimoutConfiguration(slices.Concat(inventoryEnvironments, bitriseConfig.App.Environments))
 
 	return &RunConfig{
 		Modes: models.WorkflowRunModes{
