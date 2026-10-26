@@ -13,7 +13,8 @@ pipeable and carries only the final build record). On a terminal with the
 default raw format, an interactive status display is shown instead of raw
 log lines.
 
-Ctrl-C detaches the CLI without affecting the running build.
+Ctrl-C detaches the CLI without affecting the running build, and exits
+non-zero.
 
 BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 "bitrise config set app_id ID").

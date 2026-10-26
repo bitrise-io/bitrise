@@ -51,7 +51,10 @@ json/yml the final build record is written to stdout.
 json/yml, build logs stream to stderr as plain text and the final build
 record is written to stdout; otherwise, on a terminal, an interactive status
 display is shown instead of raw log lines, and when stdout isn't a terminal,
-logs stream as plain text there instead.`,
+logs stream as plain text there instead.
+
+Ctrl-C during --wait or --watch detaches without affecting the running build,
+and exits non-zero.`,
 		Example: `  bitrise build trigger --app my-app-id --workflow primary
   bitrise build trigger --app my-app-id --workflow deploy --branch release/1.2 --format json
   bitrise build trigger --app my-app-id --pipeline my-pipeline --branch main
@@ -117,7 +120,7 @@ logs stream as plain text there instead.`,
 				return err
 			}
 
-			return runAfterTrigger(cmd, svc, b, wait, watch, interval)
+			return runAfterTrigger(cmd, svc, b, "Build triggered", wait, watch, interval)
 		},
 	}
 
@@ -134,13 +137,10 @@ logs stream as plain text there instead.`,
 	cmd.Flags().StringVar(&stack, "stack", "", "stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')")
 	cmd.Flags().StringVar(&machineType, "machine-type", "", "machine type ID to run the build on, overrides the workflow's machine type")
 	cmd.Flags().StringVar(&licensePool, "license-pool", "", "license pool ID to run the build with")
-	cmd.Flags().BoolVar(&wait, "wait", false, "block until the build finishes without streaming logs (exit code reflects build outcome)")
-	cmd.Flags().BoolVar(&watch, "watch", false, "wait for the build to finish, showing progress (exit code reflects build outcome)")
-	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait or --watch is active")
+	addFollowFlags(cmd, &wait, &watch, &interval)
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 	cmd.MarkFlagsMutuallyExclusive("workflow", "pipeline")
-	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
 
 	return cmd
 }

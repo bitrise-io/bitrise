@@ -25,7 +25,8 @@ func NewRebuildCommand() *cobra.Command {
 		Short: "Start a new build with the parameters of a finished build",
 		Long: `Start a new build of a finished build with the same parameters and workflow.
 
-BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.
+BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
+"bitrise config set app_id ID").
 
 --wait and --watch behave as in "bitrise build trigger".`,
 		Example: `  bitrise build rebuild abc123 --app my-app-id
@@ -60,17 +61,14 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID.
 				return err
 			}
 
-			return runAfterTrigger(cmd, svc, b, wait, watch, interval)
+			return runAfterTrigger(cmd, svc, b, "Rebuild started", wait, watch, interval)
 		},
 	}
 
 	cmd.Flags().BoolVar(&remoteAccess, "remote-access", false, "start the new build with remote access enabled (needs remote access permission on the app)")
-	cmd.Flags().BoolVar(&wait, "wait", false, "block until the build finishes without streaming logs (exit code reflects build outcome)")
-	cmd.Flags().BoolVar(&watch, "watch", false, "wait for the build to finish, showing progress (exit code reflects build outcome)")
-	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait or --watch is active")
+	addFollowFlags(cmd, &wait, &watch, &interval)
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
-	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
 
 	return cmd
 }
