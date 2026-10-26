@@ -1,7 +1,6 @@
 package local
 
 import (
-	"os"
 	"strconv"
 	"time"
 
@@ -10,41 +9,28 @@ import (
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 )
 
-func getNoOutputTimoutValue(inventoryEnvironments []envmanModels.EnvironmentItemModel) (string, error) {
-	for _, env := range inventoryEnvironments {
-		key, value, err := env.GetKeyValuePair()
-		if err != nil {
-			return "", err
-		}
-
-		if key == configs.NoOutputTimeoutEnvKey && value != "" {
-			return value, nil
-		}
-	}
-
-	return os.Getenv(configs.NoOutputTimeoutEnvKey), nil
-}
-
-func readNoOutputTimoutConfiguration(inventoryEnvironments []envmanModels.EnvironmentItemModel) time.Duration {
+// readNoOutputTimoutConfiguration resolves BITRISE_NO_OUTPUT_TIMEOUT (seconds)
+// from the process env, secrets and app envs, with the precedence of
+// resolveBuildEnvOverrides. Zero or a negative value disables hang detection.
+func readNoOutputTimoutConfiguration(environments []envmanModels.EnvironmentItemModel) time.Duration {
 	const defaultTimeout = -1
-	envVal, err := getNoOutputTimoutValue(inventoryEnvironments)
-	if err != nil {
-		log.Errorf("Failed to read value of %s: %s", configs.NoOutputTimeoutEnvKey, err)
+	keys := []string{configs.NoOutputTimeoutEnvKey}
+	resolved := resolveBuildEnvOverrides(keys, environments, func(key, value string) bool {
+		if _, err := strconv.ParseInt(value, 10, 0); err != nil {
+			log.Warnf("Ignoring invalid %s value %q: must be an integer", key, value)
+			return false
+		}
+		return true
+	})
+
+	envVal, ok := resolved[configs.NoOutputTimeoutEnvKey]
+	if !ok {
 		return defaultTimeout
 	}
 
-	if envVal == "" {
-		return defaultTimeout
-	}
-
-	timeout, err := strconv.ParseInt(envVal, 10, 0)
-	if err != nil {
-		log.Errorf("Invalid configuration environment variable value $%s=%s: %s", configs.NoOutputTimeoutEnvKey, envVal, err)
-		return defaultTimeout
-	}
-
+	timeout, _ := strconv.ParseInt(envVal, 10, 0)
 	if timeout <= 0 {
-		timeout = -1
+		return defaultTimeout
 	}
 
 	return time.Duration(timeout) * time.Second

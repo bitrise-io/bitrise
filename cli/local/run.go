@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -388,28 +389,46 @@ func (r WorkflowRunner) runWorkflows() (models.BuildRunResultsModel, error) {
 // runs while preparing that step's own environment, so a build already oversized
 // on its first step could never lift the limit from inside the run.
 //
-// Precedence is process env < secret < app env; the highest-precedence valid
-// value wins. Invalid values are skipped as they are considered, so a malformed
-// higher-precedence value never discards a valid lower-precedence one.
+// Precedence is that of resolveBuildEnvOverrides.
 func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.EnvironmentItemModel) {
-	targets := map[string]struct{}{
-		envman.EnvBytesLimitInKBEnvKey:     {},
-		envman.EnvListBytesLimitInKBEnvKey: {},
+	keys := []string{envman.EnvBytesLimitInKBEnvKey, envman.EnvListBytesLimitInKBEnvKey}
+	resolved := resolveBuildEnvOverrides(keys, environments, func(key, value string) bool {
+		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
+			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
+			return false
+		}
+		return true
+	})
+
+	for key, value := range resolved {
+		if err := os.Setenv(key, value); err != nil {
+			r.logger.Warnf("Failed to set %s: %s", key, err)
+		}
 	}
+}
+
+// resolveBuildEnvOverrides resolves CLI configuration that a build sets through
+// an env var before the workflow runs, when only the raw declarations exist:
+// values are not expanded, so `$OTHER_VAR` is taken literally and fails
+// validation. Workflow-level envs are not considered, as the workflow to run
+// can still change.
+//
+// environments lists the secrets first, then the app envs, so precedence is
+// process env < secret < app env; the highest-precedence valid value of each
+// key wins. Empty values are ignored and invalid ones are skipped as they are
+// considered, so a malformed higher-precedence value never discards a valid
+// lower-precedence one. Keys with no valid value are absent from the result.
+func resolveBuildEnvOverrides(keys []string, environments []envmanModels.EnvironmentItemModel, isValid func(key, value string) bool) map[string]string {
 	resolved := map[string]string{}
 
 	consider := func(key, value string) {
-		if _, ok := targets[key]; !ok || value == "" {
-			return
-		}
-		if limit, err := strconv.Atoi(value); err != nil || limit < 0 {
-			r.logger.Warnf("Ignoring invalid %s value %q: must be a non-negative integer", key, value)
+		if !slices.Contains(keys, key) || value == "" || !isValid(key, value) {
 			return
 		}
 		resolved[key] = value
 	}
 
-	for key := range targets {
+	for _, key := range keys {
 		consider(key, os.Getenv(key))
 	}
 	for _, env := range environments {
@@ -420,11 +439,7 @@ func (r WorkflowRunner) applyEnvVarLimitOverrides(environments []envmanModels.En
 		consider(key, value)
 	}
 
-	for key, value := range resolved {
-		if err := os.Setenv(key, value); err != nil {
-			r.logger.Warnf("Failed to set %s: %s", key, err)
-		}
-	}
+	return resolved
 }
 
 func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
@@ -509,7 +524,7 @@ func processArgs(cmd *cobra.Command, args []string) (*RunConfig, error) {
 	}
 
 	isSteplibOfflineMode := cmdutil.IsSteplibOfflineMode()
-	noOutputTimeout := readNoOutputTimoutConfiguration(inventoryEnvironments)
+	noOutputTimeout := readNoOutputTimoutConfiguration(slices.Concat(inventoryEnvironments, bitriseConfig.App.Environments))
 
 	return &RunConfig{
 		Modes: models.WorkflowRunModes{
