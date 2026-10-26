@@ -3,6 +3,7 @@ package local
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/bitrise-io/bitrise/v3/bitrise"
@@ -175,7 +176,7 @@ func trigger(cmd *cobra.Command, args []string) error {
 			DebugMode:               configs.IsDebugMode,
 			SecretFilteringMode:     isSecretFilteringMode,
 			SecretEnvsFilteringMode: isSecretEnvsFilteringMode,
-			NoOutputTimeout:         0,
+			NoOutputTimeout:         readNoOutputTimoutConfiguration(slices.Concat(inventoryEnvironments, bitriseConfig.App.Environments)),
 		},
 		Config:   bitriseConfig,
 		Workflow: workflowToRunID,

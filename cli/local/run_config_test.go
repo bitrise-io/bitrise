@@ -66,6 +66,27 @@ func TestReadNoOutputTimoutConfiguration(t *testing.T) {
 			environments: []envmanModels.EnvironmentItemModel{{key: "-5"}},
 			want:         -1,
 		},
+		{
+			name:       "invalid process env is ignored",
+			processEnv: "abc",
+			want:       -1,
+		},
+		{
+			name:         "later duplicate secret wins",
+			environments: []envmanModels.EnvironmentItemModel{{key: "60"}, {key: "0"}},
+			want:         -1,
+		},
+		{
+			name:         "value overflowing time.Duration does not discard a valid process env",
+			processEnv:   "60",
+			environments: []envmanModels.EnvironmentItemModel{{key: "10000000000"}},
+			want:         60 * time.Second,
+		},
+		{
+			name:         "largest representable value is accepted",
+			environments: []envmanModels.EnvironmentItemModel{{key: "9223372036"}},
+			want:         9223372036 * time.Second,
+		},
 	}
 
 	for _, tt := range tests {
