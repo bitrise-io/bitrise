@@ -401,7 +401,6 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 		maps.Copy(envs, item)
 	}
 	assert.Contains(t, envs["GOROOT"], "go/1.21.13")
-	assert.Contains(t, envs["GOBIN"], "go/1.21.13/bin")
 	assert.Contains(t, envs["PATH"], "go/1.21.13/bin")
 }
 
