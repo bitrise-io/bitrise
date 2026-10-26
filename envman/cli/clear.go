@@ -3,7 +3,7 @@ package cli
 import (
 	"errors"
 
-	"github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/pathutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"

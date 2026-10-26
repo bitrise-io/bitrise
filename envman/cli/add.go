@@ -6,8 +6,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/bitrise-io/envman/v2/envman"
-	"github.com/bitrise-io/envman/v2/models"
+	"github.com/bitrise-io/bitrise/v3/envman/envman"
+	"github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"

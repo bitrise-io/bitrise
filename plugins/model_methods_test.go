@@ -38,17 +38,11 @@ requirements:
 		require.NoError(t, err)
 
 		// Then
-		require.NoError(t, validatePlugin(plugin, pth, "bitrise"))
+		require.NoError(t, validatePlugin(plugin, pth))
 
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
 		require.Equal(t, "DidFinishRun", plugin.TriggerEvent)
-
-		assert.Equal(t, 1, len(plugin.Requirements))
-		requirement := plugin.Requirements[0]
-		require.Equal(t, "bitrise", requirement.Tool)
-		require.Equal(t, "1.3.0", requirement.MinVersion)
-		require.Equal(t, "", requirement.MaxVersion)
 	}
 
 	t.Log("simple plugin - no trigger, triggers present")
@@ -123,7 +117,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "missing name")
+		require.EqualError(t, validatePlugin(plugin, pth), "missing name")
 	}
 
 	t.Log("invalid plugin - no linux executable")
@@ -148,7 +142,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "both osx and linux executable should be defined, or non of them")
+		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no osx executable")
@@ -173,7 +167,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		require.EqualError(t, validatePlugin(plugin, pth, "bitrise"), "both osx and linux executable should be defined, or non of them")
+		require.EqualError(t, validatePlugin(plugin, pth), "both osx and linux executable should be defined, or non of them")
 	}
 
 	t.Log("invalid plugin - no executables, no bitrise-plugin.sh")
@@ -195,7 +189,7 @@ requirements:
 
 		// Then
 		require.NoError(t, err)
-		err = validatePlugin(plugin, pth, "bitrise")
+		err = validatePlugin(plugin, pth)
 		require.Error(t, err)
 		require.Equal(t, true, strings.Contains(err.Error(), "no executable defined, nor bitrise-plugin.sh exist at:"))
 	}
@@ -222,16 +216,10 @@ requirements:
 		// Then
 		require.NoError(t, err)
 
-		require.NoError(t, validatePlugin(plugin, pth, "bitrise"))
+		require.NoError(t, validatePlugin(plugin, pth))
 
 		require.Equal(t, "step", plugin.Name)
 		require.Equal(t, "Manage Bitrise CLI steps", plugin.Description)
-		require.Equal(t, 1, len(plugin.Requirements))
-
-		requirement := plugin.Requirements[0]
-		require.Equal(t, "bitrise", requirement.Tool)
-		require.Equal(t, "1.3.0", requirement.MinVersion)
-		require.Equal(t, "", requirement.MaxVersion)
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/configs"
-	envmanModels "github.com/bitrise-io/envman/v2/models"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

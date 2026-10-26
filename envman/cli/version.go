@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bitrise-io/envman/v2/output"
-	"github.com/bitrise-io/envman/v2/version"
+	"github.com/bitrise-io/bitrise/v3/envman/output"
+	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/urfave/cli"
 )
 
@@ -24,7 +24,7 @@ func printVersionCmd(c *cli.Context) error {
 	}
 
 	versionOutput := VersionOutputModel{
-		Version: version.Version,
+		Version: version.VERSION,
 	}
 
 	if fullVersion {
