@@ -76,7 +76,7 @@ func runUpdate(cmd *cobra.Command) error {
 		if err := brewCmd.Run(); err != nil {
 			output := out.String()
 			if strings.Contains(output, "already installed") {
-				logger.Donef("Bitrise CLI is already up-to-date")
+				logger.Donef("Bitrise CLI is already up to date")
 				return nil
 			}
 
@@ -99,7 +99,7 @@ func runUpdate(cmd *cobra.Command) error {
 		return nil
 	}
 
-	logger.Printf("Updating to:     %s", target.Version)
+	logger.Printf("Updating to: %s", target.Version)
 
 	logger.Print("Downloading Bitrise CLI...")
 	if err := download(target.Version); err != nil {
