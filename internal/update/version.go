@@ -21,7 +21,9 @@ func parseVersion(version string) (*semver.Version, error) {
 }
 
 // The `v` prefix is accepted because that is how the releases are tagged, and a
-// pre-release is kept, since naming one is the only way to install it.
+// pre-release is kept, since naming one is the only way to install it. Build
+// metadata is rejected because no release carries it: `2.46.0+build.7` has no
+// tag to download, so it would only fail later as a 404.
 func parseRequestedVersion(raw string) (*semver.Version, error) {
 	v, err := semver.StrictNewVersion(strings.TrimPrefix(raw, "v"))
 	if err != nil || v.Metadata() != "" {

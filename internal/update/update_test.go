@@ -271,7 +271,7 @@ func TestResolveTarget_MajorMissingFromTheReadPagesIsNotReportedAsUpToDate(t *te
 
 	_, err := ResolveTarget(t.Context(), client, "1.2.3", "")
 
-	require.ErrorContains(t, err, "no Bitrise CLI 1.x release was found")
+	require.ErrorContains(t, err, "no Bitrise CLI release was found in major version 1")
 }
 
 // newReleasesClient serves pages[page-1] for every requested page, and counts

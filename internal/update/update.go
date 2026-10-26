@@ -64,7 +64,7 @@ func ResolveTarget(ctx context.Context, client *Client, currentVersion, requeste
 		return Target{}, err
 	}
 	if !versions.CurrentMajorFound {
-		return Target{}, fmt.Errorf("no Bitrise CLI %d.x release was found, so it cannot be told whether %s is the newest one. Use bitrise update --version X.Y.Z to install a specific release", current.Major(), currentVersion)
+		return Target{}, fmt.Errorf("no Bitrise CLI release was found in major version %d, so it cannot be told whether %s is the newest one. Use bitrise update --version X.Y.Z to install a specific release", current.Major(), currentVersion)
 	}
 	if versions.Update == nil {
 		return Target{Version: currentVersion, UpToDate: true, NewMajor: versions.NewMajor}, nil
