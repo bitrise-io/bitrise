@@ -106,14 +106,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	headers := []string{"WORKFLOW", "STEP", "STATUS", "DURATION"}
 	rows := make([][]string, 0, len(res.Items))
 	for _, st := range res.Items {
-		duration := ""
-		if d, ok := st.RunTime(); ok {
-			duration = "<1s"
-			if d >= time.Second {
-				duration = d.Round(time.Second).String()
-			}
-		}
-		rows = append(rows, []string{st.Workflow, stepName(st), st.Status, duration})
+		rows = append(rows, []string{st.Workflow, stepName(st), st.Status, stepDuration(st)})
 	}
 	const colStatus = 2
 	styler := func(row, col int, content string) string {
@@ -183,4 +176,22 @@ func stepName(st internalbuild.Step) string {
 		return st.Title
 	}
 	return st.StepID
+}
+
+func stepDuration(st internalbuild.Step) string {
+	d, ok := st.RunTime()
+	if !ok {
+		return ""
+	}
+	if d >= time.Second {
+		return d.Round(time.Second).String()
+	}
+	return "<1s"
+}
+
+func noStepsMessage(status string) string {
+	if status != "" {
+		return fmt.Sprintf("No steps with status %q.", status)
+	}
+	return "No steps found."
 }
