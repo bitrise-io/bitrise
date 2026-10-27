@@ -110,18 +110,30 @@ func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, erro
 		}
 	}
 
-	// DEBUG, remove before merging: asdf-nodejs discards git's stderr when it clones
-	// node-build, and cloning ahead of it hides the failure. GIT_TRACE2 makes every git
-	// command in the test, the plugin's included, write its errors to a file instead.
+	// DEBUG, remove before merging: asdf-nodejs sends the stderr of its node-build update
+	// to /dev/null. Point it at a file instead, leaving git, its env and its timing alone,
+	// so a failing test prints why the clone failed.
 	if slices.Contains(installRequest.plugins, "nodejs") {
-		tracePath := filepath.Join(t.TempDir(), "git-trace2.log")
-		testingEnv.envVars["GIT_TRACE2"] = tracePath
+		stderrPath := filepath.Join(t.TempDir(), "nodebuild-update-stderr.log")
+		utilsPath := filepath.Join(dataDir, "plugins", "nodejs", "lib", "utils.sh")
+		utils, err := os.ReadFile(utilsPath)
+		if err != nil {
+			return testingEnv, fmt.Errorf("DEBUG read %s: %w", utilsPath, err)
+		}
+		const discard = `"$ASDF_NODEJS_PLUGIN_DIR/lib/commands/command-update-nodebuild" 2>/dev/null`
+		if !strings.Contains(string(utils), discard) {
+			return testingEnv, fmt.Errorf("DEBUG %s no longer discards the node-build update's stderr as expected", utilsPath)
+		}
+		patched := strings.Replace(string(utils), discard, `"$ASDF_NODEJS_PLUGIN_DIR/lib/commands/command-update-nodebuild" 2>>`+shellescape.Quote(stderrPath), 1)
+		if err := os.WriteFile(utilsPath, []byte(patched), 0644); err != nil {
+			return testingEnv, fmt.Errorf("DEBUG write %s: %w", utilsPath, err)
+		}
 		t.Cleanup(func() {
 			if !t.Failed() {
 				return
 			}
-			trace, err := os.ReadFile(tracePath)
-			t.Logf("DEBUG git trace2 (read err=%v):\n%s", err, trace)
+			stderr, err := os.ReadFile(stderrPath)
+			t.Logf("DEBUG node-build update stderr (read err=%v):\n%s", err, stderr)
 		})
 	}
 
