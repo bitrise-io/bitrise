@@ -110,6 +110,35 @@ func TestLogCmd_WaitPolls_ThenPrintsLog(t *testing.T) {
 	assert.Contains(t, out.String(), "done")
 }
 
+func TestLogCmd_WaitJSON_NoWaitHeader(t *testing.T) {
+	var viewCalls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/apps/my-app/builds/b-1":
+			status := 1
+			if viewCalls.Add(1) == 1 {
+				status = 0
+			}
+			_, _ = fmt.Fprintf(w, `{"data":{"slug":"b-1","build_number":5,"status":%d,"triggered_at":"2026-05-06T10:00:00Z"}}`, status)
+		case "/apps/my-app/builds/b-1/log":
+			_, _ = w.Write([]byte(`{"is_archived":true,"log_chunks":[{"chunk":"done\n","position":0}]}`))
+		}
+	})
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("wait", "true"))
+	require.NoError(t, cmd.Flags().Set("interval", "1ms"))
+	require.NoError(t, cmd.Flags().Set("format", "json"))
+	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
+
+	assert.GreaterOrEqual(t, int(viewCalls.Load()), 2, "the build was in progress, so --wait polled")
+	assert.JSONEq(t, `{"log":"done\n","complete":true}`, out.String())
+	assert.Empty(t, errOut.String())
+}
+
 func TestLogCmd_WaitSkipsPolling_WhenAlreadyFinished(t *testing.T) {
 	var viewCalls atomic.Int32
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -123,14 +152,18 @@ func TestLogCmd_WaitSkipsPolling_WhenAlreadyFinished(t *testing.T) {
 	})
 
 	cmd, out := newTestLogCmd(t, srv.URL)
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("wait", "true"))
 	require.NoError(t, cmd.Flags().Set("interval", "1ms"))
 	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
 
-	assert.NotContains(t, out.String(), "Waiting for build", "should not print wait header for a finished build")
+	assert.NotContains(t, errOut.String(), "Waiting for build", "should not print wait header for a finished build")
 	assert.Equal(t, 1, int(viewCalls.Load()), "expected exactly 1 View call")
 	assert.Contains(t, out.String(), "all good")
+	assert.Contains(t, errOut.String(), "The log is not final yet: the build has finished")
+	assert.NotContains(t, errOut.String(), "still running", "--wait has seen the build finished")
 }
 
 func TestLogCmd_StreamsArchivedLog(t *testing.T) {
@@ -342,20 +375,28 @@ func TestLogCmd_WaitForArchiveBeforeStepLogs(t *testing.T) {
 		}
 	})
 
-	cmd, out := newTestLogCmd(t, srv.URL)
-	var errOut bytes.Buffer
-	cmd.SetErr(&errOut)
-	require.NoError(t, cmd.Flags().Set("app", "my-app"))
-	require.NoError(t, cmd.Flags().Set("wait", "true"))
-	require.NoError(t, cmd.Flags().Set("interval", "1ms"))
-	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
-	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+	for _, format := range []string{"raw", "json"} {
+		summaryCalls.Store(0)
+		cmd, out := newTestLogCmd(t, srv.URL)
+		var errOut bytes.Buffer
+		cmd.SetErr(&errOut)
+		require.NoError(t, cmd.Flags().Set("app", "my-app"))
+		require.NoError(t, cmd.Flags().Set("wait", "true"))
+		require.NoError(t, cmd.Flags().Set("interval", "1ms"))
+		require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+		require.NoError(t, cmd.Flags().Set("format", format))
+		require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
 
-	assert.GreaterOrEqual(t, int(summaryCalls.Load()), 3, "polls until archived, then reads the summary for the steps")
-	assert.Contains(t, errOut.String(), "Waiting for the build log to be archived")
-	assert.NotContains(t, out.String(), "Waiting for the build log", "the notice must not corrupt stdout")
-	assert.Contains(t, out.String(), "Tests: line 3")
-	assert.NotContains(t, errOut.String(), "not available yet")
+		assert.GreaterOrEqual(t, int(summaryCalls.Load()), 3, "polls until archived, then reads the summary for the steps")
+		assert.Contains(t, out.String(), "Tests: line 3")
+		assert.NotContains(t, out.String(), "Waiting for the build log", "the notice must not corrupt stdout")
+		if format == "raw" {
+			assert.Contains(t, errOut.String(), "Waiting for the build log to be archived")
+			assert.NotContains(t, errOut.String(), "not available yet")
+		} else {
+			assert.Empty(t, errOut.String())
+		}
+	}
 }
 
 func TestLogCmd_RejectsUnknownStatus(t *testing.T) {

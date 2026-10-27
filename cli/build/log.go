@@ -158,7 +158,11 @@ the running build, and exits non-zero because no log was printed.`,
 				return err
 			}
 			if output.Format == output.FormatRaw && !complete {
-				_, err := fmt.Fprintln(cmd.ErrOrStderr(), "The log is not final yet: the build is still running, or has just finished and its log is being archived. This is the log so far.")
+				msg := "The log is not final yet: the build is still running, or has just finished and its log is being archived. This is the log so far."
+				if wait {
+					msg = "The log is not final yet: the build has finished, but its log is not archived yet. This is the log so far. Run the command again later for the final log."
+				}
+				_, err := fmt.Fprintln(cmd.ErrOrStderr(), msg)
 				return err
 			}
 			return nil
@@ -188,7 +192,9 @@ func waitForLogArchive(cmd *cobra.Command, svc *internalbuild.Service, appSlug, 
 	defer stop()
 	var noticeErr error
 	err := svc.WaitForLogArchive(ctx, appSlug, buildSlug, interval, func() {
-		_, noticeErr = fmt.Fprintln(cmd.ErrOrStderr(), "Waiting for the build log to be archived")
+		if output.Format == output.FormatRaw {
+			_, noticeErr = fmt.Fprintln(cmd.ErrOrStderr(), "Waiting for the build log to be archived")
+		}
 	})
 	if noticeErr != nil {
 		return noticeErr

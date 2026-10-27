@@ -382,6 +382,11 @@ func (c *Client) BuildStepLog(ctx context.Context, appSlug, buildSlug, stepUUID 
 	if _, err := dec.Token(); err != nil {
 		return fmt.Errorf("decode step log: %w", err)
 	}
+	if tok, err := dec.Token(); err == nil {
+		return fmt.Errorf("decode step log: unexpected %v after the JSON array", tok)
+	} else if err != io.EOF {
+		return fmt.Errorf("decode step log: %w", err)
+	}
 	return nil
 }
 

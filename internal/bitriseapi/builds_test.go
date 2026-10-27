@@ -402,7 +402,7 @@ func TestBuildStepLog_EmptyWithoutArchiveURL(t *testing.T) {
 }
 
 func TestBuildStepLog_RejectsMalformedArchive(t *testing.T) {
-	for _, body := range []string{"not json", `{"message":"a"}`, `[{"message":"a"}`, `[{"message":1}]`} {
+	for _, body := range []string{"not json", `{"message":"a"}`, `[{"message":"a"}`, `[{"message":1}]`, `[{"message":"a"}] x`, `[{"message":"a"}] []`} {
 		rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = w.Write([]byte(body))
 		}))
