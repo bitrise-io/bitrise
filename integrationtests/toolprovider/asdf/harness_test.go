@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -107,6 +108,14 @@ func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, erro
 		if err != nil {
 			return testingEnv, fmt.Errorf("install asdf plugin %s: %w\n\nOutput:\n%s", plugin, err, out)
 		}
+	}
+
+	// DEBUG, remove before merging: asdf-nodejs discards git's stderr when it clones
+	// node-build, so run its update script directly to get the clone's error into the log.
+	if slices.Contains(installRequest.plugins, "nodejs") {
+		script := filepath.Join(dataDir, "plugins", "nodejs", "lib", "commands", "command-update-nodebuild")
+		out, err := testingEnv.runCommand(map[string]string{"GIT_TRACE": "1"}, "bash", script)
+		t.Logf("DEBUG node-build update: err=%v\noutput:\n%s", err, out)
 	}
 
 	return testingEnv, nil
