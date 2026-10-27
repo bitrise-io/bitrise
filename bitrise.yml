@@ -1,5 +1,5 @@
 ---
-format_version: "17"
+format_version: "27"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 project_type: other
 
@@ -44,56 +44,46 @@ workflows:
         - client_config: "$GCP_CLIENT_CONFIG"
         - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
         - verbose: true
-    - script@1:
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
+    - title: Generate the tool catalog
+      run: |-
+        set -x
 
-            mkdir -p "$CATALOG_OUTPUT_DIR"
-            timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-            bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/catalog.json"
+        mkdir -p "$CATALOG_OUTPUT_DIR"
+        timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        bitrise tools catalog --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/catalog.json"
 
-            while IFS= read -r item; do
-              bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/$item.json"
-            done < <(bitrise tools catalog --format json | jq -r '.tools[].name')
-    - script@1:
-        title: Validate JSON files
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -e
+        while IFS= read -r item; do
+          bitrise tools versions "$item" --format json | jq --arg ts "$timestamp" '. + {timestamp: $ts}' > "$CATALOG_OUTPUT_DIR/$item.json"
+        done < <(bitrise tools catalog --format json | jq -r '.tools[].name')
+    - title: Validate JSON files
+      run: |-
+        validation_failed=false
 
-            validation_failed=false
+        for file in "$CATALOG_OUTPUT_DIR"/*; do
+          filename=$(basename "$file")
+          if [[ "$filename" != *.json ]]; then
+            echo "ERROR: File '$filename' does not have .json extension"
+            validation_failed=true
+            continue
+          fi
 
-            for file in "$CATALOG_OUTPUT_DIR"/*; do
-              filename=$(basename "$file")
-              if [[ "$filename" != *.json ]]; then
-                echo "ERROR: File '$filename' does not have .json extension"
-                validation_failed=true
-                continue
-              fi
+          if ! jq empty "$file" 2>/dev/null; then
+            echo "ERROR: File '$filename' is not valid JSON"
+            validation_failed=true
+          fi
+        done
 
-              if ! jq empty "$file" 2>/dev/null; then
-                echo "ERROR: File '$filename' is not valid JSON"
-                validation_failed=true
-              fi
-            done
+        if [[ "$validation_failed" == "true" ]]; then
+          echo "JSON validation failed"
+          exit 1
+        fi
 
-            if [[ "$validation_failed" == "true" ]]; then
-              echo "JSON validation failed"
-              exit 1
-            fi
+        echo "All files are valid JSON"
+    - title: Upload to GCS
+      run: |-
+        set -x
 
-            echo "All files are valid JSON"
-    - script@1:
-        title: Upload to GCS
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-
-            gsutil rsync -r -d "$CATALOG_OUTPUT_DIR" gs://bitrise-cli-tool-catalog
+        gsutil rsync -r -d "$CATALOG_OUTPUT_DIR" gs://bitrise-cli-tool-catalog
     - slack@4:
         is_always_run: true
         run_if: .IsBuildFailed
@@ -122,13 +112,10 @@ workflows:
     steps:
     - bundle::setup_repo: {}
     - bundle::install_dependencies: {}
-    - script@1:
-        title: Check generated CLI docs
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            make docs-check
+    - title: Check generated CLI docs
+      run: |-
+        set -x
+        make docs-check
 
   run_unit_tests_macos:
     steps:
@@ -250,16 +237,13 @@ workflows:
     - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
     - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
     steps:
-    - script@1:
-        title: Fetch GCS bucket credentials
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
+    - title: Fetch GCS bucket credentials
+      run: |-
+        set -x
 
-            echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
-            # Goreleaser expects this env var:
-            envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
+        echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
+        # Goreleaser expects this env var:
+        envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
     - script@1:
         title: Goreleaser (create binaries + publish to GH)
         deps:
@@ -276,33 +260,25 @@ workflows:
     title: Fails
     description: Workflow will fail
     steps:
-    - script:
-        title: Success
-        inputs:
-        - content: |-
-            set -ex
-            exit 0
-    - script:
-        title: Fail wit exit code 2
-        inputs:
-        - content: |-
-            set -ex
-            exit 2
-    - script:
-        title: Skippable fail with exit code 2
-        is_always_run: true
-        is_skippable: true
-        inputs:
-        - content: |-
-            set -ex
-            exit 2
-    - script:
-        title: Skipping success
-        is_always_run: false
-        inputs:
-        - content: |-
-            set -ex
-            exit 0
+    - title: Success
+      run: |-
+        set -x
+        exit 0
+    - title: Fail wit exit code 2
+      run: |-
+        set -x
+        exit 2
+    - title: Skippable fail with exit code 2
+      is_skippable: true
+      is_always_run: true
+      run: |-
+        set -x
+        exit 2
+    - title: Skipping success
+      is_always_run: false
+      run: |-
+        set -x
+        exit 0
 
   unpin-go-version:
     title: Unpin Go version from .tool-versions
@@ -311,293 +287,262 @@ workflows:
       TODO: this is only needed as long as Go steps are built from source
       (because tool setup has no influence on the environment of the CLI process itself, just the environment of the workflow).
     steps:
-    - script@1:
-        title: Unpin Go version
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
+    - title: Unpin Go version
+      run: |-
+        set -x
 
-            TOOL_VERSIONS_FILE=".tool-versions"
+        TOOL_VERSIONS_FILE=".tool-versions"
 
-            if [ ! -f "$TOOL_VERSIONS_FILE" ]; then
-                echo "Error: $TOOL_VERSIONS_FILE not found"
-                exit 1
-            fi
+        if [ ! -f "$TOOL_VERSIONS_FILE" ]; then
+            echo "Error: $TOOL_VERSIONS_FILE not found"
+            exit 1
+        fi
 
-            # Remove lines with golang from .tool-versions
-            grep -v '^golang ' "$TOOL_VERSIONS_FILE" > "$TOOL_VERSIONS_FILE.tmp" || true
-            mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
+        # Remove lines with golang from .tool-versions
+        grep -v '^golang ' "$TOOL_VERSIONS_FILE" > "$TOOL_VERSIONS_FILE.tmp" || true
+        mv "$TOOL_VERSIONS_FILE.tmp" "$TOOL_VERSIONS_FILE"
 
 step_bundles:
   run_lint:
     title: Run linter
     steps:
-    - script:
-        title: golangci-lint
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s v2.6.0
-            ./bin/golangci-lint run
+    - title: golangci-lint
+      run: |-
+        set -x
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s v2.6.0
+        ./bin/golangci-lint run
 
   run_unit_tests:
     steps:
-    - script@1:
-        title: Run unit tests
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -exo pipefail
+    - title: Run unit tests
+      run: |-
+        set -x
 
-            export BITRISE_ANALYTICS_DISABLED=true
+        export BITRISE_ANALYTICS_DISABLED=true
 
-            # Here we save the original test results and deploy directories and later on we recreate them,
-            #  because during the tests these directories are removed.
-            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
-            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+        # Here we save the original test results and deploy directories and later on we recreate them,
+        #  because during the tests these directories are removed.
+        ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+        ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
 
-            # Setup per OS test name and log file name
-            if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Unit tests on Linux"}'
-              test_log_file_name="unit_tests_linux"
-            else
-              test_name_json='{"test-name":"Unit tests on macOS"}'
-              test_log_file_name="unit_tests_macos"
-            fi
+        # Setup per OS test name and log file name
+        if [ "$(uname)" = "Linux" ]; then
+          test_name_json='{"test-name":"Unit tests on Linux"}'
+          test_log_file_name="unit_tests_linux"
+        else
+          test_name_json='{"test-name":"Unit tests on macOS"}'
+          test_log_file_name="unit_tests_macos"
+        fi
 
-            # Run tests and generate report
-            go test -v -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
-            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
-            cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
-            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+        # Run tests and generate report
+        go test -v -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+        mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+        cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+        go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
 
-            # Export the junit test results
-            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
-            mkdir -p "${test_results_dir}"
-            cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
-            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+        # Export the junit test results
+        test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/unit_test_results"
+        mkdir -p "${test_results_dir}"
+        cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+        echo "${test_name_json}" > "${test_results_dir}/test-info.json"
     - deploy-to-bitrise-io@2: {}
 
   run_integration_tests:
     steps:
-    - script@1:
-        title: Run integration tests
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -exo pipefail
+    - title: Run integration tests
+      run: |-
+        set -x
 
-            export BITRISE_ANALYTICS_DISABLED=true
-            # Enable this to get more verbose logs in toolprovider tests
-            # export MISE_LOG_LEVEL=debug
+        export BITRISE_ANALYTICS_DISABLED=true
+        # Enable this to get more verbose logs in toolprovider tests
+        # export MISE_LOG_LEVEL=debug
 
-            # Here we save the original test results and deploy directories and later on we recreate them,
-            #  because during the tests these directories are removed.
-            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
-            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+        # Here we save the original test results and deploy directories and later on we recreate them,
+        #  because during the tests these directories are removed.
+        ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+        ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
 
-            # Build and setup the current binary
-            current_bitrise="$(pwd)/_tmp/test_bitrise"
-            export CGO_ENABLED=0
-            go build -o "$current_bitrise"
+        # Build and setup the current binary
+        current_bitrise="$(pwd)/_tmp/test_bitrise"
+        export CGO_ENABLED=0
+        go build -o "$current_bitrise"
 
-            export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            $current_bitrise setup
+        export PR="" PULL_REQUEST_ID=""
+        export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+        $current_bitrise setup
 
-            # Setup per OS test name and log file name
-            if [ "$(uname)" = "Linux" ]; then
-              test_name_json='{"test-name":"Integration tests on Linux"}'
-              test_log_file_name="integration_tests_linux"
-            else
-              test_name_json='{"test-name":"Integration tests on macOS"}'
-              test_log_file_name="integration_tests_macos"
-            fi
+        # Setup per OS test name and log file name
+        if [ "$(uname)" = "Linux" ]; then
+          test_name_json='{"test-name":"Integration tests on Linux"}'
+          test_log_file_name="integration_tests_linux"
+        else
+          test_name_json='{"test-name":"Integration tests on macOS"}'
+          test_log_file_name="integration_tests_macos"
+        fi
 
-            # Run tests and generate report
-            set +e  # Temporarily disable exit on error
-            # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
-            cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
-            test_exit_code=$?
-            set -e  # Re-enable exit on error
+        # Run tests and generate report
+        set +e  # Temporarily disable exit on error
+        # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
+        cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
+        test_exit_code=$?
+        set -e  # Re-enable exit on error
 
-            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
-            cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
+        mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+        cp "./${test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.log"
 
-            go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
+        go-junit-report -in "./${test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml"
 
-            # Export the junit test results
-            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/integration_test_results"
-            mkdir -p "${test_results_dir}"
-            cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
-            echo "${test_name_json}" > "${test_results_dir}/test-info.json"
+        # Export the junit test results
+        test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/integration_test_results"
+        mkdir -p "${test_results_dir}"
+        cp "${ORIG_BITRISE_DEPLOY_DIR}/${test_log_file_name}.xml" "${test_results_dir}/${test_log_file_name}.xml"
+        echo "${test_name_json}" > "${test_results_dir}/test-info.json"
 
-            exit $test_exit_code
+        exit $test_exit_code
     - deploy-to-bitrise-io@2: {}
 
   run_system_asdf_integration_tests:
     steps:
-    - script@1:
-        title: Run integration tests against system asdf
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -ex
+    - title: Run integration tests against system asdf
+      run: |
+        set -x
 
-            # Special test mode that doesn't use the test harness but uses the system-wide asdf install and config
-            export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
-            # We test the system bitrise executable, not one built from source
-            export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-            cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
+        # Special test mode that doesn't use the test harness but uses the system-wide asdf install and config
+        export TOOLPROVIDER_TEST_USE_SYSTEM_ASDF=1
+        # We test the system bitrise executable, not one built from source
+        export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+        cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/asdf/... -timeout 360s
 
   run_system_mise_integration_tests:
     steps:
-    - script@1:
-        title: Run mise integration tests against system
-        inputs:
-        - content: |
-            #!/bin/bash
-            set -ex
+    - title: Run mise integration tests against system
+      run: |
+        set -x
 
-            # We test the system bitrise executable, not one built from source
-            export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
-            cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/mise/... -timeout 360s
+        # We test the system bitrise executable, not one built from source
+        export INTEGRATION_TEST_BINARY_PATH="$(which bitrise)"
+        cd integrationtests && go test -v --tags linux_and_mac ./toolprovider/mise/... -timeout 360s
 
   run_with_group_based_containerization_integration_tests:
     steps:
-    - script@1:
-        title: Docker login for pulls
-        run_if: .IsCI
-        inputs:
-          - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
-    - script@1:
-        title: Run With group based containerization integration tests
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -exo pipefail
+    - run_if: .IsCI
+      run: |
+        echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
+    - title: Run With group based containerization integration tests
+      run: |-
+        set -x
 
-            # Here we save the original test results and deploy directories and later on we recreate them,
-            #  because during the tests these directories are removed.
-            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
-            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+        # Here we save the original test results and deploy directories and later on we recreate them,
+        #  because during the tests these directories are removed.
+        ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+        ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
 
-            # Build and setup the current binary
-            current_bitrise="$(pwd)/_tmp/test_bitrise"
-            export CGO_ENABLED=0
-            go build -o "$current_bitrise"
+        # Build and setup the current binary
+        current_bitrise="$(pwd)/_tmp/test_bitrise"
+        export CGO_ENABLED=0
+        go build -o "$current_bitrise"
 
-            export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            $current_bitrise setup
+        export PR="" PULL_REQUEST_ID=""
+        export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+        $current_bitrise setup
 
-            # Setup per OS test name and log file name
-            linux_only_test_name_json='{"test-name":"With group based containerization integration tests"}'
-            linux_only_test_log_file_name="linux_only_integration_tests"
+        # Setup per OS test name and log file name
+        linux_only_test_name_json='{"test-name":"With group based containerization integration tests"}'
+        linux_only_test_log_file_name="linux_only_integration_tests"
 
-            # Run tests and generate report
-            set +e  # Temporarily disable exit on error
-            cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./withgroupbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
-            test_exit_code=$?
-            set -e  # Re-enable exit on error
+        # Run tests and generate report
+        set +e  # Temporarily disable exit on error
+        cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./withgroupbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+        test_exit_code=$?
+        set -e  # Re-enable exit on error
 
-            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
-            cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
+        mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+        cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
 
-            go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
+        go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
 
-            # Export the junit test results
-            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
-            mkdir -p "${test_results_dir}"
-            cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
-            echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+        # Export the junit test results
+        test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
+        mkdir -p "${test_results_dir}"
+        cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
+        echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
 
-            # Exit with the original test exit code
-            exit $test_exit_code
+        # Exit with the original test exit code
+        exit $test_exit_code
     - deploy-to-bitrise-io@2: {}
 
   run_step_based_containerization_integration_tests:
     steps:
-    - script@1:
-        title: Docker login for pulls
-        run_if: .IsCI
-        inputs:
-        - content: echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
-    - script@1:
-        title: Run Step based containerization integration tests
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -exo pipefail
+    - run_if: .IsCI
+      run: |
+        echo "${DOCKER_LOGIN_PULLONLY_PASS}" | docker login -u bitrisedev --password-stdin
+    - title: Run Step based containerization integration tests
+      run: |-
+        set -x
 
-            # Here we save the original test results and deploy directories and later on we recreate them,
-            #  because during the tests these directories are removed.
-            ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
-            ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
+        # Here we save the original test results and deploy directories and later on we recreate them,
+        #  because during the tests these directories are removed.
+        ORIG_BITRISE_TEST_RESULT_DIR="${BITRISE_TEST_RESULT_DIR}"
+        ORIG_BITRISE_DEPLOY_DIR="${BITRISE_DEPLOY_DIR}"
 
-            # Build and setup the current binary
-            current_bitrise="$(pwd)/_tmp/test_bitrise"
-            export CGO_ENABLED=0
-            go build -o "$current_bitrise"
+        # Build and setup the current binary
+        current_bitrise="$(pwd)/_tmp/test_bitrise"
+        export CGO_ENABLED=0
+        go build -o "$current_bitrise"
 
-            export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
-            $current_bitrise setup
+        export PR="" PULL_REQUEST_ID=""
+        export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
+        $current_bitrise setup
 
-            # Setup per OS test name and log file name
-            linux_only_test_name_json='{"test-name":"Step based containerization integration tests"}'
-            linux_only_test_log_file_name="linux_only_integration_tests"
+        # Setup per OS test name and log file name
+        linux_only_test_name_json='{"test-name":"Step based containerization integration tests"}'
+        linux_only_test_log_file_name="linux_only_integration_tests"
 
-            # Run tests and generate report
-            set +e  # Temporarily disable exit on error
-            cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./stepbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
-            test_exit_code=$?
-            set -e  # Re-enable exit on error
+        # Run tests and generate report
+        set +e  # Temporarily disable exit on error
+        cd ./integrationtests/docker && go test -v -p 1 --tags linux_only ./stepbased/ 2>&1 | tee "./${linux_only_test_log_file_name}.log"
+        test_exit_code=$?
+        set -e  # Re-enable exit on error
 
-            mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
-            cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
+        mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
+        cp "./${linux_only_test_log_file_name}.log" "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.log"
 
-            go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
+        go-junit-report -in "./${linux_only_test_log_file_name}.log" -out "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml"
 
-            # Export the junit test results
-            test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
-            mkdir -p "${test_results_dir}"
-            cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
-            echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
+        # Export the junit test results
+        test_results_dir="${ORIG_BITRISE_TEST_RESULT_DIR}/linux_only_integration_test_results"
+        mkdir -p "${test_results_dir}"
+        cp "${ORIG_BITRISE_DEPLOY_DIR}/${linux_only_test_log_file_name}.xml" "${test_results_dir}/${linux_only_test_log_file_name}.xml"
+        echo "${linux_only_test_name_json}" > "${test_results_dir}/test-info.json"
 
-            # Exit with the original test exit code
-            exit $test_exit_code
+        # Exit with the original test exit code
+        exit $test_exit_code
     - deploy-to-bitrise-io@2: {}
 
   run_envman_integration_tests:
     steps:
-    - script@1:
-        title: Run envman integration tests
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -exo pipefail
+    - title: Run envman integration tests
+      run: |-
+        set -x
 
-            # Build the standalone envman binary under test
-            current_envman="$(pwd)/_tmp/test_envman"
-            export CGO_ENABLED=0
-            go build -o "$current_envman" ./envman
+        # Build the standalone envman binary under test
+        current_envman="$(pwd)/_tmp/test_envman"
+        export CGO_ENABLED=0
+        go build -o "$current_envman" ./envman
 
-            export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_envman"
+        export PR="" PULL_REQUEST_ID=""
+        export INTEGRATION_TEST_BINARY_PATH="$current_envman"
 
-            # Prevent this script's content from being added to the test process environment
-            unset content
+        # Prevent this script's content from being added to the test process environment
+        unset content
 
-            test_log="${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.log"
+        test_log="${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.log"
 
-            test_exit_code=0
-            go test -v ./envman/_tests/integration/... 2>&1 | tee "$test_log" || test_exit_code=$?
+        test_exit_code=0
+        go test -v ./envman/_tests/integration/... 2>&1 | tee "$test_log" || test_exit_code=$?
 
-            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.xml"
-            exit $test_exit_code
+        go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.xml"
+        exit $test_exit_code
     - custom-test-results-export@1:
         inputs:
         - test_name: Envman integration tests on Linux
@@ -628,24 +573,19 @@ step_bundles:
 
   setup_go_junit_report:
     steps:
-    - script@1:
-        title: Setup JUnit XML converter
-        inputs:
-        - content: |-
-            #!/usr/bin/env bash
-            set -ex
-            go install github.com/jstemmer/go-junit-report/v2@latest
-            asdf reshim golang
+    - title: Setup JUnit XML converter
+      run: |-
+        set -x
+        go install github.com/jstemmer/go-junit-report/v2@latest
+        asdf reshim golang
 
   setup_goreleaser:
     steps:
-    - script@1:
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            go install github.com/goreleaser/goreleaser/v2@latest
-            asdf reshim golang
+    - title: Install Goreleaser
+      run: |-
+        set -x
+        go install github.com/goreleaser/goreleaser/v2@latest
+        asdf reshim golang
 
   install_dependencies:
     steps:
@@ -653,9 +593,7 @@ step_bundles:
         inputs:
         - workflow_id: unpin-go-version
         run_if: '{{ enveq "IGNORE_CUSTOM_GOLANG" "true" }}'
-    - script@1:
-        inputs:
-        - content: bitrise tools setup --config .tool-versions
+    - run: bitrise tools setup --config .tool-versions
     inputs:
     - IGNORE_CUSTOM_GOLANG: "false"
       opts:
