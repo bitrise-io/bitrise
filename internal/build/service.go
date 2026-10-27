@@ -140,6 +140,27 @@ type StepsResult struct {
 	Complete bool   `json:"complete" yaml:"complete"`
 }
 
+// StepLog is a step run of a build with its log.
+type StepLog struct {
+	Step `yaml:",inline"`
+	Log  string `json:"log" yaml:"log"`
+}
+
+// StepLogsResult is the steps of a build with their logs, in execution order.
+// Complete is false until the build's log is archived; until then the logs
+// are empty, and Items lists only the steps that have started so far.
+type StepLogsResult struct {
+	Items    []StepLog `json:"items" yaml:"items"`
+	Complete bool      `json:"complete" yaml:"complete"`
+}
+
+// LogResult is a build's full log. Complete is false until the log is
+// archived; until then Log holds only what has been logged so far.
+type LogResult struct {
+	Log      string `json:"log" yaml:"log"`
+	Complete bool   `json:"complete" yaml:"complete"`
+}
+
 // Service exposes build operations to the cmd layer.
 type Service struct {
 	client *bitriseapi.Client
@@ -276,24 +297,43 @@ func (s *Service) View(ctx context.Context, appSlug, buildSlug string) (Build, e
 // available so far are written.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log.
 func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Writer) error {
+	_, err := s.log(ctx, appSlug, buildSlug, w)
+	return err
+}
+
+// LogText returns the build log Log would stream, keeping only its last tail
+// lines when tail > 0.
+func (s *Service) LogText(ctx context.Context, appSlug, buildSlug string, tail int) (LogResult, error) {
+	if tail < 0 {
+		return LogResult{}, fmt.Errorf("tail must be a positive number of lines")
+	}
+	var b strings.Builder
+	complete, err := s.log(ctx, appSlug, buildSlug, &b)
+	if err != nil {
+		return LogResult{}, err
+	}
+	return LogResult{Log: tailLines(b.String(), tail), Complete: complete}, nil
+}
+
+func (s *Service) log(ctx context.Context, appSlug, buildSlug string, w io.Writer) (bool, error) {
 	if s.client == nil {
-		return fmt.Errorf("API client not configured")
+		return false, fmt.Errorf("API client not configured")
 	}
 	if appSlug == "" {
-		return fmt.Errorf("app ID is required")
+		return false, fmt.Errorf("app ID is required")
 	}
 	if buildSlug == "" {
-		return fmt.Errorf("build ID is required")
+		return false, fmt.Errorf("build ID is required")
 	}
-	_, err := s.client.BuildLog(ctx, appSlug, buildSlug, w)
+	manifest, err := s.client.BuildLog(ctx, appSlug, buildSlug, w)
 	if err != nil {
 		var apiErr *bitriseapi.APIError
 		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
-			return fmt.Errorf("build %q not found", buildSlug)
+			return false, fmt.Errorf("build %q not found", buildSlug)
 		}
-		return err
+		return false, err
 	}
-	return nil
+	return manifest.IsArchived, nil
 }
 
 // Steps returns the steps of a build across all its workflows, in execution
@@ -301,6 +341,67 @@ func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Write
 // "failed", which keeps every step that failed the build (FailedStepStatuses).
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
 func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) (StepsResult, error) {
+	return s.steps(ctx, appSlug, buildSlug, status, nil)
+}
+
+// StepLogs returns the steps of a build Steps would, narrowed to stepIDs (step
+// run UUIDs) when non-empty, each with its log. tail > 0 keeps only the last
+// tail lines of each log. Until the build's log is archived the step logs are
+// not served, so every log is empty and Complete is false.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
+func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status string, stepIDs []string, tail int) (StepLogsResult, error) {
+	if tail < 0 {
+		return StepLogsResult{}, fmt.Errorf("tail must be a positive number of lines")
+	}
+	steps, err := s.steps(ctx, appSlug, buildSlug, status, stepIDs)
+	if err != nil {
+		return StepLogsResult{}, err
+	}
+	res := StepLogsResult{Items: make([]StepLog, 0, len(steps.Items)), Complete: steps.Complete}
+	for _, st := range steps.Items {
+		var log string
+		if steps.Complete {
+			log, err = s.client.BuildStepLog(ctx, appSlug, buildSlug, st.ID)
+			if err != nil {
+				return StepLogsResult{}, fmt.Errorf("fetch log of step %q: %w", st.ID, err)
+			}
+		}
+		res.Items = append(res.Items, StepLog{Step: st, Log: tailLines(log, tail)})
+	}
+	return res, nil
+}
+
+// WaitForLogArchive polls the build's log summary every interval until the
+// log is archived, which is when StepLogs can return the step logs. A build
+// without a summary returns at once and leaves the error to StepLogs.
+func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug string, interval time.Duration) error {
+	if s.client == nil {
+		return fmt.Errorf("API client not configured")
+	}
+	if interval <= 0 {
+		interval = 3 * time.Second
+	}
+	for {
+		summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+		if err != nil {
+			var apiErr *bitriseapi.APIError
+			if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+				return nil
+			}
+			return err
+		}
+		if summary.IsLogArchived {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+	}
+}
+
+func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status string, stepIDs []string) (StepsResult, error) {
 	if s.client == nil {
 		return StepsResult{}, fmt.Errorf("API client not configured")
 	}
@@ -334,14 +435,30 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) 
 		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)
 	}
 	items := []Step{}
+	found := map[string]bool{}
 	for _, wf := range summary.Execution.Workflows {
 		for _, st := range wf.Steps {
+			if len(stepIDs) > 0 {
+				if !slices.Contains(stepIDs, st.UUID) {
+					continue
+				}
+				found[st.UUID] = true
+			}
 			matches := status == "" || st.Status == status ||
 				(status == "failed" && slices.Contains(FailedStepStatuses, st.Status))
 			if !matches {
 				continue
 			}
 			items = append(items, stepFromAPI(st, wf.WorkflowID))
+		}
+	}
+	// A step that has not started yet is missing from an unarchived summary,
+	// so only a final summary proves the ID wrong.
+	if summary.IsLogArchived {
+		for _, id := range stepIDs {
+			if !found[id] {
+				return StepsResult{}, fmt.Errorf("step %q not found in build %q", id, buildSlug)
+			}
 		}
 	}
 	return StepsResult{Items: items, Complete: summary.IsLogArchived}, nil
@@ -566,4 +683,20 @@ func parseStatusFilter(s string) (*int, error) {
 		return nil, fmt.Errorf("unknown build status %q (expected: in-progress, success, failed, aborted, aborted-with-success)", s)
 	}
 	return &n, nil
+}
+
+// tailLines returns the last n lines of s, all of s when n <= 0 or s has no
+// more lines. A trailing newline ends the last line rather than starting one.
+func tailLines(s string, n int) string {
+	if n <= 0 {
+		return s
+	}
+	i := len(strings.TrimSuffix(s, "\n"))
+	for range n {
+		i = strings.LastIndexByte(s[:i], '\n')
+		if i < 0 {
+			return s
+		}
+	}
+	return s[i+1:]
 }

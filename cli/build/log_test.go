@@ -2,8 +2,11 @@ package build
 
 import (
 	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -143,6 +146,181 @@ func TestLogCmd_Wait_CtrlCDetaches(t *testing.T) {
 	require.EqualError(t, err, "detached: use 'bitrise build log --wait b-1 --app my-app' to resume")
 }
 
+func TestLogCmd_Tail(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_archived":true,"log_chunks":[{"chunk":"one\ntwo\nthree\n","position":0}]}`))
+	})
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("tail", "2"))
+	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
+
+	assert.Equal(t, "two\nthree\n", out.String())
+}
+
+func TestLogCmd_FullLogJSON(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"one\ntwo\n","position":0}]}`))
+	})
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("format", "json"))
+	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
+
+	assert.JSONEq(t, `{"log":"one\ntwo\n","complete":false}`, out.String())
+}
+
+func TestLogCmd_StepLogsByStatus(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+	require.NoError(t, cmd.Flags().Set("tail", "1"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.Equal(t, "primary › Tests  failed  1m45s\nTests: line 3\n", out.String())
+}
+
+func TestLogCmd_StepLogsByID(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step", "s-1,s-3"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.Equal(t, "_setup › Git clone  success  <1s\nGit clone: line 1\nGit clone: line 2\nGit clone: line 3\n\nprimary › save-cache  skipped\n", out.String())
+}
+
+func TestLogCmd_StepLogsJSON(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+	require.NoError(t, cmd.Flags().Set("format", "json"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	var got struct {
+		Items []struct {
+			ID     string `json:"id"`
+			Status string `json:"status"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+			Log string `json:"log"`
+		} `json:"items"`
+		Complete bool `json:"complete"`
+	}
+	require.NoError(t, json.Unmarshal(out.Bytes(), &got), out.String())
+	assert.True(t, got.Complete)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, "s-2", got.Items[0].ID)
+	assert.Equal(t, "failed", got.Items[0].Status)
+	require.Len(t, got.Items[0].Errors, 1)
+	assert.Equal(t, "Tests: line 1\nTests: line 2\nTests: line 3\n", got.Items[0].Log)
+}
+
+func TestLogCmd_StepLogsNoMatch(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "aborted"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.Equal(t, "No steps with status \"aborted\".\n", out.String())
+}
+
+func TestLogCmd_StepLogsUnknownStep(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step", "nope"))
+	err := cmd.RunE(cmd, []string{"build-1"})
+	require.EqualError(t, err, `step "nope" not found in build "build-1"`)
+}
+
+func TestLogCmd_StepLogsBeforeArchiveNotice(t *testing.T) {
+	srv := newStepLogsFakeServer(t, `{"is_log_archived": false, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "git-clone", "status": "success"},
+  {"uuid": "s-2", "step_id": "script", "title": "Tests", "status": "started", "started_at": "2026-10-20T11:56:50Z"}
+]}]}}`)
+
+	for format, wantNotice := range map[string]bool{"raw": true, "json": false} {
+		cmd, out := newTestLogCmd(t, srv.URL)
+		var errOut bytes.Buffer
+		cmd.SetErr(&errOut)
+		require.NoError(t, cmd.Flags().Set("app", "my-app"))
+		require.NoError(t, cmd.Flags().Set("step", "s-1,s-2"))
+		require.NoError(t, cmd.Flags().Set("format", format))
+		require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+		if wantNotice {
+			assert.Equal(t, "primary › git-clone  success\nprimary › Tests  started\n", out.String(), "without logs, no blank line separates the steps")
+			assert.Contains(t, errOut.String(), "The step logs are not available yet")
+		} else {
+			assert.Contains(t, out.String(), `"complete": false`)
+			assert.Contains(t, out.String(), `"log": ""`)
+			assert.Empty(t, errOut.String())
+		}
+	}
+}
+
+func TestLogCmd_WaitForArchiveBeforeStepLogs(t *testing.T) {
+	var summaryCalls atomic.Int32
+	steps := newStepLogsFakeServer(t, stepsSummaryJSON)
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/apps/my-app/builds/build-1":
+			_, _ = w.Write([]byte(`{"data":{"slug":"build-1","build_number":5,"status":2,"triggered_at":"2026-05-06T10:00:00Z"}}`))
+		case "/apps/my-app/builds/build-1/log/summary":
+			if summaryCalls.Add(1) == 1 {
+				_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+				return
+			}
+			steps.Config.Handler.ServeHTTP(w, r)
+		default:
+			steps.Config.Handler.ServeHTTP(w, r)
+		}
+	})
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("wait", "true"))
+	require.NoError(t, cmd.Flags().Set("interval", "1ms"))
+	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.GreaterOrEqual(t, int(summaryCalls.Load()), 3, "polls until archived, then reads the summary for the steps")
+	assert.Contains(t, out.String(), "Tests: line 3")
+	assert.NotContains(t, out.String(), "not available yet")
+}
+
+func TestLogCmd_RejectsUnknownStatus(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "bogus"))
+	require.ErrorContains(t, cmd.RunE(cmd, []string{"build-1"}), `unknown step status "bogus"`)
+}
+
+func TestLogCmd_RejectsNegativeTail(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_archived":true}`))
+	})
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("tail", "-1"))
+	require.Error(t, cmd.RunE(cmd, []string{"b-1"}))
+}
+
 func newTestLogCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -155,4 +333,27 @@ func newTestLogCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buff
 	resolved := config.Resolve(config.Config{}, config.Config{}, config.Config{APIBaseURL: apiBaseURL})
 	cmd.SetContext(config.WithResolved(t.Context(), resolved))
 	return cmd, &out
+}
+
+// newStepLogsFakeServer answers build-1's step summary with summary, and the
+// log of each step with an archive holding three lines prefixed with the
+// step's title, except s-3, which logged nothing.
+func newStepLogsFakeServer(t *testing.T, summary string) *httptest.Server {
+	t.Helper()
+	titles := map[string]string{"s-1": "Git clone", "s-2": "Tests"}
+	archive := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		title := titles[strings.TrimPrefix(r.URL.Path, "/")]
+		_, _ = fmt.Fprintf(w, `[{"message":"%[1]s: line 1\n"},{"message":"%[1]s: line 2\n"},{"message":"%[1]s: line 3\n"}]`, title)
+	})
+	return newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if id, ok := strings.CutPrefix(r.URL.Path, "/apps/my-app/builds/build-1/log/steps/"); ok {
+			if id == "s-3" {
+				_, _ = w.Write([]byte(`{"log_chunks":[]}`))
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
+			return
+		}
+		_, _ = w.Write([]byte(summary))
+	})
 }

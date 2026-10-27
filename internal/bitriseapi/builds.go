@@ -1,13 +1,16 @@
 package bitriseapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -334,6 +337,39 @@ type BuildStepError struct {
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
 func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string) (BuildLogSummary, error) {
 	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", nil)
+}
+
+// BuildStepLog fetches the log of one step run, identified by the UUID the
+// log summary lists it with. Step logs are served only from the archive: until
+// the build's log is archived (BuildLogSummary.IsLogArchived), and for a step
+// that logged nothing, the log is empty.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
+func (c *Client) BuildStepLog(ctx context.Context, appSlug, buildSlug, stepUUID string) (string, error) {
+	resp, err := get[struct {
+		ExpiringRawLogURL string `json:"expiring_raw_log_url"`
+	}](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/steps/"+url.PathEscape(stepUUID), nil)
+	if err != nil {
+		return "", err
+	}
+	if resp.ExpiringRawLogURL == "" {
+		return "", nil
+	}
+	var raw bytes.Buffer
+	if err := c.streamRawLog(ctx, resp.ExpiringRawLogURL, &raw); err != nil {
+		return "", err
+	}
+	// The archived step log is a JSON array of the step's log messages.
+	var messages []struct {
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(raw.Bytes(), &messages); err != nil {
+		return "", fmt.Errorf("decode step log: %w", err)
+	}
+	var b strings.Builder
+	for _, m := range messages {
+		b.WriteString(m.Message)
+	}
+	return b.String(), nil
 }
 
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to
