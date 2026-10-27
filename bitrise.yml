@@ -162,6 +162,9 @@ workflows:
         machine_type_id: g2.mac.large
 
   run_integration_tests_linux:
+    triggers:
+      push:
+      - branch: bb/3-exp
     steps:
     - bundle::setup_repo: {}
     - bundle::install_dependencies:
