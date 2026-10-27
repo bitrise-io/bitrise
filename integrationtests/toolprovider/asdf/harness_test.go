@@ -111,11 +111,18 @@ func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, erro
 	}
 
 	// DEBUG, remove before merging: asdf-nodejs discards git's stderr when it clones
-	// node-build, so run its update script directly to get the clone's error into the log.
+	// node-build. Clone it into scratch dirs, with the stripped env the provider runs the
+	// plugin in and with the inherited env, so the log shows git's error and which env
+	// fails. The plugin's own clone into its dir still happens as usual.
 	if slices.Contains(installRequest.plugins, "nodejs") {
-		script := filepath.Join(dataDir, "plugins", "nodejs", "lib", "commands", "command-update-nodebuild")
-		out, err := testingEnv.runCommand(map[string]string{"GIT_TRACE": "1"}, "bash", script)
-		t.Logf("DEBUG node-build update: err=%v\noutput:\n%s", err, out)
+		df, _ := exec.Command("df", "-h", os.TempDir()).CombinedOutput()
+		t.Logf("DEBUG df -h %s:\n%s", os.TempDir(), df)
+		for _, clearEnv := range []bool{true, false} {
+			debugEnv := execenv.ExecEnv{EnvVars: testingEnv.envVars, ClearInheritedEnvs: clearEnv, ShellInit: testingEnv.shellInit}
+			target := filepath.Join(t.TempDir(), "node-build")
+			out, err := debugEnv.RunCommand(nil, "git", "clone", "https://github.com/nodenv/node-build.git", target, "--branch", "main")
+			t.Logf("DEBUG node-build clone, ClearInheritedEnvs=%v: err=%v\noutput:\n%s", clearEnv, err, out)
+		}
 	}
 
 	return testingEnv, nil
