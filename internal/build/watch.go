@@ -62,7 +62,7 @@ func (s *Service) Watch(ctx context.Context, appSlug, buildSlug string, w io.Wri
 
 	// Already finished: stream the archived log via the existing Log path.
 	if manifest.IsArchived || manifest.ExpiringRawLogURL != "" {
-		if err := s.Log(ctx, appSlug, buildSlug, w); err != nil {
+		if _, err := s.Log(ctx, appSlug, buildSlug, w); err != nil {
 			return Build{}, err
 		}
 		return s.View(ctx, appSlug, buildSlug)

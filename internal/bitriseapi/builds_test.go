@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -378,10 +379,10 @@ func TestBuildStepLog_ConcatenatesArchivedMessages(t *testing.T) {
 		_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, rawSrv.URL)
 	})
 
-	log, err := newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1")
-	require.NoError(t, err)
+	var log strings.Builder
+	require.NoError(t, newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", &log))
 	assert.Equal(t, "/apps/my-app/builds/my-build/log/steps/step-1", gotPath)
-	assert.Equal(t, "first\nsecond\n", log)
+	assert.Equal(t, "first\nsecond\n", log.String())
 	assert.Empty(t, gotAuthHeader, "the presigned URL must not receive our Authorization header")
 }
 
@@ -394,23 +395,25 @@ func TestBuildStepLog_EmptyWithoutArchiveURL(t *testing.T) {
 			_, _ = w.Write([]byte(body))
 		})
 
-		log, err := newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1")
-		require.NoError(t, err)
-		assert.Empty(t, log)
+		var log strings.Builder
+		require.NoError(t, newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", &log))
+		assert.Empty(t, log.String())
 	}
 }
 
 func TestBuildStepLog_RejectsMalformedArchive(t *testing.T) {
-	rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte("not json"))
-	}))
-	t.Cleanup(rawSrv.Close)
-	apiSrv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, rawSrv.URL)
-	})
+	for _, body := range []string{"not json", `{"message":"a"}`, `[{"message":"a"}`, `[{"message":1}]`} {
+		rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(body))
+		}))
+		t.Cleanup(rawSrv.Close)
+		apiSrv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, rawSrv.URL)
+		})
 
-	_, err := newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1")
-	require.ErrorContains(t, err, "decode step log")
+		err := newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", io.Discard)
+		require.ErrorContains(t, err, "decode step log", "body %q", body)
+	}
 }
 
 func TestBuildLogSummary_PathAndParse(t *testing.T) {

@@ -2,6 +2,7 @@
 package build
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -294,28 +295,10 @@ func (s *Service) View(ctx context.Context, appSlug, buildSlug string) (Build, e
 
 // Log streams the build log for the given build to w. For finished builds
 // the full archived log is streamed; for in-progress builds the chunks
-// available so far are written.
+// available so far are written. It reports whether the log is complete, which
+// it is once archived, a little after the build finishes.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log.
-func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Writer) error {
-	_, err := s.log(ctx, appSlug, buildSlug, w)
-	return err
-}
-
-// LogText returns the build log Log would stream, keeping only its last tail
-// lines when tail > 0.
-func (s *Service) LogText(ctx context.Context, appSlug, buildSlug string, tail int) (LogResult, error) {
-	if tail < 0 {
-		return LogResult{}, fmt.Errorf("tail must be a positive number of lines")
-	}
-	var b strings.Builder
-	complete, err := s.log(ctx, appSlug, buildSlug, &b)
-	if err != nil {
-		return LogResult{}, err
-	}
-	return LogResult{Log: tailLines(b.String(), tail), Complete: complete}, nil
-}
-
-func (s *Service) log(ctx context.Context, appSlug, buildSlug string, w io.Writer) (bool, error) {
+func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Writer) (bool, error) {
 	if s.client == nil {
 		return false, fmt.Errorf("API client not configured")
 	}
@@ -333,7 +316,21 @@ func (s *Service) log(ctx context.Context, appSlug, buildSlug string, w io.Write
 		}
 		return false, err
 	}
-	return manifest.IsArchived, nil
+	return manifest.IsArchived || manifest.ExpiringRawLogURL != "", nil
+}
+
+// LogText returns the build log Log would stream, keeping only its last tail
+// lines when tail > 0.
+func (s *Service) LogText(ctx context.Context, appSlug, buildSlug string, tail int) (LogResult, error) {
+	if tail < 0 {
+		return LogResult{}, fmt.Errorf("tail must not be negative")
+	}
+	buf := newLogBuffer(tail)
+	complete, err := s.Log(ctx, appSlug, buildSlug, buf)
+	if err != nil {
+		return LogResult{}, err
+	}
+	return LogResult{Log: buf.String(), Complete: complete}, nil
 }
 
 // Steps returns the steps of a build across all its workflows, in execution
@@ -351,7 +348,7 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) 
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
 func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status string, stepIDs []string, tail int) (StepLogsResult, error) {
 	if tail < 0 {
-		return StepLogsResult{}, fmt.Errorf("tail must be a positive number of lines")
+		return StepLogsResult{}, fmt.Errorf("tail must not be negative")
 	}
 	steps, err := s.steps(ctx, appSlug, buildSlug, status, stepIDs)
 	if err != nil {
@@ -359,29 +356,37 @@ func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status strin
 	}
 	res := StepLogsResult{Items: make([]StepLog, 0, len(steps.Items)), Complete: steps.Complete}
 	for _, st := range steps.Items {
-		var log string
+		buf := newLogBuffer(tail)
 		if steps.Complete {
-			log, err = s.client.BuildStepLog(ctx, appSlug, buildSlug, st.ID)
-			if err != nil {
+			if err := s.client.BuildStepLog(ctx, appSlug, buildSlug, st.ID, buf); err != nil {
 				return StepLogsResult{}, fmt.Errorf("fetch log of step %q: %w", st.ID, err)
 			}
 		}
-		res.Items = append(res.Items, StepLog{Step: st, Log: tailLines(log, tail)})
+		res.Items = append(res.Items, StepLog{Step: st, Log: buf.String()})
 	}
 	return res, nil
 }
 
+// logArchiveTimeout bounds WaitForLogArchive. Archiving normally takes a few
+// seconds after the build finishes; a log still not archived after this is
+// unlikely to be soon.
+var logArchiveTimeout = time.Minute
+
 // WaitForLogArchive polls the build's log summary every interval until the
-// log is archived, which is when StepLogs can return the step logs. A build
-// without a summary returns at once and leaves the error to StepLogs.
-func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug string, interval time.Duration) error {
+// log is archived, which is when StepLogs can return the step logs, calling
+// waiting once if the first poll finds it not archived yet. It gives up
+// without an error after logArchiveTimeout, leaving StepLogs to report the
+// log as incomplete, and so does a build without a summary, leaving the error
+// to StepLogs.
+func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug string, interval time.Duration, waiting func()) error {
 	if s.client == nil {
 		return fmt.Errorf("API client not configured")
 	}
 	if interval <= 0 {
 		interval = 3 * time.Second
 	}
-	for {
+	deadline := time.Now().Add(logArchiveTimeout)
+	for first := true; ; first = false {
 		summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
 		if err != nil {
 			var apiErr *bitriseapi.APIError
@@ -390,13 +395,16 @@ func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug stri
 			}
 			return err
 		}
-		if summary.IsLogArchived {
+		if summary.IsLogArchived || time.Now().After(deadline) {
 			return nil
+		}
+		if first && waiting != nil {
+			waiting()
 		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(interval):
+		case <-time.After(min(interval, time.Until(deadline))):
 		}
 	}
 }
@@ -411,8 +419,8 @@ func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status string, 
 	if buildSlug == "" {
 		return StepsResult{}, fmt.Errorf("build ID is required")
 	}
-	if status != "" && !slices.Contains(StepStatuses, status) {
-		return StepsResult{}, fmt.Errorf("unknown step status %q (expected: %s)", status, strings.Join(StepStatuses, ", "))
+	if err := ValidateStepStatus(status); err != nil {
+		return StepsResult{}, err
 	}
 	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
 	if err != nil {
@@ -462,6 +470,15 @@ func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status string, 
 		}
 	}
 	return StepsResult{Items: items, Complete: summary.IsLogArchived}, nil
+}
+
+// ValidateStepStatus checks a step status filter: empty, or one of
+// StepStatuses.
+func ValidateStepStatus(status string) error {
+	if status != "" && !slices.Contains(StepStatuses, status) {
+		return fmt.Errorf("unknown step status %q (expected: %s)", status, strings.Join(StepStatuses, ", "))
+	}
+	return nil
 }
 
 // AbortRequest describes a build-abort operation.
@@ -685,18 +702,53 @@ func parseStatusFilter(s string) (*int, error) {
 	return &n, nil
 }
 
-// tailLines returns the last n lines of s, all of s when n <= 0 or s has no
-// more lines. A trailing newline ends the last line rather than starting one.
-func tailLines(s string, n int) string {
-	if n <= 0 {
-		return s
+// newLogBuffer returns a buffer that keeps everything written to it, or only
+// the last tail lines when tail > 0.
+func newLogBuffer(tail int) interface {
+	io.Writer
+	fmt.Stringer
+} {
+	if tail > 0 {
+		return &tailBuffer{n: tail}
 	}
-	i := len(strings.TrimSuffix(s, "\n"))
-	for range n {
-		i = strings.LastIndexByte(s[:i], '\n')
+	return &strings.Builder{}
+}
+
+// tailBuffer keeps the last n lines written to it, so a long log is never held
+// whole. A trailing newline ends the last line rather than starting one.
+type tailBuffer struct {
+	n int
+	// lines holds the last complete lines, newline included, as a ring
+	// starting at next once it has n lines.
+	lines []string
+	next  int
+	cur   []byte
+}
+
+func (t *tailBuffer) Write(p []byte) (int, error) {
+	written := len(p)
+	for {
+		i := bytes.IndexByte(p, '\n')
 		if i < 0 {
-			return s
+			t.cur = append(t.cur, p...)
+			return written, nil
 		}
+		line := string(append(t.cur, p[:i+1]...))
+		t.cur = t.cur[:0]
+		p = p[i+1:]
+		if len(t.lines) < t.n {
+			t.lines = append(t.lines, line)
+			continue
+		}
+		t.lines[t.next] = line
+		t.next = (t.next + 1) % t.n
 	}
-	return s[i+1:]
+}
+
+func (t *tailBuffer) String() string {
+	lines := append(slices.Clone(t.lines[t.next:]), t.lines[:t.next]...)
+	if len(t.cur) > 0 && len(lines) == t.n {
+		lines = lines[1:]
+	}
+	return strings.Join(lines, "") + string(t.cur)
 }

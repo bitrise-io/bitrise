@@ -1,7 +1,6 @@
 package bitriseapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -340,56 +338,82 @@ func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string)
 }
 
 // BuildStepLog fetches the log of one step run, identified by the UUID the
-// log summary lists it with. Step logs are served only from the archive: until
-// the build's log is archived (BuildLogSummary.IsLogArchived), and for a step
-// that logged nothing, the log is empty.
+// log summary lists it with, and writes it to w. Step logs are served only
+// from the archive: until the build's log is archived
+// (BuildLogSummary.IsLogArchived), and for a step that logged nothing, nothing
+// is written.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
-func (c *Client) BuildStepLog(ctx context.Context, appSlug, buildSlug, stepUUID string) (string, error) {
+func (c *Client) BuildStepLog(ctx context.Context, appSlug, buildSlug, stepUUID string, w io.Writer) error {
 	resp, err := get[struct {
 		ExpiringRawLogURL string `json:"expiring_raw_log_url"`
 	}](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/steps/"+url.PathEscape(stepUUID), nil)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if resp.ExpiringRawLogURL == "" {
-		return "", nil
+		return nil
 	}
-	var raw bytes.Buffer
-	if err := c.streamRawLog(ctx, resp.ExpiringRawLogURL, &raw); err != nil {
-		return "", err
+	body, err := c.openRawLog(ctx, resp.ExpiringRawLogURL)
+	if err != nil {
+		return err
 	}
-	// The archived step log is a JSON array of the step's log messages.
-	var messages []struct {
-		Message string `json:"message"`
+	defer func() { _ = body.Close() }()
+	// The archived step log is a JSON array of the step's log messages,
+	// decoded one at a time so a long log is never held whole.
+	dec := json.NewDecoder(body)
+	tok, err := dec.Token()
+	if err != nil {
+		return fmt.Errorf("decode step log: %w", err)
 	}
-	if err := json.Unmarshal(raw.Bytes(), &messages); err != nil {
-		return "", fmt.Errorf("decode step log: %w", err)
+	if tok != json.Delim('[') {
+		return fmt.Errorf("decode step log: expected a JSON array, got %v", tok)
 	}
-	var b strings.Builder
-	for _, m := range messages {
-		b.WriteString(m.Message)
+	for dec.More() {
+		var m struct {
+			Message string `json:"message"`
+		}
+		if err := dec.Decode(&m); err != nil {
+			return fmt.Errorf("decode step log: %w", err)
+		}
+		if _, err := io.WriteString(w, m.Message); err != nil {
+			return fmt.Errorf("write step log: %w", err)
+		}
 	}
-	return b.String(), nil
+	if _, err := dec.Token(); err != nil {
+		return fmt.Errorf("decode step log: %w", err)
+	}
+	return nil
 }
 
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to
 // be a presigned URL from BuildLogResponse.ExpiringRawLogURL — no auth
 // header is sent to it.
 func (c *Client) streamRawLog(ctx context.Context, rawURL string, w io.Writer) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	body, err := c.openRawLog(ctx, rawURL)
 	if err != nil {
-		return fmt.Errorf("build log URL request: %w", err)
+		return err
 	}
-	resp, err := c.streamHTTPClient().Do(req)
-	if err != nil {
-		return fmt.Errorf("fetch raw log: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("fetch raw log: HTTP %d", resp.StatusCode)
-	}
-	if _, err := io.Copy(w, resp.Body); err != nil {
+	defer func() { _ = body.Close() }()
+	if _, err := io.Copy(w, body); err != nil {
 		return fmt.Errorf("stream raw log: %w", err)
 	}
 	return nil
+}
+
+// openRawLog GETs the presigned rawURL, without an auth header, and returns
+// the response body.
+func (c *Client) openRawLog(ctx context.Context, rawURL string) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build log URL request: %w", err)
+	}
+	resp, err := c.streamHTTPClient().Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("fetch raw log: %w", err)
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		_ = resp.Body.Close()
+		return nil, fmt.Errorf("fetch raw log: HTTP %d", resp.StatusCode)
+	}
+	return resp.Body, nil
 }

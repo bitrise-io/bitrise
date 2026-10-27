@@ -361,7 +361,9 @@ func TestService_Log_Streams(t *testing.T) {
 	svc := NewService(newAPIClient(t, srv.URL))
 
 	var buf bytes.Buffer
-	require.NoError(t, svc.Log(context.Background(), "my-app", "b-1", &buf))
+	complete, err := svc.Log(context.Background(), "my-app", "b-1", &buf)
+	require.NoError(t, err)
+	assert.True(t, complete)
 	assert.Contains(t, buf.String(), "LOG OUTPUT")
 }
 
@@ -369,8 +371,10 @@ func TestService_Log_RequiresSlugs(t *testing.T) {
 	srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	assert.Error(t, svc.Log(context.Background(), "", "b", io.Discard))
-	assert.Error(t, svc.Log(context.Background(), "a", "", io.Discard))
+	_, err := svc.Log(context.Background(), "", "b", io.Discard)
+	assert.Error(t, err)
+	_, err = svc.Log(context.Background(), "a", "", io.Discard)
+	assert.Error(t, err)
 }
 
 func TestService_Steps_FlattensWorkflowsInOrder(t *testing.T) {
@@ -625,8 +629,39 @@ func TestService_WaitForLogArchive(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond))
+	var waiting int
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, func() { waiting++ }))
 	assert.Equal(t, int32(3), calls.Load())
+	assert.Equal(t, 1, waiting, "waiting is called once, when the first poll finds the log not archived")
+}
+
+func TestService_WaitForLogArchive_AlreadyArchived(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": true}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, func() { t.Error("waiting must not be called") }))
+}
+
+func TestService_WaitForLogArchive_GivesUp(t *testing.T) {
+	timeout := logArchiveTimeout
+	logArchiveTimeout = 20 * time.Millisecond
+	t.Cleanup(func() { logArchiveTimeout = timeout })
+
+	var calls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, nil))
+	assert.Greater(t, calls.Load(), int32(1))
+
+	start := time.Now()
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, nil))
+	assert.Less(t, time.Since(start), 5*time.Second, "an interval longer than the timeout must not outlast it")
 }
 
 func TestService_WaitForLogArchive_ReturnsWithoutSummary(t *testing.T) {
@@ -636,7 +671,7 @@ func TestService_WaitForLogArchive_ReturnsWithoutSummary(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour))
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, nil))
 }
 
 func TestService_LogText(t *testing.T) {
@@ -654,7 +689,7 @@ func TestService_LogText(t *testing.T) {
 	assert.Equal(t, "two\nthree\n", got.Log)
 }
 
-func TestTailLines(t *testing.T) {
+func TestLogBuffer(t *testing.T) {
 	for _, tt := range []struct {
 		in   string
 		n    int
@@ -662,13 +697,20 @@ func TestTailLines(t *testing.T) {
 	}{
 		{"a\nb\nc\n", 2, "b\nc\n"},
 		{"a\nb\nc", 2, "b\nc"},
+		{"a\nb\nc", 1, "c"},
 		{"a\nb\nc\n", 3, "a\nb\nc\n"},
 		{"a\nb\nc\n", 10, "a\nb\nc\n"},
 		{"a\nb\nc\n", 0, "a\nb\nc\n"},
 		{"a\n\n\n", 2, "\n\n"},
 		{"", 5, ""},
 	} {
-		assert.Equal(t, tt.want, tailLines(tt.in, tt.n), "tailLines(%q, %d)", tt.in, tt.n)
+		// Every split point, since a line can span writes.
+		for i := range len(tt.in) + 1 {
+			buf := newLogBuffer(tt.n)
+			_, _ = io.WriteString(buf, tt.in[:i])
+			_, _ = io.WriteString(buf, tt.in[i:])
+			assert.Equal(t, tt.want, buf.String(), "newLogBuffer(%d) given %q split at %d", tt.n, tt.in, i)
+		}
 	}
 }
 
@@ -802,7 +844,8 @@ func TestService_NilClientFails(t *testing.T) {
 	assert.Error(t, err)
 	_, err = svc.Trigger(context.Background(), TriggerRequest{AppSlug: "a"})
 	assert.Error(t, err)
-	assert.Error(t, svc.Log(context.Background(), "a", "b", io.Discard))
+	_, err = svc.Log(context.Background(), "a", "b", io.Discard)
+	assert.Error(t, err)
 	_, err = svc.Abort(context.Background(), AbortRequest{AppSlug: "a", BuildSlug: "b"})
 	assert.Error(t, err)
 }
