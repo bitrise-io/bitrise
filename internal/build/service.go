@@ -385,26 +385,35 @@ func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug stri
 	if interval <= 0 {
 		interval = 3 * time.Second
 	}
-	deadline := time.Now().Add(logArchiveTimeout)
+	// The timeout also bounds an in-flight request, so a slow response can't
+	// stretch the wait or turn giving up into an error.
+	dctx, cancel := context.WithTimeout(ctx, logArchiveTimeout)
+	defer cancel()
 	for first := true; ; first = false {
-		summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+		summary, err := s.client.BuildLogSummary(dctx, appSlug, buildSlug)
 		if err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			if dctx.Err() != nil {
+				return nil
+			}
 			var apiErr *bitriseapi.APIError
 			if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
 				return nil
 			}
 			return err
 		}
-		if summary.IsLogArchived || time.Now().After(deadline) {
+		if summary.IsLogArchived {
 			return nil
 		}
 		if first && waiting != nil {
 			waiting()
 		}
 		select {
-		case <-ctx.Done():
+		case <-dctx.Done():
 			return ctx.Err()
-		case <-time.After(min(interval, time.Until(deadline))):
+		case <-time.After(interval):
 		}
 	}
 }

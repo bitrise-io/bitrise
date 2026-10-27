@@ -664,6 +664,36 @@ func TestService_WaitForLogArchive_GivesUp(t *testing.T) {
 	assert.Less(t, time.Since(start), 5*time.Second, "an interval longer than the timeout must not outlast it")
 }
 
+func TestService_WaitForLogArchive_SlowResponseGivesUp(t *testing.T) {
+	timeout := logArchiveTimeout
+	logArchiveTimeout = 50 * time.Millisecond
+	t.Cleanup(func() { logArchiveTimeout = timeout })
+
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(10 * time.Second):
+			_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+		}
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	start := time.Now()
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, nil), "reaching the timeout mid-request is giving up, not an error")
+	assert.Less(t, time.Since(start), 5*time.Second, "a slow response must not outlast the timeout")
+}
+
+func TestService_WaitForLogArchive_CallerCancel(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	err := svc.WaitForLogArchive(ctx, "my-app", "b-1", time.Hour, cancel)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
 func TestService_WaitForLogArchive_ReturnsWithoutSummary(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
