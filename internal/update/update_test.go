@@ -78,21 +78,13 @@ func TestResolve(t *testing.T) {
 			wantRequests:  1,
 		},
 		{
-			name:          "a full page without the running major is followed by the next page",
+			name:          "a full page is followed by the next page",
 			pages:         [][]Release{majorReleases(3, releasesPerPage), {release("v2.45.0")}},
 			current:       "2.44.0",
 			wantUpdate:    available("2.45.0"),
 			wantNewMajor:  available(fmt.Sprintf("3.%d.0", releasesPerPage-1)),
 			wantMajorSeen: true,
 			wantRequests:  2,
-		},
-		{
-			name:          "a full page carrying the running major is not followed by the next page",
-			pages:         [][]Release{majorReleases(2, releasesPerPage), {release("v2.100.0")}},
-			current:       "2.44.0",
-			wantUpdate:    available(fmt.Sprintf("2.%d.0", releasesPerPage-1)),
-			wantMajorSeen: true,
-			wantRequests:  1,
 		},
 	}
 
@@ -135,9 +127,10 @@ func TestResolve_PagingIsBounded(t *testing.T) {
 	require.EqualValues(t, maxReleasePages, requests.Load())
 }
 
-// Releases of a major are created in ascending version order, so a higher version
-// published before a lower one of the same major is out of reach of the paging.
-func TestResolve_HigherVersionPublishedBeforeALowerOneOfItsMajorIsNotFound(t *testing.T) {
+// The list is ordered by the commit date of the tag, which does not track the
+// version order, so a release of the running major is no sign that its newest one
+// has been read.
+func TestResolve_HigherVersionCreatedBeforeALowerOneOfItsMajorIsFound(t *testing.T) {
 	pages := [][]Release{
 		append(majorReleases(3, releasesPerPage-1), release("v2.45.1")),
 		{release("v2.46.0")},
@@ -147,9 +140,9 @@ func TestResolve_HigherVersionPublishedBeforeALowerOneOfItsMajorIsNotFound(t *te
 	versions, err := resolve(t.Context(), client, "2.45.1")
 
 	require.NoError(t, err)
-	require.Nil(t, versions.Update)
+	require.Equal(t, available("2.46.0"), versions.Update)
 	require.True(t, versions.CurrentMajorFound)
-	require.EqualValues(t, 1, requests.Load())
+	require.EqualValues(t, 2, requests.Load())
 }
 
 func TestResolve_RequestError(t *testing.T) {
