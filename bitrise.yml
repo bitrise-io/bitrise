@@ -429,8 +429,18 @@ step_bundles:
             # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
             cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
             test_exit_code=$?
-            # DEBUG, remove before merging: rerun the asdf Node.js tests to catch the intermittent node-build clone failure with GIT_TRACE2 on
-            go test -v --tags linux_and_mac -count=5 -run 'TestAsdfInstallClassic|TestAsdfInstallRewrite|TestAsdfInstallNodeVersion|TestNoMatchingVersionError|TestCorepackWithNewNodeInstall' ./toolprovider/asdf 2>&1 | tee -a "./${test_log_file_name}.log"
+            # DEBUG, remove before merging: clone node-build with a stripped env (as the asdf provider
+            # runs the plugin) and with this step's env, and list the names (not values) of anything
+            # that could carry git credentials.
+            echo "DEBUG env var names matching git/token/cred:"; env | cut -d= -f1 | grep -i -E 'git|token|cred|askpass' | sort
+            echo "DEBUG git config keys:"; git config --list --show-origin --name-only 2>&1 | sort -u
+            for i in 1 2 3 4 5 6 7 8; do
+              d="$(mktemp -d)"
+              if out="$(env -i HOME="$d/home" PATH=/usr/bin:/bin git clone -q https://github.com/nodenv/node-build.git "$d/stripped" 2>&1)"; then echo "DEBUG clone $i stripped env: ok"; else echo "DEBUG clone $i stripped env: FAIL: $out"; fi
+              if out="$(HOME="$d/home" git clone -q https://github.com/nodenv/node-build.git "$d/inherited-tmphome" 2>&1)"; then echo "DEBUG clone $i inherited env, temp HOME: ok"; else echo "DEBUG clone $i inherited env, temp HOME: FAIL: $out"; fi
+              if out="$(git clone -q https://github.com/nodenv/node-build.git "$d/inherited" 2>&1)"; then echo "DEBUG clone $i inherited env: ok"; else echo "DEBUG clone $i inherited env: FAIL: $out"; fi
+              rm -rf "$d"
+            done 2>&1 | tee -a "./${test_log_file_name}.log"
             set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
