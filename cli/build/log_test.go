@@ -41,10 +41,47 @@ func TestLogCmd_OrdersOutOfPositionChunks(t *testing.T) {
 	})
 
 	cmd, out := newTestLogCmd(t, srv.URL)
+	cmd.SetErr(&bytes.Buffer{})
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
 
 	assert.Equal(t, "zero\ntwo\none\nthree\n", out.String())
+}
+
+func TestLogCmd_PartialLogNotice(t *testing.T) {
+	for _, tt := range []struct {
+		name       string
+		archived   bool
+		flags      map[string]string
+		wantNotice bool
+	}{
+		{"streamed, running", false, nil, true},
+		{"tail, running", false, map[string]string{"tail": "1"}, true},
+		{"json, running", false, map[string]string{"format": "json"}, false},
+		{"streamed, archived", true, nil, false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = fmt.Fprintf(w, `{"is_archived":%t,"log_chunks":[{"chunk":"so far\n","position":0}]}`, tt.archived)
+			})
+
+			cmd, out := newTestLogCmd(t, srv.URL)
+			var errOut bytes.Buffer
+			cmd.SetErr(&errOut)
+			require.NoError(t, cmd.Flags().Set("app", "my-app"))
+			for k, v := range tt.flags {
+				require.NoError(t, cmd.Flags().Set(k, v))
+			}
+			require.NoError(t, cmd.RunE(cmd, []string{"b-1"}))
+
+			assert.Contains(t, out.String(), "so far")
+			if tt.wantNotice {
+				assert.Contains(t, errOut.String(), "The log is not final yet")
+			} else {
+				assert.Empty(t, errOut.String())
+			}
+		})
+	}
 }
 
 func TestLogCmd_WaitPolls_ThenPrintsLog(t *testing.T) {
@@ -143,7 +180,7 @@ func TestLogCmd_Wait_CtrlCDetaches(t *testing.T) {
 	require.NoError(t, cmd.Flags().Set("interval", "1h"))
 
 	err := cmd.RunE(cmd, []string{"b-1"})
-	require.EqualError(t, err, "detached: use 'bitrise build log --wait b-1 --app my-app' to resume")
+	require.EqualError(t, err, "detached: use 'bitrise build log --wait b-1 --interval 1h0m0s --app my-app' to resume")
 }
 
 func TestLogCmd_Tail(t *testing.T) {
@@ -235,6 +272,22 @@ func TestLogCmd_StepLogsNoMatch(t *testing.T) {
 	assert.Equal(t, "No steps with status \"aborted\".\n", out.String())
 }
 
+func TestLogCmd_StepLogsNoMatchBeforeArchive(t *testing.T) {
+	srv := newStepLogsFakeServer(t, `{"is_log_archived": false, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "git-clone", "status": "success"}
+]}]}}`)
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.Empty(t, out.String(), "a running build may still fail, so no \"No steps with status\" claim")
+	assert.Contains(t, errOut.String(), "The step logs are not available yet")
+}
+
 func TestLogCmd_StepLogsUnknownStep(t *testing.T) {
 	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
 
@@ -290,6 +343,8 @@ func TestLogCmd_WaitForArchiveBeforeStepLogs(t *testing.T) {
 	})
 
 	cmd, out := newTestLogCmd(t, srv.URL)
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("wait", "true"))
 	require.NoError(t, cmd.Flags().Set("interval", "1ms"))
@@ -297,8 +352,10 @@ func TestLogCmd_WaitForArchiveBeforeStepLogs(t *testing.T) {
 	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
 
 	assert.GreaterOrEqual(t, int(summaryCalls.Load()), 3, "polls until archived, then reads the summary for the steps")
+	assert.Contains(t, errOut.String(), "Waiting for the build log to be archived")
+	assert.NotContains(t, out.String(), "Waiting for the build log", "the notice must not corrupt stdout")
 	assert.Contains(t, out.String(), "Tests: line 3")
-	assert.NotContains(t, out.String(), "not available yet")
+	assert.NotContains(t, errOut.String(), "not available yet")
 }
 
 func TestLogCmd_RejectsUnknownStatus(t *testing.T) {
@@ -319,6 +376,58 @@ func TestLogCmd_RejectsNegativeTail(t *testing.T) {
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("tail", "-1"))
 	require.Error(t, cmd.RunE(cmd, []string{"b-1"}))
+}
+
+func TestLogCmd_ValidatesFlagsBeforeWaiting(t *testing.T) {
+	for name, flags := range map[string]map[string]string{
+		"unknown step status": {"step-status": "faild"},
+		"negative tail":       {"tail": "-5"},
+		"zero tail":           {"tail": "0"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var calls atomic.Int32
+			srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+				calls.Add(1)
+				_, _ = w.Write([]byte(`{"data":{"slug":"b-1","build_number":5,"status":0,"triggered_at":"2026-05-06T10:00:00Z"}}`))
+			})
+
+			cmd, _ := newTestLogCmd(t, srv.URL)
+			require.NoError(t, cmd.Flags().Set("app", "my-app"))
+			require.NoError(t, cmd.Flags().Set("wait", "true"))
+			require.NoError(t, cmd.Flags().Set("interval", "1h"))
+			for k, v := range flags {
+				require.NoError(t, cmd.Flags().Set(k, v))
+			}
+			require.Error(t, cmd.RunE(cmd, []string{"b-1"}))
+			assert.Zero(t, calls.Load(), "an invalid flag must fail before the API is called, let alone waited on")
+		})
+	}
+}
+
+func TestLogCmd_Wait_CtrlCResumeHintKeepsFilters(t *testing.T) {
+	var viewCalls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/apps/my-app/builds/b-1" {
+			http.NotFound(w, r)
+			return
+		}
+		if viewCalls.Add(1) == 2 {
+			sendInterrupt(t)
+		}
+		_, _ = w.Write([]byte(`{"data":{"slug":"b-1","build_number":5,"status":0,"triggered_at":"2026-05-06T10:00:00Z"}}`))
+	})
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("wait", "true"))
+	require.NoError(t, cmd.Flags().Set("interval", "1h"))
+	require.NoError(t, cmd.Flags().Set("step-status", "failed"))
+	require.NoError(t, cmd.Flags().Set("step", "s-1,s-2"))
+	require.NoError(t, cmd.Flags().Set("tail", "50"))
+	require.NoError(t, cmd.Flags().Set("format", "json"))
+
+	err := cmd.RunE(cmd, []string{"b-1"})
+	require.EqualError(t, err, "detached: use 'bitrise build log --wait b-1 --step-status failed --step s-1 --step s-2 --tail 50 --interval 1h0m0s --format json --app my-app' to resume")
 }
 
 func newTestLogCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {
