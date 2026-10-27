@@ -429,6 +429,8 @@ step_bundles:
             # Note about `-p 1`: `bitrise run` is not parallelizable and has some race conditions, we need to execute tests sequentially
             cd ./integrationtests && go test -v --tags linux_and_mac -p 1 ./... 2>&1 | tee "./${test_log_file_name}.log"
             test_exit_code=$?
+            # DEBUG, remove before merging: rerun the asdf Node.js tests to catch the intermittent node-build clone failure with GIT_TRACE2 on
+            go test -v --tags linux_and_mac -count=5 -run 'TestAsdfInstallClassic|TestAsdfInstallRewrite|TestAsdfInstallNodeVersion|TestNoMatchingVersionError|TestCorepackWithNewNodeInstall' ./toolprovider/asdf 2>&1 | tee -a "./${test_log_file_name}.log"
             set -e  # Re-enable exit on error
 
             mkdir -p "${ORIG_BITRISE_DEPLOY_DIR}"
