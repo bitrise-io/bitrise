@@ -433,14 +433,15 @@ step_bundles:
             # runs the plugin) and with this step's env, and list the names (not values) of anything
             # that could carry git credentials.
             { set +x; } 2>/dev/null  # DEBUG: keep env values (proxy URLs may hold credentials) out of the trace
-            echo "DEBUG all env var names:"; env | cut -d= -f1 | grep -E '^[A-Za-z_][A-Za-z0-9_]*$' | sort | tr '\n' ' '; echo
-            proxy_envs=(); for n in $(env | cut -d= -f1 | grep -i -E 'proxy'); do proxy_envs+=("$n=${!n}"); done
-            echo "DEBUG proxy env var names: ${proxy_envs[*]%%=*}"
-            for i in 1 2 3 4 5 6 7 8; do
+            echo "DEBUG inherited PATH: $PATH"
+            echo "DEBUG git on inherited PATH: $(command -v -a git | tr '\n' ' ') -> $(git --version)"
+            echo "DEBUG git on /usr/bin:/bin: $(PATH=/usr/bin:/bin command -v git) -> $(PATH=/usr/bin:/bin git --version)"
+            for i in $(seq 1 12); do
               d="$(mktemp -d)"
-              if out="$(env -i HOME="$d/home" PATH=/usr/bin:/bin git clone -q https://github.com/nodenv/node-build.git "$d/stripped" 2>&1)"; then echo "DEBUG clone $i stripped env: ok"; else echo "DEBUG clone $i stripped env: FAIL: $out"; fi
-              if out="$(env -i HOME="$d/home" PATH=/usr/bin:/bin "${proxy_envs[@]}" git clone -q https://github.com/nodenv/node-build.git "$d/stripped-plus-proxy" 2>&1)"; then echo "DEBUG clone $i stripped env + proxy vars: ok"; else echo "DEBUG clone $i stripped env + proxy vars: FAIL: $out"; fi
-              if out="$(HOME="$d/home" git clone -q https://github.com/nodenv/node-build.git "$d/inherited-tmphome" 2>&1)"; then echo "DEBUG clone $i inherited env, temp HOME: ok"; else echo "DEBUG clone $i inherited env, temp HOME: FAIL: $out"; fi
+              if out="$(env -i HOME="$d/home" PATH=/usr/bin:/bin git clone -q https://github.com/nodenv/node-build.git "$d/a" 2>&1)"; then echo "DEBUG clone $i A stripped env: ok"; else echo "DEBUG clone $i A stripped env: FAIL: $out"; fi
+              if out="$(env -i HOME="$d/home" PATH="$PATH" git clone -q https://github.com/nodenv/node-build.git "$d/b" 2>&1)"; then echo "DEBUG clone $i B stripped env + inherited PATH: ok"; else echo "DEBUG clone $i B stripped env + inherited PATH: FAIL: $out"; fi
+              if out="$(HOME="$d/home" PATH=/usr/bin:/bin git clone -q https://github.com/nodenv/node-build.git "$d/c" 2>&1)"; then echo "DEBUG clone $i C inherited env + /usr/bin:/bin PATH: ok"; else echo "DEBUG clone $i C inherited env + /usr/bin:/bin PATH: FAIL: $out"; fi
+              if out="$(HOME="$d/home" git clone -q https://github.com/nodenv/node-build.git "$d/d" 2>&1)"; then echo "DEBUG clone $i D inherited env: ok"; else echo "DEBUG clone $i D inherited env: FAIL: $out"; fi
               rm -rf "$d"
             done 2>&1 | tee -a "./${test_log_file_name}.log"
             set -x
