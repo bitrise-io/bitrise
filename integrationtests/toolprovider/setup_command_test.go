@@ -321,7 +321,7 @@ v18.16.0
 				args = append(args, "--provider", "asdf")
 			}
 
-			out, err := runBitrise(tmpDir, nil, args...)
+			out, err := runBitrise(t, tmpDir, nil, args...)
 
 			if tc.wantErr {
 				require.Error(t, err, "expected command to fail")
@@ -380,7 +380,7 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 	envstorePath := filepath.Join(tmpDir, "envstore.yml")
 	require.NoError(t, os.WriteFile(envstorePath, nil, 0644))
 
-	out, err := runBitrise(tmpDir, []string{"ENVMAN_ENVSTORE_PATH=" + envstorePath}, "tools", "setup", "--config", configPath)
+	out, err := runBitrise(t, tmpDir, []string{"ENVMAN_ENVSTORE_PATH=" + envstorePath}, "tools", "setup", "--config", configPath)
 	require.NoError(t, err, "tools setup should succeed: %s", out)
 
 	content, err := os.ReadFile(envstorePath)
@@ -421,7 +421,7 @@ workflows:
 	require.NoError(t, err)
 
 	// Run setup WITHOUT --workflow flag
-	out, err := runBitrise(tmpDir, nil, "tools", "setup",
+	out, err := runBitrise(t, tmpDir, nil, "tools", "setup",
 		"--config", configPath,
 		"--format", "plaintext")
 
@@ -464,7 +464,7 @@ func TestToolsSetupCommandNoArg(t *testing.T) {
 
 			args := []string{"tools", "setup", "--format", tc.outputFormat}
 
-			out, err := runBitrise(tmpDir, nil, args...)
+			out, err := runBitrise(t, tmpDir, nil, args...)
 
 			require.NoError(t, err, "Setup output: %s", out)
 			if tc.validateOutput != nil {

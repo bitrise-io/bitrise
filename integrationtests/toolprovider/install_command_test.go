@@ -225,7 +225,7 @@ func TestToolsInstallCommand(t *testing.T) {
 				args = append(args, "--format", tt.outputFormat)
 			}
 
-			output, err := runBitrise(tmpDir, nil, args...)
+			output, err := runBitrise(t, tmpDir, nil, args...)
 
 			if tt.validateOutput != nil {
 				tt.validateOutput(t, output, err)

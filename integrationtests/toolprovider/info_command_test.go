@@ -170,7 +170,7 @@ func TestToolsInfoAfterInstall(t *testing.T) {
 
 	tmpDir := t.TempDir()
 
-	_, err := runBitrise(tmpDir, nil, "tools", "install", "node@20.10.0", "--format", "json")
+	_, err := runBitrise(t, tmpDir, nil, "tools", "install", "node@20.10.0", "--format", "json")
 	if err != nil {
 		t.Skip("Skipping test: could not install node@20.10.0")
 	}

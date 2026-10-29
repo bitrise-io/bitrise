@@ -26,21 +26,21 @@ import (
 func TestMiseToolProvider(t *testing.T) {
 	t.Parallel()
 
-	out, err := runBitrise("", nil, "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
+	out, err := runBitrise(t, "", nil, "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	require.NoError(t, err, out)
 }
 
 func TestMiseNodeCorepack(t *testing.T) {
 	t.Parallel()
 
-	out, err := runBitrise("", nil, "run", "node_corepack_test", "--config", "toolprovider_test_mise_bitrise.yml")
+	out, err := runBitrise(t, "", nil, "run", "node_corepack_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	require.NoError(t, err, out)
 }
 
 func TestWorkflowChaining(t *testing.T) {
 	t.Parallel()
 
-	out, err := runBitrise("", nil, "run", "toolprovider_test", "--config", "toolprovider_test_workflow_chain_bitrise.yml")
+	out, err := runBitrise(t, "", nil, "run", "toolprovider_test", "--config", "toolprovider_test_workflow_chain_bitrise.yml")
 	require.NoError(t, err, out)
 }
 
@@ -50,7 +50,7 @@ func TestWorkflowChaining(t *testing.T) {
 // (installs/<tool>/latest and the like) of every installed tool without a lock, so two
 // installs can remove the same link. The version is installed by then, and the second run only
 // rebuilds the links. A build runs one bitrise at a time and never hits this.
-func runBitrise(dir string, envs []string, args ...string) (string, error) {
+func runBitrise(t *testing.T, dir string, envs []string, args ...string) (string, error) {
 	run := func() (string, error) {
 		return command.New(testhelpers.BinPath(), args...).
 			SetDir(dir).
@@ -60,6 +60,7 @@ func runBitrise(dir string, envs []string, args ...string) (string, error) {
 
 	out, err := run()
 	if err != nil && strings.Contains(out, "failed to rebuild runtime symlinks") {
+		t.Log("mise raced another install rebuilding its runtime symlinks, running bitrise again")
 		out, err = run()
 	}
 	return out, err
