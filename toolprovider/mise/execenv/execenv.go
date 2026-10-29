@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/bitrise-io/bitrise/v3/log"
 )
 
 const (
@@ -91,6 +93,7 @@ func (e MiseExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, additional
 		if !errors.Is(err, syscall.ETXTBSY) || attempt == textFileBusyAttempts {
 			break
 		}
+		log.Warnf("Running %s failed with text file busy, retrying (attempt %d of %d).", executable, attempt+1, textFileBusyAttempts)
 		time.Sleep(textFileBusyRetryWait)
 	}
 	if err != nil {

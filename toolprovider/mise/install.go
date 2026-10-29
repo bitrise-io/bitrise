@@ -98,6 +98,7 @@ func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concrete
 		// like) of every installed tool without a lock, so an install running alongside another
 		// on the same data dir can fail removing a link the other one already removed. The
 		// version is installed by then: installing it again finds it and only rebuilds the links.
+		log.Warnf("mise failed rebuilding runtime symlinks after installing %s, installing it again.", versionString)
 		output, err = m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
 	}
 	if !m.Silent && os.Getenv("MISE_LOG_LEVEL") != "" {
