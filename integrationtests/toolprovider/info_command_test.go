@@ -170,9 +170,7 @@ func TestToolsInfoAfterInstall(t *testing.T) {
 
 	tmpDir := t.TempDir()
 
-	installCmd := command.New(testhelpers.BinPath(), "tools", "install", "node@20.10.0", "--format", "json")
-	installCmd.SetDir(tmpDir)
-	_, err := installCmd.RunAndReturnTrimmedCombinedOutput()
+	_, err := runBitrise(tmpDir, nil, "tools", "install", "node@20.10.0", "--format", "json")
 	if err != nil {
 		t.Skip("Skipping test: could not install node@20.10.0")
 	}

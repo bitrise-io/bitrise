@@ -225,10 +225,7 @@ func TestToolsInstallCommand(t *testing.T) {
 				args = append(args, "--format", tt.outputFormat)
 			}
 
-			cmd := command.New(testhelpers.BinPath(), args...)
-			cmd.SetDir(tmpDir)
-
-			output, err := cmd.RunAndReturnTrimmedCombinedOutput()
+			output, err := runBitrise(tmpDir, nil, args...)
 
 			if tt.validateOutput != nil {
 				tt.validateOutput(t, output, err)

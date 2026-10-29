@@ -321,9 +321,7 @@ v18.16.0
 				args = append(args, "--provider", "asdf")
 			}
 
-			cmd := command.New(testhelpers.BinPath(), args...)
-			cmd.SetDir(tmpDir)
-			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+			out, err := runBitrise(tmpDir, nil, args...)
 
 			if tc.wantErr {
 				require.Error(t, err, "expected command to fail")
@@ -382,10 +380,7 @@ func TestToolsSetupCommand_EnvmanInitialization(t *testing.T) {
 	envstorePath := filepath.Join(tmpDir, "envstore.yml")
 	require.NoError(t, os.WriteFile(envstorePath, nil, 0644))
 
-	cmd := command.New(testhelpers.BinPath(), "tools", "setup", "--config", configPath)
-	cmd.AppendEnvs("ENVMAN_ENVSTORE_PATH=" + envstorePath)
-	cmd.SetDir(tmpDir)
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	out, err := runBitrise(tmpDir, []string{"ENVMAN_ENVSTORE_PATH=" + envstorePath}, "tools", "setup", "--config", configPath)
 	require.NoError(t, err, "tools setup should succeed: %s", out)
 
 	content, err := os.ReadFile(envstorePath)
@@ -426,11 +421,9 @@ workflows:
 	require.NoError(t, err)
 
 	// Run setup WITHOUT --workflow flag
-	cmd := command.New(testhelpers.BinPath(), "tools", "setup",
+	out, err := runBitrise(tmpDir, nil, "tools", "setup",
 		"--config", configPath,
 		"--format", "plaintext")
-	cmd.SetDir(tmpDir)
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
 	require.NoError(t, err, "tools setup should succeed without workflow flag: %s", out)
 
@@ -471,9 +464,7 @@ func TestToolsSetupCommandNoArg(t *testing.T) {
 
 			args := []string{"tools", "setup", "--format", tc.outputFormat}
 
-			cmd := command.New(testhelpers.BinPath(), args...)
-			cmd.SetDir(tmpDir)
-			out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+			out, err := runBitrise(tmpDir, nil, args...)
 
 			require.NoError(t, err, "Setup output: %s", out)
 			if tc.validateOutput != nil {

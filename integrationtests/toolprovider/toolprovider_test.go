@@ -4,6 +4,7 @@
 package toolprovider
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
@@ -25,23 +26,41 @@ import (
 func TestMiseToolProvider(t *testing.T) {
 	t.Parallel()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	out, err := runBitrise("", nil, "run", "toolprovider_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	require.NoError(t, err, out)
 }
 
 func TestMiseNodeCorepack(t *testing.T) {
 	t.Parallel()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "node_corepack_test", "--config", "toolprovider_test_mise_bitrise.yml")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	out, err := runBitrise("", nil, "run", "node_corepack_test", "--config", "toolprovider_test_mise_bitrise.yml")
 	require.NoError(t, err, out)
 }
 
 func TestWorkflowChaining(t *testing.T) {
 	t.Parallel()
 
-	cmd := command.New(testhelpers.BinPath(), "run", "toolprovider_test", "--config", "toolprovider_test_workflow_chain_bitrise.yml")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	out, err := runBitrise("", nil, "run", "toolprovider_test", "--config", "toolprovider_test_workflow_chain_bitrise.yml")
 	require.NoError(t, err, out)
+}
+
+// runBitrise runs bitrise with args in dir, the package dir when empty, and runs it once more
+// if mise failed rebuilding its runtime symlinks. These tests install tools into the machine's
+// own mise data dir in parallel, and after an install, mise rebuilds the runtime symlinks
+// (installs/<tool>/latest and the like) of every installed tool without a lock, so two
+// installs can remove the same link. The version is installed by then, and the second run only
+// rebuilds the links. A build runs one bitrise at a time and never hits this.
+func runBitrise(dir string, envs []string, args ...string) (string, error) {
+	run := func() (string, error) {
+		return command.New(testhelpers.BinPath(), args...).
+			SetDir(dir).
+			AppendEnvs(envs...).
+			RunAndReturnTrimmedCombinedOutput()
+	}
+
+	out, err := run()
+	if err != nil && strings.Contains(out, "failed to rebuild runtime symlinks") {
+		out, err = run()
+	}
+	return out, err
 }
