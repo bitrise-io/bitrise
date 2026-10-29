@@ -30,8 +30,9 @@ breaks them. The rules below keep such a test's changes to itself.
 - `BITRISE_ANALYTICS_DISABLED=true`
 - CI runs the tests without `ENVMAN_ENVSTORE_PATH`, so they can't write into the build's
   envstore; a test that needs an envstore creates its own and passes it with `cmd.AppendEnvs`
-- a test that changes `~/.stepman` or `~/.bitrise` (steplib cache, agent config, toolkit
-  caches) runs bitrise with `HOME=testhelpers.IsolatedHome(t)`
+- a test that changes `~/.stepman`, `~/.bitrise` or `~/.config/bitrise` (steplib cache,
+  agent config, toolkit caches, the record of the version set up) runs bitrise with
+  `HOME=testhelpers.IsolatedHome(t)`
 - a test that changes the binary itself runs a copy of it, as `Test_Update` does
 
 For a command that hits the API, serve canned responses from an `httptest.Server` and

@@ -21,7 +21,10 @@ func Test_Update(t *testing.T) {
 	{
 		binPath := copyBinary(t)
 
-		out, err := command.New(binPath, "update", "--version", "2.31.0").RunAndReturnTrimmedCombinedOutput()
+		// update then runs setup, which records 2.31.0 as the version set up.
+		out, err := command.New(binPath, "update", "--version", "2.31.0").
+			AppendEnvs("HOME=" + testhelpers.IsolatedHome(t)).
+			RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
 		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, "version")
