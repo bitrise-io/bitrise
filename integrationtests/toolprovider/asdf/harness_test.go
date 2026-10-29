@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"al.essio.dev/pkg/shellescape"
@@ -29,6 +30,14 @@ const (
 
 const cacheDir = "bitrise-asdf-test-cache"
 
+// installMu serializes install: parallel tests share the asdf checkouts cached under cacheDir,
+// and a test must not see a checkout another test is still cloning.
+var installMu sync.Mutex
+
+// systemAsdfMu runs the tests one at a time against the system asdf: they share ~/.asdf, and
+// createTestEnv wipes its installs.
+var systemAsdfMu sync.Mutex
+
 type asdfInstallation struct {
 	flavor  flavor
 	version string
@@ -43,6 +52,9 @@ type testEnv struct {
 // createTestEnv creates an isolated installation of a given asdf version for testing.
 func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, error) {
 	if useSystemAsdf() {
+		systemAsdfMu.Lock()
+		t.Cleanup(systemAsdfMu.Unlock)
+
 		// Remove installed tools between test runs because tests don't run their own isolated asdf install in this mode
 		out, err := exec.Command("bash", "-c", "rm -rf ~/.asdf/installs").CombinedOutput()
 		if err != nil {
@@ -138,6 +150,9 @@ func (te *testEnv) runCommand(extraEnvs map[string]string, args ...string) (stri
 }
 
 func install(t *testing.T, install asdfInstallation) (string, error) {
+	installMu.Lock()
+	defer installMu.Unlock()
+
 	installDir := filepath.Join(os.TempDir(), cacheDir, fmt.Sprintf("asdf-v%s", install.version))
 	_, err := os.Stat(installDir)
 	if err == nil {

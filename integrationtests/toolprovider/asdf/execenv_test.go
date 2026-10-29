@@ -13,6 +13,8 @@ import (
 )
 
 func TestExecEnv_RunCommandWithTimeout(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name          string
 		timeout       time.Duration
@@ -68,6 +70,8 @@ func TestExecEnv_RunCommandWithTimeout(t *testing.T) {
 }
 
 func TestExecEnv_RunAsdfPlugin(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		args        []string
@@ -105,6 +109,8 @@ func TestExecEnv_RunAsdfPlugin(t *testing.T) {
 }
 
 func TestExecEnv_RunAsdfPluginTimeout(t *testing.T) {
+	t.Parallel()
+
 	t.Run("plugin commands use timeout", func(t *testing.T) {
 		execEnv := &execenv.ExecEnv{
 			EnvVars:            map[string]string{},
