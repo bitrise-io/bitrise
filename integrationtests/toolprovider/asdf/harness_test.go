@@ -103,6 +103,15 @@ func createTestEnv(t *testing.T, installRequest asdfInstallation) (testEnv, erro
 	}
 
 	for _, plugin := range installRequest.plugins {
+		if plugin == "nodejs" {
+			nodeBuildDir, err := nodeBuildCheckout()
+			if err != nil {
+				return testingEnv, err
+			}
+			// asdf-nodejs uses this checkout instead of cloning and updating node-build itself.
+			testingEnv.envVars["ASDF_NODEJS_NODEBUILD_HOME"] = nodeBuildDir
+			testingEnv.envVars["ASDF_NODEJS_SKIP_NODEBUILD_UPDATE"] = "1"
+		}
 		out, err := testingEnv.runAsdf("plugin", "add", plugin)
 		if err != nil {
 			return testingEnv, fmt.Errorf("install asdf plugin %s: %w\n\nOutput:\n%s", plugin, err, out)
@@ -189,6 +198,26 @@ func gitCheckout(t *testing.T, version string, targetDir string) error {
 	)
 	return gitCmd.Run()
 }
+
+// nodeBuildCheckout clones node-build once per test run for the nodejs plugin's tests to share.
+// Left to itself, asdf-nodejs clones it in every test, and on Bitrise's EU Linux machines GitHub
+// intermittently answers those anonymous clones with 401; the plugin discards git's error and
+// reports only "Updating node-build failed with exit code 128".
+//
+// Unlike the asdf checkouts in cacheDir, which are pinned versions kept between runs, this one is
+// deleted and cloned again every run: node-build is the list of Node releases, and the tests install
+// recent ones (24.20.0, for example) that an older clone would not know about.
+var nodeBuildCheckout = sync.OnceValues(func() (string, error) {
+	dir := filepath.Join(os.TempDir(), cacheDir, "node-build")
+	if err := os.RemoveAll(dir); err != nil {
+		return "", fmt.Errorf("remove previous node-build checkout: %w", err)
+	}
+	out, err := exec.Command("git", "clone", "--depth=1", "https://github.com/nodenv/node-build.git", dir).CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("clone node-build: %w\n\nOutput:\n%s", err, out)
+	}
+	return dir, nil
+})
 
 func downloadReleaseBinary(t *testing.T, version string, targetDir string) error {
 	url := fmt.Sprintf("https://github.com/asdf-vm/asdf/releases/download/v%s/asdf-v%s-%s-%s.tar.gz", version, version, runtime.GOOS, runtime.GOARCH)
