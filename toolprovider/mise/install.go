@@ -93,6 +93,13 @@ func (m *MiseToolProvider) installToolVersion(toolName provider.ToolID, concrete
 	}
 
 	output, err := m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
+	if err != nil && strings.Contains(err.Error(), "failed to rebuild runtime symlinks") {
+		// After an install, mise rebuilds the runtime symlinks (installs/<tool>/latest and the
+		// like) of every installed tool without a lock, so an install running alongside another
+		// on the same data dir can fail removing a link the other one already removed. The
+		// version is installed by then: installing it again finds it and only rebuilds the links.
+		output, err = m.ExecEnv.RunMiseWithTimeoutAndEnvs(execenv.InstallTimeout, extraEnvs, "install", "--yes", versionString)
+	}
 	if !m.Silent && os.Getenv("MISE_LOG_LEVEL") != "" {
 		// Log the output of successful installs as well, useful for debugging and tests.
 		log.Printf("[TOOLPROVIDER] mise install output for %s:\n%s", versionString, output)

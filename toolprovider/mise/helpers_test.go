@@ -11,13 +11,20 @@ type fakeExecEnv struct {
 	responses map[string]string
 	// errors maps command strings to errors.
 	errors map[string]error
+	// firstErrors maps command strings to an error returned on the first run only.
+	firstErrors map[string]error
 }
 
 func newFakeExecEnv() *fakeExecEnv {
 	return &fakeExecEnv{
-		responses: make(map[string]string),
-		errors:    make(map[string]error),
+		responses:   make(map[string]string),
+		errors:      make(map[string]error),
+		firstErrors: make(map[string]error),
 	}
+}
+
+func (m *fakeExecEnv) setFirstError(cmdKey string, err error) {
+	m.firstErrors[cmdKey] = err
 }
 
 func (m *fakeExecEnv) setResponse(cmdKey string, output string) {
@@ -50,6 +57,11 @@ func (m *fakeExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, extraEnvs
 
 func (m *fakeExecEnv) runCommand(args ...string) (string, error) {
 	cmdKey := strings.Join(args, " ")
+
+	if err, ok := m.firstErrors[cmdKey]; ok {
+		delete(m.firstErrors, cmdKey)
+		return "", err
+	}
 
 	if err, ok := m.errors[cmdKey]; ok {
 		return "", err

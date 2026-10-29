@@ -279,6 +279,30 @@ func TestInstallToolVersion(t *testing.T) {
 	}
 }
 
+func TestInstallToolVersion_RuntimeSymlinkRace(t *testing.T) {
+	symlinkErr := errors.New("exit status 1\nmise ERROR failed to rebuild runtime symlinks\nfailed to rebuild runtime symlinks for node in /root/.local/share/mise/installs/node: failed rm: ~/.local/share/mise/installs/node/latest: No such file or directory (os error 2)")
+	cmdKey := "install --yes python@3.11.4"
+
+	t.Run("succeeds when installing again succeeds", func(t *testing.T) {
+		fake := newFakeExecEnv()
+		fake.setFirstError(cmdKey, symlinkErr)
+		fake.setResponse(cmdKey, "")
+
+		p := &MiseToolProvider{ExecEnv: fake}
+		require.NoError(t, p.installToolVersion("python", "3.11.4"))
+	})
+
+	t.Run("fails when installing again fails", func(t *testing.T) {
+		fake := newFakeExecEnv()
+		fake.setError(cmdKey, symlinkErr)
+
+		p := &MiseToolProvider{ExecEnv: fake}
+		var toolErr provider.ToolInstallError
+		require.ErrorAs(t, p.installToolVersion("python", "3.11.4"), &toolErr)
+		require.Contains(t, toolErr.Cause, "failed to rebuild runtime symlinks")
+	})
+}
+
 func TestInstallRequest(t *testing.T) {
 	tests := []struct {
 		name   string
