@@ -2,7 +2,9 @@ package timeoutcmd
 
 import (
 	"io"
+	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 	"time"
 
@@ -67,19 +69,24 @@ func (c *Command) Start() error {
 		hanged = c.hangDetector.C()
 	}
 
-	if err := c.cmd.Start(); err != nil { // start the process
+	output, err := copyOutput(c.cmd)
+	if err != nil {
 		return err
 	}
 
+	startErr := c.cmd.Start() // start the process
+	// The child holds its own copies of the write ends; closing ours lets the
+	// copies reach EOF once the child, and anything it left behind, exits.
+	output.closeWriteEnds()
+	if startErr != nil {
+		return startErr
+	}
+
 	// Wait reaps the process only. cmd.Wait would additionally block until the
-	// goroutines exec.Cmd spawns to copy the child's stdout/stderr have drained
-	// their pipes, which sounds better — it is what stops a large final burst
-	// being truncated — but the pipes only reach EOF once every process holding
-	// the write end exits. A step that leaves a daemon behind (ssh-agent, adb,
-	// an emulator) keeps them open, and with no per-step timeout and no
-	// BITRISE_NO_OUTPUT_TIMEOUT configured, which is the default, nothing else
-	// in the select below can fire: the step would hang forever. Truncation is
-	// the lesser failure, so this stays on Process.Wait.
+	// child's stdout/stderr pipes reach EOF, but a step that leaves a daemon
+	// behind (ssh-agent, adb, an emulator) keeps them open, and with no per-step
+	// timeout and no BITRISE_NO_OUTPUT_TIMEOUT configured, which is the default,
+	// nothing else in the select below can fire: the step would hang forever.
 	done := make(chan error, 1)
 	go func() {
 		switch p, err := c.cmd.Process.Wait(); {
@@ -115,8 +122,80 @@ func (c *Command) Start() error {
 
 		return NewNoOutputTimeout(c.hangTimeout)
 	case err := <-done:
+		// The copies can still be behind the child's last writes when it exits,
+		// which would lose the end of the step's output and the error message
+		// read from it. Wait for them, but only briefly: a daemon left behind
+		// keeps the pipes open, and its output keeps being copied after this
+		// returns, so it isn't killed by writing to a closed pipe.
+		select {
+		case <-output.done:
+		case <-time.After(outputDrainTimeout):
+		}
 		return err
 	}
+}
+
+// outputDrainTimeout bounds how long Start waits, once the process exits, for
+// its remaining output to be copied.
+const outputDrainTimeout = time.Second
+
+// commandOutput copies a command's stdout and stderr through pipes it owns,
+// instead of the ones exec.Cmd creates, so that waiting for the copy doesn't
+// mean cmd.Wait, which waits for EOF or, given a WaitDelay, closes the pipes.
+type commandOutput struct {
+	writeEnds []*os.File
+	done      chan struct{}
+}
+
+// copyOutput replaces cmd's stdout and stderr writers with pipes, and copies
+// from them to the original writers. Like exec.Cmd, it uses one pipe for both
+// when they are the same writer, which keeps their lines in order.
+func copyOutput(cmd *exec.Cmd) (commandOutput, error) {
+	dests := []io.Writer{cmd.Stdout}
+	if !sameWriter(cmd.Stdout, cmd.Stderr) {
+		dests = append(dests, cmd.Stderr)
+	}
+
+	output := commandOutput{done: make(chan struct{})}
+	var copies sync.WaitGroup
+	for _, dest := range dests {
+		r, w, err := os.Pipe()
+		if err != nil {
+			output.closeWriteEnds()
+			return commandOutput{}, err
+		}
+		output.writeEnds = append(output.writeEnds, w)
+
+		copies.Go(func() {
+			defer r.Close()
+			_, _ = io.Copy(dest, r)
+		})
+	}
+	go func() {
+		copies.Wait()
+		close(output.done)
+	}()
+
+	cmd.Stdout = output.writeEnds[0]
+	cmd.Stderr = output.writeEnds[len(output.writeEnds)-1]
+	return output, nil
+}
+
+func (o commandOutput) closeWriteEnds() {
+	for _, w := range o.writeEnds {
+		_ = w.Close()
+	}
+}
+
+// sameWriter reports whether a and b are the same writer, the way exec.Cmd
+// decides to share one pipe: a writer of an uncomparable type is never equal.
+func sameWriter(a, b io.Writer) (same bool) {
+	defer func() {
+		if recover() != nil {
+			same = false
+		}
+	}()
+	return a == b
 }
 
 // ExitStatus returns the error's exit status
