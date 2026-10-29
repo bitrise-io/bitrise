@@ -25,46 +25,34 @@ const (
 )
 
 func TestStepDebugLogMessagesAppear(t *testing.T) {
-	consoleLog, consoleErr := createConsoleLog(t, "debug_log")
+	consoleLog, consoleErr := createConsoleLog("debug_log")
 	require.NoError(t, consoleErr, consoleLog)
 	require.True(t, strings.Contains(consoleLog, debugLogMessage))
 
-	jsonLog, jsonErr := createJSONLog(t, "debug_log")
+	jsonLog, jsonErr := createJSONLog("debug_log")
 	require.NoError(t, jsonErr)
 	require.True(t, strings.Contains(string(jsonLog), debugLogMessage))
 }
 
 func TestConsoleLogCanBeRestoredFromJSONLog(t *testing.T) {
-	consoleLog, consoleErr := createConsoleLog(t, "fail_test")
+	consoleLog, consoleErr := createConsoleLog("fail_test")
 	require.EqualError(t, consoleErr, "exit status 1")
 
-	jsonLog, jsonErr := createJSONLog(t, "fail_test")
+	jsonLog, jsonErr := createJSONLog("fail_test")
 	require.EqualError(t, jsonErr, "exit status 1")
 
 	convertedConsoleLog := restoreConsoleLog(t, jsonLog)
 	require.Equal(t, replaceVariableParts(consoleLog), replaceVariableParts(convertedConsoleLog))
 }
 
-func createConsoleLog(t *testing.T, workflow string) (string, error) {
-	{
-		cmd := exec.Command(testhelpers.BinPath(), "setup")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
+func createConsoleLog(workflow string) (string, error) {
 	cmd := exec.Command(testhelpers.BinPath(), "run", workflow, "--config", "log_format_test_bitrise.yml")
 	cmd.Env = append(os.Environ(), "BITRISE_ANALYTICS_DISABLED=true")
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
 
-func createJSONLog(t *testing.T, workflow string) ([]byte, error) {
-	{
-		cmd := exec.Command(testhelpers.BinPath(), "setup")
-		outBytes, err := cmd.CombinedOutput()
-		require.NoError(t, err, string(outBytes))
-	}
-
+func createJSONLog(workflow string) ([]byte, error) {
 	cmd := exec.Command(testhelpers.BinPath(), "run", workflow, "--config", "log_format_test_bitrise.yml", "--output-format", "json")
 	cmd.Env = append(os.Environ(), "BITRISE_ANALYTICS_DISABLED=true")
 	
