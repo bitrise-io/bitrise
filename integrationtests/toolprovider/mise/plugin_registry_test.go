@@ -15,7 +15,7 @@ import (
 func TestPluginRegistry_KnownTool(t *testing.T) {
 	t.Parallel()
 
-	miseInstallDir := t.TempDir()
+	miseInstallDir := bootstrappedMiseInstallDir
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
@@ -38,7 +38,7 @@ func TestPluginRegistry_KnownTool(t *testing.T) {
 func TestPluginRegistry_CoreTool(t *testing.T) {
 	t.Parallel()
 
-	miseInstallDir := t.TempDir()
+	miseInstallDir := bootstrappedMiseInstallDir
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
@@ -61,7 +61,7 @@ func TestPluginRegistry_CoreTool(t *testing.T) {
 func TestPluginRegistry_UnknownTool(t *testing.T) {
 	t.Parallel()
 
-	miseInstallDir := t.TempDir()
+	miseInstallDir := bootstrappedMiseInstallDir
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestPluginRegistry_UnknownTool(t *testing.T) {
 func TestPluginRegistry_CustomPluginURL(t *testing.T) {
 	t.Parallel()
 
-	miseInstallDir := t.TempDir()
+	miseInstallDir := bootstrappedMiseInstallDir
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
@@ -116,7 +116,7 @@ func TestPluginRegistry_CustomPluginURL(t *testing.T) {
 func TestPluginRegistry_EmptyToolName(t *testing.T) {
 	t.Parallel()
 
-	miseInstallDir := t.TempDir()
+	miseInstallDir := bootstrappedMiseInstallDir
 	miseDataDir := t.TempDir()
 	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)

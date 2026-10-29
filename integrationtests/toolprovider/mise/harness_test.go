@@ -4,12 +4,40 @@
 package mise
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/bitrise-io/bitrise/v3/toolprovider/mise"
 	"github.com/stretchr/testify/require"
 )
+
+// bootstrappedMiseInstallDir has mise installed before any test runs, and the tests share it
+// instead of each bootstrapping its own. Bootstrapping writes bin/mise, and a process that a
+// parallel test forks meanwhile inherits the open file until it execs: running that mise then
+// fails with "text file busy" (https://go.dev/issue/22315). A build bootstraps mise once.
+var bootstrappedMiseInstallDir string
+
+func TestMain(m *testing.M) {
+	installDir, err := os.MkdirTemp("", "mise-install-")
+	if err == nil {
+		var miseProvider *mise.MiseToolProvider
+		miseProvider, err = mise.NewToolProvider(installDir, filepath.Join(installDir, "data"), false, true, nil)
+		if err == nil {
+			err = miseProvider.Bootstrap()
+		}
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "bootstrap mise: %s\n", err)
+		os.Exit(1)
+	}
+	bootstrappedMiseInstallDir = installDir
+
+	code := m.Run()
+	_ = os.RemoveAll(installDir)
+	os.Exit(code)
+}
 
 // isolatedEnvs keeps a mise provider's mise away from state that parallel tests would share:
 //   - its own cache dir: with a shared one, `mise latest --installed` came back empty in CI.

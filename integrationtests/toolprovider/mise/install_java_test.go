@@ -50,7 +50,7 @@ func TestMiseInstallJavaVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			miseInstallDir := t.TempDir()
+			miseInstallDir := bootstrappedMiseInstallDir
 			miseDataDir := t.TempDir()
 			miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 			require.NoError(t, err)
