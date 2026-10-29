@@ -15,8 +15,6 @@ import (
 )
 
 func Test_Envman(t *testing.T) {
-	ensureEnvmanInstalled(t)
-
 	t.Run("lifecycle: init, add, print, json, clear", func(t *testing.T) {
 		dir := t.TempDir()
 
@@ -108,12 +106,6 @@ func Test_Envman(t *testing.T) {
 		require.EqualError(t, err, "exit status 1", out)
 		assert.Contains(t, out, "oops")
 	})
-}
-
-func ensureEnvmanInstalled(t *testing.T) {
-	cmd := command.New(testhelpers.BinPath(), "setup")
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
-	require.NoError(t, err, out)
 }
 
 func runBitriseEnvman(dir string, args ...string) (string, error) {
