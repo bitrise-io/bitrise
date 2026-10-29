@@ -2,16 +2,21 @@ package execenv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
 const (
 	InstallTimeout = 5 * time.Minute
 	DefaultTimeout = 1 * time.Minute
+
+	textFileBusyAttempts  = 5
+	textFileBusyRetryWait = 200 * time.Millisecond
 )
 
 // ExecEnv contains everything needed to run mise commands in a specific environment
@@ -66,15 +71,28 @@ func (e MiseExecEnv) RunMiseWithTimeoutAndEnvs(timeout time.Duration, additional
 	}
 
 	executable := filepath.Join(e.installDir, "bin", "mise")
-	cmd := exec.CommandContext(ctx, executable, args...)
-	cmd.Env = os.Environ()
+	env := os.Environ()
 	for k, v := range e.ExtraEnvs {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 	for k, v := range additionalEnvs {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
-	output, err := cmd.CombinedOutput()
+
+	var output []byte
+	var err error
+	for attempt := 1; ; attempt++ {
+		cmd := exec.CommandContext(ctx, executable, args...)
+		cmd.Env = env
+		output, err = cmd.CombinedOutput()
+		// Bootstrap writes bin/mise, and a process another goroutine forks meanwhile
+		// inherits that write fd until it execs, which fails running mise with ETXTBSY
+		// (https://go.dev/issue/22315). The child execs soon, so the run succeeds on retry.
+		if !errors.Is(err, syscall.ETXTBSY) || attempt == textFileBusyAttempts {
+			break
+		}
+		time.Sleep(textFileBusyRetryWait)
+	}
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return "", fmt.Errorf("mise command timed out: %v", args)
