@@ -37,6 +37,11 @@ func runWatchTUI(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild
 	finalModel, err := p.Run()
 	cancel()
 	<-doneCh
+	// bubbletea turns a SIGINT that doesn't arrive as a keypress (stdin not a
+	// TTY, kill -INT) into ErrInterrupted.
+	if errors.Is(err, tea.ErrInterrupted) {
+		return detach(cmd.ErrOrStderr(), "build watch "+b.Slug, b.AppSlug)
+	}
 	if err != nil {
 		return fmt.Errorf("render wait UI: %w", err)
 	}
@@ -51,24 +56,13 @@ func runWatchTUI(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild
 	// fm.finished is only true after watchDoneMsg arrived and was handled;
 	// fm.finalErr is context.Canceled when Watch itself observed the cancel.
 	if !fm.finished || errors.Is(fm.finalErr, context.Canceled) {
-		return writeDetachNotice(stderr, "build watch "+b.Slug)
+		return detach(stderr, "build watch "+b.Slug, b.AppSlug)
 	}
 	if fm.finalErr != nil {
 		return fm.finalErr
 	}
 
-	final := fm.finalBuild
-	footer := fmt.Sprintf("Build #%d finished: %s%s\n", final.BuildNumber, final.Status, buildElapsed(final))
-	if url := buildDetailURL(cmd, b); url != "" {
-		footer += fmt.Sprintf("%s\n", url)
-	}
-	if _, err := fmt.Fprint(stderr, footer); err != nil {
-		return err
-	}
-	if final.Status != "success" && final.Status != "aborted-with-success" {
-		return fmt.Errorf("build %s", final.Status)
-	}
-	return nil
+	return finishFollowedBuild(cmd, fm.finalBuild, "", buildDetailURL(cmd, b))
 }
 
 // teaLogWriter adapts svc.Watch's io.Writer log sink to the bubbletea

@@ -143,7 +143,16 @@ func (s *Service) Trigger(ctx context.Context, req TriggerRequest) (Build, error
 		}
 		return Build{}, err
 	}
-	return triggerRespToBuild(resp, req), nil
+	// The response carries none of the source fields, so echo what was sent.
+	b := triggerRespToBuild(resp, req.AppSlug)
+	b.Branch = req.Branch
+	b.Tag = req.Tag
+	b.CommitHash = req.CommitHash
+	b.CommitMessage = req.CommitMessage
+	if b.Workflow == "" {
+		b.Workflow = req.Workflow
+	}
+	return b, nil
 }
 
 // List returns one page of builds for an app.
@@ -290,6 +299,38 @@ func (s *Service) Abort(ctx context.Context, req AbortRequest) (AbortResult, err
 	}, nil
 }
 
+// RebuildRequest describes a build-rebuild operation.
+type RebuildRequest struct {
+	AppSlug      string
+	BuildSlug    string
+	RemoteAccess bool
+}
+
+// Rebuild starts a new build with the parameters and workflow of a finished
+// build. The response has no branch, tag or commit, so the returned Build
+// leaves them empty.
+// Endpoint: POST /apps/{app-slug}/builds/{build-slug}/rebuild.
+func (s *Service) Rebuild(ctx context.Context, req RebuildRequest) (Build, error) {
+	if s.client == nil {
+		return Build{}, fmt.Errorf("API client not configured")
+	}
+	if req.AppSlug == "" {
+		return Build{}, fmt.Errorf("app ID is required")
+	}
+	if req.BuildSlug == "" {
+		return Build{}, fmt.Errorf("build ID is required")
+	}
+	resp, err := s.client.RebuildBuild(ctx, req.AppSlug, req.BuildSlug, bitriseapi.RebuildBuildRequest{IsRemote: req.RemoteAccess})
+	if err != nil {
+		var apiErr *bitriseapi.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+			return Build{}, fmt.Errorf("build %q not found", req.BuildSlug)
+		}
+		return Build{}, err
+	}
+	return triggerRespToBuild(resp, req.AppSlug), nil
+}
+
 // fromAPI maps a bitriseapi.Build (wire shape) into the CLI's Build type.
 // appSlug comes from the request, not the response, since the API doesn't
 // echo it back.
@@ -327,9 +368,10 @@ func fromAPI(b bitriseapi.Build, appSlug string) Build {
 	return out
 }
 
-// triggerRespToBuild collapses the trigger response into our Build shape,
-// preferring the modern Results[0] over the deprecated top-level fields.
-func triggerRespToBuild(resp bitriseapi.TriggerBuildResponse, req TriggerRequest) Build {
+// triggerRespToBuild collapses the trigger (or rebuild) response into our
+// Build shape, preferring the modern Results[0] over the deprecated top-level
+// fields.
+func triggerRespToBuild(resp bitriseapi.TriggerBuildResponse, appSlug string) Build {
 	slug := resp.BuildSlug
 	number := resp.BuildNumber
 	url := resp.BuildURL
@@ -349,22 +391,15 @@ func triggerRespToBuild(resp bitriseapi.TriggerBuildResponse, req TriggerRequest
 			workflow = r.TriggeredWorkflow
 		}
 	}
-	if workflow == "" {
-		workflow = req.Workflow
-	}
 	return Build{
-		Slug:          slug,
-		AppSlug:       req.AppSlug,
-		BuildNumber:   number,
-		Status:        "in-progress",
-		StatusText:    resp.Message,
-		Branch:        req.Branch,
-		Tag:           req.Tag,
-		Workflow:      workflow,
-		CommitHash:    req.CommitHash,
-		CommitMessage: req.CommitMessage,
-		TriggeredAt:   time.Now().UTC(),
-		BuildURL:      url,
+		Slug:        slug,
+		AppSlug:     appSlug,
+		BuildNumber: number,
+		Status:      "in-progress",
+		StatusText:  resp.Message,
+		Workflow:    workflow,
+		TriggeredAt: time.Now().UTC(),
+		BuildURL:    url,
 	}
 }
 

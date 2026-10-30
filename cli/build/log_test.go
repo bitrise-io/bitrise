@@ -119,6 +119,30 @@ func TestLogCmd_RequiresApp(t *testing.T) {
 	require.EqualError(t, err, "--app is required")
 }
 
+func TestLogCmd_Wait_CtrlCDetaches(t *testing.T) {
+	// log --wait views the build once before waiting, so Ctrl-C lands on the
+	// second View.
+	var viewCalls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/apps/my-app/builds/b-1" {
+			http.NotFound(w, r)
+			return
+		}
+		if viewCalls.Add(1) == 2 {
+			sendInterrupt(t)
+		}
+		_, _ = w.Write([]byte(`{"data":{"slug":"b-1","build_number":5,"status":0,"triggered_at":"2026-05-06T10:00:00Z"}}`))
+	})
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("wait", "true"))
+	require.NoError(t, cmd.Flags().Set("interval", "1h"))
+
+	err := cmd.RunE(cmd, []string{"b-1"})
+	require.EqualError(t, err, "detached: use 'bitrise build log --wait b-1 --app my-app' to resume")
+}
+
 func newTestLogCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *bytes.Buffer) {
 	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())

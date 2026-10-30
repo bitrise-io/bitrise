@@ -1,5 +1,6 @@
 // Package build implements the `bitrise build` command group: trigger,
-// list, view, log, watch, abort, and yml operations on Bitrise builds.
+// rebuild, list, view, log, watch, abort, and yml operations on Bitrise
+// builds.
 package build
 
 import (
@@ -15,6 +16,6 @@ func NewCmd() *cobra.Command {
 		Short: "Trigger, list, and inspect builds.",
 		RunE:  cmdutil.RequireKnownSubcommand,
 	}
-	c.AddCommand(NewTriggerCommand(), NewListCommand(), NewViewCommand(), NewLogCommand(), NewWatchCommand(), NewAbortCommand(), NewYMLCommand())
+	c.AddCommand(NewTriggerCommand(), NewRebuildCommand(), NewListCommand(), NewViewCommand(), NewLogCommand(), NewWatchCommand(), NewAbortCommand(), NewYMLCommand())
 	return c
 }

@@ -214,6 +214,39 @@ func TestAbortBuild_PropagatesAPIError(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, apiErr.StatusCode)
 }
 
+func TestRebuildBuild_RequestAndResponse(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      RebuildBuildRequest
+		wantBody string
+	}{
+		{name: "default", req: RebuildBuildRequest{}, wantBody: `{}`},
+		{name: "remote access", req: RebuildBuildRequest{IsRemote: true}, wantBody: `{"is_remote":true}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotMethod, gotPath string
+			var gotBody []byte
+			srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+				gotMethod = r.Method
+				gotPath = r.URL.Path
+				gotBody, _ = io.ReadAll(r.Body)
+				w.WriteHeader(http.StatusCreated)
+				_, _ = w.Write([]byte(`{"build_slug":"new-build","build_number":8,"triggered_workflow":"deploy"}`))
+			})
+
+			resp, err := newAPIClient(t, srv.URL, "t").RebuildBuild(context.Background(), "my-app", "build-1", tt.req)
+			require.NoError(t, err)
+			assert.Equal(t, http.MethodPost, gotMethod)
+			assert.Equal(t, "/apps/my-app/builds/build-1/rebuild", gotPath)
+			assert.JSONEq(t, tt.wantBody, string(gotBody))
+			assert.Equal(t, "new-build", resp.BuildSlug)
+			assert.Equal(t, 8, resp.BuildNumber)
+			assert.Equal(t, "deploy", resp.TriggeredWorkflow)
+		})
+	}
+}
+
 func TestBuildLog_StreamsArchivedURL(t *testing.T) {
 	var gotAuthHeader string
 	rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
