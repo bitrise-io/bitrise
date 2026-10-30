@@ -157,6 +157,26 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	}
 }
 
+// StepStatus returns the style to render a step run status in: every status
+// that fails the build in Failure, failed_skippable (failed, but the build
+// went on) and aborted (the build was aborted) in the aborted color, started
+// like a running build, success in Success, and the skipped ones, not_started
+// and any other value in Dim.
+func (s Styles) StepStatus(status string) lipgloss.Style {
+	switch status {
+	case "started":
+		return s.running
+	case "success":
+		return s.Success
+	case "failed", "preparation_failed", "aborted_with_custom_timeout", "aborted_with_no_output":
+		return s.Failure
+	case "failed_skippable", "aborted":
+		return s.aborted
+	default:
+		return s.Dim
+	}
+}
+
 // HasColor reports whether the styles will emit ANSI codes.
 func (s Styles) HasColor() bool {
 	return s.r.ColorProfile() != termenv.Ascii
