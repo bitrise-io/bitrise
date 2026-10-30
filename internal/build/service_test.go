@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -358,7 +361,9 @@ func TestService_Log_Streams(t *testing.T) {
 	svc := NewService(newAPIClient(t, srv.URL))
 
 	var buf bytes.Buffer
-	require.NoError(t, svc.Log(context.Background(), "my-app", "b-1", &buf))
+	complete, err := svc.Log(context.Background(), "my-app", "b-1", &buf)
+	require.NoError(t, err)
+	assert.True(t, complete)
 	assert.Contains(t, buf.String(), "LOG OUTPUT")
 }
 
@@ -366,8 +371,10 @@ func TestService_Log_RequiresSlugs(t *testing.T) {
 	srv := newFakeServer(t, func(http.ResponseWriter, *http.Request) {})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	assert.Error(t, svc.Log(context.Background(), "", "b", io.Discard))
-	assert.Error(t, svc.Log(context.Background(), "a", "", io.Discard))
+	_, err := svc.Log(context.Background(), "", "b", io.Discard)
+	assert.Error(t, err)
+	_, err = svc.Log(context.Background(), "a", "", io.Discard)
+	assert.Error(t, err)
 }
 
 func TestService_Steps_FlattensWorkflowsInOrder(t *testing.T) {
@@ -543,6 +550,214 @@ func TestStepsResult_JSONShape(t *testing.T) {
 	assert.Contains(t, string(y), "complete: true")
 }
 
+func TestService_StepLogs_FetchesLogOfEachMatchingStep(t *testing.T) {
+	srv := newStepLogsServer(t)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "failed", nil, 0)
+	require.NoError(t, err)
+	assert.True(t, got.Complete)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, "s-2", got.Items[0].ID)
+	assert.Equal(t, "primary", got.Items[0].Workflow)
+	assert.Equal(t, "s-2 one\ns-2 two\ns-2 three\n", got.Items[0].Log)
+}
+
+func TestService_StepLogs_FiltersByStepIDAndStatus(t *testing.T) {
+	srv := newStepLogsServer(t)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-3", "s-1"}, 0)
+	require.NoError(t, err)
+	require.Len(t, got.Items, 2)
+	assert.Equal(t, "s-1", got.Items[0].ID, "steps keep execution order, not the order of the IDs")
+	assert.Equal(t, "s-3", got.Items[1].ID)
+	assert.Empty(t, got.Items[1].Log, "a step that logged nothing has an empty log")
+
+	got, err = svc.StepLogs(context.Background(), "my-app", "b-1", "failed", []string{"s-1"}, 0)
+	require.NoError(t, err)
+	assert.Empty(t, got.Items)
+	assert.NotNil(t, got.Items, "an empty result must render as [] not null")
+}
+
+func TestService_StepLogs_Tail(t *testing.T) {
+	srv := newStepLogsServer(t)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-2"}, 2)
+	require.NoError(t, err)
+	require.Len(t, got.Items, 1)
+	assert.Equal(t, "s-2 two\ns-2 three\n", got.Items[0].Log)
+
+	_, err = svc.StepLogs(context.Background(), "my-app", "b-1", "", nil, -1)
+	require.Error(t, err)
+}
+
+func TestService_StepLogs_UnknownStepID(t *testing.T) {
+	srv := newStepLogsServer(t)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-2", "nope"}, 0)
+	require.EqualError(t, err, `step "nope" not found in build "b-1"`)
+}
+
+func TestService_StepLogs_NoLogsUntilArchived(t *testing.T) {
+	var stepLogCalls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/log/steps/") {
+			stepLogCalls.Add(1)
+		}
+		_, _ = w.Write([]byte(`{"is_log_archived": false, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "script", "status": "started", "started_at": "2026-10-20T11:56:50Z"}
+]}]}}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-1", "not-started-yet"}, 0)
+	require.NoError(t, err)
+	assert.False(t, got.Complete)
+	require.Len(t, got.Items, 1)
+	assert.Empty(t, got.Items[0].Log)
+	assert.Zero(t, stepLogCalls.Load(), "step logs are served only from the archive")
+}
+
+func TestService_WaitForLogArchive(t *testing.T) {
+	var calls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		archived := calls.Add(1) >= 3
+		_, _ = fmt.Fprintf(w, `{"is_log_archived": %t}`, archived)
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	var waiting int
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, func() { waiting++ }))
+	assert.Equal(t, int32(3), calls.Load())
+	assert.Equal(t, 1, waiting, "waiting is called once, when the first poll finds the log not archived")
+}
+
+func TestService_WaitForLogArchive_AlreadyArchived(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": true}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, func() { t.Error("waiting must not be called") }))
+}
+
+func TestService_WaitForLogArchive_GivesUp(t *testing.T) {
+	timeout := logArchiveTimeout
+	logArchiveTimeout = 20 * time.Millisecond
+	t.Cleanup(func() { logArchiveTimeout = timeout })
+
+	var calls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, nil))
+	assert.Greater(t, calls.Load(), int32(1))
+
+	start := time.Now()
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, nil))
+	assert.Less(t, time.Since(start), 5*time.Second, "an interval longer than the timeout must not outlast it")
+}
+
+func TestService_WaitForLogArchive_SlowResponseGivesUp(t *testing.T) {
+	timeout := logArchiveTimeout
+	logArchiveTimeout = 50 * time.Millisecond
+	t.Cleanup(func() { logArchiveTimeout = timeout })
+
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(10 * time.Second):
+			_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+		}
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	start := time.Now()
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Millisecond, nil), "reaching the timeout mid-request is giving up, not an error")
+	assert.Less(t, time.Since(start), 5*time.Second, "a slow response must not outlast the timeout")
+}
+
+func TestService_WaitForLogArchive_CallerCancel(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": false}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	err := svc.WaitForLogArchive(ctx, "my-app", "b-1", time.Hour, cancel)
+	require.ErrorIs(t, err, context.Canceled)
+}
+
+func TestService_WaitForLogArchive_ReturnsWithoutSummary(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	require.NoError(t, svc.WaitForLogArchive(context.Background(), "my-app", "b-1", time.Hour, nil))
+}
+
+func TestService_LogText(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"one\ntwo\n","position":0},{"chunk":"three\n","position":1}]}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.LogText(context.Background(), "my-app", "b-1", 0)
+	require.NoError(t, err)
+	assert.Equal(t, LogResult{Log: "one\ntwo\nthree\n", Complete: false}, got)
+
+	got, err = svc.LogText(context.Background(), "my-app", "b-1", 2)
+	require.NoError(t, err)
+	assert.Equal(t, "two\nthree\n", got.Log)
+}
+
+func TestLogBuffer(t *testing.T) {
+	for _, tt := range []struct {
+		in   string
+		n    int
+		want string
+	}{
+		{"a\nb\nc\n", 2, "b\nc\n"},
+		{"a\nb\nc", 2, "b\nc"},
+		{"a\nb\nc", 1, "c"},
+		{"a\nb\nc\n", 3, "a\nb\nc\n"},
+		{"a\nb\nc\n", 10, "a\nb\nc\n"},
+		{"a\nb\nc\n", 0, "a\nb\nc\n"},
+		{"a\n\n\n", 2, "\n\n"},
+		{"", 5, ""},
+	} {
+		// Every split point, since a line can span writes.
+		for i := range len(tt.in) + 1 {
+			buf := newLogBuffer(tt.n)
+			_, _ = io.WriteString(buf, tt.in[:i])
+			_, _ = io.WriteString(buf, tt.in[i:])
+			assert.Equal(t, tt.want, buf.String(), "newLogBuffer(%d) given %q split at %d", tt.n, tt.in, i)
+		}
+	}
+}
+
+func TestStepLogsResult_Shape(t *testing.T) {
+	res := StepLogsResult{Items: []StepLog{{Step: Step{ID: "s-2", Workflow: "primary", StepID: "script", Status: "failed"}, Log: "boom\n"}}, Complete: true}
+
+	b, err := json.Marshal(res)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"complete":true,"items":[{"id":"s-2","workflow":"primary","step_id":"script","status":"failed","log":"boom\n"}]}`, string(b))
+
+	y, err := yaml.Marshal(res)
+	require.NoError(t, err)
+	assert.Contains(t, string(y), "- id: s-2\n")
+	assert.Contains(t, string(y), "step_id: script")
+	assert.Contains(t, string(y), "log: |")
+}
+
 func TestService_Abort_BodyAndResponse(t *testing.T) {
 	var gotMethod, gotPath string
 	var gotBody []byte
@@ -659,7 +874,8 @@ func TestService_NilClientFails(t *testing.T) {
 	assert.Error(t, err)
 	_, err = svc.Trigger(context.Background(), TriggerRequest{AppSlug: "a"})
 	assert.Error(t, err)
-	assert.Error(t, svc.Log(context.Background(), "a", "b", io.Discard))
+	_, err = svc.Log(context.Background(), "a", "b", io.Discard)
+	assert.Error(t, err)
 	_, err = svc.Abort(context.Background(), AbortRequest{AppSlug: "a", BuildSlug: "b"})
 	assert.Error(t, err)
 }
@@ -742,5 +958,31 @@ func newSummaryNotFoundServer(t *testing.T, buildStatusCode int, buildBody strin
 		}
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
+}
+
+// newStepLogsServer answers the step summary with stepsSummaryJSON and each step's log
+// with an archive URL, whose JSON holds three messages for s-2 and none for
+// any other step.
+func newStepLogsServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	archive := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/s-2" {
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+		_, _ = w.Write([]byte(`[{"message":"s-2 one\n","level":"normal"},{"message":"s-2 two\n","level":"normal"},{"message":"s-2 three\n","level":"normal"}]`))
+	})
+	return newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if id, ok := strings.CutPrefix(r.URL.Path, "/apps/my-app/builds/b-1/log/steps/"); ok {
+			if id == "s-3" {
+				// build-log-service answers an empty step without an archive URL.
+				_, _ = w.Write([]byte(`{"log_chunks":[]}`))
+				return
+			}
+			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
+			return
+		}
+		_, _ = w.Write([]byte(stepsSummaryJSON))
 	})
 }

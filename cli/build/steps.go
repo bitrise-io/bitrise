@@ -86,11 +86,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 // cell would mangle.
 func printStepsTable(w io.Writer, res internalbuild.StepsResult, status string) error {
 	if len(res.Items) == 0 {
-		msg := "No steps found."
-		if status != "" {
-			msg = fmt.Sprintf("No steps with status %q.", status)
-		}
-		_, err := fmt.Fprintln(w, msg)
+		_, err := fmt.Fprintln(w, noStepsMessage(status))
 		return err
 	}
 
@@ -98,15 +94,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, status string) 
 	headers := []string{"WORKFLOW", "STEP", "STATUS", "DURATION"}
 	rows := make([][]string, 0, len(res.Items))
 	for _, st := range res.Items {
-		duration := ""
-		// Skipped steps carry timestamps too, but a duration would suggest they ran.
-		if st.StartedAt != nil && st.FinishedAt != nil && !strings.HasPrefix(st.Status, "skipped") {
-			duration = "<1s"
-			if d := st.FinishedAt.Sub(*st.StartedAt); d >= time.Second {
-				duration = d.Round(time.Second).String()
-			}
-		}
-		rows = append(rows, []string{st.Workflow, stepName(st), st.Status, duration})
+		rows = append(rows, []string{st.Workflow, stepName(st), st.Status, stepDuration(st)})
 	}
 	const colStatus = 2
 	styler := func(row, col int, content string) string {
@@ -156,4 +144,22 @@ func stepName(st internalbuild.Step) string {
 		return st.Title
 	}
 	return st.StepID
+}
+
+func stepDuration(st internalbuild.Step) string {
+	// Skipped steps carry timestamps too, but a duration would suggest they ran.
+	if st.StartedAt == nil || st.FinishedAt == nil || strings.HasPrefix(st.Status, "skipped") {
+		return ""
+	}
+	if d := st.FinishedAt.Sub(*st.StartedAt); d >= time.Second {
+		return d.Round(time.Second).String()
+	}
+	return "<1s"
+}
+
+func noStepsMessage(status string) string {
+	if status != "" {
+		return fmt.Sprintf("No steps with status %q.", status)
+	}
+	return "No steps found."
 }
