@@ -5,6 +5,7 @@ package cli
 
 import (
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/bitrise-io/bitrise/v3/cli"
@@ -14,35 +15,40 @@ import (
 )
 
 func Test_Update(t *testing.T) {
-
+	// update replaces the binary it runs from, so each case runs a copy: the other tests,
+	// running in parallel, need the binary under test.
 	t.Log("Update --version 2.31.0")
 	{
-		// save original binary
-		if err := cli.CopyFile(testhelpers.BinPath(), testhelpers.BinPath()+"_original", false); err != nil {
-			t.Fatal(err)
-		}
+		binPath := copyBinary(t)
 
-		out, err := command.New(testhelpers.BinPath(), "update", "--version", "2.31.0").RunAndReturnTrimmedCombinedOutput()
+		// update then runs setup, which records 2.31.0 as the version set up.
+		out, err := command.New(binPath, "update", "--version", "2.31.0").
+			AppendEnvs("HOME=" + testhelpers.IsolatedHome(t)).
+			RunAndReturnTrimmedCombinedOutput()
 		require.NoError(t, err, out)
 
-		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "version")
+		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, "version")
 		require.NoError(t, err)
 		require.Equal(t, "2.31.0", updatedVer)
-
-		// restore original binary
-		if err := cli.CopyFile(testhelpers.BinPath()+"_original", testhelpers.BinPath(), true); err != nil {
-			t.Fatal(err)
-		}
-
 	}
 	t.Log("Update --version invalid")
 	{
-		originalVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "version")
+		binPath := copyBinary(t)
+
+		originalVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, "version")
 		require.NoError(t, err)
-		err = exec.Command(testhelpers.BinPath(), "update", "--version", "invalid").Run()
+		err = exec.Command(binPath, "update", "--version", "invalid").Run()
 		require.Error(t, err)
-		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(testhelpers.BinPath(), "version")
+		updatedVer, err := command.RunCommandAndReturnCombinedStdoutAndStderr(binPath, "version")
 		require.NoError(t, err)
 		require.Equal(t, originalVer, updatedVer)
 	}
+}
+
+func copyBinary(t *testing.T) string {
+	binPath := filepath.Join(t.TempDir(), "bitrise")
+	if err := cli.CopyFile(testhelpers.BinPath(), binPath, false); err != nil {
+		t.Fatal(err)
+	}
+	return binPath
 }

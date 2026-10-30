@@ -14,13 +14,13 @@ under `docker/`, which are `linux_only`. One tag per file, with the legacy
 go build -o /tmp/bitrise .          # from the repo root
 bitrise setup                       # once per machine
 cd integrationtests
-INTEGRATION_TEST_BINARY_PATH=/tmp/bitrise go test --tags linux_and_mac -p 1 ./...
+INTEGRATION_TEST_BINARY_PATH=/tmp/bitrise go test --tags linux_and_mac ./...
 ```
 
 Docker suites run via `make docker-step-based-test` and `make docker-with-group-test`.
 
-`-p 1` is required for a whole-suite run because `bitrise local run` shares machine
-state across packages (steplib cache, `~/.bitrise`, temp and plugin dirs).
+Packages run in parallel on one machine, so a test that changes state other tests read
+breaks them. The rules below keep such a test's changes to itself.
 
 ## Isolating a new test
 
@@ -30,6 +30,10 @@ state across packages (steplib cache, `~/.bitrise`, temp and plugin dirs).
 - `BITRISE_ANALYTICS_DISABLED=true`
 - CI runs the tests without `ENVMAN_ENVSTORE_PATH`, so they can't write into the build's
   envstore; a test that needs an envstore creates its own and passes it with `cmd.AppendEnvs`
+- a test that changes `~/.stepman`, `~/.bitrise` or `~/.config/bitrise` (steplib cache,
+  agent config, toolkit caches, the record of the version set up) runs bitrise with
+  `HOME=testhelpers.IsolatedHome(t)`
+- a test that changes the binary itself runs a copy of it, as `Test_Update` does
 
 For a command that hits the API, serve canned responses from an `httptest.Server` and
 point `api_base_url` (or `rde_api_base_url`) at it through a fixture `config.yml` in
