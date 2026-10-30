@@ -31,9 +31,45 @@ type Versions struct {
 	CurrentMajorFound bool
 }
 
+type Target struct {
+	// Version is the release to install, or the running one when UpToDate.
+	Version  string
+	UpToDate bool
+	NewMajor *Available
+}
+
 type usableRelease struct {
 	version *semver.Version
 	url     string
+}
+
+// requested is the raw --version value, and is installed as named, so it is the
+// only way to cross a major version.
+func ResolveTarget(ctx context.Context, client *Client, currentVersion, requested string) (Target, error) {
+	if requested != "" {
+		wanted, err := parseRequestedVersion(requested)
+		if err != nil {
+			return Target{}, err
+		}
+		return Target{Version: wanted.String(), UpToDate: isRunningVersion(wanted, currentVersion)}, nil
+	}
+
+	current, err := parseVersion(currentVersion)
+	if err != nil {
+		return Target{}, fmt.Errorf("this Bitrise CLI was not installed from a release (version %q), so it cannot be compared against the published releases. Use bitrise update --version X.Y.Z to install a specific release", currentVersion)
+	}
+
+	versions, err := resolve(ctx, client, currentVersion)
+	if err != nil {
+		return Target{}, err
+	}
+	if !versions.CurrentMajorFound {
+		return Target{}, fmt.Errorf("no Bitrise CLI release was found in major version %d, so it cannot be told whether %s is the newest one. Use bitrise update --version X.Y.Z to install a specific release", current.Major(), currentVersion)
+	}
+	if versions.Update == nil {
+		return Target{Version: currentVersion, UpToDate: true, NewMajor: versions.NewMajor}, nil
+	}
+	return Target{Version: versions.Update.Version, NewMajor: versions.NewMajor}, nil
 }
 
 // resolve returns the newest release inside currentVersion's major, and
@@ -62,6 +98,16 @@ func resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 	versions := selectVersions(candidates, current)
 	versions.CurrentMajorFound = hasMajor(candidates, current.Major())
 	return versions, nil
+}
+
+// A current version that does not parse is not a release, so no release matches it.
+// It is parsed the same way as the requested one, so a running pre-release can match.
+func isRunningVersion(wanted *semver.Version, currentVersion string) bool {
+	current, err := parseRequestedVersion(currentVersion)
+	if err != nil {
+		return false
+	}
+	return wanted.Equal(current)
 }
 
 func usableReleases(releases []Release) []usableRelease {
