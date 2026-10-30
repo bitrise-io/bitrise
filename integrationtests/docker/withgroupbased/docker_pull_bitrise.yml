@@ -4,7 +4,7 @@ containers:
   success:
     image: frolvlad/alpine-bash:latest
   fails-404:
-    image: localhost.hu/noimage:3cb48a46a66e
+    image: bitriseio/noimage:3cb48a46a66e
   login-fail:
     image: us-central1-docker.pkg.dev/ip-kubernetes-dev/sandbox/ruby:zstd
     credentials:

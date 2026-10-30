@@ -13,9 +13,11 @@ import (
 )
 
 func TestPluginRegistry_KnownTool(t *testing.T) {
+	t.Parallel()
+
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -34,9 +36,11 @@ func TestPluginRegistry_KnownTool(t *testing.T) {
 }
 
 func TestPluginRegistry_CoreTool(t *testing.T) {
+	t.Parallel()
+
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -55,9 +59,11 @@ func TestPluginRegistry_CoreTool(t *testing.T) {
 }
 
 func TestPluginRegistry_UnknownTool(t *testing.T) {
+	t.Parallel()
+
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -84,9 +90,11 @@ func TestPluginRegistry_UnknownTool(t *testing.T) {
 }
 
 func TestPluginRegistry_CustomPluginURL(t *testing.T) {
+	t.Parallel()
+
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()
@@ -106,9 +114,11 @@ func TestPluginRegistry_CustomPluginURL(t *testing.T) {
 }
 
 func TestPluginRegistry_EmptyToolName(t *testing.T) {
+	t.Parallel()
+
 	miseInstallDir := t.TempDir()
 	miseDataDir := t.TempDir()
-	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
+	miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
 	require.NoError(t, err)
 
 	err = miseProvider.Bootstrap()

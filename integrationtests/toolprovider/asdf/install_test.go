@@ -12,6 +12,8 @@ import (
 )
 
 func TestAsdfInstallClassic(t *testing.T) {
+	t.Parallel()
+
 	if useSystemAsdf() {
 		t.Skip("Irrelevant test when using system asdf")
 	}
@@ -39,6 +41,8 @@ func TestAsdfInstallClassic(t *testing.T) {
 }
 
 func TestAsdfInstallRewrite(t *testing.T) {
+	t.Parallel()
+
 	if useSystemAsdf() {
 		t.Skip("Irrelevant test when using system asdf")
 	}
