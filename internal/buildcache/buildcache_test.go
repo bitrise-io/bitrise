@@ -2,13 +2,10 @@ package buildcache
 
 import (
 	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -158,17 +155,17 @@ func TestActivateIfEnabled_AReferencedOptInAndTokenReachTheCLI(t *testing.T) {
 	assert.Equal(t, "activate all --auto token=tok-1", strings.TrimSpace(string(calls)))
 }
 
-func TestActivateIfEnabled_RunsTheVersionedBinaryNotTheSharedLink(t *testing.T) {
+func TestActivateIfEnabled_RunsThePreinstalledBinaryNotTheSharedLink(t *testing.T) {
 	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	out := filepath.Join(t.TempDir(), "path")
-	installFakeCLI(t, `echo "$0" >> `+out)
+	bin := installFakeCLI(t, `echo "$0" >> `+out)
 
 	require.True(t, ActivateIfEnabled(testLogger(), nil))
 
 	got, err := os.ReadFile(out)
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName), strings.TrimSpace(string(got)))
+	assert.Equal(t, bin, strings.TrimSpace(string(got)))
 }
 
 func TestCacheEnvs(t *testing.T) {
@@ -191,13 +188,13 @@ func TestCacheEnvs(t *testing.T) {
 	}, cacheEnvs(eval(t, envs)))
 }
 
-func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
+func TestActivateIfEnabled_RunsBothCommandsFromThePreinstalledCLI(t *testing.T) {
 	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 	t.Setenv("BITRISE_BUILD_API_TOKEN", "")
 	out := filepath.Join(t.TempDir(), "calls")
-	installFakeCLI(t, `echo "$@ proxy=$BITRISE_MAVENCENTRAL_PROXY_ENABLED jwt=$BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN api=${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
+	bin := installFakeCLI(t, `echo "$@ proxy=$BITRISE_MAVENCENTRAL_PROXY_ENABLED jwt=$BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN api=${BITRISE_BUILD_API_TOKEN:-absent}" >> `+out)
 
 	ran := ActivateIfEnabled(testLogger(), buildEnvs(servicesTokenKey, "jwt", "BITRISE_BUILD_API_TOKEN", "secret"))
 
@@ -211,7 +208,8 @@ func TestActivateIfEnabled_InstallsOnceAndRunsBothCommands(t *testing.T) {
 
 	target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", "3.14.1", binaryName), target)
+	assert.Equal(t, bin, target)
+	assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
 }
 
 func TestActivateIfEnabled_MirrorsOnly(t *testing.T) {
@@ -269,35 +267,23 @@ func TestActivateIfEnabled_HostsOverrideDisabledStillRunsAll(t *testing.T) {
 	assert.Equal(t, "all", strings.TrimSpace(string(calls)))
 }
 
-func TestActivateIfEnabled_InstallsThroughTheHookAndRunsBothCommands(t *testing.T) {
+func TestActivateIfEnabled_NoCLIFromTheVMSetupIsAttemptedButRunsNothing(t *testing.T) {
 	isolate(t)
-	out := filepath.Join(t.TempDir(), "calls")
-	tarball, checksum := releaseTarball(t, "#!/bin/sh\necho \"$2\" >> "+out+"\n")
-	var downloads atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		downloads.Add(1)
-		_, _ = w.Write(tarball)
-	}))
-	defer srv.Close()
-	t.Setenv(EnvCLISHA256, checksum)
-	t.Setenv(EnvHostCacheURL, srv.URL)
 	t.Setenv(EnvActivateAll, "true")
 	t.Setenv(EnvActivateGradleMirrors, "true")
 
-	require.True(t, ActivateIfEnabled(testLogger(), nil))
-
-	calls, err := os.ReadFile(out)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"gradle-mirrors", "all"}, strings.Split(strings.TrimSpace(string(calls)), "\n"))
-	assert.EqualValues(t, 1, downloads.Load())
+	assert.True(t, ActivateIfEnabled(testLogger(), nil))
+	assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
+	assert.NoFileExists(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 }
 
-func TestActivateIfEnabled_InstallFailureIsAttemptedButRunsNothing(t *testing.T) {
+func TestActivateIfEnabled_AnUnusableCLIRunsNothing(t *testing.T) {
 	isolate(t)
-	t.Setenv(EnvCLIVersion, "")
 	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvCLIPath, filepath.Join(t.TempDir(), "missing"))
 
 	assert.True(t, ActivateIfEnabled(testLogger(), nil))
+	assert.NoFileExists(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 }
 
 func TestActivateIfEnabled_AHangingCommandDoesNotStarveTheNext(t *testing.T) {
@@ -342,16 +328,13 @@ func setVersionTimeout(t *testing.T, timeout time.Duration) {
 	t.Cleanup(func() { versionTimeout = old })
 }
 
-func TestInstallCLI_RequiresPin(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	for _, pin := range [][2]string{{"", ""}, {"3.14.1", ""}, {"../3.14.1", strings.Repeat("a", 64)}, {"3.14.1", "not-a-sha"}} {
-		t.Setenv(EnvCLIVersion, pin[0])
-		t.Setenv(EnvCLISHA256, pin[1])
+func TestResolveCLI_RequiresThePath(t *testing.T) {
+	isolate(t)
 
-		_, err := installCLI(context.Background(), testLogger())
+	_, err := resolveCLI(context.Background(), testLogger())
 
-		require.ErrorContains(t, err, "must be set by the VM setup")
-	}
+	require.ErrorContains(t, err, EnvCLIPath)
+	assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
 }
 
 func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
@@ -367,23 +350,17 @@ func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
 	assert.NoFileExists(t, out)
 }
 
-func TestActivateIfEnabled_ReusesThePreinstalledCLI(t *testing.T) {
+func TestActivateIfEnabled_UsesThePreinstalledCLI(t *testing.T) {
 	isolate(t)
 	t.Setenv(EnvActivateAll, "true")
-	t.Setenv(EnvCLISHA256, "")
 	out := filepath.Join(t.TempDir(), "calls")
 	bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, out)
 	t.Setenv(EnvCLIPath, bin)
 	bin, err := filepath.EvalSymlinks(bin)
 	require.NoError(t, err)
-	var downloads atomic.Int32
-	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { downloads.Add(1) }))
-	defer srv.Close()
-	t.Setenv(EnvHostCacheURL, srv.URL)
 
 	require.True(t, ActivateIfEnabled(testLogger(), nil))
 
-	assert.Zero(t, downloads.Load())
 	assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
 	target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 	require.NoError(t, err)
@@ -393,17 +370,19 @@ func TestActivateIfEnabled_ReusesThePreinstalledCLI(t *testing.T) {
 	assert.Equal(t, bin+" activate all --auto", strings.TrimSpace(string(calls)))
 }
 
-func TestInstallCLI_PreinstalledPath(t *testing.T) {
+func TestResolveCLI_PreinstalledPath(t *testing.T) {
 	dir := t.TempDir()
 	notExecutable := filepath.Join(dir, "plain")
 	require.NoError(t, os.WriteFile(notExecutable, []byte("#!/bin/sh\necho "+testVersion+"\n"), 0o644))
 	failing := filepath.Join(dir, "failing")
 	require.NoError(t, os.WriteFile(failing, []byte("#!/bin/sh\nexit 1\n"), 0o755))
+	notAVersion := filepath.Join(dir, "chatty")
+	require.NoError(t, os.WriteFile(notAVersion, []byte("#!/bin/sh\necho oops\n"), 0o755))
 
 	tests := []struct {
-		name  string
-		path  func(t *testing.T) string
-		reuse bool
+		name   string
+		path   func(t *testing.T) string
+		usable bool
 	}{
 		{"usable", func(t *testing.T) string {
 			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
@@ -414,10 +393,11 @@ func TestInstallCLI_PreinstalledPath(t *testing.T) {
 		{"missing", func(*testing.T) string { return filepath.Join(dir, "missing") }, false},
 		{"not executable", func(*testing.T) string { return notExecutable }, false},
 		{"a directory", func(*testing.T) string { return dir }, false},
-		{"wrong version", func(t *testing.T) string {
+		{"an older version than the VM setup pins", func(t *testing.T) string {
 			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "3.0.0", "/dev/null")
-		}, false},
+		}, true},
 		{"version command fails", func(*testing.T) string { return failing }, false},
+		{"version output is not a version", func(*testing.T) string { return notAVersion }, false},
 		{"usable with a trailing slash", func(t *testing.T) string {
 			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null") + "/"
 		}, true},
@@ -439,27 +419,31 @@ func TestInstallCLI_PreinstalledPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			isolate(t)
-			installFakeCLI(t, "")
 			bin := tt.path(t)
 			t.Setenv(EnvCLIPath, bin)
 
-			got, err := installCLI(context.Background(), testLogger())
+			got, err := resolveCLI(context.Background(), testLogger())
 
-			require.NoError(t, err)
-			want := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName)
-			if tt.reuse {
-				want, err = filepath.EvalSymlinks(filepath.Clean(bin))
-				require.NoError(t, err)
+			tools := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+			if !tt.usable {
+				require.ErrorContains(t, err, EnvCLIPath)
+				assert.NoFileExists(t, tools)
+				assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
+
+				return
 			}
+			require.NoError(t, err)
+			want, err := filepath.EvalSymlinks(filepath.Clean(bin))
+			require.NoError(t, err)
 			assert.Equal(t, want, got)
-			target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
+			target, err := os.Readlink(tools)
 			require.NoError(t, err)
 			assert.Equal(t, want, target)
 		})
 	}
 }
 
-func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
+func TestResolveCLI_PathShapes(t *testing.T) {
 	tests := []struct {
 		name  string
 		setup func(t *testing.T) (envPath, realBin string)
@@ -519,13 +503,12 @@ func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			isolate(t)
-			installFakeCLI(t, "")
 			envPath, realBin := tt.setup(t)
 			t.Setenv(EnvCLIPath, envPath)
 			wantBin, err := filepath.EvalSymlinks(realBin)
 			require.NoError(t, err)
 
-			got, err := installCLI(context.Background(), testLogger())
+			got, err := resolveCLI(context.Background(), testLogger())
 
 			require.NoError(t, err)
 			assert.Equal(t, wantBin, got)
@@ -538,34 +521,24 @@ func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
 	}
 }
 
-func TestInstallCLI_PreinstalledPathDoesNotRelaxThePin(t *testing.T) {
-	good := func(t *testing.T) string {
-		return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
-	}
+func TestResolveCLI_IgnoresThePinsOfTheVMSetup(t *testing.T) {
+	isolate(t)
+	t.Setenv("BITRISE_BUILD_CACHE_CLI_VERSION", "0.0.1")
+	t.Setenv("BITRISE_BUILD_CACHE_CLI_SHA256", "")
+	t.Setenv("BITRISE_BUILD_CACHE_CLI_HOST_CACHE_URL", "http://127.0.0.1:1")
+	bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+	t.Setenv(EnvCLIPath, bin)
 
-	t.Run("the version is still required", func(t *testing.T) {
-		isolate(t)
-		t.Setenv(EnvCLIVersion, "")
-		t.Setenv(EnvCLIPath, good(t))
+	got, err := resolveCLI(context.Background(), testLogger())
 
-		_, err := installCLI(context.Background(), testLogger())
-
-		require.ErrorContains(t, err, EnvCLIVersion)
-	})
-	t.Run("the checksum is required once the path is unusable", func(t *testing.T) {
-		isolate(t)
-		t.Setenv(EnvCLISHA256, "")
-		t.Setenv(EnvCLIPath, filepath.Join(t.TempDir(), "missing"))
-
-		_, err := installCLI(context.Background(), testLogger())
-
-		require.ErrorContains(t, err, EnvCLISHA256)
-	})
+	require.NoError(t, err)
+	want, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
 }
 
-func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
+func TestResolveCLI_AHangingVersionCommandIsNotUsed(t *testing.T) {
 	isolate(t)
-	installFakeCLI(t, "")
 	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
 	setVersionTimeout(t, 200*time.Millisecond)
 	hanging := filepath.Join(t.TempDir(), binaryName)
@@ -573,16 +546,15 @@ func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
 	t.Setenv(EnvCLIPath, hanging)
 
 	start := time.Now()
-	got, err := installCLI(context.Background(), testLogger())
+	_, err := resolveCLI(context.Background(), testLogger())
 
-	require.NoError(t, err)
+	require.ErrorContains(t, err, EnvCLIPath)
 	assert.Less(t, time.Since(start), 5*time.Second)
-	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName), got)
+	assert.NoFileExists(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
 }
 
-func TestInstallCLI_APreinstalledCLILeavingADescendantOnItsOutputIsReused(t *testing.T) {
+func TestResolveCLI_APreinstalledCLILeavingADescendantOnItsOutputIsUsed(t *testing.T) {
 	isolate(t)
-	installFakeCLI(t, "")
 	setTimeouts(t, 3*time.Second, 300*time.Millisecond)
 	bin := filepath.Join(t.TempDir(), binaryName)
 	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nif [ \"$1\" = version ]; then echo "+testVersion+"; sleep 3 & exit 0; fi\n"), 0o755))
@@ -590,7 +562,7 @@ func TestInstallCLI_APreinstalledCLILeavingADescendantOnItsOutputIsReused(t *tes
 	want, err := filepath.EvalSymlinks(bin)
 	require.NoError(t, err)
 
-	got, err := installCLI(context.Background(), testLogger())
+	got, err := resolveCLI(context.Background(), testLogger())
 
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
@@ -605,11 +577,18 @@ func fakeCLIAt(t *testing.T, bin, version, out string) string {
 	return bin
 }
 
-func installFakeCLI(t *testing.T, script string) {
+// installFakeCLI is the CLI the VM setup installed: it reports testVersion and runs script for any other command.
+// It returns the real path, which is what the activations run from.
+func installFakeCLI(t *testing.T, script string) string {
 	t.Helper()
-	dir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", os.Getenv(EnvCLIVersion))
-	require.NoError(t, os.MkdirAll(dir, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(dir, binaryName), []byte("#!/bin/sh\n"+script+"\n"), 0o755))
+	bin := filepath.Join(t.TempDir(), binaryName)
+	body := "#!/bin/sh\nif [ \"$1\" = version ]; then echo " + testVersion + "; exit 0; fi\n" + script + "\n"
+	require.NoError(t, os.WriteFile(bin, []byte(body), 0o755))
+	t.Setenv(EnvCLIPath, bin)
+	resolved, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
+
+	return resolved
 }
 
 // isolate clears every env var the package reads, so a CI or VM export cannot leak into a test.
@@ -618,13 +597,11 @@ func isolate(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv(analytics.StepExecutionIDEnvKey, "")
 	for _, key := range []string{
-		EnvActivateAll, EnvActivateGradleMirrors, EnvHostCacheURL, EnvCLIPath, envDisableHostsOverride, envMavenCentralProxy,
+		EnvActivateAll, EnvActivateGradleMirrors, EnvCLIPath, envDisableHostsOverride, envMavenCentralProxy,
 		servicesTokenKey, buildHubVMTokenKey, buildHubVMTokenURLKey,
 	} {
 		t.Setenv(key, "")
 	}
-	t.Setenv(EnvCLIVersion, testVersion)
-	t.Setenv(EnvCLISHA256, strings.Repeat("a", 64))
 }
 
 func eval(t *testing.T, items []envmanModels.EnvironmentItemModel) map[string]string {
