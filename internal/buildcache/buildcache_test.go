@@ -515,7 +515,7 @@ func isolate(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv(analytics.StepExecutionIDEnvKey, "")
 	for _, key := range []string{
-		EnvActivateAll, EnvCLIPath,
+		EnvActivateAll, EnvCLIPath, "BITRISE_MAVENCENTRAL_PROXY_ENABLED",
 		servicesTokenKey, buildHubVMTokenKey, buildHubVMTokenURLKey,
 	} {
 		t.Setenv(key, "")
