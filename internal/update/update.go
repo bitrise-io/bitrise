@@ -5,7 +5,6 @@ package update
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -59,9 +58,7 @@ func resolve(ctx context.Context, client *Client, currentVersion string) (Versio
 		}
 	}
 
-	versions := selectVersions(candidates, current)
-	versions.CurrentMajorFound = hasMajor(candidates, current.Major())
-	return versions, nil
+	return selectVersions(candidates, current), nil
 }
 
 func usableReleases(releases []Release) []usableRelease {
@@ -79,15 +76,13 @@ func usableReleases(releases []Release) []usableRelease {
 	return usable
 }
 
-func hasMajor(candidates []usableRelease, major uint64) bool {
-	return slices.ContainsFunc(candidates, func(c usableRelease) bool { return c.version.Major() == major })
-}
-
 func selectVersions(candidates []usableRelease, current *semver.Version) Versions {
 	var update, newMajor *usableRelease
+	var majorFound bool
 	for i, c := range candidates {
 		switch {
 		case c.version.Major() == current.Major():
+			majorFound = true
 			if c.version.GreaterThan(current) && (update == nil || c.version.GreaterThan(update.version)) {
 				update = &candidates[i]
 			}
@@ -97,7 +92,7 @@ func selectVersions(candidates []usableRelease, current *semver.Version) Version
 			}
 		}
 	}
-	return Versions{Update: update.available(), NewMajor: newMajor.available()}
+	return Versions{Update: update.available(), NewMajor: newMajor.available(), CurrentMajorFound: majorFound}
 }
 
 func (r *usableRelease) available() *Available {
