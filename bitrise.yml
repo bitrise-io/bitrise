@@ -404,6 +404,11 @@ step_bundles:
             go build -o "$current_bitrise"
 
             export PR="" PULL_REQUEST_ID=""
+            # This CI step's envstore holds the env vars it passes to later steps. `bitrise tools` adds
+            # its tools' envs to whatever envstore ENVMAN_ENVSTORE_PATH names, so the tests must not
+            # inherit it: they would add envs to this build, and tests running in parallel would
+            # corrupt the file.
+            unset ENVMAN_ENVSTORE_PATH
             export INTEGRATION_TEST_BINARY_PATH="$current_bitrise"
             $current_bitrise setup
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,13 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var binPathStr string
-
-func BinPath() string {
-	if binPathStr != "" {
-		return binPathStr
-	}
-
+var BinPath = sync.OnceValue(func() string {
 	pth := os.Getenv("INTEGRATION_TEST_BINARY_PATH")
 	if pth == "" {
 		if os.Getenv("CI") == "true" {
@@ -28,9 +23,8 @@ func BinPath() string {
 			pth = "bitrise"
 		}
 	}
-	binPathStr = pth
 	return pth
-}
+})
 
 func ToBase64(str string) string {
 	return base64.StdEncoding.EncodeToString([]byte(str))

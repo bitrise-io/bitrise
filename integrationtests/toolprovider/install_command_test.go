@@ -15,6 +15,8 @@ import (
 )
 
 func TestToolsCommandHelp(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		args     []string
@@ -53,6 +55,8 @@ func TestToolsCommandHelp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			output, err := command.New(testhelpers.BinPath(), tt.args...).RunAndReturnTrimmedCombinedOutput()
 
 			require.NoError(t, err)
@@ -64,6 +68,8 @@ func TestToolsCommandHelp(t *testing.T) {
 }
 
 func TestToolsInstallArgumentValidation(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		args        []string
@@ -104,6 +110,8 @@ func TestToolsInstallArgumentValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			output, err := command.New(testhelpers.BinPath(), tt.args...).RunAndReturnTrimmedCombinedOutput()
 
 			if tt.expectError {
@@ -119,6 +127,8 @@ func TestToolsInstallArgumentValidation(t *testing.T) {
 }
 
 func TestToolsInstallCommand(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 
 	tests := []struct {
@@ -205,6 +215,8 @@ func TestToolsInstallCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			args := []string{"tools", "install", tt.toolName}
 			if tt.toolVersion != "" {
 				args = append(args, tt.toolVersion)
@@ -226,6 +238,8 @@ func TestToolsInstallCommand(t *testing.T) {
 }
 
 func TestToolsLatestCommand(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 
 	tests := []struct {
@@ -391,6 +405,8 @@ func TestToolsLatestCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			args := []string{"tools", "latest", tt.toolName}
 			if tt.toolVersion != "" {
 				args = append(args, tt.toolVersion)

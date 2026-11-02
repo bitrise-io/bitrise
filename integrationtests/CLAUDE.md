@@ -28,6 +28,8 @@ state across packages (steplib cache, `~/.bitrise`, temp and plugin dirs).
 - temp `XDG_CONFIG_HOME`, and clear `BITRISE_TOKEN` explicitly
 - `cmd.SetDir(tmpDir)` so no ancestor `.bitrise-cli.yml` leaks in
 - `BITRISE_ANALYTICS_DISABLED=true`
+- CI runs the tests without `ENVMAN_ENVSTORE_PATH`, so they can't write into the build's
+  envstore; a test that needs an envstore creates its own and passes it with `cmd.AppendEnvs`
 
 For a command that hits the API, serve canned responses from an `httptest.Server` and
 point `api_base_url` (or `rde_api_base_url`) at it through a fixture `config.yml` in

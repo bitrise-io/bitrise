@@ -246,25 +246,39 @@ func extractFile(tarReader *tar.Reader, header *tar.Header, targetPath string) e
 			return fmt.Errorf("create parent directory for %s: %w", targetPath, err)
 		}
 
-		outFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(header.Mode))
+		// Bootstraps sharing an install dir (parallel `bitrise tools setup` runs) extract over
+		// each other, and one may be running bin/mise while another writes it. Writing a temp
+		// file in the same directory and renaming it into place swaps the file atomically, so
+		// a concurrent reader sees either the old or the new file in full, never a partial one.
+		tmpFile, err := os.CreateTemp(dir, "."+filepath.Base(targetPath)+".tmp-*")
 		if err != nil {
-			return fmt.Errorf("create file %s: %w", targetPath, err)
+			return fmt.Errorf("create temp file for %s: %w", targetPath, err)
 		}
+		tmpPath := tmpFile.Name()
 		defer func() {
-			_ = outFile.Close()
+			_ = tmpFile.Close()
+			_ = os.Remove(tmpPath)
 		}()
 
-		_, err = io.Copy(outFile, tarReader)
+		_, err = io.Copy(tmpFile, tarReader)
 		if err != nil {
 			return fmt.Errorf("extract file %s: %w", targetPath, err)
 		}
+		if err := tmpFile.Close(); err != nil {
+			return fmt.Errorf("close temp file for %s: %w", targetPath, err)
+		}
 
+		mode := os.FileMode(header.Mode).Perm()
 		if filepath.Base(targetPath) == "mise" {
 			// Make mise binary executable.
-			err = os.Chmod(targetPath, 0755)
-			if err != nil {
-				return fmt.Errorf("make mise binary executable %s: %w", targetPath, err)
-			}
+			mode = 0755
+		}
+		if err := os.Chmod(tmpPath, mode); err != nil {
+			return fmt.Errorf("set mode of %s: %w", targetPath, err)
+		}
+
+		if err := os.Rename(tmpPath, targetPath); err != nil {
+			return fmt.Errorf("move %s into place: %w", targetPath, err)
 		}
 	default:
 		// Skip other file types (symlinks, etc.).
