@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -86,6 +87,32 @@ func TestResolve(t *testing.T) {
 			wantMajorSeen: true,
 			wantRequests:  2,
 		},
+		{
+			name: "a higher release of the major created before a lower one is still found",
+			pages: [][]Release{
+				append(majorReleases(3, releasesPerPage-1), release("v2.45.1")),
+				{release("v2.46.0")},
+			},
+			current:       "2.45.1",
+			wantUpdate:    available("2.46.0"),
+			wantNewMajor:  available(fmt.Sprintf("3.%d.0", releasesPerPage-2)),
+			wantMajorSeen: true,
+			wantRequests:  2,
+		},
+		{
+			name:         "a running major missing from the read pages is not reported as seen",
+			pages:        [][]Release{{release("v3.0.0"), release("v2.45.0")}},
+			current:      "1.2.3",
+			wantNewMajor: available("3.0.0"),
+			wantRequests: 1,
+		},
+		{
+			name:         "paging stops at the page bound",
+			pages:        slices.Repeat([][]Release{majorReleases(3, releasesPerPage)}, maxReleasePages+1),
+			current:      "2.44.0",
+			wantNewMajor: available(fmt.Sprintf("3.%d.0", releasesPerPage-1)),
+			wantRequests: maxReleasePages,
+		},
 	}
 
 	for _, tt := range tests {
@@ -110,39 +137,6 @@ func TestResolve_NotComparableCurrentVersionSendsNoRequest(t *testing.T) {
 
 	require.Error(t, err)
 	require.Zero(t, requests.Load())
-}
-
-func TestResolve_PagingIsBounded(t *testing.T) {
-	pages := make([][]Release, maxReleasePages+1)
-	for i := range pages {
-		pages[i] = majorReleases(3, releasesPerPage)
-	}
-	client, requests := newReleasesClient(t, pages)
-
-	versions, err := resolve(t.Context(), client, "2.44.0")
-
-	require.NoError(t, err)
-	require.Nil(t, versions.Update)
-	require.False(t, versions.CurrentMajorFound, "a nil Update must not read as up to date when the major was never seen")
-	require.EqualValues(t, maxReleasePages, requests.Load())
-}
-
-// The list is ordered by the commit date of the tag, which does not track the
-// version order, so a release of the running major is no sign that its newest one
-// has been read.
-func TestResolve_HigherVersionCreatedBeforeALowerOneOfItsMajorIsFound(t *testing.T) {
-	pages := [][]Release{
-		append(majorReleases(3, releasesPerPage-1), release("v2.45.1")),
-		{release("v2.46.0")},
-	}
-	client, requests := newReleasesClient(t, pages)
-
-	versions, err := resolve(t.Context(), client, "2.45.1")
-
-	require.NoError(t, err)
-	require.Equal(t, available("2.46.0"), versions.Update)
-	require.True(t, versions.CurrentMajorFound)
-	require.EqualValues(t, 2, requests.Load())
 }
 
 func TestResolve_RequestError(t *testing.T) {

@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -333,6 +335,13 @@ func setTimeouts(t *testing.T, command, waitDelay time.Duration) {
 	t.Cleanup(func() { commandTimeout, commandWaitDelay = oldCommand, oldWait })
 }
 
+func setVersionTimeout(t *testing.T, timeout time.Duration) {
+	t.Helper()
+	old := versionTimeout
+	versionTimeout = timeout
+	t.Cleanup(func() { versionTimeout = old })
+}
+
 func TestInstallCLI_RequiresPin(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	for _, pin := range [][2]string{{"", ""}, {"3.14.1", ""}, {"../3.14.1", strings.Repeat("a", 64)}, {"3.14.1", "not-a-sha"}} {
@@ -358,6 +367,244 @@ func TestActivateIfEnabled_SkipsNestedRuns(t *testing.T) {
 	assert.NoFileExists(t, out)
 }
 
+func TestActivateIfEnabled_ReusesThePreinstalledCLI(t *testing.T) {
+	isolate(t)
+	t.Setenv(EnvActivateAll, "true")
+	t.Setenv(EnvCLISHA256, "")
+	out := filepath.Join(t.TempDir(), "calls")
+	bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, out)
+	t.Setenv(EnvCLIPath, bin)
+	bin, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
+	var downloads atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { downloads.Add(1) }))
+	defer srv.Close()
+	t.Setenv(EnvHostCacheURL, srv.URL)
+
+	require.True(t, ActivateIfEnabled(testLogger(), nil))
+
+	assert.Zero(t, downloads.Load())
+	assert.NoDirExists(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache"))
+	target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
+	require.NoError(t, err)
+	assert.Equal(t, bin, target)
+	calls, err := os.ReadFile(out)
+	require.NoError(t, err)
+	assert.Equal(t, bin+" activate all --auto", strings.TrimSpace(string(calls)))
+}
+
+func TestInstallCLI_PreinstalledPath(t *testing.T) {
+	dir := t.TempDir()
+	notExecutable := filepath.Join(dir, "plain")
+	require.NoError(t, os.WriteFile(notExecutable, []byte("#!/bin/sh\necho "+testVersion+"\n"), 0o644))
+	failing := filepath.Join(dir, "failing")
+	require.NoError(t, os.WriteFile(failing, []byte("#!/bin/sh\nexit 1\n"), 0o755))
+
+	tests := []struct {
+		name  string
+		path  func(t *testing.T) string
+		reuse bool
+	}{
+		{"usable", func(t *testing.T) string {
+			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+		}, true},
+		{"usable with a v prefix", func(t *testing.T) string {
+			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "v"+testVersion, "/dev/null")
+		}, true},
+		{"missing", func(*testing.T) string { return filepath.Join(dir, "missing") }, false},
+		{"not executable", func(*testing.T) string { return notExecutable }, false},
+		{"a directory", func(*testing.T) string { return dir }, false},
+		{"wrong version", func(t *testing.T) string {
+			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "3.0.0", "/dev/null")
+		}, false},
+		{"version command fails", func(*testing.T) string { return failing }, false},
+		{"usable with a trailing slash", func(t *testing.T) string {
+			return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null") + "/"
+		}, true},
+		{"a symlink loop", func(t *testing.T) string {
+			loop := filepath.Join(t.TempDir(), "loop")
+			require.NoError(t, os.Symlink(loop, loop))
+
+			return loop
+		}, false},
+		{"a FIFO", func(t *testing.T) string {
+			fifo := filepath.Join(t.TempDir(), "fifo")
+			if err := syscall.Mkfifo(fifo, 0o755); err != nil {
+				t.Skipf("mkfifo is unavailable: %s", err)
+			}
+
+			return fifo
+		}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isolate(t)
+			installFakeCLI(t, "")
+			bin := tt.path(t)
+			t.Setenv(EnvCLIPath, bin)
+
+			got, err := installCLI(context.Background(), testLogger())
+
+			require.NoError(t, err)
+			want := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName)
+			if tt.reuse {
+				want, err = filepath.EvalSymlinks(filepath.Clean(bin))
+				require.NoError(t, err)
+			}
+			assert.Equal(t, want, got)
+			target, err := os.Readlink(filepath.Join(configs.GetBitriseToolsDirPath(), binaryName))
+			require.NoError(t, err)
+			assert.Equal(t, want, target)
+		})
+	}
+}
+
+func TestInstallCLI_PreinstalledPathShapes(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup func(t *testing.T) (envPath, realBin string)
+	}{
+		{"relative", func(t *testing.T) (string, string) {
+			dir := t.TempDir()
+			bin := fakeCLIAt(t, filepath.Join(dir, binaryName), testVersion, "/dev/null")
+			t.Chdir(dir)
+
+			return "./" + binaryName, bin
+		}},
+		{"a symlink to the CLI", func(t *testing.T) (string, string) {
+			dir := t.TempDir()
+			bin := fakeCLIAt(t, filepath.Join(dir, binaryName), testVersion, "/dev/null")
+			alias := filepath.Join(dir, "alias")
+			require.NoError(t, os.Symlink(bin, alias))
+
+			return alias, bin
+		}},
+		{"the CLI already at the tools entry", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			bin := fakeCLIAt(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
+		}},
+		{"the tools entry linked to the CLI", func(t *testing.T) (string, string) {
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			tools := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+			require.NoError(t, os.Symlink(bin, tools))
+
+			return tools, bin
+		}},
+		{"the tools entry linked to an older CLI", func(t *testing.T) (string, string) {
+			old := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), "3.0.0", "/dev/null")
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			require.NoError(t, os.Symlink(old, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)))
+
+			return bin, bin
+		}},
+		{"the tools entry a file of another version", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			fakeCLIAt(t, filepath.Join(configs.GetBitriseToolsDirPath(), binaryName), "3.0.0", "/dev/null")
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
+		}},
+		{"the tools entry a dangling link", func(t *testing.T) (string, string) {
+			require.NoError(t, os.MkdirAll(configs.GetBitriseToolsDirPath(), 0o755))
+			require.NoError(t, os.Symlink(filepath.Join(t.TempDir(), "gone"), filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)))
+			bin := fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+
+			return bin, bin
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isolate(t)
+			installFakeCLI(t, "")
+			envPath, realBin := tt.setup(t)
+			t.Setenv(EnvCLIPath, envPath)
+			wantBin, err := filepath.EvalSymlinks(realBin)
+			require.NoError(t, err)
+
+			got, err := installCLI(context.Background(), testLogger())
+
+			require.NoError(t, err)
+			assert.Equal(t, wantBin, got)
+			tools := filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
+			resolved, err := filepath.EvalSymlinks(tools)
+			require.NoError(t, err, "the tools entry must resolve to a file")
+			assert.Equal(t, wantBin, resolved)
+			assert.NoError(t, exec.Command(tools, "version").Run(), "the tools entry must run")
+		})
+	}
+}
+
+func TestInstallCLI_PreinstalledPathDoesNotRelaxThePin(t *testing.T) {
+	good := func(t *testing.T) string {
+		return fakeCLIAt(t, filepath.Join(t.TempDir(), binaryName), testVersion, "/dev/null")
+	}
+
+	t.Run("the version is still required", func(t *testing.T) {
+		isolate(t)
+		t.Setenv(EnvCLIVersion, "")
+		t.Setenv(EnvCLIPath, good(t))
+
+		_, err := installCLI(context.Background(), testLogger())
+
+		require.ErrorContains(t, err, EnvCLIVersion)
+	})
+	t.Run("the checksum is required once the path is unusable", func(t *testing.T) {
+		isolate(t)
+		t.Setenv(EnvCLISHA256, "")
+		t.Setenv(EnvCLIPath, filepath.Join(t.TempDir(), "missing"))
+
+		_, err := installCLI(context.Background(), testLogger())
+
+		require.ErrorContains(t, err, EnvCLISHA256)
+	})
+}
+
+func TestInstallCLI_AHangingVersionCommandFallsBack(t *testing.T) {
+	isolate(t)
+	installFakeCLI(t, "")
+	setTimeouts(t, 3*time.Second, 100*time.Millisecond)
+	setVersionTimeout(t, 200*time.Millisecond)
+	hanging := filepath.Join(t.TempDir(), binaryName)
+	require.NoError(t, os.WriteFile(hanging, []byte("#!/bin/sh\nsleep 10 &\nwait\n"), 0o755))
+	t.Setenv(EnvCLIPath, hanging)
+
+	start := time.Now()
+	got, err := installCLI(context.Background(), testLogger())
+
+	require.NoError(t, err)
+	assert.Less(t, time.Since(start), 5*time.Second)
+	assert.Equal(t, filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", testVersion, binaryName), got)
+}
+
+func TestInstallCLI_APreinstalledCLILeavingADescendantOnItsOutputIsReused(t *testing.T) {
+	isolate(t)
+	installFakeCLI(t, "")
+	setTimeouts(t, 3*time.Second, 300*time.Millisecond)
+	bin := filepath.Join(t.TempDir(), binaryName)
+	require.NoError(t, os.WriteFile(bin, []byte("#!/bin/sh\nif [ \"$1\" = version ]; then echo "+testVersion+"; sleep 3 & exit 0; fi\n"), 0o755))
+	t.Setenv(EnvCLIPath, bin)
+	want, err := filepath.EvalSymlinks(bin)
+	require.NoError(t, err)
+
+	got, err := installCLI(context.Background(), testLogger())
+
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+// fakeCLIAt writes a CLI that prints version for `version` and appends its path and arguments to out otherwise.
+func fakeCLIAt(t *testing.T, bin, version, out string) string {
+	t.Helper()
+	script := "#!/bin/sh\nif [ \"$1\" = version ]; then echo " + version + "; exit 0; fi\necho \"$0 $@\" >> " + out + "\n"
+	require.NoError(t, os.WriteFile(bin, []byte(script), 0o755))
+
+	return bin
+}
+
 func installFakeCLI(t *testing.T, script string) {
 	t.Helper()
 	dir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", os.Getenv(EnvCLIVersion))
@@ -371,7 +618,7 @@ func isolate(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv(analytics.StepExecutionIDEnvKey, "")
 	for _, key := range []string{
-		EnvActivateAll, EnvActivateGradleMirrors, EnvHostCacheURL, envDisableHostsOverride, envMavenCentralProxy,
+		EnvActivateAll, EnvActivateGradleMirrors, EnvHostCacheURL, EnvCLIPath, envDisableHostsOverride, envMavenCentralProxy,
 		servicesTokenKey, buildHubVMTokenKey, buildHubVMTokenURLKey,
 	} {
 		t.Setenv(key, "")

@@ -17,6 +17,8 @@ import (
 )
 
 func TestFallbackDownloadURLs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		os   string
 		arch string

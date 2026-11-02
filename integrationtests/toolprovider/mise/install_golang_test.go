@@ -12,6 +12,8 @@ import (
 )
 
 func TestMiseInstallGolangVersion(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name               string
 		requestedVersion   string
@@ -24,15 +26,17 @@ func TestMiseInstallGolangVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		miseInstallDir := t.TempDir()
-		miseDataDir := t.TempDir()
-		miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, nil)
-		require.NoError(t, err)
-
-		err = miseProvider.Bootstrap()
-		require.NoError(t, err)
-
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			miseInstallDir := t.TempDir()
+			miseDataDir := t.TempDir()
+			miseProvider, err := mise.NewToolProvider(miseInstallDir, miseDataDir, false, false, isolatedEnvs(t))
+			require.NoError(t, err)
+
+			err = miseProvider.Bootstrap()
+			require.NoError(t, err)
+
 			request := provider.ToolRequest{
 				ToolName:           "golang",
 				UnparsedVersion:    tt.requestedVersion,

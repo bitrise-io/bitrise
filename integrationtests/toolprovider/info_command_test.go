@@ -15,6 +15,8 @@ import (
 )
 
 func TestToolsInfoCommandHelp(t *testing.T) {
+	t.Parallel()
+
 	output, err := command.New(testhelpers.BinPath(), "tools", "info", "--help").RunAndReturnTrimmedCombinedOutput()
 
 	require.NoError(t, err)
@@ -24,6 +26,8 @@ func TestToolsInfoCommandHelp(t *testing.T) {
 }
 
 func TestToolsInfoCommand(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name           string
 		args           []string
@@ -105,6 +109,8 @@ func TestToolsInfoCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			cmd := command.New(testhelpers.BinPath(), tt.args...)
 			output, err := cmd.RunAndReturnTrimmedCombinedOutput()
 
@@ -116,6 +122,8 @@ func TestToolsInfoCommand(t *testing.T) {
 }
 
 func TestToolsInfoJSONStructure(t *testing.T) {
+	t.Parallel()
+
 	t.Run("installed tools JSON structure", func(t *testing.T) {
 		cmd := command.New(testhelpers.BinPath(), "tools", "info", "--format", "json")
 		output, err := cmd.RunAndReturnTrimmedCombinedOutput()
@@ -158,6 +166,8 @@ func TestToolsInfoJSONStructure(t *testing.T) {
 }
 
 func TestToolsInfoAfterInstall(t *testing.T) {
+	t.Parallel()
+
 	tmpDir := t.TempDir()
 
 	installCmd := command.New(testhelpers.BinPath(), "tools", "install", "node@20.10.0", "--format", "json")
