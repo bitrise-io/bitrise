@@ -3,10 +3,13 @@ package bitrise
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/plugins"
 	"github.com/bitrise-io/bitrise/v3/progress"
@@ -161,14 +164,14 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool, no
 	}
 
 	// check whether installed
-	progInstallPth, err := utils.CheckProgramInstalledPath(toolname)
+	progInstallPth, err := lookPathOutsideShims(toolname)
 	if err != nil {
 		if !isInstall {
 			return err
 		}
 		return doInstall()
 	}
-	versionOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr(toolname, "-version")
+	versionOutput, err := command.RunCommandAndReturnCombinedStdoutAndStderr(progInstallPth, "-version")
 	if err != nil {
 		log.Print(versionOutput)
 		return fmt.Errorf("run %s -version", toolname)
@@ -202,6 +205,26 @@ func checkIsBitriseToolInstalled(toolname, minVersion string, isInstall bool, no
 
 	log.Printf("%s %s (%s): %s", colorstring.Green("[OK]"), toolname, versionOutput, progInstallPth)
 	return nil
+}
+
+// lookPathOutsideShims finds the installed binary of a tool. A shim resolves to this CLI,
+// whose version says nothing about the binary setup manages (and is "dev" on a plain go build).
+func lookPathOutsideShims(toolname string) (string, error) {
+	shimsDir := configs.GetBitriseShimsDirPath()
+	for _, dir := range filepath.SplitList(os.Getenv("PATH")) {
+		if dir == "" || filepath.Clean(dir) == shimsDir {
+			continue
+		}
+		// Absolute, so running it later is not another PATH lookup, which would find the shim.
+		pth, err := filepath.Abs(filepath.Join(dir, toolname))
+		if err != nil {
+			continue
+		}
+		if utils.IsExecutable(pth) {
+			return pth, nil
+		}
+	}
+	return "", fmt.Errorf("%s not found in PATH", toolname)
 }
 
 // CheckIsEnvmanInstalled ...

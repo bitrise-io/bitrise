@@ -16,12 +16,19 @@ import (
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/output"
 	"github.com/bitrise-io/bitrise/v3/plugins"
+	"github.com/bitrise-io/bitrise/v3/tools"
 	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/spf13/cobra"
 )
 
 // Run ...
 func Run() {
+	// A shim is a symlink to this binary. It skips everything below, since steps call
+	// the tools many times and their interface (single-dash flags included) must stay unchanged.
+	if tools.RunAsShim(os.Args[0]) {
+		return
+	}
+
 	rawArgs := os.Args[1:]
 
 	rootCmd := newRootCommand()
