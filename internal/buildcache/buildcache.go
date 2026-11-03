@@ -25,8 +25,6 @@ import (
 const (
 	// EnvActivateAll opts a build in; the DEN agent passes BITRISE_* envs through, so preboot can set it.
 	EnvActivateAll = "BITRISE_BUILD_CACHE_ACTIVATE_ALL"
-	// EnvActivateGradleMirrors opts a build in to the Gradle repository mirrors, independently of the activation above.
-	EnvActivateGradleMirrors = "BITRISE_BUILD_CACHE_ACTIVATE_GRADLE_MIRRORS"
 	// EnvCLIPath points at the CLI the VM setup installed; the hook never downloads one itself.
 	EnvCLIPath = "BITRISE_BUILD_CACHE_CLI_PATH"
 
@@ -37,9 +35,6 @@ const (
 	gradleUserHomeKey     = "GRADLE_USER_HOME"
 
 	activationTimeout = 3 * time.Minute
-
-	envDisableHostsOverride = "BITRISE_DEN_DISABLE_HOSTS_OVERRIDE"
-	envMavenCentralProxy    = "BITRISE_MAVENCENTRAL_PROXY_ENABLED"
 )
 
 var (
@@ -62,20 +57,14 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	values, err := evaluate(buildEnvs)
 	if err != nil {
 		// Only a build that opted in at the VM level has reason to see this.
-		if os.Getenv(EnvActivateAll) == "true" || os.Getenv(EnvActivateGradleMirrors) == "true" {
+		if os.Getenv(EnvActivateAll) == "true" {
 			logger.Warnf("Bitrise Build Cache activation skipped, could not evaluate the build envs: %s", err)
 		}
 
 		return false
 	}
 
-	all := enabled(values, EnvActivateAll)
-	mirrors := enabled(values, EnvActivateGradleMirrors)
-	if mirrors && os.Getenv(envDisableHostsOverride) == "true" {
-		logger.Infof("Skipping the Gradle mirrors because %s is true", envDisableHostsOverride)
-		mirrors = false
-	}
-	if !all && !mirrors {
+	if !enabled(values, EnvActivateAll) {
 		return false
 	}
 
@@ -90,22 +79,10 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 		return true
 	}
 
-	if mirrors {
-		// The mirrors' init script re-reads this at build time, so a build can still switch them off.
-		env := append(os.Environ(), envMavenCentralProxy+"=true")
-		if home, ok := values[gradleUserHomeKey]; ok {
-			env = append(env, gradleUserHomeKey+"="+home)
-		}
-		if err := run(ctx, logger, bin, env, "activate", "gradle-mirrors", "-d"); err != nil {
-			logger.Warnf("activating bitrise-build-cache gradle-mirrors failed: %s", err)
-		}
-	}
-	if all {
-		// exec keeps the last value of a duplicated key, so build envs win.
-		env := append(os.Environ(), cacheEnvs(values)...)
-		if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
-			logger.Warnf("Bitrise Build Cache activation failed, continuing without it: activate all: %s", err)
-		}
+	// exec keeps the last value of a duplicated key, so build envs win.
+	env := append(os.Environ(), cacheEnvs(values)...)
+	if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
+		logger.Warnf("Bitrise Build Cache activation failed, continuing without it: activate all: %s", err)
 	}
 
 	return true
