@@ -1,0 +1,38 @@
+steps:
+- args: [-l, debug, init]
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] - Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] [ENVMAN] - Initialized
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [--loglevel, debug, add, --key, A, --value, a]
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] adding flag value: (a)
+    DEBU[HH:MM:SS] [ENVMAN] Env added
+    DEBU[HH:MM:SS] - A: a
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [init]
+  env:
+  - LOGLEVEL=debug
+  exit_code: 1
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] - Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] [ENVMAN] - Initialized
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: Path already exist: $WORK/.envstore.yml
+- args: [-l, warn, init]
+  env:
+  - LOGLEVEL=debug
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: Path already exist: $WORK/.envstore.yml
+- args: [-l, invalid, init]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [BITRISE_CLI] - Failed to parse log level:not a valid logrus Level: "invalid"

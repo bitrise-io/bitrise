@@ -1,0 +1,28 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+- args: [add, --key, B, --value, ""]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+      - B: ""
+- args: [add, --key, C]
+  stdin: ""
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+      - B: ""
+      - C: ""

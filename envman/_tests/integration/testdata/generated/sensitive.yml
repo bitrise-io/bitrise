@@ -1,0 +1,79 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, public]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: public
+- args: [add, --key, B, --value, secret, --sensitive]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: public
+      - B: secret
+        opts:
+          is_sensitive: true
+- args: [add, --key, C, --value, $B-derived, --sensitive]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: public
+      - B: secret
+        opts:
+          is_sensitive: true
+      - C: $B-derived
+        opts:
+          is_sensitive: true
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"A":"public","B":"secret","C":"$B-derived"}
+- args: [print, --format, json, --sensitive-only]
+  exit_code: 0
+  stdout: |
+    {"B":"secret","C":"$B-derived"}
+- args: [print, --format, json, --sensitive-only, --expand]
+  exit_code: 0
+  stdout: |
+    {"B":"secret","C":"secret-derived"}
+- args: [print, --sensitive-only]
+  exit_code: 0
+  stdout: |2
+
+
+    B: secret
+    C: $B-derived
+- args: [-l, debug, add, --key, D, --value, debug-secret, --sensitive]
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] adding flag value: (debug-secret)
+    DEBU[HH:MM:SS] [ENVMAN] Env added
+    DEBU[HH:MM:SS] - A: public
+    DEBU[HH:MM:SS] - B: secret
+    DEBU[HH:MM:SS] - C: $B-derived
+    DEBU[HH:MM:SS] - D: debug-secret
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: public
+      - B: secret
+        opts:
+          is_sensitive: true
+      - C: $B-derived
+        opts:
+          is_sensitive: true
+      - D: debug-secret
+        opts:
+          is_sensitive: true
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  exit_code: 0
+  stdout: |
+    A=public|B=secret|C=secret-derived

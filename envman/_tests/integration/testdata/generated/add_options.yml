@@ -1,0 +1,78 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, NO_EXPAND, --value, $HOME, --no-expand]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - NO_EXPAND: $HOME
+        opts:
+          is_expand: false
+- args: [add, --key, NO_EXPAND_SHORT, --value, $HOME, -n]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - NO_EXPAND: $HOME
+        opts:
+          is_expand: false
+      - NO_EXPAND_SHORT: $HOME
+        opts:
+          is_expand: false
+- args: [add, --key, SKIP, --value, "", --skip-if-empty]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - NO_EXPAND: $HOME
+        opts:
+          is_expand: false
+      - NO_EXPAND_SHORT: $HOME
+        opts:
+          is_expand: false
+      - SKIP: ""
+        opts:
+          skip_if_empty: true
+- args: [add, --key, SENSITIVE, --value, secret, --sensitive]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - NO_EXPAND: $HOME
+        opts:
+          is_expand: false
+      - NO_EXPAND_SHORT: $HOME
+        opts:
+          is_expand: false
+      - SKIP: ""
+        opts:
+          skip_if_empty: true
+      - SENSITIVE: secret
+        opts:
+          is_sensitive: true
+- args: [add, --key, ALL, --value, x, -n, --skip-if-empty, --sensitive, -a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - NO_EXPAND: $HOME
+        opts:
+          is_expand: false
+      - NO_EXPAND_SHORT: $HOME
+        opts:
+          is_expand: false
+      - SKIP: ""
+        opts:
+          skip_if_empty: true
+      - SENSITIVE: secret
+        opts:
+          is_sensitive: true
+      - ALL: x
+        opts:
+          is_expand: false
+          skip_if_empty: true
+          is_sensitive: true

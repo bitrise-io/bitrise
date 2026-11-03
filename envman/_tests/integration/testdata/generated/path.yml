@@ -1,0 +1,66 @@
+steps:
+- args: [-p, $WORK/short.yml, init]
+  exit_code: 0
+  changed_files:
+    short.yml: |
+      envs: []
+- args: [-p, $WORK/short.yml, add, --key, A, --value, short]
+  exit_code: 0
+  changed_files:
+    short.yml: |
+      envs:
+      - A: short
+- args: [--path, $WORK/long.yml, init]
+  exit_code: 0
+  changed_files:
+    long.yml: |
+      envs: []
+- args: [--path, $WORK/long.yml, add, --key, A, --value, long]
+  exit_code: 0
+  changed_files:
+    long.yml: |
+      envs:
+      - A: long
+- args: [init]
+  env:
+  - ENVMAN_ENVSTORE_PATH=$WORK/env.yml
+  exit_code: 0
+  changed_files:
+    env.yml: |
+      envs: []
+- args: [add, --key, A, --value, env]
+  env:
+  - ENVMAN_ENVSTORE_PATH=$WORK/env.yml
+  exit_code: 0
+  changed_files:
+    env.yml: |
+      envs:
+      - A: env
+- args: [-p, $WORK/short.yml, add, --key, A, --value, flag]
+  env:
+  - ENVMAN_ENVSTORE_PATH=$WORK/env.yml
+  exit_code: 0
+  changed_files:
+    short.yml: |
+      envs:
+      - A: flag
+- args: [-p, relative.yml, init]
+  exit_code: 0
+  changed_files:
+    relative.yml: |
+      envs: []
+- args: [-p, relative.yml, add, --key, A, --value, relative]
+  exit_code: 0
+  changed_files:
+    relative.yml: |
+      envs:
+      - A: relative
+- args: [-p, $WORK/missing-dir/store.yml, init]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: open $WORK/missing-dir/store.yml: no such file or directory
+- args: [-p, "", init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []

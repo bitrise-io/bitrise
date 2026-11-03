@@ -1,0 +1,55 @@
+steps:
+- args: [add, --key, KEY, --value, value]
+  env:
+  - DONOTEXPORT=os
+  - EXPORT_THIS=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - KEY: value
+- args: [add, --key, ADDED, --value, sample value]
+  env:
+  - DONOTEXPORT=os
+  - EXPORT_THIS=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - KEY: value
+      - ADDED: sample value
+- args: [unset, --key, ADDED]
+  env:
+  - DONOTEXPORT=os
+  - EXPORT_THIS=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - KEY: value
+      - ADDED: ""
+        opts:
+          unset: true
+- args: [unset, --key, DONOTEXPORT]
+  env:
+  - DONOTEXPORT=os
+  - EXPORT_THIS=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - KEY: value
+      - ADDED: ""
+        opts:
+          unset: true
+      - DONOTEXPORT: ""
+        opts:
+          unset: true
+- args: [run, sh, -c, 'printf ''%s|%s|%s|%s\n'' "${KEY-<unset>}" "${ADDED-<unset>}"
+      "${DONOTEXPORT-<unset>}" "${EXPORT_THIS-<unset>}"']
+  env:
+  - DONOTEXPORT=os
+  - EXPORT_THIS=os
+  exit_code: 0
+  stdout: |
+    value|<unset>|<unset>|os

@@ -1,0 +1,15 @@
+steps:
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"A":"duplicate","B":"quoted","C":"c"}
+- args: [add, --key, D, --value, d]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - A: duplicate
+      - B: quoted
+      - C: c
+      - D: d

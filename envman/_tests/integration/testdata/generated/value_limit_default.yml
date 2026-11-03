@@ -1,0 +1,20 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, OVER, --valuefile, over_limit]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (OVER) value is too large (256.0009765625 KB), max allowed size: 256 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, MULTIBYTE, --valuefile, multibyte]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (MULTIBYTE) value is too large (256.0009765625 KB), max allowed size: 256 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, AT, --valuefile, at_limit]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <262157 bytes, sha256 4949b8a3ab076d2d44a57f97961e6e7404d658d93e19062bcf1cd95091630ab1>

@@ -1,0 +1,236 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, COLON, --value, 'a: b']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+- args: [add, --key, LEADING_SPACE, --value, '  lead']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+- args: [add, --key, TRAILING_SPACE, --value, 'trail  ']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+- args: [add, --key, HASH, --value, '# not a comment']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+- args: [add, --key, BOOL, --value, "true"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+- args: [add, --key, NUMBER, --value, "0123"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+- args: [add, --key, "NULL", --value, "null"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+- args: [add, --key, TILDE, --value, "~"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+- args: [add, --key, QUOTES, --value, '"double" ''single''']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+- args: [add, --key, MULTILINE]
+  stdin: |
+    line1
+    line2
+
+    line4
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+- args: [add, --key, CRLF]
+  stdin: "a\r\nb"
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+      - CRLF: "a\r\nb"
+- args: [add, --key, TAB]
+  stdin: "a\tb"
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+      - CRLF: "a\r\nb"
+      - TAB: "a\tb"
+- args: [add, --key, UNICODE, --value, ünï©ødé ✓]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+      - CRLF: "a\r\nb"
+      - TAB: "a\tb"
+      - UNICODE: ünï©ødé ✓
+- args: [add, --key, YAML_LIKE, --value, '- [a, {b: c}]']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+      - CRLF: "a\r\nb"
+      - TAB: "a\tb"
+      - UNICODE: ünï©ødé ✓
+      - YAML_LIKE: '- [a, {b: c}]'
+- args: [add, --key, lower.dotted-key, --value, k]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - COLON: 'a: b'
+      - LEADING_SPACE: '  lead'
+      - TRAILING_SPACE: 'trail  '
+      - HASH: '# not a comment'
+      - BOOL: "true"
+      - NUMBER: "0123"
+      - "NULL": "null"
+      - TILDE: "~"
+      - QUOTES: '"double" ''single'''
+      - MULTILINE: |
+          line1
+          line2
+
+          line4
+      - CRLF: "a\r\nb"
+      - TAB: "a\tb"
+      - UNICODE: ünï©ødé ✓
+      - YAML_LIKE: '- [a, {b: c}]'
+      - lower.dotted-key: k
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"BOOL":"true","COLON":"a: b","CRLF":"a\r\nb","HASH":"# not a comment","LEADING_SPACE":"  lead","MULTILINE":"line1\nline2\n\nline4\n","NULL":"null","NUMBER":"0123","QUOTES":"\"double\" 'single'","TAB":"a\tb","TILDE":"~","TRAILING_SPACE":"trail  ","UNICODE":"ünï©ødé ✓","YAML_LIKE":"- [a, {b: c}]","lower.dotted-key":"k"}

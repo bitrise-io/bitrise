@@ -1,0 +1,39 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [add, --key, B, --value, '$A-${A}-$$A-\$A']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A-${A}-$$A-\$A
+- args: [add, --key, C, --value, '$B/$UNDEFINED/${UNDEFINED}/end']
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A-${A}-$$A-\$A
+      - C: $B/$UNDEFINED/${UNDEFINED}/end
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"A":"a","B":"$A-${A}-$$A-\\$A","C":"$B/$UNDEFINED/${UNDEFINED}/end"}
+- args: [print, --format, json, --expand]
+  exit_code: 0
+  stdout: |
+    {"A":"a","B":"a-a-A-\\a","C":"a-a-A-\\a///end"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  exit_code: 0
+  stdout: |
+    A=a|B=a-a-A-\a|C=a-a-A-\a///end

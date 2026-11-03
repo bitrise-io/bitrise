@@ -1,0 +1,87 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [version, -h]
+  exit_code: 0
+  stdout: |+
+    NAME:
+       envman version - Prints the version
+
+    USAGE:
+       envman version [command options] [arguments...]
+
+    OPTIONS:
+       --format value  Output format. Accepted: json, yml
+       --full          Prints the build number and commit as well.
+
+- args: [init, -h]
+  exit_code: 0
+  stdout: |+
+    NAME:
+       envman init - Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.
+
+    USAGE:
+       envman init [command options] [arguments...]
+
+    OPTIONS:
+       --clear, -c  If enabled, 'envman init' removes envstore if exist.
+
+- args: [add, --help]
+  exit_code: 0
+  stdout: |+
+    NAME:
+       envman add - Add new, or update an exist environment variable.
+
+    USAGE:
+       envman add [command options] [arguments...]
+
+    OPTIONS:
+       --key value, -k value        Key of the environment variable. Empty string ("") is NOT accepted.
+       --value value, -v value      Value of the environment variable. Empty string is accepted.
+       --valuefile value, -f value  Path of a file which contains the environment variable's value to be stored.
+       --no-expand, -n              If enabled, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.
+       --append, -a                 If enabled, new env will append to envstore, otherwise if env exist with specified key, will replaced.
+       --skip-if-empty              If enabled the added environment variable will be skipped during envman run, if the value is empty. If not set then the empty value will be used.
+       --sensitive                  The environment variable will be marked as sensitive.
+
+- args: [clear, -h]
+  exit_code: 0
+  stdout: |
+    NAME:
+       envman clear - Clear the envstore.
+
+    USAGE:
+       envman clear [arguments...]
+- args: [print, -h]
+  exit_code: 0
+  stdout: |2
+
+
+
+       --expand          If enabled, expanded envs will use.
+       --format value    Output format (options: raw, json, envlist).
+       --sensitive-only  Print the only environment variables that are marked as sensitive.
+       envman print - Print out the environment variables in envstore.
+       envman print [command options] [arguments...]
+    NAME:
+    OPTIONS:
+    USAGE:
+- args: [run, -h]
+  exit_code: 255
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exec: "-h": executable file not found in $PATH
+- args: [unset, -h]
+  exit_code: 0
+  stdout: |+
+    NAME:
+       envman unset - Enlist an environment variable to be unset (for example to clear OS inherited vars for the process).
+
+    USAGE:
+       envman unset [command options] [arguments...]
+
+    OPTIONS:
+       --key value, -k value  Key of the environment variable. Empty string ("") is NOT accepted.
+

@@ -1,0 +1,49 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, OVER, --valuefile, 1kb_plus]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (OVER) value is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, AT, --valuefile, 1kb]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <1037 bytes, sha256 e1876eba51596558b1699df8880f4777a7273b50fb52c5ecc14785b69069effa>
+- args: [add, --key, ENV_WINS, --valuefile, 1kb_plus]
+  env:
+  - ENVMAN_ENV_BYTES_LIMIT_IN_KB=2
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <2075 bytes, sha256 bafb2776b7244a6e55cd90b58819cca126e2682c27737b2bb15e015cc0d14ce1>
+- args: [add, --key, INVALID_ENV, --valuefile, 1kb_plus]
+  env:
+  - ENVMAN_ENV_BYTES_LIMIT_IN_KB=abc
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (INVALID_ENV) value is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, NEGATIVE_ENV, --valuefile, 1kb_plus]
+  env:
+  - ENVMAN_ENV_BYTES_LIMIT_IN_KB=-1
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (NEGATIVE_ENV) value is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, EMPTY_ENV, --valuefile, 1kb_plus]
+  env:
+  - ENVMAN_ENV_BYTES_LIMIT_IN_KB=
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (EMPTY_ENV) value is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, FLOAT_ENV, --valuefile, 1kb_plus]
+  env:
+  - ENVMAN_ENV_BYTES_LIMIT_IN_KB=1.5
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var (FLOAT_ENV) value is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large

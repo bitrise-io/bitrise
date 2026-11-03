@@ -1,0 +1,77 @@
+steps:
+- args: [help]
+  exit_code: 0
+  stdout: |2+
+
+    NAME: envman - Environment variable manager
+
+    USAGE: envman [OPTIONS] COMMAND [arg...]
+
+    VERSION: $VERSION
+
+    GLOBAL OPTIONS:
+      --loglevel value, -l value  Log level (options: debug, info, warn, error, fatal, panic). (default: "info") [$LOGLEVEL]
+      --path value, -p value      Path of the envstore. [$ENVMAN_ENVSTORE_PATH]
+      --tool, -t                  If enabled, envman will NOT ask for user inputs. [$ENVMAN_TOOLMODE]
+      --help, -h                  Show help.
+      --version, -v               Print the version.
+
+    COMMANDS:
+      version  Prints the version
+      init     Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.
+      add      Add new, or update an exist environment variable.
+      clear    Clear the envstore.
+      print    Print out the environment variables in envstore.
+      run      Run the specified command with the environment variables stored in the envstore.
+      unset    Enlist an environment variable to be unset (for example to clear OS inherited vars for the process).
+      help     Shows a list of commands or help for one command
+
+    COMMAND HELP: envman COMMAND --help/-h
+
+- args: [help, add]
+  exit_code: 0
+  stdout: |+
+    NAME:
+       envman add - Add new, or update an exist environment variable.
+
+    USAGE:
+       envman add [command options] [arguments...]
+
+    OPTIONS:
+       --key value, -k value        Key of the environment variable. Empty string ("") is NOT accepted.
+       --value value, -v value      Value of the environment variable. Empty string is accepted.
+       --valuefile value, -f value  Path of a file which contains the environment variable's value to be stored.
+       --no-expand, -n              If enabled, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.
+       --append, -a                 If enabled, new env will append to envstore, otherwise if env exist with specified key, will replaced.
+       --skip-if-empty              If enabled the added environment variable will be skipped during envman run, if the value is empty. If not set then the empty value will be used.
+       --sensitive                  The environment variable will be marked as sensitive.
+
+- args: [h]
+  exit_code: 0
+  stdout: |2+
+
+    NAME: envman - Environment variable manager
+
+    USAGE: envman [OPTIONS] COMMAND [arg...]
+
+    VERSION: $VERSION
+
+    GLOBAL OPTIONS:
+      --loglevel value, -l value  Log level (options: debug, info, warn, error, fatal, panic). (default: "info") [$LOGLEVEL]
+      --path value, -p value      Path of the envstore. [$ENVMAN_ENVSTORE_PATH]
+      --tool, -t                  If enabled, envman will NOT ask for user inputs. [$ENVMAN_TOOLMODE]
+      --help, -h                  Show help.
+      --version, -v               Print the version.
+
+    COMMANDS:
+      version  Prints the version
+      init     Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.
+      add      Add new, or update an exist environment variable.
+      clear    Clear the envstore.
+      print    Print out the environment variables in envstore.
+      run      Run the specified command with the environment variables stored in the envstore.
+      unset    Enlist an environment variable to be unset (for example to clear OS inherited vars for the process).
+      help     Shows a list of commands or help for one command
+
+    COMMAND HELP: envman COMMAND --help/-h
+
