@@ -625,6 +625,16 @@ step_bundles:
               | tee "$test_log" || test_exit_code=$?
             go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests.xml"
 
+            # The same tests against the CLI shim: a symlink named envman to the bitrise binary,
+            # the way setup creates it
+            shim_dir="$(pwd)/_tmp/shim"
+            go build -o "${shim_dir}/bitrise" .
+            ln -sf "${shim_dir}/bitrise" "${shim_dir}/envman"
+            shim_log="${BITRISE_DEPLOY_DIR}/envman_shim_tests.log"
+            INTEGRATION_TEST_BINARY_PATH="${shim_dir}/envman" go test -v ./envman/_tests/integration/... 2>&1 \
+              | tee "$shim_log" || test_exit_code=$?
+            go-junit-report -in "$shim_log" -out "${BITRISE_DEPLOY_DIR}/envman_shim_tests.xml"
+
             # The parity suite against the envman steps run with today
             parity_log="${BITRISE_DEPLOY_DIR}/envman_parity_tests_stack.log"
             INTEGRATION_TEST_BINARY_PATH="$(command -v envman)" go test -v -run TestGolden ./envman/_tests/integration/... 2>&1 \
@@ -637,6 +647,12 @@ step_bundles:
         inputs:
         - test_name: Envman integration tests on $TEST_OS_NAME
         - base_path: $BITRISE_DEPLOY_DIR/envman_integration_tests.xml
+        - search_pattern: "*"
+    - custom-test-results-export@1:
+        title: Export envman shim test results
+        inputs:
+        - test_name: Envman integration tests on $TEST_OS_NAME (CLI shim)
+        - base_path: $BITRISE_DEPLOY_DIR/envman_shim_tests.xml
         - search_pattern: "*"
     - custom-test-results-export@1:
         title: Export envman parity test results
