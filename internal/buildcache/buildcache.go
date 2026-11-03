@@ -17,9 +17,11 @@ import (
 	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
+	"github.com/bitrise-io/bitrise/v3/internal/symlink"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/log/logwriter"
 	"github.com/bitrise-io/bitrise/v3/tools"
+	"github.com/bitrise-io/bitrise/v3/utils"
 )
 
 const (
@@ -33,6 +35,8 @@ const (
 	buildHubVMTokenURLKey = "BITRISEIO_BUILD_HUB_VM_TOKEN_URL"
 	buildCacheEnvPrefix   = "BITRISE_BUILD_CACHE_"
 	gradleUserHomeKey     = "GRADLE_USER_HOME"
+
+	binaryName = "bitrise-build-cache"
 
 	activationTimeout = 3 * time.Minute
 )
@@ -185,7 +189,7 @@ func usePreinstalled(ctx context.Context, path string) (string, string, error) {
 	}
 
 	if tools := toolsLinkPath(); !sameFile(tools, bin) {
-		if err := link(bin, tools); err != nil {
+		if err := symlink.Ensure(bin, tools); err != nil {
 			return "", "", fmt.Errorf("link onto PATH: %w", err)
 		}
 	}
@@ -201,7 +205,7 @@ func sameFile(a, b string) bool {
 }
 
 func reportedVersion(ctx context.Context, bin string) (string, error) {
-	if !isExecutable(bin) {
+	if !utils.IsExecutable(bin) {
 		return "", errors.New("not an executable file")
 	}
 
