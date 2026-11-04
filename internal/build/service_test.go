@@ -570,6 +570,11 @@ func TestStep_RunTime(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestStep_FailedBuild(t *testing.T) {
+	assert.True(t, Step{Status: "aborted_with_no_output"}.FailedBuild())
+	assert.False(t, Step{Status: "failed_skippable"}.FailedBuild())
+}
+
 func TestStep_SkippedAfterFailure(t *testing.T) {
 	assert.True(t, Step{Status: "skipped", StatusReason: `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`}.SkippedAfterFailure())
 	assert.False(t, Step{Status: "skipped", StatusReason: "This Step was skipped, because the build was aborted."}.SkippedAfterFailure())

@@ -122,9 +122,14 @@ func (st Step) RunTime() (d time.Duration, ok bool) {
 	return st.FinishedAt.Sub(*st.StartedAt), true
 }
 
+// FailedBuild reports whether the step failed the build (FailedStepStatuses).
+func (st Step) FailedBuild() bool {
+	return slices.Contains(FailedStepStatuses, st.Status)
+}
+
 // SkippedAfterFailure reports whether the step was skipped only because an
-// earlier step failed, which the Bitrise CLI states in StatusReason. That
-// reason adds nothing to the failed step it refers to.
+// earlier step failed, which the Bitrise CLI states in StatusReason. Next to
+// that failed step, the reason adds nothing.
 func (st Step) SkippedAfterFailure() bool {
 	return st.Status == "skipped" && strings.Contains(st.StatusReason, "because a previous Step failed")
 }

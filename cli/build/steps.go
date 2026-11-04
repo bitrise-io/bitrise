@@ -62,7 +62,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 			}); err != nil {
 				return err
 			}
-			if output.Format == output.FormatRaw && !res.Complete {
+			if output.Format == output.FormatRaw && !res.Complete && !cmdutil.IsQuiet(cmd) {
 				_, err := fmt.Fprintln(cmd.ErrOrStderr(), "The step summary is not final yet: the build has not finished, or has just finished and its log is being archived. Only the steps that have started so far are listed.")
 				return err
 			}
@@ -126,9 +126,11 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	}
 
 	var b strings.Builder
+	// A filter can leave out the failed step a skipped step refers to.
+	failureListed := false
 	for _, st := range res.Items {
 		var reasons []string
-		if st.StatusReason != "" && !st.SkippedAfterFailure() {
+		if st.StatusReason != "" && (!st.SkippedAfterFailure() || !failureListed) {
 			reasons = append(reasons, strings.TrimSpace(st.StatusReason))
 		}
 		for _, e := range st.Errors {
@@ -138,6 +140,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 			}
 			reasons = append(reasons, msg)
 		}
+		failureListed = failureListed || st.FailedBuild()
 		if len(reasons) == 0 {
 			continue
 		}
