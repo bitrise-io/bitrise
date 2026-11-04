@@ -23,16 +23,18 @@ bitrise build steps BUILD_ID [flags]
 ```
   bitrise build steps abc123 --app my-app-id
   bitrise build steps abc123 --app my-app-id --status failed
+  bitrise build steps abc123 --app my-app-id --step-id xcode-test
   bitrise build steps abc123 --app my-app-id --format json
 ```
 
 ### Options
 
 ```
-      --app string      app ID (or set BITRISE_APP_ID)
-  -f, --format string   Output format. Accepted: raw (default), json, yml
-  -h, --help            help for steps
-      --status string   only steps with this status: not_started, started, success, failed, failed_skippable, skipped, skipped_with_run_if, preparation_failed, aborted, aborted_with_custom_timeout, aborted_with_no_output. failed matches every status that fails the build: failed, preparation_failed, aborted_with_custom_timeout, aborted_with_no_output
+      --app string       app ID (or set BITRISE_APP_ID)
+  -f, --format string    Output format. Accepted: raw (default), json, yml
+  -h, --help             help for steps
+      --status string    only steps with this status: not_started, started, success, failed, failed_skippable, skipped, skipped_with_run_if, preparation_failed, aborted, aborted_with_custom_timeout, aborted_with_no_output. failed matches every status that fails the build: failed, preparation_failed, aborted_with_custom_timeout, aborted_with_no_output
+      --step-id string   only the runs of this step, for example xcode-test
 ```
 
 ### Options inherited from parent commands

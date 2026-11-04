@@ -16,7 +16,7 @@ import (
 
 // NewStepsCommand returns the `build steps` subcommand.
 func NewStepsCommand() *cobra.Command {
-	var status string
+	var status, stepID string
 
 	cmd := &cobra.Command{
 		Use:   "steps BUILD_ID",
@@ -32,6 +32,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 "bitrise config set app_id ID").`,
 		Example: `  bitrise build steps abc123 --app my-app-id
   bitrise build steps abc123 --app my-app-id --status failed
+  bitrise build steps abc123 --app my-app-id --step-id xcode-test
   bitrise build steps abc123 --app my-app-id --format json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -51,13 +52,13 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 				return err
 			}
 
-			res, err := internalbuild.NewService(client).Steps(cmd.Context(), appSlug, args[0], status)
+			res, err := internalbuild.NewService(client).Steps(cmd.Context(), appSlug, args[0], status, stepID)
 			if err != nil {
 				return err
 			}
 
 			if err := output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalbuild.StepsResult) error {
-				return printStepsTable(w, res, status)
+				return printStepsTable(w, res, status != "" || stepID != "")
 			}); err != nil {
 				return err
 			}
@@ -71,6 +72,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 
 	cmd.Flags().StringVar(&status, "status", "", fmt.Sprintf("only steps with this status: %s. failed matches every status that fails the build: %s",
 		strings.Join(internalbuild.StepStatuses, ", "), strings.Join(internalbuild.FailedStepStatuses, ", ")))
+	cmd.Flags().StringVar(&stepID, "step-id", "", "only the runs of this step, for example xcode-test")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 
@@ -84,11 +86,11 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 // printStepsTable renders the steps as a table, then the failure and skip
 // reasons of every step that has any. Reasons can span lines, which a table
 // cell would mangle.
-func printStepsTable(w io.Writer, res internalbuild.StepsResult, status string) error {
+func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) error {
 	if len(res.Items) == 0 {
 		msg := "No steps found."
-		if status != "" {
-			msg = fmt.Sprintf("No steps with status %q.", status)
+		if filtered {
+			msg = "No steps match the filters."
 		}
 		_, err := fmt.Fprintln(w, msg)
 		return err

@@ -337,10 +337,19 @@ type BuildStepError struct {
 	Message string `json:"message"`
 }
 
-// BuildLogSummary fetches the step-level summary of a build.
+// BuildLogSummary fetches the step-level summary of a build. A non-empty
+// statuses or stepID keeps only the matching steps, and drops the workflows
+// left without any.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
-func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string) (BuildLogSummary, error) {
-	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", nil)
+func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string, statuses []string, stepID string) (BuildLogSummary, error) {
+	params := url.Values{}
+	for _, st := range statuses {
+		params.Add("status", st)
+	}
+	if stepID != "" {
+		params.Set("step_id", stepID)
+	}
+	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", params)
 }
 
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to

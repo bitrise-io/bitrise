@@ -281,7 +281,7 @@ func (s *Service) StackImageVersion(ctx context.Context, appSlug, buildSlug stri
 	if s.client == nil {
 		return "", fmt.Errorf("API client not configured")
 	}
-	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, nil, "")
 	if err != nil {
 		return "", err
 	}
@@ -316,8 +316,10 @@ func (s *Service) Log(ctx context.Context, appSlug, buildSlug string, w io.Write
 // Steps returns the steps of a build across all its workflows, in execution
 // order. A non-empty status keeps only the steps with that status, except
 // "failed", which keeps every step that failed the build (FailedStepStatuses).
+// A non-empty stepID keeps only the runs of that step. The server applies
+// both filters.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
-func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) (StepsResult, error) {
+func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID string) (StepsResult, error) {
 	if s.client == nil {
 		return StepsResult{}, fmt.Errorf("API client not configured")
 	}
@@ -330,7 +332,15 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) 
 	if status != "" && !slices.Contains(StepStatuses, status) {
 		return StepsResult{}, fmt.Errorf("unknown step status %q (expected: %s)", status, strings.Join(StepStatuses, ", "))
 	}
-	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+	var statuses []string
+	switch status {
+	case "":
+	case "failed":
+		statuses = FailedStepStatuses
+	default:
+		statuses = []string{status}
+	}
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, statuses, stepID)
 	if err != nil {
 		var apiErr *bitriseapi.APIError
 		if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
@@ -353,11 +363,6 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status string) 
 	items := []Step{}
 	for _, wf := range summary.Execution.Workflows {
 		for _, st := range wf.Steps {
-			matches := status == "" || st.Status == status ||
-				(status == "failed" && slices.Contains(FailedStepStatuses, st.Status))
-			if !matches {
-				continue
-			}
 			items = append(items, stepFromAPI(st, wf.WorkflowID))
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -34,31 +35,30 @@ func TestStepsCmd_HappyPath(t *testing.T) {
 	assert.Contains(t, out.String(), "Reasons:\n  primary › Tests\n    first line\n    second line\n")
 }
 
-func TestStepsCmd_StatusFilter(t *testing.T) {
-	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+func TestStepsCmd_SendsFilters(t *testing.T) {
+	var gotQuery url.Values
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
 		_, _ = w.Write([]byte(stepsSummaryJSON))
 	})
 
-	cmd, out := newTestStepsCmd(t, srv.URL)
-	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "failed"})
+	cmd, _ := newTestStepsCmd(t, srv.URL)
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "skipped", "--step-id", "save-cache"})
 	require.NoError(t, cmd.Execute())
 
-	assert.Contains(t, out.String(), "Tests")
-	assert.NotContains(t, out.String(), "Git clone")
-	assert.NotContains(t, out.String(), "save-cache")
-	assert.Contains(t, out.String(), "first line")
+	assert.Equal(t, url.Values{"status": {"skipped"}, "step_id": {"save-cache"}}, gotQuery)
 }
 
-func TestStepsCmd_StatusFilterNoMatch(t *testing.T) {
+func TestStepsCmd_FilterNoMatch(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(stepsSummaryJSON))
+		_, _ = w.Write([]byte(`{"is_log_archived": true, "execution": {"workflows": []}}`))
 	})
 
 	cmd, out := newTestStepsCmd(t, srv.URL)
 	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "preparation_failed"})
 	require.NoError(t, cmd.Execute())
 
-	assert.Equal(t, "No steps with status \"preparation_failed\".\n", out.String())
+	assert.Equal(t, "No steps match the filters.\n", out.String())
 }
 
 func TestStepsCmd_JSON(t *testing.T) {
@@ -67,7 +67,7 @@ func TestStepsCmd_JSON(t *testing.T) {
 	})
 
 	cmd, out := newTestStepsCmd(t, srv.URL)
-	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "failed", "--format", "json"})
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--format", "json"})
 	require.NoError(t, cmd.Execute())
 
 	var got struct {
@@ -82,13 +82,13 @@ func TestStepsCmd_JSON(t *testing.T) {
 		} `json:"items"`
 	}
 	require.NoError(t, json.Unmarshal(out.Bytes(), &got), out.String())
-	require.Len(t, got.Items, 1)
-	assert.Equal(t, "s-2", got.Items[0].ID)
-	assert.Equal(t, "primary", got.Items[0].Workflow)
-	assert.Equal(t, "script", got.Items[0].StepID)
-	assert.Equal(t, "failed", got.Items[0].Status)
-	require.Len(t, got.Items[0].Errors, 1)
-	assert.Equal(t, "first line\nsecond line", got.Items[0].Errors[0].Message)
+	require.Len(t, got.Items, 3)
+	assert.Equal(t, "s-2", got.Items[1].ID)
+	assert.Equal(t, "primary", got.Items[1].Workflow)
+	assert.Equal(t, "script", got.Items[1].StepID)
+	assert.Equal(t, "failed", got.Items[1].Status)
+	require.Len(t, got.Items[1].Errors, 1)
+	assert.Equal(t, "first line\nsecond line", got.Items[1].Errors[0].Message)
 }
 
 func TestStepsCmd_RunningBuildNotice(t *testing.T) {
