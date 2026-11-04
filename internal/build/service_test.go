@@ -1066,9 +1066,9 @@ func TestService_TestResults_MapsTree(t *testing.T) {
 
 	login := got.TestSuites[0]
 	assert.Equal(t, "LoginTests", login.Name)
-	assert.Equal(t, 3, login.TestCount)
+	assert.Equal(t, 4, login.TestCount)
 	assert.Equal(t, 1, login.FailureCount)
-	assert.Equal(t, int64(2500), login.DurationMS)
+	assert.Equal(t, int64(2800), login.DurationMS)
 	require.Len(t, login.TestCases, 3)
 	failed := login.TestCases[1]
 	assert.Equal(t, "testWrongPassword", failed.Name)
@@ -1156,7 +1156,7 @@ func TestService_TestResults_NameFilter(t *testing.T) {
 	assert.Equal(t, "LoginTests", got.TestSuites[0].Name, "the parent of a matching suite stays as its container")
 	assert.Empty(t, got.TestSuites[0].TestCases)
 	assert.NotNil(t, got.TestSuites[0].TestCases)
-	assert.Equal(t, 3, got.TestSuites[0].TestCount, "counts stay the suite's reported totals")
+	assert.Equal(t, 4, got.TestSuites[0].TestCount, "counts stay the suite's reported totals")
 
 	got, err = svc.TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{Name: "nothing-matches"})
 	require.NoError(t, err)
@@ -1372,7 +1372,7 @@ func testCasePaths(suites []TestSuite) []string {
 }
 
 const testResultsJSON = `{"test_suites": [
-  {"name": "LoginTests", "test_count": 3, "failure_count": 1, "error_count": 0, "skipped_count": 0, "duration_in_ms": 2500,
+  {"name": "LoginTests", "test_count": 4, "failure_count": 1, "error_count": 1, "skipped_count": 0, "duration_in_ms": 2800,
    "properties": [{"key": "k", "value": "v"}], "attachments": [],
    "test_cases": [
      {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120, "flaky": false, "runs": []},
