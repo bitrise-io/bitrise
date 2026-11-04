@@ -186,7 +186,7 @@ workflows:
     meta:
       bitrise.io:
         stack: osx-xcode-latest-stable
-        machine_type_id: g2.mac.medium
+        machine_type_id: g2.mac.large
 
   run_envman_integration_tests_linux:
     envs:
