@@ -112,6 +112,22 @@ type Step struct {
 	Errors       []StepError `json:"errors,omitempty" yaml:"errors,omitempty"`
 }
 
+// RunTime reports how long the step ran. ok is false for a step that didn't
+// run or hasn't finished: a skipped step carries timestamps too.
+func (st Step) RunTime() (d time.Duration, ok bool) {
+	if st.StartedAt == nil || st.FinishedAt == nil || strings.HasPrefix(st.Status, "skipped") {
+		return 0, false
+	}
+	return st.FinishedAt.Sub(*st.StartedAt), true
+}
+
+// SkippedAfterFailure reports whether the step was skipped only because an
+// earlier step failed, which the Bitrise CLI states in StatusReason. That
+// reason adds nothing to the failed step it refers to.
+func (st Step) SkippedAfterFailure() bool {
+	return st.Status == "skipped" && strings.Contains(st.StatusReason, "because a previous Step failed")
+}
+
 // StepError is one error a failed step reported.
 type StepError struct {
 	Code    int    `json:"code" yaml:"code"`
@@ -338,8 +354,11 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID 
 			}
 			return StepsResult{}, fmt.Errorf("no step summary for build %q, and looking up the build failed: %w", buildSlug, buildErr)
 		}
-		if statusString(b.Status) == "in-progress" {
+		switch b.Status {
+		case 0: // in-progress, which includes queued and on-hold builds
 			return StepsResult{Items: []Step{}}, nil
+		case 3, 4: // aborted before any step ran
+			return StepsResult{Items: []Step{}, Complete: true}, nil
 		}
 		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)
 	}

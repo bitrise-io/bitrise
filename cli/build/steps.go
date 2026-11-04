@@ -63,7 +63,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 				return err
 			}
 			if output.Format == output.FormatRaw && !res.Complete {
-				_, err := fmt.Fprintln(cmd.ErrOrStderr(), "The step summary is not final yet: the build is still running, or has just finished and its log is being archived. Only the steps that have started so far are listed.")
+				_, err := fmt.Fprintln(cmd.ErrOrStderr(), "The step summary is not final yet: the build has not finished, or has just finished and its log is being archived. Only the steps that have started so far are listed.")
 				return err
 			}
 			return nil
@@ -87,6 +87,11 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 // reasons of every step that has any. Reasons can span lines, which a table
 // cell would mangle.
 func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) error {
+	// Before any step has started, the notice about the summary not being
+	// final is all there is to say.
+	if len(res.Items) == 0 && !res.Complete {
+		return nil
+	}
 	if len(res.Items) == 0 {
 		msg := "No steps found."
 		if filtered {
@@ -101,10 +106,9 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	rows := make([][]string, 0, len(res.Items))
 	for _, st := range res.Items {
 		duration := ""
-		// Skipped steps carry timestamps too, but a duration would suggest they ran.
-		if st.StartedAt != nil && st.FinishedAt != nil && !strings.HasPrefix(st.Status, "skipped") {
+		if d, ok := st.RunTime(); ok {
 			duration = "<1s"
-			if d := st.FinishedAt.Sub(*st.StartedAt); d >= time.Second {
+			if d >= time.Second {
 				duration = d.Round(time.Second).String()
 			}
 		}
@@ -124,9 +128,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	var b strings.Builder
 	for _, st := range res.Items {
 		var reasons []string
-		// A plain skipped step's reason is always "a previous Step failed",
-		// which the failed step listed before it already says.
-		if st.StatusReason != "" && st.Status != "skipped" {
+		if st.StatusReason != "" && !st.SkippedAfterFailure() {
 			reasons = append(reasons, strings.TrimSpace(st.StatusReason))
 		}
 		for _, e := range st.Errors {

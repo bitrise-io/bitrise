@@ -125,7 +125,8 @@ func TestStepsCmd_Reasons(t *testing.T) {
    "errors": [{"code": 1, "message": "exit status 1"}]},
   {"uuid": "s-3", "title": "Tests", "status": "failed", "errors": [{"code": 1, "message": "exit status 2"}]},
   {"uuid": "s-4", "title": "Save cache", "status": "skipped",
-   "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."}
+   "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."},
+  {"uuid": "s-5", "title": "Deploy", "status": "skipped", "status_reason": "This Step was skipped for another reason."}
 ]}]}}`))
 	})
 
@@ -142,8 +143,30 @@ func TestStepsCmd_Reasons(t *testing.T) {
     exit status 1
   primary › Tests
     exit status 2
+  primary › Deploy
+    This Step was skipped for another reason.
 `)
 	assert.NotContains(t, out.String(), "previous Step failed", "a plain skipped step's reason is implied by the failure listed before it")
+}
+
+func TestStepsCmd_NotStartedBuildPrintsOnlyTheNotice(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/apps/my-app/builds/build-1/log/summary" {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"message":"not found"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"data":{"slug":"build-1","status":0,"is_on_hold":true}}`))
+	})
+
+	cmd, out := newTestStepsCmd(t, srv.URL)
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "failed"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Empty(t, out.String(), "no \"No steps match the filters.\" for a build that has not started")
+	assert.Contains(t, errOut.String(), "the build has not finished")
 }
 
 func TestStepsCmd_ErrorWithoutMessageShowsCode(t *testing.T) {
