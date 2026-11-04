@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -1039,6 +1040,47 @@ func newStepLogsServer(t *testing.T) *httptest.Server {
 			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
 			return
 		}
-		_, _ = w.Write([]byte(stepsSummaryJSON))
+		body, err := filterSummaryByStatus(stepsSummaryJSON, r.URL.Query()["status"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write(body)
 	})
+}
+
+// filterSummaryByStatus applies the status filter of GET .../log/summary as
+// build-log-service does: it keeps the steps with one of statuses, and the
+// workflows left with any.
+func filterSummaryByStatus(summary string, statuses []string) ([]byte, error) {
+	if len(statuses) == 0 {
+		return []byte(summary), nil
+	}
+	var s struct {
+		IsLogArchived bool `json:"is_log_archived"`
+		Execution     struct {
+			Workflows []struct {
+				WorkflowID string           `json:"workflow_id"`
+				Steps      []map[string]any `json:"steps"`
+			} `json:"workflows"`
+		} `json:"execution"`
+	}
+	if err := json.Unmarshal([]byte(summary), &s); err != nil {
+		return nil, err
+	}
+	workflows := s.Execution.Workflows[:0]
+	for _, wf := range s.Execution.Workflows {
+		steps := wf.Steps[:0]
+		for _, st := range wf.Steps {
+			if status, _ := st["status"].(string); slices.Contains(statuses, status) {
+				steps = append(steps, st)
+			}
+		}
+		if len(steps) > 0 {
+			wf.Steps = steps
+			workflows = append(workflows, wf)
+		}
+	}
+	s.Execution.Workflows = workflows
+	return json.Marshal(s)
 }
