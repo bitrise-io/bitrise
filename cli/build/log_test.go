@@ -193,6 +193,33 @@ func TestLogCmd_StepLogsByStepID(t *testing.T) {
 	assert.Equal(t, url.Values{"step_id": {"script"}}, gotQuery)
 }
 
+func TestLogCmd_QuietSuppressesNotices(t *testing.T) {
+	var summaryCalls atomic.Int32
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/apps/my-app/builds/b-1":
+			_, _ = w.Write([]byte(`{"data":{"slug":"b-1","build_number":5,"status":1,"triggered_at":"2026-05-06T10:00:00Z"}}`))
+		case "/apps/my-app/builds/b-1/log/summary":
+			_, _ = fmt.Fprintf(w, `{"is_log_archived": %t}`, summaryCalls.Add(1) > 1)
+		case "/apps/my-app/builds/b-1/log":
+			_, _ = w.Write([]byte(`{"is_archived":false,"log_chunks":[{"chunk":"so far\n","position":0}]}`))
+		}
+	})
+
+	for _, args := range [][]string{{"b-1"}, {"b-1", "--wait", "--interval", "1ms"}} {
+		summaryCalls.Store(0)
+		cmd, out := newTestLogCmd(t, srv.URL)
+		cmd.PersistentFlags().BoolP(cmdutil.FlagQuiet, "q", false, "quiet")
+		var errOut bytes.Buffer
+		cmd.SetErr(&errOut)
+		cmd.SetArgs(append(args, "--app", "my-app", "--quiet"))
+		require.NoError(t, cmd.Execute())
+
+		assert.Equal(t, "so far\n", out.String(), "args %v", args)
+		assert.Empty(t, errOut.String(), "args %v: --quiet drops the not-final and waiting notices", args)
+	}
+}
+
 func TestLogCmd_StreamsArchivedLog(t *testing.T) {
 	rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ARCHIVED LOG CONTENT\n"))

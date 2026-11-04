@@ -134,7 +134,7 @@ the running build, and exits non-zero because no log was printed.`,
 				}); err != nil {
 					return err
 				}
-				if output.Format == output.FormatRaw && !res.Complete {
+				if output.Format == output.FormatRaw && !res.Complete && !cmdutil.IsQuiet(cmd) {
 					msg := "The step logs are not available yet: the build is still running, or has just finished and its log is being archived. Only the steps that have started so far are listed. Pass --wait to wait for the logs."
 					if wait {
 						msg = "The step logs are not available yet: the build log was not archived within a minute. Run the command again later."
@@ -162,7 +162,7 @@ the running build, and exits non-zero because no log was printed.`,
 			if err != nil {
 				return err
 			}
-			if output.Format == output.FormatRaw && !complete {
+			if output.Format == output.FormatRaw && !complete && !cmdutil.IsQuiet(cmd) {
 				msg := "The log is not final yet: the build is still running, or has just finished and its log is being archived. This is the log so far."
 				if wait {
 					msg = "The log is not final yet: the build log was not archived within a minute. This is the log so far. Run the command again later for the final log."
@@ -198,7 +198,7 @@ func waitForLogArchive(cmd *cobra.Command, svc *internalbuild.Service, appSlug, 
 	defer stop()
 	var noticeErr error
 	err := svc.WaitForLogArchive(ctx, appSlug, buildSlug, interval, func() {
-		if output.Format == output.FormatRaw {
+		if output.Format == output.FormatRaw && !cmdutil.IsQuiet(cmd) {
 			_, noticeErr = fmt.Fprintln(cmd.ErrOrStderr(), "Waiting for the build log to be archived")
 		}
 	})
