@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -519,8 +520,21 @@ func TestService_Steps_NoSummaryYetForRunningBuild(t *testing.T) {
 	assert.Empty(t, got.Items)
 }
 
+func TestService_Steps_NoSummaryForAbortedBuild(t *testing.T) {
+	for _, status := range []int{3, 4} {
+		srv := newSummaryNotFoundServer(t, http.StatusOK, fmt.Sprintf(`{"data":{"slug":"b-1","status":%d}}`, status))
+		svc := NewService(newAPIClient(t, srv.URL))
+
+		got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+		require.NoError(t, err, "status %d", status)
+		assert.True(t, got.Complete, "a build aborted before any step ran has its final, empty list")
+		assert.NotNil(t, got.Items)
+		assert.Empty(t, got.Items)
+	}
+}
+
 func TestService_Steps_NoSummaryForFinishedBuild(t *testing.T) {
-	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":3}}`)
+	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":2}}`)
 	svc := NewService(newAPIClient(t, srv.URL))
 
 	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
@@ -540,6 +554,26 @@ func TestService_Steps_RejectsUnknownStatus(t *testing.T) {
 
 	_, err := svc.Steps(context.Background(), "my-app", "b-1", "aborted-with-success", "")
 	require.ErrorContains(t, err, `unknown step status "aborted-with-success" (expected: not_started, started, success`)
+}
+
+func TestStep_RunTime(t *testing.T) {
+	start := time.Date(2026, 10, 19, 13, 26, 48, 0, time.UTC)
+	end := start.Add(90 * time.Second)
+
+	d, ok := Step{Status: "failed", StartedAt: &start, FinishedAt: &end}.RunTime()
+	assert.True(t, ok)
+	assert.Equal(t, 90*time.Second, d)
+
+	_, ok = Step{Status: "skipped_with_run_if", StartedAt: &start, FinishedAt: &end}.RunTime()
+	assert.False(t, ok, "a skipped step's timestamps don't mean it ran")
+	_, ok = Step{Status: "started", StartedAt: &start}.RunTime()
+	assert.False(t, ok)
+}
+
+func TestStep_SkippedAfterFailure(t *testing.T) {
+	assert.True(t, Step{Status: "skipped", StatusReason: `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`}.SkippedAfterFailure())
+	assert.False(t, Step{Status: "skipped", StatusReason: "This Step was skipped, because the build was aborted."}.SkippedAfterFailure())
+	assert.False(t, Step{Status: "skipped_with_run_if", StatusReason: "because a previous Step failed"}.SkippedAfterFailure())
 }
 
 func TestStepsResult_JSONShape(t *testing.T) {
