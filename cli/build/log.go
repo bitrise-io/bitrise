@@ -24,7 +24,8 @@ func NewLogCommand() *cobra.Command {
 		wait       bool
 		interval   time.Duration
 		stepStatus string
-		stepIDs    []string
+		stepID     string
+		stepUUIDs  []string
 		tail       int
 	)
 
@@ -36,22 +37,25 @@ func NewLogCommand() *cobra.Command {
 BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 "bitrise config set app_id ID").
 
---step-status and --step print the logs of the matching steps only, each
-under a header with its workflow, status and duration. --step takes a step's
-ID: the "id" field of "bitrise build steps --format json". Step logs are
-available once the build has finished and its log is archived, a little
-after; until then only the steps are listed, without logs.
+--step-status, --step-id and --step-uuid print the logs of the matching steps
+only, each under a header with its workflow, status and duration. --step-id
+takes a step's library ID, such as xcode-test, and matches every run of it.
+--step-uuid takes one step run: the "id" field of "bitrise build steps
+--format json". Step logs are available once the build has finished and its
+log is archived, a little after; until then only the steps are listed,
+without logs.
 
 --tail N keeps the last N lines of the log, or of each step's log.
 
 --wait waits for the build to finish before printing the log — useful when
-the build is still in-progress. With --step-status or --step it also waits
-up to a minute for the log to be archived. Ctrl-C detaches without affecting
+the build is still in-progress — and then up to a minute for the log to be
+archived. Ctrl-C detaches without affecting
 the running build, and exits non-zero because no log was printed.`,
 		Example: `  bitrise build log abc123 --app my-app-id
   bitrise build log abc123 --app my-app-id --tail 100
   bitrise build log abc123 --app my-app-id --step-status failed
-  bitrise build log abc123 --app my-app-id --step 3f2a1c9e-... --format json
+  bitrise build log abc123 --app my-app-id --step-id xcode-test
+  bitrise build log abc123 --app my-app-id --step-uuid 3f2a1c9e-... --format json
   bitrise build log abc123 --app my-app-id --wait --step-status failed --tail 50
   bitrise build log abc123 --app my-app-id > build.log`,
 		Args: cobra.ExactArgs(1),
@@ -74,7 +78,7 @@ the running build, and exits non-zero because no log was printed.`,
 			}
 
 			buildSlug := args[0]
-			byStep := stepStatus != "" || len(stepIDs) > 0
+			byStep := stepStatus != "" || stepID != "" || len(stepUUIDs) > 0
 
 			client, err := cmdutil.NewAPIClient(cmd)
 			if err != nil {
@@ -95,8 +99,11 @@ the running build, and exits non-zero because no log was printed.`,
 				if stepStatus != "" {
 					resumeCmd += " --step-status " + stepStatus
 				}
-				for _, id := range stepIDs {
-					resumeCmd += " --step " + id
+				if stepID != "" {
+					resumeCmd += " --step-id " + stepID
+				}
+				for _, id := range stepUUIDs {
+					resumeCmd += " --step-uuid " + id
 				}
 				if tail > 0 {
 					resumeCmd += fmt.Sprintf(" --tail %d", tail)
@@ -112,20 +119,18 @@ the running build, and exits non-zero because no log was printed.`,
 						return err
 					}
 				}
-				if byStep {
-					if err := waitForLogArchive(cmd, svc, appSlug, buildSlug, interval, resumeCmd); err != nil {
-						return err
-					}
+				if err := waitForLogArchive(cmd, svc, appSlug, buildSlug, interval, resumeCmd); err != nil {
+					return err
 				}
 			}
 
 			if byStep {
-				res, err := svc.StepLogs(cmd.Context(), appSlug, buildSlug, stepStatus, stepIDs, tail)
+				res, err := svc.StepLogs(cmd.Context(), appSlug, buildSlug, stepStatus, stepID, stepUUIDs, tail)
 				if err != nil {
 					return err
 				}
 				if err := output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalbuild.StepLogsResult) error {
-					return printStepLogsText(w, res, stepStatus)
+					return printStepLogsText(w, res)
 				}); err != nil {
 					return err
 				}
@@ -160,7 +165,7 @@ the running build, and exits non-zero because no log was printed.`,
 			if output.Format == output.FormatRaw && !complete {
 				msg := "The log is not final yet: the build is still running, or has just finished and its log is being archived. This is the log so far."
 				if wait {
-					msg = "The log is not final yet: the build has finished, but its log is not archived yet. This is the log so far. Run the command again later for the final log."
+					msg = "The log is not final yet: the build log was not archived within a minute. This is the log so far. Run the command again later for the final log."
 				}
 				_, err := fmt.Fprintln(cmd.ErrOrStderr(), msg)
 				return err
@@ -173,7 +178,8 @@ the running build, and exits non-zero because no log was printed.`,
 	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait is active")
 	cmd.Flags().StringVar(&stepStatus, "step-status", "", fmt.Sprintf("only the logs of steps with this status: %s. failed matches every status that fails the build: %s",
 		strings.Join(internalbuild.StepStatuses, ", "), strings.Join(internalbuild.FailedStepStatuses, ", ")))
-	cmd.Flags().StringSliceVar(&stepIDs, "step", nil, "only the log of the step with this ID, the \"id\" field of \"bitrise build steps --format json\" (repeatable)")
+	cmd.Flags().StringVar(&stepID, "step-id", "", "only the logs of the runs of this step, for example xcode-test")
+	cmd.Flags().StringSliceVar(&stepUUIDs, "step-uuid", nil, "only the log of the step run with this UUID, the \"id\" field of \"bitrise build steps --format json\" (repeatable)")
 	cmd.Flags().IntVar(&tail, "tail", 0, "only the last N lines of the log, or of each step's log")
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
@@ -207,7 +213,7 @@ func waitForLogArchive(cmd *cobra.Command, svc *internalbuild.Service, appSlug, 
 
 // printStepLogsText prints each step's log under a header naming the step,
 // its workflow, status and duration.
-func printStepLogsText(w io.Writer, res internalbuild.StepLogsResult, status string) error {
+func printStepLogsText(w io.Writer, res internalbuild.StepLogsResult) error {
 	if len(res.Items) == 0 {
 		// Before the archive the summary lists only the steps started so far,
 		// so "no steps" would claim more than is known; the stderr notice
@@ -215,7 +221,7 @@ func printStepLogsText(w io.Writer, res internalbuild.StepLogsResult, status str
 		if !res.Complete {
 			return nil
 		}
-		_, err := fmt.Fprintln(w, noStepsMessage(status))
+		_, err := fmt.Fprintln(w, "No steps match the filters.")
 		return err
 	}
 	s := style.New(w)

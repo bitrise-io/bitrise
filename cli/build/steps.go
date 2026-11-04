@@ -168,10 +168,3 @@ func stepDuration(st internalbuild.Step) string {
 	}
 	return "<1s"
 }
-
-func noStepsMessage(status string) string {
-	if status != "" {
-		return fmt.Sprintf("No steps with status %q.", status)
-	}
-	return "No steps found."
-}

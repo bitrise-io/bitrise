@@ -151,8 +151,9 @@ func TestTriggerCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 	})
 
 	cmd, _ := newTestTriggerCmd(t, srv.URL)
-	var stdout bytes.Buffer
+	var stdout, stderr bytes.Buffer
 	cmd.SetOut(&stdout)
+	cmd.SetErr(&stderr)
 	require.NoError(t, cmd.Flags().Set("app", "my-app"))
 	require.NoError(t, cmd.Flags().Set("workflow", "primary"))
 	require.NoError(t, cmd.Flags().Set("wait", "true"))
@@ -166,6 +167,7 @@ func TestTriggerCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 	var rec map[string]any
 	require.NoError(t, json.Unmarshal(stdout.Bytes(), &rec))
 	assert.Equal(t, "b-1", rec["id"])
+	assert.NotContains(t, stderr.String(), "Waiting for build", "the human-only header is raw-format only")
 }
 
 func TestTriggerCmd_DefaultsBranchToMain(t *testing.T) {
