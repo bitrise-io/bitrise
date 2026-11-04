@@ -149,6 +149,39 @@ func TestStepsCmd_Reasons(t *testing.T) {
 	assert.NotContains(t, out.String(), "previous Step failed", "a plain skipped step's reason is implied by the failure listed before it")
 }
 
+func TestStepsCmd_QuietSuppressesNotice(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": false, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "script", "status": "started", "started_at": "2026-10-20T11:56:50Z"}
+]}]}}`))
+	})
+
+	cmd, out := newTestStepsCmd(t, srv.URL)
+	cmd.PersistentFlags().BoolP(cmdutil.FlagQuiet, "q", false, "quiet")
+	var errOut bytes.Buffer
+	cmd.SetErr(&errOut)
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--quiet"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Regexp(t, `primary\s+script\s+started`, out.String())
+	assert.Empty(t, errOut.String())
+}
+
+func TestStepsCmd_FilteredSkipKeepsReasonWithoutItsFailure(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": true, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-4", "title": "Save cache", "status": "skipped",
+   "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."}
+]}]}}`))
+	})
+
+	cmd, out := newTestStepsCmd(t, srv.URL)
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--status", "skipped"})
+	require.NoError(t, cmd.Execute())
+
+	assert.Contains(t, out.String(), "primary › Save cache\n    This Step was skipped, because a previous Step failed", "the failed step it refers to is filtered out")
+}
+
 func TestStepsCmd_NotStartedBuildPrintsOnlyTheNotice(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/apps/my-app/builds/build-1/log/summary" {
