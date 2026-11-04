@@ -1051,6 +1051,197 @@ func TestParseStatusFilter(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestService_TestResults_MapsTree(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(testResultsJSON))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{})
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/b-1/test-results", gotPath)
+	require.Len(t, got.TestSuites, 2)
+
+	login := got.TestSuites[0]
+	assert.Equal(t, "LoginTests", login.Name)
+	assert.Equal(t, 3, login.TestCount)
+	assert.Equal(t, 1, login.FailureCount)
+	assert.Equal(t, int64(2500), login.DurationMS)
+	require.Len(t, login.TestCases, 3)
+	failed := login.TestCases[1]
+	assert.Equal(t, "testWrongPassword", failed.Name)
+	assert.Equal(t, "LoginTests", failed.ClassName)
+	assert.Equal(t, "failed", failed.Status)
+	assert.Equal(t, "expected error\nat line 12", failed.Message)
+	flaky := login.TestCases[2]
+	assert.True(t, flaky.Flaky)
+	assert.Equal(t, []TestRun{{Status: "failed", Message: "timeout", DurationMS: 900}, {Status: "passed", DurationMS: 400}}, flaky.Runs)
+
+	require.Len(t, login.TestSuites, 1)
+	assert.Equal(t, "SSO", login.TestSuites[0].Name)
+	require.Len(t, login.TestSuites[0].TestCases, 1)
+
+	empty := got.TestSuites[1]
+	assert.Equal(t, "Empty", empty.Name)
+	assert.NotNil(t, empty.TestCases, "an empty suite must render as [] not null")
+	assert.NotNil(t, empty.TestSuites)
+}
+
+func TestService_TestResults_SendsFilters(t *testing.T) {
+	var gotQuery url.Values
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		_, _ = w.Write([]byte(`{"test_suites": []}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+	flaky, notFlaky := true, false
+
+	tests := []struct {
+		name   string
+		filter TestResultsFilter
+		want   url.Values
+	}{
+		{"none", TestResultsFilter{}, url.Values{}},
+		{"statuses", TestResultsFilter{Statuses: []string{"failed", "error"}}, url.Values{"status": {"failed", "error"}}},
+		{"suite and class name", TestResultsFilter{Suite: "LoginTests", ClassName: "SSOTests"}, url.Values{"suite": {"LoginTests"}, "class_name": {"SSOTests"}}},
+		{"flaky", TestResultsFilter{Flaky: &flaky}, url.Values{"flaky": {"true"}}},
+		{"not flaky", TestResultsFilter{Flaky: &notFlaky}, url.Values{"flaky": {"false"}}},
+		{"sort", TestResultsFilter{SortBy: "duration", SortOrder: "desc"}, url.Values{"sort_by": {"duration"}, "sort_order": {"desc"}}},
+		{"limit", TestResultsFilter{Limit: 20}, url.Values{"limit": {"20"}}},
+		{"name is matched on the client", TestResultsFilter{Name: "sso"}, url.Values{}},
+		{"limit with name is applied on the client", TestResultsFilter{Name: "sso", Limit: 20, Statuses: []string{"error"}}, url.Values{"status": {"error"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := svc.TestResults(context.Background(), "my-app", "b-1", tt.filter)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, gotQuery)
+			assert.NotNil(t, got.TestSuites, "an empty result must render as [] not null")
+		})
+	}
+}
+
+func TestService_TestResults_NameFilter(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(testResultsJSON))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	tests := []struct {
+		name   string
+		filter TestResultsFilter
+		want   []string
+	}{
+		{"matches class name case-insensitively", TestResultsFilter{Name: "ssotests"}, []string{"SSO/testSAML"}},
+		{"matches name", TestResultsFilter{Name: "PASSWORD"}, []string{"LoginTests/testWrongPassword"}},
+		{"limit applies after it", TestResultsFilter{Name: "test", Limit: 2}, []string{"LoginTests/testOK", "LoginTests/testWrongPassword"}},
+		{"limit counts a suite's own cases before its child suites'", TestResultsFilter{Name: "test", Limit: 4}, []string{"LoginTests/testOK", "LoginTests/testWrongPassword", "LoginTests/testRetry", "SSO/testSAML"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := svc.TestResults(context.Background(), "my-app", "b-1", tt.filter)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, testCasePaths(got.TestSuites))
+			for _, su := range got.TestSuites {
+				assert.NotEqual(t, "Empty", su.Name, "a name filter drops suites left without test cases")
+			}
+		})
+	}
+
+	got, err := svc.TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{Name: "saml"})
+	require.NoError(t, err)
+	require.Len(t, got.TestSuites, 1)
+	assert.Equal(t, "LoginTests", got.TestSuites[0].Name, "the parent of a matching suite stays as its container")
+	assert.Empty(t, got.TestSuites[0].TestCases)
+	assert.NotNil(t, got.TestSuites[0].TestCases)
+	assert.Equal(t, 3, got.TestSuites[0].TestCount, "counts stay the suite's reported totals")
+
+	got, err = svc.TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{Name: "nothing-matches"})
+	require.NoError(t, err)
+	assert.Empty(t, got.TestSuites)
+	assert.NotNil(t, got.TestSuites, "an empty result must render as [] not null")
+}
+
+func TestService_TestResults_RejectsInvalidFilters(t *testing.T) {
+	svc := NewService(newAPIClient(t, "https://unused.test"))
+
+	tests := []struct {
+		filter TestResultsFilter
+		want   string
+	}{
+		{TestResultsFilter{Statuses: []string{"failure"}}, `unknown test status "failure" (expected: passed, failed, skipped, error)`},
+		{TestResultsFilter{SortBy: "size"}, `unknown sort field "size" (expected: duration, name, status)`},
+		{TestResultsFilter{SortBy: "name", SortOrder: "up"}, `unknown sort order "up" (expected: asc, desc)`},
+		{TestResultsFilter{SortOrder: "desc"}, "a sort order needs a sort field"},
+		{TestResultsFilter{Limit: -1}, "limit must be between 1 and 1000"},
+		{TestResultsFilter{Limit: 1001}, "limit must be between 1 and 1000"},
+	}
+	for _, tt := range tests {
+		_, err := svc.TestResults(context.Background(), "my-app", "b-1", tt.filter)
+		require.EqualError(t, err, tt.want)
+	}
+}
+
+func TestService_TestResults_MapsAPIErrors(t *testing.T) {
+	tests := map[int]string{
+		http.StatusBadRequest: "Couldn't fetch test results for this build. Please try again later!",
+		http.StatusForbidden:  "the plan of the app's workspace does not include test reports",
+		http.StatusNotFound:   `build "b-1" not found`,
+		http.StatusBadGateway: "Couldn't fetch test results",
+	}
+	for code, want := range tests {
+		srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(code)
+			_, _ = w.Write([]byte(`{"message":"Couldn't fetch test results for this build. Please try again later!"}`))
+		})
+		_, err := NewService(newAPIClient(t, srv.URL)).TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), want, "status %d", code)
+	}
+}
+
+func TestService_TestResults_BadRequestReturnsServerMessage(t *testing.T) {
+	for _, msg := range []string{"Test results are available once the build has finished", "Invalid limit: must be an integer between 1 and 1000"} {
+		srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error_msg":"` + msg + `"}`))
+		})
+		_, err := NewService(newAPIClient(t, srv.URL)).TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{})
+		require.EqualError(t, err, msg)
+	}
+}
+
+func TestService_TestResults_RequiresSlugs(t *testing.T) {
+	svc := NewService(newAPIClient(t, "https://unused.test"))
+	_, err := svc.TestResults(context.Background(), "", "b", TestResultsFilter{})
+	assert.Error(t, err)
+	_, err = svc.TestResults(context.Background(), "a", "", TestResultsFilter{})
+	assert.Error(t, err)
+}
+
+func TestTestResultsResult_JSONShape(t *testing.T) {
+	res := TestResultsResult{TestSuites: []TestSuite{{
+		Name: "S", TestCount: 1, DurationMS: 5, TestSuites: []TestSuite{},
+		TestCases: []TestCase{{Name: "c", ClassName: "K", Status: "failed", Message: "m", DurationMS: 5, Flaky: true,
+			Runs: []TestRun{{Name: "r", Status: "failed", Message: "m", DurationMS: 5}}}},
+	}}}
+	const want = `{"test_suites":[{"name":"S","test_count":1,"failure_count":0,"error_count":0,"skipped_count":0,"duration_ms":5,` +
+		`"test_cases":[{"name":"c","class_name":"K","status":"failed","message":"m","duration_ms":5,"flaky":true,` +
+		`"runs":[{"name":"r","status":"failed","message":"m","duration_ms":5}]}],"test_suites":[]}]}`
+	b, err := json.Marshal(res)
+	require.NoError(t, err)
+	assert.JSONEq(t, want, string(b))
+
+	y, err := yaml.Marshal(res)
+	require.NoError(t, err)
+	assert.Contains(t, string(y), "test_count: 1")
+	assert.Contains(t, string(y), "duration_ms: 5")
+	assert.Contains(t, string(y), "class_name: K")
+	assert.Contains(t, string(y), "test_cases:")
+}
+
 func newFakeServer(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(handler)
@@ -1168,3 +1359,31 @@ func filterSummary(summary string, query url.Values) ([]byte, error) {
 	s.Execution.Workflows = workflows
 	return json.Marshal(s)
 }
+
+func testCasePaths(suites []TestSuite) []string {
+	var paths []string
+	for _, su := range suites {
+		for _, tc := range su.TestCases {
+			paths = append(paths, su.Name+"/"+tc.Name)
+		}
+		paths = append(paths, testCasePaths(su.TestSuites)...)
+	}
+	return paths
+}
+
+const testResultsJSON = `{"test_suites": [
+  {"name": "LoginTests", "test_count": 3, "failure_count": 1, "error_count": 0, "skipped_count": 0, "duration_in_ms": 2500,
+   "properties": [{"key": "k", "value": "v"}], "attachments": [],
+   "test_cases": [
+     {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120, "flaky": false, "runs": []},
+     {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100, "flaky": false},
+     {"name": "testRetry", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 1300, "flaky": true,
+      "runs": [{"status": "failed", "message": "timeout", "duration_in_ms": 900}, {"status": "passed", "duration_in_ms": 400}]}
+   ],
+   "test_suites": [
+     {"name": "SSO", "test_count": 1, "failure_count": 0, "error_count": 1, "skipped_count": 0, "duration_in_ms": 300,
+      "test_cases": [{"name": "testSAML", "class_name": "SSOTests", "status": "error", "message": "crashed", "duration_in_ms": 300}],
+      "test_suites": []}
+   ]},
+  {"name": "Empty", "test_count": 0, "failure_count": 0, "error_count": 0, "skipped_count": 0, "duration_in_ms": 0, "test_cases": [], "test_suites": []}
+]}`

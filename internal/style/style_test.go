@@ -242,3 +242,22 @@ func TestTable_EmptyHeadersIsNoop(t *testing.T) {
 		t.Errorf("expected no output for empty headers, got %q", buf.String())
 	}
 }
+
+func TestTestStatus_KnownAndUnknownValues(t *testing.T) {
+	var buf bytes.Buffer
+	s := New(&buf)
+
+	cases := map[string]lipgloss.Style{
+		"passed":                s.Success,
+		"failed":                s.Failure,
+		"error":                 s.Failure,
+		"skipped":               s.Dim,
+		"some-unrecognized-str": s.Dim,
+	}
+	for status, want := range cases {
+		// Style.String() is empty for every style here, so compare the colors.
+		if got := s.TestStatus(status); got.GetForeground() != want.GetForeground() {
+			t.Errorf("TestStatus(%q) foreground = %v, want %v", status, got.GetForeground(), want.GetForeground())
+		}
+	}
+}

@@ -483,6 +483,38 @@ func TestBuildLogSummary_PathAndParse(t *testing.T) {
 	assert.True(t, wf.Steps[1].StartedAt.IsZero())
 }
 
+func TestBuildTestResults_PathAndParse(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"test_suites": [{
+  "name": "LoginTests", "test_count": 2, "failure_count": 1, "error_count": 0, "skipped_count": 0, "duration_in_ms": 1500,
+  "test_cases": [
+    {"name": "testRetry", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 1300, "flaky": true,
+     "runs": [{"name": "run 1", "status": "failed", "message": "timeout", "duration_in_ms": 900}]},
+    {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "boom", "duration_in_ms": 200}
+  ],
+  "test_suites": [{"name": "SSO", "test_count": 0, "test_cases": [], "test_suites": []}]
+}]}`))
+	})
+
+	res, err := newAPIClient(t, srv.URL, "t").BuildTestResults(context.Background(), "my-app", "my-build", TestResultsQuery{})
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/my-build/test-results", gotPath)
+	require.Len(t, res.TestSuites, 1)
+	su := res.TestSuites[0]
+	assert.Equal(t, "LoginTests", su.Name)
+	assert.Equal(t, 2, su.TestCount)
+	assert.Equal(t, 1, su.FailureCount)
+	assert.Equal(t, int64(1500), su.DurationInMS)
+	require.Len(t, su.TestCases, 2)
+	assert.True(t, su.TestCases[0].Flaky)
+	assert.Equal(t, []TestRun{{Name: "run 1", Status: "failed", Message: "timeout", DurationInMS: 900}}, su.TestCases[0].Runs)
+	assert.Equal(t, "boom", su.TestCases[1].Message)
+	require.Len(t, su.TestSuites, 1)
+	assert.Equal(t, "SSO", su.TestSuites[0].Name)
+}
+
 func TestBuildLogSummary_Query(t *testing.T) {
 	var gotQuery url.Values
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -498,4 +530,33 @@ func TestBuildLogSummary_Query(t *testing.T) {
 	_, err = c.BuildLogSummary(context.Background(), "my-app", "my-build", []string{"failed", "aborted"}, "xcode-test")
 	require.NoError(t, err)
 	assert.Equal(t, url.Values{"status": {"failed", "aborted"}, "step_id": {"xcode-test"}}, gotQuery)
+}
+
+func TestBuildTestResults_Query(t *testing.T) {
+	var gotQuery url.Values
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		_, _ = w.Write([]byte(`{"test_suites": []}`))
+	})
+	c := newAPIClient(t, srv.URL, "t")
+
+	_, err := c.BuildTestResults(context.Background(), "my-app", "my-build", TestResultsQuery{})
+	require.NoError(t, err)
+	assert.Empty(t, gotQuery)
+
+	notFlaky := false
+	_, err = c.BuildTestResults(context.Background(), "my-app", "my-build", TestResultsQuery{
+		Statuses: []string{"failed", "error"}, Suite: "Login Tests", ClassName: "LoginTests", Flaky: &notFlaky,
+		SortBy: "duration", SortOrder: "desc", Limit: 20,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, url.Values{
+		"status":     {"failed", "error"},
+		"suite":      {"Login Tests"},
+		"class_name": {"LoginTests"},
+		"flaky":      {"false"},
+		"sort_by":    {"duration"},
+		"sort_order": {"desc"},
+		"limit":      {"20"},
+	}, gotQuery)
 }

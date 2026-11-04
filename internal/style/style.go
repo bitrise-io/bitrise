@@ -157,6 +157,19 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	}
 }
 
+// TestStatus returns the style to render a test case status in: passed in
+// Success, failed and error in Failure, skipped and any other value in Dim.
+func (s Styles) TestStatus(status string) lipgloss.Style {
+	switch status {
+	case "passed":
+		return s.Success
+	case "failed", "error":
+		return s.Failure
+	default:
+		return s.Dim
+	}
+}
+
 // HasColor reports whether the styles will emit ANSI codes.
 func (s Styles) HasColor() bool {
 	return s.r.ColorProfile() != termenv.Ascii
