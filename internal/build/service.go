@@ -382,16 +382,16 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID 
 	return s.steps(ctx, appSlug, buildSlug, status, stepID, nil)
 }
 
-// StepLogs returns the steps of a build Steps would, narrowed to stepIDs (step
-// run UUIDs) when non-empty, each with its log. tail > 0 keeps only the last
-// tail lines of each log. Until the build's log is archived the step logs are
-// not served, so every log is empty and Complete is false.
+// StepLogs returns the steps of a build Steps would, narrowed to stepUUIDs
+// (step run UUIDs) when non-empty, each with its log. tail > 0 keeps only the
+// last tail lines of each log. Until the build's log is archived the step logs
+// are not served, so every log is empty and Complete is false.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
-func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status string, stepIDs []string, tail int) (StepLogsResult, error) {
+func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status, stepID string, stepUUIDs []string, tail int) (StepLogsResult, error) {
 	if tail < 0 {
 		return StepLogsResult{}, fmt.Errorf("tail must not be negative")
 	}
-	steps, err := s.steps(ctx, appSlug, buildSlug, status, "", stepIDs)
+	steps, err := s.steps(ctx, appSlug, buildSlug, status, stepID, stepUUIDs)
 	if err != nil {
 		return StepLogsResult{}, err
 	}
@@ -474,18 +474,21 @@ func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status, stepID 
 	if err := ValidateStepStatus(status); err != nil {
 		return StepsResult{}, err
 	}
-	// The server would leave out a requested step whose status doesn't match,
-	// which would then look missing below, so with stepUUIDs the status is
-	// matched here instead.
+	// The server would leave out a requested step whose status or step ID
+	// doesn't match, which would then look missing below, so with stepUUIDs
+	// both are matched here instead.
 	var statuses []string
+	serverStepID := stepID
 	switch {
-	case status == "" || len(stepUUIDs) > 0:
+	case len(stepUUIDs) > 0:
+		serverStepID = ""
+	case status == "":
 	case status == "failed":
 		statuses = FailedStepStatuses
 	default:
 		statuses = []string{status}
 	}
-	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, statuses, stepID)
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, statuses, serverStepID)
 	if err != nil {
 		var apiErr *bitriseapi.APIError
 		if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
@@ -518,6 +521,9 @@ func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status, stepID 
 				}
 				found[st.UUID] = true
 				if status != "" && st.Status != status && (status != "failed" || !slices.Contains(FailedStepStatuses, st.Status)) {
+					continue
+				}
+				if stepID != "" && st.StepID != stepID {
 					continue
 				}
 			}

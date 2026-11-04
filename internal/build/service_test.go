@@ -611,7 +611,7 @@ func TestService_StepLogs_FetchesLogOfEachMatchingStep(t *testing.T) {
 	srv := newStepLogsServer(t)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "failed", nil, 0)
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "failed", "", nil, 0)
 	require.NoError(t, err)
 	assert.True(t, got.Complete)
 	require.Len(t, got.Items, 1)
@@ -624,29 +624,50 @@ func TestService_StepLogs_FiltersByStepIDAndStatus(t *testing.T) {
 	srv := newStepLogsServer(t)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-3", "s-1"}, 0)
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "", []string{"s-3", "s-1"}, 0)
 	require.NoError(t, err)
 	require.Len(t, got.Items, 2)
 	assert.Equal(t, "s-1", got.Items[0].ID, "steps keep execution order, not the order of the IDs")
 	assert.Equal(t, "s-3", got.Items[1].ID)
 	assert.Empty(t, got.Items[1].Log, "a step that logged nothing has an empty log")
 
-	got, err = svc.StepLogs(context.Background(), "my-app", "b-1", "failed", []string{"s-1"}, 0)
+	got, err = svc.StepLogs(context.Background(), "my-app", "b-1", "failed", "", []string{"s-1"}, 0)
 	require.NoError(t, err)
 	assert.Empty(t, got.Items)
 	assert.NotNil(t, got.Items, "an empty result must render as [] not null")
+}
+
+func TestService_StepLogs_StepIDFilter(t *testing.T) {
+	var gotQuery url.Values
+	steps := newStepLogsServer(t)
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/log/summary") {
+			gotQuery = r.URL.Query()
+		}
+		steps.Config.Handler.ServeHTTP(w, r)
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "script", nil, 0)
+	require.NoError(t, err)
+	assert.Equal(t, url.Values{"step_id": {"script"}}, gotQuery, "without step run UUIDs the server filters")
+
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "script", []string{"s-1"}, 0)
+	require.NoError(t, err, "s-1 is git-clone: the server must not drop it, or it would look missing")
+	assert.Empty(t, gotQuery)
+	assert.Empty(t, got.Items)
 }
 
 func TestService_StepLogs_Tail(t *testing.T) {
 	srv := newStepLogsServer(t)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-2"}, 2)
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "", []string{"s-2"}, 2)
 	require.NoError(t, err)
 	require.Len(t, got.Items, 1)
 	assert.Equal(t, "s-2 two\ns-2 three\n", got.Items[0].Log)
 
-	_, err = svc.StepLogs(context.Background(), "my-app", "b-1", "", nil, -1)
+	_, err = svc.StepLogs(context.Background(), "my-app", "b-1", "", "", nil, -1)
 	require.Error(t, err)
 }
 
@@ -654,7 +675,7 @@ func TestService_StepLogs_UnknownStepID(t *testing.T) {
 	srv := newStepLogsServer(t)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	_, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-2", "nope"}, 0)
+	_, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "", []string{"s-2", "nope"}, 0)
 	require.EqualError(t, err, `step "nope" not found in build "b-1"`)
 }
 
@@ -670,7 +691,7 @@ func TestService_StepLogs_NoLogsUntilArchived(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", []string{"s-1", "not-started-yet"}, 0)
+	got, err := svc.StepLogs(context.Background(), "my-app", "b-1", "", "", []string{"s-1", "not-started-yet"}, 0)
 	require.NoError(t, err)
 	assert.False(t, got.Complete)
 	require.Len(t, got.Items, 1)
