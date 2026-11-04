@@ -28,7 +28,7 @@ func TestTestResultsCmd_HappyPath(t *testing.T) {
 	require.NoError(t, cmd.Execute())
 
 	assert.Equal(t, "/apps/my-app/builds/build-1/test-results", gotPath)
-	assert.Equal(t, `LoginTests  3 tests, 1 failed, 0 errors, 0 skipped, 2.5s
+	assert.Equal(t, `LoginTests  4 tests, 1 failed, 1 errors, 0 skipped, 2.8s
   passed   LoginTests.testOK  120ms
   failed   LoginTests.testWrongPassword  1.1s
     expected error
@@ -39,7 +39,7 @@ func TestTestResultsCmd_HappyPath(t *testing.T) {
       crashed
 Empty  0 tests, 0 failed, 0 errors, 0 skipped, 0s
 
-Total: 3 tests, 1 failed, 0 errors, 0 skipped, 2.5s
+Total: 4 tests, 1 failed, 1 errors, 0 skipped, 2.8s
 `, out.String())
 }
 
@@ -135,7 +135,7 @@ func TestTestResultsCmd_JSON(t *testing.T) {
 	require.NoError(t, json.Unmarshal(out.Bytes(), &got), out.String())
 	require.Len(t, got.TestSuites, 1)
 	assert.Equal(t, "LoginTests", got.TestSuites[0].Name)
-	assert.Equal(t, 3, got.TestSuites[0].TestCount)
+	assert.Equal(t, 4, got.TestSuites[0].TestCount)
 	require.Len(t, got.TestSuites[0].TestCases, 1)
 	assert.Equal(t, "testRetry", got.TestSuites[0].TestCases[0].Name)
 }
@@ -197,7 +197,7 @@ func newTestTestResultsCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *by
 }
 
 const testResultsJSON = `{"test_suites": [
-  {"name": "LoginTests", "test_count": 3, "failure_count": 1, "error_count": 0, "skipped_count": 0, "duration_in_ms": 2500,
+  {"name": "LoginTests", "test_count": 4, "failure_count": 1, "error_count": 1, "skipped_count": 0, "duration_in_ms": 2800,
    "test_cases": [
      {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120},
      {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100},
