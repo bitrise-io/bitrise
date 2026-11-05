@@ -60,6 +60,11 @@ type APIError struct {
 	Message     string
 	Body        string
 	RequestInfo string
+
+	// rawBody is the whole response body, for the few endpoints whose error
+	// response carries data a caller needs, like the existing quarantine of
+	// a 409 on CreateQuarantinedTest.
+	rawBody []byte
 }
 
 func (e *APIError) Error() string {
@@ -122,6 +127,12 @@ func (c *Client) newRequest(ctx context.Context, path string, params url.Values)
 // body. params, when non-nil, are appended to the URL as a query string —
 // e.g. the validate endpoint's optional app_slug.
 func (c *Client) post(ctx context.Context, path string, params url.Values, body any) ([]byte, error) {
+	return c.send(ctx, http.MethodPost, path, params, body)
+}
+
+// send executes an authenticated request with body encoded as JSON, or with
+// no body when body is nil, and returns the raw response body.
+func (c *Client) send(ctx context.Context, method, path string, params url.Values, body any) ([]byte, error) {
 	u, err := url.Parse(c.baseURL + path)
 	if err != nil {
 		return nil, fmt.Errorf("parse URL: %w", err)
@@ -130,18 +141,24 @@ func (c *Client) post(ctx context.Context, path string, params url.Values, body 
 		u.RawQuery = params.Encode()
 	}
 
-	data, err := json.Marshal(body)
-	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+	var reqBody io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("marshal request: %w", err)
+		}
+		reqBody = bytes.NewReader(data)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Authorization", "token "+c.token)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	return c.do(req)
 }
@@ -211,8 +228,14 @@ func getPage[T any](ctx context.Context, c *Client, path string, params url.Valu
 // postDecode performs an authenticated POST with reqBody as the JSON body,
 // and decodes the JSON response into Resp.
 func postDecode[Resp any](ctx context.Context, c *Client, path string, params url.Values, reqBody any) (Resp, error) {
+	return sendDecode[Resp](ctx, c, http.MethodPost, path, params, reqBody)
+}
+
+// sendDecode performs an authenticated request with reqBody as the JSON
+// body, and decodes the JSON response into Resp.
+func sendDecode[Resp any](ctx context.Context, c *Client, method, path string, params url.Values, reqBody any) (Resp, error) {
 	var zero Resp
-	body, err := c.post(ctx, path, params, reqBody)
+	body, err := c.send(ctx, method, path, params, reqBody)
 	if err != nil {
 		return zero, err
 	}
@@ -243,6 +266,7 @@ func (c *Client) do(req *http.Request) ([]byte, error) {
 			StatusCode:  resp.StatusCode,
 			Message:     msg,
 			RequestInfo: req.Method + " " + req.URL.RequestURI(),
+			rawBody:     body,
 		}
 		if msg == "" {
 			// No structured field — keep the raw body so the user has

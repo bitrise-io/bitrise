@@ -54,6 +54,11 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 |---|---|
 | [`app create`](docs/cli/bitrise_app_create.md) | Register a new app on Bitrise |
 | [`app list`](docs/cli/bitrise_app_list.md) | List apps the authenticated user can access |
+| [`app quarantined-tests add`](docs/cli/bitrise_app_quarantined-tests_add.md) | Add a test to quarantine |
+| [`app quarantined-tests list`](docs/cli/bitrise_app_quarantined-tests_list.md) | List the tests quarantined on an app |
+| [`app quarantined-tests remove`](docs/cli/bitrise_app_quarantined-tests_remove.md) | Remove a test from quarantine |
+| [`app quarantined-tests update`](docs/cli/bitrise_app_quarantined-tests_update.md) | Change the comment or scope of a quarantined test |
+| [`app quarantined-tests view`](docs/cli/bitrise_app_quarantined-tests_view.md) | Show a quarantined test |
 | [`app view`](docs/cli/bitrise_app_view.md) | Show details of a single app |
 
 ### [`auth`](docs/cli/bitrise_auth.md) — Manage the Bitrise access token
