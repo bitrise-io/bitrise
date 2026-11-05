@@ -29,8 +29,8 @@ func TestTestResultsCmd_HappyPath(t *testing.T) {
 
 	assert.Equal(t, "/apps/my-app/builds/build-1/test-results", gotPath)
 	assert.Equal(t, `LoginTests  4 tests, 1 failed, 1 errors, 0 skipped, 2.8s
-  passed   LoginTests.testOK  120ms
-  failed   LoginTests.testWrongPassword  1.1s
+  passed   LoginTests.testOK  120ms  suites: LoginTests
+  failed   LoginTests.testWrongPassword  1.1s  suites: AppTests › LoginTests  identifier: LoginTests/testWrongPassword()
     expected error
     at line 12
   passed   LoginTests.testRetry  1.3s  flaky  2 runs
@@ -140,6 +140,30 @@ func TestTestResultsCmd_JSON(t *testing.T) {
 	assert.Equal(t, "testRetry", got.TestSuites[0].TestCases[0].Name)
 }
 
+func TestTestResultsCmd_JSONKeepsSuitesAndIdentifier(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(testResultsJSON))
+	})
+
+	cmd, out := newTestTestResultsCmd(t, srv.URL)
+	cmd.SetArgs([]string{"build-1", "--app", "my-app", "--format", "json"})
+	require.NoError(t, cmd.Execute())
+
+	var got struct {
+		TestSuites []struct {
+			TestCases []map[string]any `json:"test_cases"`
+		} `json:"test_suites"`
+	}
+	require.NoError(t, json.Unmarshal(out.Bytes(), &got), out.String())
+	require.NotEmpty(t, got.TestSuites)
+	require.Len(t, got.TestSuites[0].TestCases, 3)
+	assert.NotContains(t, got.TestSuites[0].TestCases[2], "test_suites", "a case without suites leaves the key out")
+	tc := got.TestSuites[0].TestCases[1]
+	assert.Equal(t, []any{"AppTests", "LoginTests"}, tc["test_suites"])
+	assert.Equal(t, "LoginTests/testWrongPassword()", tc["identifier"])
+	assert.NotContains(t, tc, "properties", "only the identifier of the properties is exposed")
+}
+
 func TestTestResultsCmd_BuildNotFinished(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -199,8 +223,10 @@ func newTestTestResultsCmd(t *testing.T, apiBaseURL string) (*cobra.Command, *by
 const testResultsJSON = `{"test_suites": [
   {"name": "LoginTests", "test_count": 4, "failure_count": 1, "error_count": 1, "skipped_count": 0, "duration_in_ms": 2800,
    "test_cases": [
-     {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120},
-     {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100},
+     {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120, "test_suites": ["LoginTests"]},
+     {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100,
+      "test_suites": ["AppTests", "LoginTests"],
+      "properties": [{"key": "configuration-hash", "value": "abc"}, {"key": "test-identifier", "value": "LoginTests/testWrongPassword()"}]},
      {"name": "testRetry", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 1300, "flaky": true,
       "runs": [{"status": "failed", "message": "timeout", "duration_in_ms": 900}, {"status": "passed", "duration_in_ms": 400}]}
    ],

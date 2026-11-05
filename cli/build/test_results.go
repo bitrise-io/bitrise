@@ -25,6 +25,9 @@ func NewTestResultsCommand() *cobra.Command {
 		Long: `List the test suites a build reported and the test cases in them, with each
 case's status and duration, and the message of failed ones.
 
+Each test case also lists the test suites it belongs to, which can differ from
+where it is nested, and the identifier its test report gives it, if any.
+
 Test results are available once the build has finished, and only if the plan
 of the app's workspace includes test reports. Filters narrow the test cases
 listed, and suites left without any are left out; a suite's counts always
@@ -124,6 +127,12 @@ func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filt
 			}
 			if len(tc.Runs) > 1 {
 				fmt.Fprintf(&b, "  %s", s.Dim.Render(fmt.Sprintf("%d runs", len(tc.Runs))))
+			}
+			if len(tc.TestSuites) > 0 {
+				fmt.Fprintf(&b, "  %s %s", s.Dim.Render("suites:"), strings.Join(tc.TestSuites, " › "))
+			}
+			if tc.Identifier != "" {
+				fmt.Fprintf(&b, "  %s", s.Dim.Render("identifier: "+tc.Identifier))
 			}
 			b.WriteString("\n")
 			if msg := strings.TrimSpace(tc.Message); msg != "" && (tc.Status == "failed" || tc.Status == "error") {

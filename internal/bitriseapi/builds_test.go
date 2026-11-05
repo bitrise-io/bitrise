@@ -492,7 +492,8 @@ func TestBuildTestResults_PathAndParse(t *testing.T) {
   "test_cases": [
     {"name": "testRetry", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 1300, "flaky": true,
      "runs": [{"name": "run 1", "status": "failed", "message": "timeout", "duration_in_ms": 900}]},
-    {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "boom", "duration_in_ms": 200}
+    {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "boom", "duration_in_ms": 200,
+     "test_suites": ["AppTests", "LoginTests"], "properties": [{"key": "test-identifier", "value": "LoginTests/testWrongPassword()"}]}
   ],
   "test_suites": [{"name": "SSO", "test_count": 0, "test_cases": [], "test_suites": []}]
 }]}`))
@@ -511,6 +512,8 @@ func TestBuildTestResults_PathAndParse(t *testing.T) {
 	assert.True(t, su.TestCases[0].Flaky)
 	assert.Equal(t, []TestRun{{Name: "run 1", Status: "failed", Message: "timeout", DurationInMS: 900}}, su.TestCases[0].Runs)
 	assert.Equal(t, "boom", su.TestCases[1].Message)
+	assert.Equal(t, []string{"AppTests", "LoginTests"}, su.TestCases[1].TestSuites)
+	assert.Equal(t, []TestProperty{{Key: "test-identifier", Value: "LoginTests/testWrongPassword()"}}, su.TestCases[1].Properties)
 	require.Len(t, su.TestSuites, 1)
 	assert.Equal(t, "SSO", su.TestSuites[0].Name)
 }

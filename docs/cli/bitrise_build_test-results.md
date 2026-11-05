@@ -7,6 +7,9 @@ List a build's test suites and test cases with their results
 List the test suites a build reported and the test cases in them, with each
 case's status and duration, and the message of failed ones.
 
+Each test case also lists the test suites it belongs to, which can differ from
+where it is nested, and the identifier its test report gives it, if any.
+
 Test results are available once the build has finished, and only if the plan
 of the app's workspace includes test reports. Filters narrow the test cases
 listed, and suites left without any are left out; a suite's counts always

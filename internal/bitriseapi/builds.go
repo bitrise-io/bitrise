@@ -426,14 +426,24 @@ type TestSuite struct {
 
 // TestCase is one test case of a suite. Status is passed, failed, skipped or
 // error. Runs lists the individual attempts when the test was retried.
+// TestSuites names the suites the test case originally belonged to, which can
+// differ from where the report nests it.
 type TestCase struct {
-	Name         string    `json:"name"`
-	ClassName    string    `json:"class_name"`
-	Status       string    `json:"status"`
-	Message      string    `json:"message"`
-	DurationInMS int64     `json:"duration_in_ms"`
-	Flaky        bool      `json:"flaky"`
-	Runs         []TestRun `json:"runs"`
+	Name         string         `json:"name"`
+	ClassName    string         `json:"class_name"`
+	Status       string         `json:"status"`
+	Message      string         `json:"message"`
+	DurationInMS int64          `json:"duration_in_ms"`
+	Flaky        bool           `json:"flaky"`
+	Runs         []TestRun      `json:"runs"`
+	TestSuites   []string       `json:"test_suites"`
+	Properties   []TestProperty `json:"properties"`
+}
+
+// TestProperty is a key/value pair a test report attaches to a test case.
+type TestProperty struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // TestRun is one attempt of a retried test case.
