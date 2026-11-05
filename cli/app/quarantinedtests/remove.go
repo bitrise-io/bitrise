@@ -3,10 +3,12 @@ package quarantinedtests
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/configs"
 	internalapp "github.com/bitrise-io/bitrise/v3/internal/app"
 )
 
@@ -20,13 +22,16 @@ func NewRemoveCommand() *cobra.Command {
 		Long: `Remove a test from quarantine, so it is included in test runs again.
 
 Asks for confirmation unless --yes is passed. Without a terminal to ask on,
---yes is required.`,
+or with --ci, --yes is required.`,
 		Example: `  bitrise app quarantined-tests remove 0b8a9c34-5d6e-4f70-8192-a3b4c5d6e7f8 --app my-app-id
   bitrise app quarantined-tests remove 0b8a9c34-5d6e-4f70-8192-a3b4c5d6e7f8 --app my-app-id --yes`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmdutil.LogCommandParameters(cmd)
 
+			if !yes && configs.IsCIMode {
+				return errors.New("CI mode does not ask for confirmation; pass --yes to remove the test")
+			}
 			if !yes && !cmdutil.IsTerminal(cmd.InOrStdin()) {
 				return errors.New("stdin is not a terminal to confirm on; pass --yes to remove the test without confirmation")
 			}
@@ -54,7 +59,7 @@ Asks for confirmation unless --yes is passed. Without a terminal to ask on,
 				if err != nil {
 					return err
 				}
-				if answer != "y" && answer != "Y" && answer != "yes" {
+				if !strings.EqualFold(answer, "y") && !strings.EqualFold(answer, "yes") {
 					return errors.New("aborted")
 				}
 			}

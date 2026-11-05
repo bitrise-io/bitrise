@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	internalapp "github.com/bitrise-io/bitrise/v3/internal/app"
+	internalbuild "github.com/bitrise-io/bitrise/v3/internal/build"
 	"github.com/bitrise-io/bitrise/v3/internal/style"
 	"github.com/bitrise-io/bitrise/v3/output"
 )
@@ -81,15 +82,9 @@ func printQuarantinedTestsTable(w io.Writer, tests []internalapp.QuarantinedTest
 }
 
 // testPath identifies a test the way a test report nests it: suites
-// outermost first, then the class name, then the test case. Like
-// `build test-results`, it leaves out a class name the test case name already
-// starts with: Jest reports, for one, repeat the full description in both.
+// outermost first, then the test case as `build test-results` names it.
 func testPath(t internalapp.QuarantinedTest) string {
-	parts := append([]string{}, t.TestSuiteName...)
-	if t.ClassName != "" && !strings.HasPrefix(t.TestCaseName, t.ClassName) {
-		parts = append(parts, t.ClassName)
-	}
-	return strings.Join(append(parts, t.TestCaseName), " › ")
+	return strings.Join(append(append([]string{}, t.TestSuiteName...), internalbuild.TestCaseDisplayName(t.ClassName, t.TestCaseName)), " › ")
 }
 
 func filterText(values []string) string {

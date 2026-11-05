@@ -51,10 +51,11 @@ type QuarantinedTestsResult struct {
 // AddQuarantinedTestOptions identifies the test to quarantine and the
 // scope of the quarantine.
 //
-// Without BuildID, the test fields are sent as given. With BuildID, the test
-// case is looked up in that build's test results and quarantined with the
-// values it has there, as the build page does: TestCaseName matches its name,
-// or its class name and name joined by a dot, and TestSuiteName, ClassName and
+// Without BuildID, the test fields are sent as given, and TestSuiteName is
+// required. With BuildID, the test case is looked up in that build's test
+// results and quarantined with the values it has there, as the build page
+// does: TestCaseName matches its name, or its name as test results list it
+// (internalbuild.TestCaseDisplayName), and TestSuiteName, ClassName and
 // TestCaseIdentifier only narrow the lookup.
 type AddQuarantinedTestOptions struct {
 	TestCaseName       string
@@ -102,6 +103,9 @@ func (s *Service) GetQuarantinedTest(ctx context.Context, appSlug, id string) (Q
 // quarantined, the error names the existing quarantine, whose scope the
 // caller can update instead.
 func (s *Service) AddQuarantinedTest(ctx context.Context, appSlug string, opts AddQuarantinedTestOptions) (QuarantinedTest, error) {
+	if opts.BuildID == "" && len(opts.TestSuiteName) == 0 {
+		return QuarantinedTest{}, errors.New("pass --build to look the test case up in a build, or --suite with the suites it belongs to")
+	}
 	if opts.BuildID != "" {
 		tc, err := s.findTestCase(ctx, appSlug, opts)
 		if err != nil {
@@ -159,7 +163,7 @@ func (s *Service) RemoveQuarantinedTest(ctx context.Context, appSlug, id string)
 func (s *Service) findTestCase(ctx context.Context, appSlug string, opts AddQuarantinedTestOptions) (internalbuild.TestCase, error) {
 	res, err := internalbuild.NewService(s.client).TestResults(ctx, appSlug, opts.BuildID, internalbuild.TestResultsFilter{})
 	if err != nil {
-		return internalbuild.TestCase{}, fmt.Errorf("getting the test results of build %s: %w", opts.BuildID, err)
+		return internalbuild.TestCase{}, err
 	}
 
 	var found []internalbuild.TestCase
@@ -181,7 +185,7 @@ func (s *Service) findTestCase(ctx context.Context, appSlug string, opts AddQuar
 
 	switch {
 	case len(found) == 0:
-		return internalbuild.TestCase{}, fmt.Errorf("build %s has no test case %q matching the given flags; pass the name as 'bitrise build test-results %s' lists it", opts.BuildID, opts.TestCaseName, opts.BuildID)
+		return internalbuild.TestCase{}, fmt.Errorf("build %s has no test case %q matching the given flags; pass the name as 'bitrise build test-results %s --app %s' lists it", opts.BuildID, opts.TestCaseName, opts.BuildID, appSlug)
 	case len(found) > 1:
 		var b strings.Builder
 		fmt.Fprintf(&b, "%d test cases of build %s match; narrow it down with --class-name, --suite or --identifier:", len(found), opts.BuildID)
@@ -206,7 +210,7 @@ func (s *Service) findTestCase(ctx context.Context, appSlug string, opts AddQuar
 const maxListedMatches = 10
 
 func testCaseMatches(tc internalbuild.TestCase, opts AddQuarantinedTestOptions) bool {
-	if opts.TestCaseName != tc.Name && opts.TestCaseName != tc.ClassName+"."+tc.Name {
+	if opts.TestCaseName != tc.Name && opts.TestCaseName != internalbuild.TestCaseDisplayName(tc.ClassName, tc.Name) {
 		return false
 	}
 	if opts.ClassName != "" && opts.ClassName != tc.ClassName {

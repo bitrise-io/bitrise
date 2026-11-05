@@ -192,7 +192,7 @@ func TestAddQuarantinedTest_FromBuildRefusesWithoutOneMatch(t *testing.T) {
 		{
 			name:    "no match",
 			opts:    AddQuarantinedTestOptions{TestCaseName: "testMissing", BuildID: "b-1"},
-			wantErr: []string{`build b-1 has no test case "testMissing"`, "'bitrise build test-results b-1'"},
+			wantErr: []string{`build b-1 has no test case "testMissing"`, "'bitrise build test-results b-1 --app my-app'"},
 		},
 		{
 			name:    "a flag rules out the only case with the name",
@@ -232,6 +232,15 @@ func TestAddQuarantinedTest_FromBuildRefusesWithoutOneMatch(t *testing.T) {
 	}
 }
 
+func TestAddQuarantinedTest_RequiresBuildOrSuites(t *testing.T) {
+	srv := newFakeServer(t, func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no request expected")
+	})
+
+	_, err := NewService(newAPIClient(t, srv.URL)).AddQuarantinedTest(context.Background(), "my-app", AddQuarantinedTestOptions{TestCaseName: "x"})
+	assert.ErrorContains(t, err, "pass --build to look the test case up in a build, or --suite")
+}
+
 func TestAddQuarantinedTest_FromBuildPassesTestResultsErrors(t *testing.T) {
 	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
@@ -240,6 +249,5 @@ func TestAddQuarantinedTest_FromBuildPassesTestResultsErrors(t *testing.T) {
 
 	_, err := NewService(newAPIClient(t, srv.URL)).AddQuarantinedTest(context.Background(), "my-app", AddQuarantinedTestOptions{TestCaseName: "x", BuildID: "b-1"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "getting the test results of build b-1")
 	assert.Contains(t, err.Error(), "does not include test reports")
 }

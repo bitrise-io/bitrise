@@ -33,7 +33,7 @@ func TestList_Table(t *testing.T) {
 	out, _, err := runCmd(t, NewListCommand(), srv.URL)
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/my-app/quarantined-tests", gotPath)
-	for _, want := range []string{"ID", "TEST", "BRANCHES", "TARGETS", "QUARANTINED", "qt-1", "AppTests › LoginTests › LoginSpec › test_login", "main, release/*", "all", "by jdoe"} {
+	for _, want := range []string{"ID", "TEST", "BRANCHES", "TARGETS", "QUARANTINED", "qt-1", "AppTests › LoginTests › LoginSpec.test_login", "main, release/*", "all", "by jdoe"} {
 		assert.Contains(t, out, want)
 	}
 }

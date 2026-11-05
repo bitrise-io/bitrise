@@ -1,7 +1,6 @@
 package quarantinedtests
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -41,10 +40,6 @@ The quarantine applies to every branch and every Workflow and Pipeline unless
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cmdutil.LogCommandParameters(cmd)
-			if opts.BuildID == "" && len(opts.TestSuiteName) == 0 {
-				return errors.New("pass --build to look the test case up in a build, or --suite with the suites it belongs to")
-			}
-
 			format, _ := cmd.Flags().GetString(cmdutil.FormatKey)
 			if err := output.ConfigureOutputFormat(format); err != nil {
 				return fmt.Errorf("failed to configure output format: %w", err)
