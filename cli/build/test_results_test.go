@@ -40,6 +40,9 @@ func TestTestResultsCmd_HappyPath(t *testing.T) {
 Empty  0 tests, 0 failed, 0 errors, 0 skipped, 0s
 
 Total: 4 tests, 1 failed, 1 errors, 0 skipped, 2.8s
+
+Quarantining a test case needs its exact suites, name and class name, or its identifier. To look them up in this build:
+  bitrise app quarantined-tests add --app my-app --build build-1 --name NAME
 `, out.String())
 }
 
