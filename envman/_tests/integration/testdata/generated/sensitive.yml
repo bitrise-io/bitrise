@@ -45,11 +45,11 @@ steps:
     {"B":"secret","C":"secret-derived"}
 - args: [print, --sensitive-only]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     B: secret
     C: $B-derived
+
 - args: [-l, debug, add, --key, D, --value, debug-secret, --sensitive]
   exit_code: 0
   stderr: |

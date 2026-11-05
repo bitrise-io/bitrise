@@ -57,18 +57,18 @@ steps:
        envman clear [arguments...]
 - args: [print, -h]
   exit_code: 0
-  stdout: |2
-
-
-
-       --expand          If enabled, expanded envs will use.
-       --format value    Output format (options: raw, json, envlist).
-       --sensitive-only  Print the only environment variables that are marked as sensitive.
-       envman print - Print out the environment variables in envstore.
-       envman print [command options] [arguments...]
+  stdout: |+
     NAME:
-    OPTIONS:
+       envman print - Print out the environment variables in envstore.
+
     USAGE:
+       envman print [command options] [arguments...]
+
+    OPTIONS:
+       --format value    Output format (options: raw, json, envlist).
+       --expand          If enabled, expanded envs will use.
+       --sensitive-only  Print the only environment variables that are marked as sensitive.
+
 - args: [run, -h]
   exit_code: 255
   stderr: |

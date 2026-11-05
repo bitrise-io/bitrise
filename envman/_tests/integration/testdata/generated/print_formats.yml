@@ -21,38 +21,38 @@ steps:
           line "quoted" $A
 - args: [print]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     A: a
     B: multi
     line "quoted" $A
+
 - args: [print, --format, raw]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     A: a
     B: multi
     line "quoted" $A
+
 - args: [print, --format, json]
   exit_code: 0
   stdout: |
     {"A":"a","B":"multi\nline \"quoted\" $A"}
 - args: [print, --format, envlist]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     export A="a"
     export B="multi\nline \"quoted\" $A"
+
 - args: [print, --format, envlist, --expand]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     export A="a"
     export B="multi\nline \"quoted\" a"
+
 - args: [p, --format=json]
   exit_code: 0
   stdout: |
@@ -63,9 +63,9 @@ steps:
     FATA[HH:MM:SS] Invalid format: invalid
 - args: [print, --format, ""]
   exit_code: 0
-  stdout: |2
-
+  stdout: |2+
 
     A: a
     B: multi
     line "quoted" $A
+

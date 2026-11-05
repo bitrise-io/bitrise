@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -227,8 +228,8 @@ func runGoldenCase(t *testing.T, bin, version string, tc goldenCase) []goldenRes
 		}
 
 		stdoutStr := n.normalize(trimTrailingSpaces(stdout.String()))
-		if isPrintCommand(step.args) {
-			stdoutStr = sortLines(stdoutStr)
+		if printsEnvs(step.args) {
+			stdoutStr = sortEnvRecords(stdoutStr)
 		}
 
 		result := goldenResult{
@@ -290,27 +291,42 @@ func (n normalizer) normalize(s string) string {
 	return s
 }
 
-func isPrintCommand(args []string) bool {
+func printsEnvs(args []string) bool {
 	for i := 0; i < len(args); i++ {
 		switch a := args[i]; {
 		case a == "-l" || a == "--loglevel" || a == "-p" || a == "--path":
 			i++
 		case strings.HasPrefix(a, "-"):
 		default:
-			return a == "print" || a == "p"
+			rest := args[i+1:]
+			return (a == "print" || a == "p") && !slices.Contains(rest, "-h") && !slices.Contains(rest, "--help")
 		}
 	}
 	return false
 }
 
-// print's raw and envlist formats iterate a map, so their line order is random.
-func sortLines(s string) string {
-	if s == "" {
+var envRecordStartPattern = regexp.MustCompile(`^(export |[^\s:]+:( |$))`)
+
+// print's raw and envlist formats iterate a map, so their env order is random. Both wrap the envs in blank
+// lines, and a raw multiline value continues on the next lines, which stay with their key. A value line that
+// looks like `KEY: value` would start a new record, no case has one.
+func sortEnvRecords(s string) string {
+	body, hasHeader := strings.CutPrefix(s, "\n")
+	body, hasFooter := strings.CutSuffix(body, "\n")
+	if !hasHeader || !hasFooter || body == "" {
 		return s
 	}
-	lines := strings.Split(strings.TrimSuffix(s, "\n"), "\n")
-	sort.Strings(lines)
-	return strings.Join(lines, "\n") + "\n"
+
+	var records []string
+	for _, line := range strings.Split(strings.TrimSuffix(body, "\n"), "\n") {
+		if len(records) == 0 || envRecordStartPattern.MatchString(line) {
+			records = append(records, line+"\n")
+			continue
+		}
+		records[len(records)-1] += line + "\n"
+	}
+	sort.Strings(records)
+	return "\n" + strings.Join(records, "") + "\n"
 }
 
 func trimTrailingSpaces(s string) string {
