@@ -1139,6 +1139,7 @@ func TestService_TestResults_NameFilter(t *testing.T) {
 	}{
 		{"matches class name case-insensitively", TestResultsFilter{Name: "ssotests"}, []string{"SSO/testSAML"}},
 		{"matches name", TestResultsFilter{Name: "PASSWORD"}, []string{"LoginTests/testWrongPassword"}},
+		{"matches the name as listed", TestResultsFilter{Name: "SSOTests.testSAML"}, []string{"SSO/testSAML"}},
 		{"limit applies after it", TestResultsFilter{Name: "test", Limit: 2}, []string{"LoginTests/testOK", "LoginTests/testWrongPassword"}},
 		{"limit counts a suite's own cases before its child suites'", TestResultsFilter{Name: "test", Limit: 4}, []string{"LoginTests/testOK", "LoginTests/testWrongPassword", "LoginTests/testRetry", "SSO/testSAML"}},
 	}

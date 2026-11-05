@@ -78,7 +78,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 	cmd.Flags().BoolVar(&flaky, "flaky", false, "only flaky test cases, or with --flaky=false only the ones that are not flaky")
 	cmd.Flags().StringVar(&filter.Suite, "suite", "", "only the test suite with this exact name, at any depth, with the suites nested in it")
 	cmd.Flags().StringVar(&filter.ClassName, "class-name", "", "only test cases with this exact class name")
-	cmd.Flags().StringVar(&filter.Name, "name", "", "only test cases whose name or class name contains this text (case-insensitive)")
+	cmd.Flags().StringVar(&filter.Name, "name", "", "only test cases whose name, as listed (Class.name), contains this text (case-insensitive)")
 	cmd.Flags().StringVar(&filter.SortBy, "sort", "", fmt.Sprintf("sort the test cases within each suite by: %s. status puts error first, then failed, skipped and passed", strings.Join(internalbuild.TestSortFields, ", ")))
 	cmd.Flags().StringVar(&filter.SortOrder, "order", "", fmt.Sprintf("direction of --sort: %s (default asc)", strings.Join(internalbuild.TestSortOrders, ", ")))
 	cmd.Flags().IntVar(&filter.Limit, "limit", 0, fmt.Sprintf("list at most this many test cases, up to %d (default: all)", internalbuild.MaxTestResultsLimit))
@@ -121,7 +121,7 @@ func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filt
 			shown++
 			// Pad outside the styled text: ANSI codes would count toward the width.
 			status := s.TestStatus(tc.Status).Render(tc.Status) + strings.Repeat(" ", max(0, len("skipped")-len(tc.Status)))
-			fmt.Fprintf(&b, "%s  %s  %s  %s", indent, status, testCaseName(tc), s.Dim.Render(testDuration(tc.DurationMS)))
+			fmt.Fprintf(&b, "%s  %s  %s  %s", indent, status, internalbuild.TestCaseDisplayName(tc.ClassName, tc.Name), s.Dim.Render(testDuration(tc.DurationMS)))
 			if tc.Flaky {
 				fmt.Fprintf(&b, "  %s", s.Bold.Render("flaky"))
 			}
@@ -183,9 +183,3 @@ func testDuration(ms int64) string {
 	return d.Round(100 * time.Millisecond).String()
 }
 
-func testCaseName(tc internalbuild.TestCase) string {
-	if tc.ClassName == "" || strings.HasPrefix(tc.Name, tc.ClassName) {
-		return tc.Name
-	}
-	return tc.ClassName + "." + tc.Name
-}

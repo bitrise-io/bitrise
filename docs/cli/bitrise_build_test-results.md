@@ -43,7 +43,7 @@ bitrise build test-results BUILD_ID [flags]
   -f, --format string       Output format. Accepted: raw (default), json, yml
   -h, --help                help for test-results
       --limit int           list at most this many test cases, up to 1000 (default: all)
-      --name string         only test cases whose name or class name contains this text (case-insensitive)
+      --name string         only test cases whose name, as listed (Class.name), contains this text (case-insensitive)
       --order string        direction of --sort: asc, desc (default asc)
       --sort string         sort the test cases within each suite by: duration, name, status. status puts error first, then failed, skipped and passed
       --status strings      only test cases with one of these statuses (comma-separated or repeated): passed, failed, skipped, error
