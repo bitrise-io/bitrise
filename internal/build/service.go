@@ -203,10 +203,14 @@ type TestSuite struct {
 }
 
 // TestCase is one test case of a suite. Runs lists its attempts when it was
-// retried.
+// retried. TestSuites names the suites the test case originally belonged to,
+// which can differ from where the report nests it, and Identifier is the test
+// framework's own identifier of it, when the report gives one.
 type TestCase struct {
 	Name       string    `json:"name" yaml:"name"`
 	ClassName  string    `json:"class_name,omitempty" yaml:"class_name,omitempty"`
+	TestSuites []string  `json:"test_suites,omitempty" yaml:"test_suites,omitempty"`
+	Identifier string    `json:"identifier,omitempty" yaml:"identifier,omitempty"`
 	Status     string    `json:"status" yaml:"status"`
 	Message    string    `json:"message,omitempty" yaml:"message,omitempty"`
 	DurationMS int64     `json:"duration_ms" yaml:"duration_ms"`
@@ -876,14 +880,26 @@ func limitTestCases(suites []TestSuite, limit int) ([]TestSuite, int) {
 	return out, limit
 }
 
+// testIdentifierProperty is the test case property a test report carries
+// the test framework's own identifier in. The build page reads the same one
+// (testCaseIdentifierOf in bitrise-website's TestResults.utils.ts).
+const testIdentifierProperty = "test-identifier"
+
 func testCaseFromAPI(tc bitriseapi.TestCase) TestCase {
 	out := TestCase{
 		Name:       tc.Name,
 		ClassName:  tc.ClassName,
+		TestSuites: tc.TestSuites,
 		Status:     tc.Status,
 		Message:    tc.Message,
 		DurationMS: tc.DurationInMS,
 		Flaky:      tc.Flaky,
+	}
+	for _, p := range tc.Properties {
+		if p.Key == testIdentifierProperty {
+			out.Identifier = p.Value
+			break
+		}
 	}
 	for _, r := range tc.Runs {
 		out.Runs = append(out.Runs, TestRun{Name: r.Name, Status: r.Status, Message: r.Message, DurationMS: r.DurationInMS})

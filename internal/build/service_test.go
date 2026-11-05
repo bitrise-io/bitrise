@@ -974,6 +974,9 @@ func TestService_TestResults_MapsTree(t *testing.T) {
 	assert.Equal(t, "LoginTests", failed.ClassName)
 	assert.Equal(t, "failed", failed.Status)
 	assert.Equal(t, "expected error\nat line 12", failed.Message)
+	assert.Equal(t, []string{"AppTests", "LoginTests"}, failed.TestSuites)
+	assert.Equal(t, "LoginTests/testWrongPassword()", failed.Identifier)
+	assert.Empty(t, login.TestCases[0].Identifier, "a case without the test-identifier property has no identifier")
 	flaky := login.TestCases[2]
 	assert.True(t, flaky.Flaky)
 	assert.Equal(t, []TestRun{{Status: "failed", Message: "timeout", DurationMS: 900}, {Status: "passed", DurationMS: 400}}, flaky.Runs)
@@ -1123,11 +1126,11 @@ func TestService_TestResults_RequiresSlugs(t *testing.T) {
 func TestTestResultsResult_JSONShape(t *testing.T) {
 	res := TestResultsResult{TestSuites: []TestSuite{{
 		Name: "S", TestCount: 1, DurationMS: 5, TestSuites: []TestSuite{},
-		TestCases: []TestCase{{Name: "c", ClassName: "K", Status: "failed", Message: "m", DurationMS: 5, Flaky: true,
+		TestCases: []TestCase{{Name: "c", ClassName: "K", TestSuites: []string{"P", "S"}, Identifier: "K/c()", Status: "failed", Message: "m", DurationMS: 5, Flaky: true,
 			Runs: []TestRun{{Name: "r", Status: "failed", Message: "m", DurationMS: 5}}}},
 	}}}
 	const want = `{"test_suites":[{"name":"S","test_count":1,"failure_count":0,"error_count":0,"skipped_count":0,"duration_ms":5,` +
-		`"test_cases":[{"name":"c","class_name":"K","status":"failed","message":"m","duration_ms":5,"flaky":true,` +
+		`"test_cases":[{"name":"c","class_name":"K","test_suites":["P","S"],"identifier":"K/c()","status":"failed","message":"m","duration_ms":5,"flaky":true,` +
 		`"runs":[{"name":"r","status":"failed","message":"m","duration_ms":5}]}],"test_suites":[]}]}`
 	b, err := json.Marshal(res)
 	require.NoError(t, err)
@@ -1138,6 +1141,8 @@ func TestTestResultsResult_JSONShape(t *testing.T) {
 	assert.Contains(t, string(y), "test_count: 1")
 	assert.Contains(t, string(y), "duration_ms: 5")
 	assert.Contains(t, string(y), "class_name: K")
+	assert.Contains(t, string(y), "test_suites:\n")
+	assert.Contains(t, string(y), "identifier: K/c()")
 	assert.Contains(t, string(y), "test_cases:")
 }
 
@@ -1272,7 +1277,9 @@ const testResultsJSON = `{"test_suites": [
    "properties": [{"key": "k", "value": "v"}], "attachments": [],
    "test_cases": [
      {"name": "testOK", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 120, "flaky": false, "runs": []},
-     {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100, "flaky": false},
+     {"name": "testWrongPassword", "class_name": "LoginTests", "status": "failed", "message": "expected error\nat line 12", "duration_in_ms": 1100, "flaky": false,
+      "test_suites": ["AppTests", "LoginTests"],
+      "properties": [{"key": "configuration-hash", "value": "abc"}, {"key": "test-identifier", "value": "LoginTests/testWrongPassword()"}]},
      {"name": "testRetry", "class_name": "LoginTests", "status": "passed", "duration_in_ms": 1300, "flaky": true,
       "runs": [{"status": "failed", "message": "timeout", "duration_in_ms": 900}, {"status": "passed", "duration_in_ms": 400}]}
    ],
