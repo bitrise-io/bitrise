@@ -7,7 +7,7 @@ Remove a test from quarantine
 Remove a test from quarantine, so it is included in test runs again.
 
 Asks for confirmation unless --yes is passed. Without a terminal to ask on,
---yes is required.
+or with --ci, --yes is required.
 
 ```
 bitrise app quarantined-tests remove ID [flags]

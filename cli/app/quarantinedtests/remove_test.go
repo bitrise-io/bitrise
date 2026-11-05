@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
+	"github.com/bitrise-io/bitrise/v3/configs"
 )
 
 func TestRemove_WithYes(t *testing.T) {
@@ -33,6 +34,7 @@ func TestRemove_Prompt(t *testing.T) {
 	}{
 		{name: "y", answer: "y\n", wantRemove: true},
 		{name: "yes", answer: "yes\n", wantRemove: true},
+		{name: "YES", answer: "YES\n", wantRemove: true},
 		{name: "n", answer: "n\n"},
 		{name: "empty", answer: "\n"},
 	}
@@ -53,7 +55,7 @@ func TestRemove_Prompt(t *testing.T) {
 			cmd.SetIn(strings.NewReader(tt.answer))
 			out, errOut, err := runCmd(t, cmd, srv.URL, "qt-1")
 
-			assert.Contains(t, errOut, "Remove AppTests › LoginTests › LoginSpec › test_login from quarantine? [y/N]: ")
+			assert.Contains(t, errOut, "Remove AppTests › LoginTests › LoginSpec.test_login from quarantine? [y/N]: ")
 			assert.Equal(t, tt.wantRemove, deleted)
 			if tt.wantRemove {
 				require.NoError(t, err)
@@ -79,6 +81,21 @@ func TestRemove_PromptLeavesOutClassNameTheNameStartsWith(t *testing.T) {
 }
 
 func TestRemove_NonTerminalNeedsYes(t *testing.T) {
+	srv := newFakeServer(t, func(_ http.ResponseWriter, _ *http.Request) {
+		t.Error("no request expected")
+	})
+
+	cmd := NewRemoveCommand()
+	cmd.SetIn(strings.NewReader("y\n"))
+	_, _, err := runCmd(t, cmd, srv.URL, "qt-1")
+	assert.ErrorContains(t, err, "pass --yes")
+}
+
+func TestRemove_CIModeNeedsYes(t *testing.T) {
+	fakeTerminal(t)
+	orig := configs.IsCIMode
+	configs.IsCIMode = true
+	t.Cleanup(func() { configs.IsCIMode = orig })
 	srv := newFakeServer(t, func(_ http.ResponseWriter, _ *http.Request) {
 		t.Error("no request expected")
 	})
