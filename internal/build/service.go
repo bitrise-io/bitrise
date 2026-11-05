@@ -830,7 +830,7 @@ func stepFromAPI(st bitriseapi.BuildExecutionStep, workflow string) Step {
 }
 
 // testSuitesFromAPI converts suites. A non-empty name, which must be
-// lowercase, keeps only the test cases whose name or class name contains it,
+// lowercase, keeps only the test cases whose TestCaseDisplayName contains it,
 // and drops the suites left without test cases and child suites.
 func testSuitesFromAPI(suites []bitriseapi.TestSuite, name string) []TestSuite {
 	out := []TestSuite{}
@@ -846,7 +846,7 @@ func testSuitesFromAPI(suites []bitriseapi.TestSuite, name string) []TestSuite {
 			TestSuites:   testSuitesFromAPI(su.TestSuites, name),
 		}
 		for _, tc := range su.TestCases {
-			if name == "" || strings.Contains(strings.ToLower(tc.ClassName), name) || strings.Contains(strings.ToLower(tc.Name), name) {
+			if name == "" || strings.Contains(strings.ToLower(TestCaseDisplayName(tc.ClassName, tc.Name)), name) {
 				ts.TestCases = append(ts.TestCases, testCaseFromAPI(tc))
 			}
 		}
@@ -856,6 +856,16 @@ func testSuitesFromAPI(suites []bitriseapi.TestSuite, name string) []TestSuite {
 		out = append(out, ts)
 	}
 	return out
+}
+
+// TestCaseDisplayName is how test results name a test case: Class.name, or
+// the name alone when it already starts with the class name, as in Jest
+// reports, which give the full name as both.
+func TestCaseDisplayName(className, name string) string {
+	if className == "" || strings.HasPrefix(name, className) {
+		return name
+	}
+	return className + "." + name
 }
 
 // limitTestCases keeps the first limit test cases in the order the server
