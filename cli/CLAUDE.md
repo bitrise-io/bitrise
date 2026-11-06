@@ -98,9 +98,12 @@ app.bitrise.io also gets `--web` (`app view`, `build view`); stacks have none.
   `SLUG` is `$BITRISE_APP_SLUG`, which Bitrise sets in every build.
 - **Workspace**, never organization, org or owner. `rde template`'s `OWNER` column is
   the creator's email, a different thing.
-- Singular nouns. CRUD verbs: `create`, `update`, `delete`, `list`, `view`. `build`
-  uses `trigger` instead of `create` to start a run, and `abort` instead of `cancel`
-  to stop one.
+- Singular nouns for top-level groups; a nested group can be plural, like `app
+  quarantined-tests`, `build steps` and `build test-results`. CRUD verbs:
+  `create`, `update`, `delete`, `list`, `view`. `build` uses `trigger` instead of
+  `create` to start a run, and `abort` instead of `cancel` to stop one.
+  `app quarantined-tests` uses `add` and `remove`: it puts existing tests on a list
+  rather than creating a resource.
 - `Use` and `Short` always, `Example` on leaves. Add `Long` only for an example, a
   precedence rule or a surprise - cobra already prints the flags.
 
