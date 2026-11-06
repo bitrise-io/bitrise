@@ -399,6 +399,98 @@ func (c *Client) BuildStepLog(ctx context.Context, appSlug, buildSlug, stepUUID 
 	return nil
 }
 
+// BuildTestResults is the response of
+// GET /apps/{app-slug}/builds/{build-slug}/test-results.
+type BuildTestResults struct {
+	TestSuites []TestSuite `json:"test_suites"`
+}
+
+// TestSuite is one test suite of a build's test report. Suites nest.
+type TestSuite struct {
+	Name         string      `json:"name"`
+	TestCount    int         `json:"test_count"`
+	FailureCount int         `json:"failure_count"`
+	ErrorCount   int         `json:"error_count"`
+	SkippedCount int         `json:"skipped_count"`
+	DurationInMS int64       `json:"duration_in_ms"`
+	TestCases    []TestCase  `json:"test_cases"`
+	TestSuites   []TestSuite `json:"test_suites"`
+}
+
+// TestCase is one test case of a suite. Status is passed, failed, skipped or
+// error. Runs lists the individual attempts when the test was retried.
+// TestSuites names the suites the test case originally belonged to, which can
+// differ from where the report nests it.
+type TestCase struct {
+	Name         string         `json:"name"`
+	ClassName    string         `json:"class_name"`
+	Status       string         `json:"status"`
+	Message      string         `json:"message"`
+	DurationInMS int64          `json:"duration_in_ms"`
+	Flaky        bool           `json:"flaky"`
+	Runs         []TestRun      `json:"runs"`
+	TestSuites   []string       `json:"test_suites"`
+	Properties   []TestProperty `json:"properties"`
+}
+
+// TestProperty is a key/value pair a test report attaches to a test case.
+type TestProperty struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// TestRun is one attempt of a retried test case.
+type TestRun struct {
+	Name         string `json:"name"`
+	Status       string `json:"status"`
+	Message      string `json:"message"`
+	DurationInMS int64  `json:"duration_in_ms"`
+}
+
+// TestResultsQuery narrows, sorts and limits the test cases of
+// BuildTestResults. Zero fields are not sent. Suite and ClassName are exact
+// names. SortOrder is only valid with SortBy. Limit counts test cases across
+// suites, in response order.
+type TestResultsQuery struct {
+	Statuses  []string
+	Suite     string
+	ClassName string
+	Flaky     *bool
+	SortBy    string
+	SortOrder string
+	Limit     int
+}
+
+// BuildTestResults fetches the test report of a finished build. With any
+// filter or limit, the server drops the suites left without test cases, and
+// keeps the counts of the rest as reported.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/test-results.
+func (c *Client) BuildTestResults(ctx context.Context, appSlug, buildSlug string, q TestResultsQuery) (BuildTestResults, error) {
+	params := url.Values{}
+	for _, st := range q.Statuses {
+		params.Add("status", st)
+	}
+	if q.Suite != "" {
+		params.Set("suite", q.Suite)
+	}
+	if q.ClassName != "" {
+		params.Set("class_name", q.ClassName)
+	}
+	if q.Flaky != nil {
+		params.Set("flaky", strconv.FormatBool(*q.Flaky))
+	}
+	if q.SortBy != "" {
+		params.Set("sort_by", q.SortBy)
+	}
+	if q.SortOrder != "" {
+		params.Set("sort_order", q.SortOrder)
+	}
+	if q.Limit > 0 {
+		params.Set("limit", strconv.Itoa(q.Limit))
+	}
+	return get[BuildTestResults](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/test-results", params)
+}
+
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to
 // be a presigned URL from BuildLogResponse.ExpiringRawLogURL — no auth
 // header is sent to it.

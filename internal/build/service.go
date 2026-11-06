@@ -183,6 +183,87 @@ type LogResult struct {
 	Complete bool   `json:"complete" yaml:"complete"`
 }
 
+// TestResultsResult is the test report of a build: its top-level suites.
+type TestResultsResult struct {
+	TestSuites []TestSuite `json:"test_suites" yaml:"test_suites"`
+}
+
+// TestSuite is one suite of a build's test report. The counts and duration
+// are the suite's own totals as reported, and stay so when a filter leaves
+// out some of its test cases.
+type TestSuite struct {
+	Name         string      `json:"name" yaml:"name"`
+	TestCount    int         `json:"test_count" yaml:"test_count"`
+	FailureCount int         `json:"failure_count" yaml:"failure_count"`
+	ErrorCount   int         `json:"error_count" yaml:"error_count"`
+	SkippedCount int         `json:"skipped_count" yaml:"skipped_count"`
+	DurationMS   int64       `json:"duration_ms" yaml:"duration_ms"`
+	TestCases    []TestCase  `json:"test_cases" yaml:"test_cases"`
+	TestSuites   []TestSuite `json:"test_suites" yaml:"test_suites"`
+}
+
+// TestCase is one test case of a suite. Runs lists its attempts when it was
+// retried. TestSuites names the suites the test case originally belonged to,
+// which can differ from where the report nests it, and Identifier is the test
+// framework's own identifier of it, when the report gives one.
+type TestCase struct {
+	Name       string    `json:"name" yaml:"name"`
+	ClassName  string    `json:"class_name,omitempty" yaml:"class_name,omitempty"`
+	TestSuites []string  `json:"test_suites,omitempty" yaml:"test_suites,omitempty"`
+	Identifier string    `json:"identifier,omitempty" yaml:"identifier,omitempty"`
+	Status     string    `json:"status" yaml:"status"`
+	Message    string    `json:"message,omitempty" yaml:"message,omitempty"`
+	DurationMS int64     `json:"duration_ms" yaml:"duration_ms"`
+	Flaky      bool      `json:"flaky" yaml:"flaky"`
+	Runs       []TestRun `json:"runs,omitempty" yaml:"runs,omitempty"`
+}
+
+// TestRun is one attempt of a retried test case.
+type TestRun struct {
+	Name       string `json:"name,omitempty" yaml:"name,omitempty"`
+	Status     string `json:"status" yaml:"status"`
+	Message    string `json:"message,omitempty" yaml:"message,omitempty"`
+	DurationMS int64  `json:"duration_ms" yaml:"duration_ms"`
+}
+
+// TestStatuses lists every status a test case can have.
+var TestStatuses = []string{"passed", "failed", "skipped", "error"}
+
+// TestSortFields lists the fields test cases can be sorted by. Ascending
+// status order puts error first, then failed, skipped and passed.
+var TestSortFields = []string{"duration", "name", "status"}
+
+// TestSortOrders lists the directions of a test case sort.
+var TestSortOrders = []string{"asc", "desc"}
+
+// MaxTestResultsLimit is the most test cases one request can be limited to.
+const MaxTestResultsLimit = 1000
+
+// TestResultsFilter narrows, sorts and limits a test report. Every set field
+// must match. Statuses matches any of the listed statuses. Suite is the exact
+// name of a suite at any depth, and keeps that suite's whole subtree.
+// ClassName is an exact class name. Name is a case-insensitive substring of a
+// test case's name or class name. SortBy sorts the test cases within each
+// suite, and SortOrder, which needs SortBy, sets its direction. Limit keeps
+// the first test cases across suites: a suite's own, then its nested suites'.
+// Name is matched on the client, everything else on the server.
+type TestResultsFilter struct {
+	Statuses  []string
+	Suite     string
+	ClassName string
+	Name      string
+	Flaky     *bool
+	SortBy    string
+	SortOrder string
+	Limit     int
+}
+
+// IsSet reports whether the filter can leave out test cases. Sorting alone
+// does not.
+func (f TestResultsFilter) IsSet() bool {
+	return len(f.Statuses) > 0 || f.Suite != "" || f.ClassName != "" || f.Name != "" || f.Flaky != nil || f.Limit > 0
+}
+
 // Service exposes build operations to the cmd layer.
 type Service struct {
 	client *bitriseapi.Client
@@ -533,6 +614,79 @@ func ValidateStepStatus(status string) error {
 	return nil
 }
 
+// TestResults returns the test report of a finished build, narrowed by f.
+// When f is set, suites left with no test cases and no child suites are
+// dropped.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/test-results.
+func (s *Service) TestResults(ctx context.Context, appSlug, buildSlug string, f TestResultsFilter) (TestResultsResult, error) {
+	if s.client == nil {
+		return TestResultsResult{}, fmt.Errorf("API client not configured")
+	}
+	if appSlug == "" {
+		return TestResultsResult{}, fmt.Errorf("app ID is required")
+	}
+	if buildSlug == "" {
+		return TestResultsResult{}, fmt.Errorf("build ID is required")
+	}
+	for _, st := range f.Statuses {
+		if !slices.Contains(TestStatuses, st) {
+			return TestResultsResult{}, fmt.Errorf("unknown test status %q (expected: %s)", st, strings.Join(TestStatuses, ", "))
+		}
+	}
+	if f.SortBy != "" && !slices.Contains(TestSortFields, f.SortBy) {
+		return TestResultsResult{}, fmt.Errorf("unknown sort field %q (expected: %s)", f.SortBy, strings.Join(TestSortFields, ", "))
+	}
+	if f.SortOrder != "" {
+		if !slices.Contains(TestSortOrders, f.SortOrder) {
+			return TestResultsResult{}, fmt.Errorf("unknown sort order %q (expected: %s)", f.SortOrder, strings.Join(TestSortOrders, ", "))
+		}
+		if f.SortBy == "" {
+			return TestResultsResult{}, fmt.Errorf("a sort order needs a sort field")
+		}
+	}
+	if f.Limit < 0 || f.Limit > MaxTestResultsLimit {
+		return TestResultsResult{}, fmt.Errorf("limit must be between 1 and %d", MaxTestResultsLimit)
+	}
+
+	q := bitriseapi.TestResultsQuery{
+		Statuses:  f.Statuses,
+		Suite:     f.Suite,
+		ClassName: f.ClassName,
+		Flaky:     f.Flaky,
+		SortBy:    f.SortBy,
+		SortOrder: f.SortOrder,
+	}
+	// The server would apply the limit before the name filter below, and leave
+	// fewer test cases than asked for.
+	if f.Name == "" {
+		q.Limit = f.Limit
+	}
+	resp, err := s.client.BuildTestResults(ctx, appSlug, buildSlug, q)
+	if err != nil {
+		var apiErr *bitriseapi.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.StatusCode {
+			case http.StatusBadRequest:
+				// Either the build has not finished yet or a filter value is
+				// invalid; the message says which.
+				if apiErr.Message != "" {
+					return TestResultsResult{}, errors.New(apiErr.Message)
+				}
+			case http.StatusForbidden:
+				return TestResultsResult{}, fmt.Errorf("the plan of the app's workspace does not include test reports")
+			case http.StatusNotFound:
+				return TestResultsResult{}, fmt.Errorf("build %q not found", buildSlug)
+			}
+		}
+		return TestResultsResult{}, err
+	}
+	suites := testSuitesFromAPI(resp.TestSuites, strings.ToLower(f.Name))
+	if f.Name != "" && f.Limit > 0 {
+		suites, _ = limitTestCases(suites, f.Limit)
+	}
+	return TestResultsResult{TestSuites: suites}, nil
+}
+
 // AbortRequest describes a build-abort operation.
 type AbortRequest struct {
 	AppSlug             string
@@ -671,6 +825,94 @@ func stepFromAPI(st bitriseapi.BuildExecutionStep, workflow string) Step {
 	}
 	for _, e := range st.Errors {
 		out.Errors = append(out.Errors, StepError{Code: e.Code, Message: e.Message})
+	}
+	return out
+}
+
+// testSuitesFromAPI converts suites. A non-empty name, which must be
+// lowercase, keeps only the test cases whose TestCaseDisplayName contains it,
+// and drops the suites left without test cases and child suites.
+func testSuitesFromAPI(suites []bitriseapi.TestSuite, name string) []TestSuite {
+	out := []TestSuite{}
+	for _, su := range suites {
+		ts := TestSuite{
+			Name:         su.Name,
+			TestCount:    su.TestCount,
+			FailureCount: su.FailureCount,
+			ErrorCount:   su.ErrorCount,
+			SkippedCount: su.SkippedCount,
+			DurationMS:   su.DurationInMS,
+			TestCases:    []TestCase{},
+			TestSuites:   testSuitesFromAPI(su.TestSuites, name),
+		}
+		for _, tc := range su.TestCases {
+			if name == "" || strings.Contains(strings.ToLower(TestCaseDisplayName(tc.ClassName, tc.Name)), name) {
+				ts.TestCases = append(ts.TestCases, testCaseFromAPI(tc))
+			}
+		}
+		if name != "" && len(ts.TestCases) == 0 && len(ts.TestSuites) == 0 {
+			continue
+		}
+		out = append(out, ts)
+	}
+	return out
+}
+
+// TestCaseDisplayName is how test results name a test case: Class.name, or
+// the name alone when it already starts with the class name, as in Jest
+// reports, which give the full name as both.
+func TestCaseDisplayName(className, name string) string {
+	if className == "" || strings.HasPrefix(name, className) {
+		return name
+	}
+	return className + "." + name
+}
+
+// limitTestCases keeps the first limit test cases in the order the server
+// counts its own limit: a suite's own test cases, then its child suites'. It
+// drops the suites left without any, and returns how many of limit are left.
+func limitTestCases(suites []TestSuite, limit int) ([]TestSuite, int) {
+	out := []TestSuite{}
+	for _, su := range suites {
+		if limit == 0 {
+			break
+		}
+		if len(su.TestCases) > limit {
+			su.TestCases = su.TestCases[:limit]
+		}
+		limit -= len(su.TestCases)
+		su.TestSuites, limit = limitTestCases(su.TestSuites, limit)
+		if len(su.TestCases) == 0 && len(su.TestSuites) == 0 {
+			continue
+		}
+		out = append(out, su)
+	}
+	return out, limit
+}
+
+// testIdentifierProperty is the test case property a test report carries
+// the test framework's own identifier in. The build page reads the same one
+// (testCaseIdentifierOf in bitrise-website's TestResults.utils.ts).
+const testIdentifierProperty = "test-identifier"
+
+func testCaseFromAPI(tc bitriseapi.TestCase) TestCase {
+	out := TestCase{
+		Name:       tc.Name,
+		ClassName:  tc.ClassName,
+		TestSuites: tc.TestSuites,
+		Status:     tc.Status,
+		Message:    tc.Message,
+		DurationMS: tc.DurationInMS,
+		Flaky:      tc.Flaky,
+	}
+	for _, p := range tc.Properties {
+		if p.Key == testIdentifierProperty {
+			out.Identifier = p.Value
+			break
+		}
+	}
+	for _, r := range tc.Runs {
+		out.Runs = append(out.Runs, TestRun{Name: r.Name, Status: r.Status, Message: r.Message, DurationMS: r.DurationInMS})
 	}
 	return out
 }
