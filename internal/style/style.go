@@ -13,11 +13,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/termenv"
+
+	"github.com/bitrise-io/bitrise/v3/internal/build"
 )
 
 // Theme controls which side of an AdaptiveColor pair New picks. Auto leaves
@@ -151,6 +154,26 @@ func (s Styles) BuildStatus(status string) lipgloss.Style {
 	case "in-progress":
 		return s.running
 	case "aborted", "aborted-with-success":
+		return s.aborted
+	default:
+		return s.Dim
+	}
+}
+
+// StepStatus returns the style to render a step run status in: every status
+// that fails the build in Failure, failed_skippable (failed, but the build
+// went on) and aborted (the build was aborted) in the aborted color, started
+// like a running build, success in Success, and the skipped ones, not_started
+// and any other value in Dim.
+func (s Styles) StepStatus(status string) lipgloss.Style {
+	switch {
+	case status == "started":
+		return s.running
+	case status == "success":
+		return s.Success
+	case slices.Contains(build.FailedStepStatuses, status):
+		return s.Failure
+	case status == "failed_skippable", status == "aborted":
 		return s.aborted
 	default:
 		return s.Dim
