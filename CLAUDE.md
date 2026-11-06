@@ -2,8 +2,8 @@
 
 One `bitrise` binary, two halves: the local workflow runner (`bitrise local run`,
 steps, tool provisioning, plugins) and the cloud commands (`app`, `build`, `stack`,
-`auth`, `config`, `user`, `workspace`, `yml`, `api`, `rde`, `purr`). Cobra only - the
-`urfave/cli` entry in `go.mod` is indirect and imported nowhere.
+`auth`, `config`, `user`, `workspace`, `yml`, `api`, `rde`, `purr`). Cobra only, except
+`envman/`: the Envman CLI copied into the repo still runs on `urfave/cli`.
 
 ## Layering
 
@@ -55,8 +55,6 @@ abstractions, not correctness.
 - `log/models.go` and `log/corelog/` define a schema downstream systems consume.
   Renaming, retyping or removing a JSON field breaks them.
 - `--format json`/`yml` output is a contract: additive changes only.
-- `go test ./plugins/...` fails with a `stepman --version` error unless `bitrise setup`
-  has run. `validatePlugin` probes all three tools whatever the plugin declares.
 
 ## Areas with their own conventions
 

@@ -44,6 +44,11 @@ func GetBitriseToolsDirPath() string {
 	return filepath.Join(GetBitriseHomeDirPath(), "tools")
 }
 
+// GetBitriseShimsDirPath holds links named after the tools the CLI took over, pointing at the CLI itself.
+func GetBitriseShimsDirPath() string {
+	return filepath.Join(GetBitriseHomeDirPath(), "shims")
+}
+
 func initBitriseWorkPaths() error {
 	bitriseWorkDirPath, err := pathutil.NormalizedOSTempDirPath("bitrise")
 	if err != nil {
@@ -93,6 +98,18 @@ func GeneratePATHEnvString(currentPATHEnv, pathToInclude string) string {
 	return pthWithPathIncluded
 }
 
+// MovePATHEntryToFront puts entry first, removing it from anywhere else in currentPATHEnv.
+// Unlike GeneratePATHEnvString, an entry that is already present still ends up first.
+func MovePATHEntryToFront(currentPATHEnv, entry string) string {
+	entries := []string{entry}
+	for _, e := range filepath.SplitList(currentPATHEnv) {
+		if filepath.Clean(e) != filepath.Clean(entry) {
+			entries = append(entries, e)
+		}
+	}
+	return strings.Join(entries, string(os.PathListSeparator))
+}
+
 func InitPaths() error {
 	if err := initBitriseWorkPaths(); err != nil {
 		return fmt.Errorf("init bitrise paths: %s", err)
@@ -105,6 +122,8 @@ func InitPaths() error {
 			return err
 		}
 		pthWithBitriseTools := GeneratePATHEnvString(os.Getenv("PATH"), bitriseToolsDirPth)
+		// The shims dir goes first even while empty, so a shim created by a step reaches the steps after it.
+		pthWithBitriseTools = MovePATHEntryToFront(pthWithBitriseTools, GetBitriseShimsDirPath())
 
 		if IsDebugUseSystemTools() {
 			log.Warn("[BitriseDebug] Using system tools, instead of the ones in BITRISE_HOME")

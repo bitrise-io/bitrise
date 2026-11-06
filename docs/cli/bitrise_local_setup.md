@@ -9,10 +9,11 @@ bitrise local setup [flags]
 ### Options
 
 ```
-      --clean       Removes bitrise's workdir before setup.
-  -h, --help        help for setup
-      --minimal     Only installs the required tools for running in CI mode.
-      --no-update   Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated (or set BITRISE_SETUP_NO_UPDATE=true).
+      --clean                        Removes bitrise's workdir before setup.
+      --experimental-gen-cli-shims   Experimental: put an envman shim ahead of the installed envman on PATH, running the Envman built into this CLI. Set it to false to remove the shim.
+  -h, --help                         help for setup
+      --minimal                      Only installs the required tools for running in CI mode.
+      --no-update                    Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated (or set BITRISE_SETUP_NO_UPDATE=true).
 ```
 
 ### Options inherited from parent commands
