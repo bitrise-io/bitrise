@@ -1,0 +1,34 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [run, sh, -c, printf out; printf err >&2]
+  exit_code: 0
+  stdout: out
+  stderr: err
+- args: [run, sh, -c, exit 1]
+  exit_code: 1
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exit status 1
+- args: [run, sh, -c, exit 42]
+  exit_code: 42
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exit status 42
+- args: [run, sh, -c, kill -TERM $$]
+  exit_code: 255
+  stderr: |
+    ERRO[HH:MM:SS] command failed: signal: terminated
+- args: [run, envman-golden-command-not-found]
+  exit_code: 255
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exec: "envman-golden-command-not-found": executable file not found in $PATH
+- args: [run]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - No command specified
+- args: [r, sh, -c, exit 3]
+  exit_code: 3
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exit status 3

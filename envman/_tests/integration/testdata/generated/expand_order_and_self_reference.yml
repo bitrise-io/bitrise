@@ -1,0 +1,58 @@
+steps:
+- args: [init]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, B, --value, $A]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - B: $A
+- args: [add, --key, A, --value, '$A:store']
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - B: $A
+      - A: $A:store
+- args: [add, --key, C, --value, $A]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - B: $A
+      - A: $A:store
+      - C: $A
+- args: [add, --key, A, --value, '$A:again', --append]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - B: $A
+      - A: $A:store
+      - C: $A
+      - A: $A:again
+- args: [print, --format, json, --expand]
+  env:
+  - A=os
+  exit_code: 0
+  stdout: |
+    {"A":"os:store:again","B":"os","C":"os:store"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  env:
+  - A=os
+  exit_code: 0
+  stdout: |
+    A=os:store:again|B=os|C=os:store

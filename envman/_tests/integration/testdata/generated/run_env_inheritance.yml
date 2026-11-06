@@ -1,0 +1,24 @@
+steps:
+- args: [init]
+  env:
+  - OS_ONLY=os
+  - OVERRIDDEN=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, OVERRIDDEN, --value, store]
+  env:
+  - OS_ONLY=os
+  - OVERRIDDEN=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - OVERRIDDEN: store
+- args: [run, sh, -c, printf '%s|%s|%s' "$OS_ONLY" "$OVERRIDDEN" "$HOME"]
+  env:
+  - OS_ONLY=os
+  - OVERRIDDEN=os
+  exit_code: 0
+  stdout: os|store|$WORK/home

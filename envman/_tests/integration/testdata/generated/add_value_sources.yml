@@ -1,0 +1,102 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, FILE, --valuefile, value.txt]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+- args: [add, --key, FILE_SHORT, -f, $WORK/unicode.txt]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+- args: [add, --key, PIPE]
+  stdin: from stdin
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+- args: [add, --key, FLAG_OVER_FILE, --value, flag, --valuefile, value.txt]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+      - FLAG_OVER_FILE: flag
+- args: [add, --key, FLAG_OVER_PIPE, --value, flag]
+  stdin: stdin
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+      - FLAG_OVER_FILE: flag
+      - FLAG_OVER_PIPE: flag
+- args: [add, --key, EMPTY_FLAG_FALLS_TO_FILE, --value, "", --valuefile, value.txt]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+      - FLAG_OVER_FILE: flag
+      - FLAG_OVER_PIPE: flag
+      - EMPTY_FLAG_FALLS_TO_FILE: |
+          from file
+- args: [add, --key, EMPTY_FILE_FALLS_TO_PIPE, --valuefile, empty.txt]
+  stdin: stdin
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+      - FLAG_OVER_FILE: flag
+      - FLAG_OVER_PIPE: flag
+      - EMPTY_FLAG_FALLS_TO_FILE: |
+          from file
+      - EMPTY_FILE_FALLS_TO_PIPE: stdin
+- args: [add, --key, FILE_OVER_PIPE, --valuefile, value.txt]
+  stdin: stdin
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - FILE: |
+          from file
+      - FILE_SHORT: "árvíztűrő tükörfúrógép \U0001F680"
+      - PIPE: from stdin
+      - FLAG_OVER_FILE: flag
+      - FLAG_OVER_PIPE: flag
+      - EMPTY_FLAG_FALLS_TO_FILE: |
+          from file
+      - EMPTY_FILE_FALLS_TO_PIPE: stdin
+      - FILE_OVER_PIPE: |
+          from file
+- args: [add, --key, MISSING_FILE, --valuefile, missing.txt]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to read env var value from file: open missing.txt: no such file or directory

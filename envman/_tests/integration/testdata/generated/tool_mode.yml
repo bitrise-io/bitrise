@@ -1,0 +1,26 @@
+steps:
+- args: [-t, init]
+  exit_code: 0
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - Tool mode on
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [--tool, init]
+  exit_code: 1
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - Tool mode on
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: Path already exist: $WORK/.envstore.yml
+- args: [init]
+  env:
+  - ENVMAN_TOOLMODE=true
+  exit_code: 1
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - Tool mode on
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: Path already exist: $WORK/.envstore.yml
+- args: [init]
+  env:
+  - ENVMAN_TOOLMODE=invalid
+  exit_code: 1
+  stderr: |
+    time="<time>" level=fatal msg="[ENVMAN] - Finished:could not parse invalid as bool value for flag tool, t: strconv.ParseBool: parsing \"invalid\": invalid syntax"

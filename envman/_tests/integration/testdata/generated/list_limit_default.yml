@@ -1,0 +1,23 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --valuefile, half]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <131084 bytes, sha256 740a361761367c0b21f650268a5ebb30b0ec89fc9e50160f1e5a63b9b2e910a3>
+- args: [add, --key, B, --valuefile, half]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <262162 bytes, sha256 cb71d77d3f63107d48c9f3929e9cc171f4cfc5584d3291d5e0adebbad20e27d1>
+- args: [add, --key, C, --valuefile, one_byte]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var list is too large (256.0009765625 KB), max allowed size: 256 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, EMPTY, --value, ""]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <262174 bytes, sha256 b6b4dea0faf22f59d12ca91161cb6de36839a96401b4b3f1f8ea236c9b972aa9>

@@ -1,0 +1,92 @@
+steps:
+- args: [init]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [unset, --key, A]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+- args: [unset, --key, MISSING]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - MISSING: ""
+        opts:
+          unset: true
+- args: [add, --key, B, --value, b]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - MISSING: ""
+        opts:
+          unset: true
+      - B: b
+- args: [unset, --key, B]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - MISSING: ""
+        opts:
+          unset: true
+      - B: ""
+        opts:
+          unset: true
+- args: [rm, --key, C]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - MISSING: ""
+        opts:
+          unset: true
+      - B: ""
+        opts:
+          unset: true
+      - C: ""
+        opts:
+          unset: true
+- args: [unset]
+  env:
+  - A=os
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:no environment key found, keys: [ opts]
+- args: [unset, --key, ""]
+  env:
+  - A=os
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:no environment key found, keys: [ opts]

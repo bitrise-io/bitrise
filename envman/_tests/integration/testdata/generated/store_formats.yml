@@ -1,0 +1,83 @@
+steps:
+- args: [-p, empty.yml, print, --format, json]
+  exit_code: 0
+  stdout: |
+    {}
+- args: [-p, empty_list.yml, print, --format, json]
+  exit_code: 0
+  stdout: |
+    {}
+- args: [-p, no_envs.yml, print, --format, json]
+  exit_code: 0
+  stdout: |
+    {}
+- args: [-p, typed.yml, print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"BOOL":"true","FLOAT":"1.5","INT":"1","NULL_VALUE":"","QUOTED":"x"}
+- args: [-p, typed.yml, run, sh, -c, 'printf ''%s|%s|%s|%s|%s\n'' "$INT" "$FLOAT"
+      "$BOOL" "${NULL_VALUE-<unset>}" "$QUOTED"']
+  exit_code: 0
+  stdout: |
+    1|1.5|true||x
+- args: [-p, opts.yml, print, --format, json, --expand]
+  exit_code: 0
+  stdout: |
+    {"A":"a","B":"a"}
+- args: [-p, opts.yml, add, --key, C, --value, c]
+  exit_code: 0
+  changed_files:
+    opts.yml: |
+      envs:
+      - A: a
+        opts:
+          is_expand: false
+          skip_if_empty: true
+          title: Title
+          description: Description
+          summary: Summary
+          category: Category
+          value_options:
+          - a
+          - b
+          is_required: true
+          is_dont_change_value: true
+          is_template: true
+          is_sensitive: true
+          meta:
+            key: value
+      - B: $A
+      - C: c
+- args: [-p, null_key.yml, print, --format, json]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: no environment key found, keys: [ opts]
+- args: [-p, invalid.yml, print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: yaml: line 1: did not find expected node content
+- args: [-p, invalid.yml, add, --key, A, --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: yaml: line 1: did not find expected node content
+- args: [-p, invalid_env.yml, print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: more than 2 keys specified: [A B opts]
+- args: [-p, not_a_list.yml, print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: yaml: unmarshal errors:
+      line 1: cannot unmarshal !!str `value` into []models.EnvironmentItemModel
+- args: [-p, missing.yml, print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: No file found at path: missing.yml
+- args: [-p, missing.yml, run, "true"]
+  exit_code: 2
+  stderr: |
+    ERRO[HH:MM:SS] command failed: failed to load EnvStore: No file found at path: missing.yml
+    panic: runtime error: invalid memory address or nil pointer dereference
+    [signal SIGSEGV: segmentation violation code=<code> addr=<addr> pc=<pc>]
+
+    <stack trace>

@@ -1,0 +1,14 @@
+steps:
+- args: [add, --key, C, --value, x]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var list is too large (1.0029296875 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [unset, --key, C]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <1076 bytes, sha256 5f5d7b1ab6773792c934f735f0187f2c0cb00d0a02ca9a8dd8cd017e6da84502>

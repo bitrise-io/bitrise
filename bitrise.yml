@@ -20,6 +20,7 @@ pipelines:
       run_unit_tests_linux: {}
       run_integration_tests_macos: {}
       run_integration_tests_linux: {}
+      run_envman_integration_tests_macos: {}
       run_envman_integration_tests_linux: {}
       run_with_group_based_containerization_integration_tests_linux: {}
       run_step_based_containerization_integration_tests_linux: {}
@@ -174,7 +175,22 @@ workflows:
         stack: ubuntu-noble-24.04-bitrise-2025-android
         machine_type_id: g2.linux.x-large
 
+  run_envman_integration_tests_macos:
+    envs:
+    - TEST_OS_NAME: macOS
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_envman_integration_tests: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-latest-stable
+        machine_type_id: g2.mac.large
+
   run_envman_integration_tests_linux:
+    envs:
+    - TEST_OS_NAME: Linux
     steps:
     - bundle::setup_repo: {}
     - bundle::install_dependencies:
@@ -182,6 +198,10 @@ workflows:
         - IGNORE_CUSTOM_GOLANG: "true"
     - bundle::setup_go_junit_report: {}
     - bundle::run_envman_integration_tests: {}
+    meta:
+      bitrise.io:
+        stack: ubuntu-noble-24.04-bitrise-2025-android
+        machine_type_id: g2.linux.medium
 
   run_with_group_based_containerization_integration_tests_linux:
     steps:
@@ -585,28 +605,44 @@ step_bundles:
             #!/usr/bin/env bash
             set -exo pipefail
 
-            # Build the standalone envman binary under test
-            current_envman="$(pwd)/_tmp/test_envman"
+            # Build the standalone envman binary under test, named envman like the release binaries
+            current_envman="$(pwd)/_tmp/envman/envman"
             export CGO_ENABLED=0
             go build -o "$current_envman" ./envman
 
             export PR="" PULL_REQUEST_ID=""
-            export INTEGRATION_TEST_BINARY_PATH="$current_envman"
+            # This CI step's envstore holds the env vars it passes to later steps. Unset it so no
+            # test can write into it.
+            unset ENVMAN_ENVSTORE_PATH
 
             # Prevent this script's content from being added to the test process environment
             unset content
 
-            test_log="${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.log"
-
             test_exit_code=0
-            go test -v ./envman/_tests/integration/... 2>&1 | tee "$test_log" || test_exit_code=$?
 
-            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests_linux.xml"
+            test_log="${BITRISE_DEPLOY_DIR}/envman_integration_tests.log"
+            INTEGRATION_TEST_BINARY_PATH="$current_envman" go test -v ./envman/_tests/integration/... 2>&1 \
+              | tee "$test_log" || test_exit_code=$?
+            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/envman_integration_tests.xml"
+
+            # The parity suite against the envman steps run with today
+            parity_log="${BITRISE_DEPLOY_DIR}/envman_parity_tests_stack.log"
+            INTEGRATION_TEST_BINARY_PATH="$(command -v envman)" go test -v -run TestGolden ./envman/_tests/integration/... 2>&1 \
+              | tee "$parity_log" || test_exit_code=$?
+            go-junit-report -in "$parity_log" -out "${BITRISE_DEPLOY_DIR}/envman_parity_tests_stack.xml"
+
             exit $test_exit_code
     - custom-test-results-export@1:
+        title: Export envman integration test results
         inputs:
-        - test_name: Envman integration tests on Linux
-        - base_path: $BITRISE_DEPLOY_DIR/envman_integration_tests_linux.xml
+        - test_name: Envman integration tests on $TEST_OS_NAME
+        - base_path: $BITRISE_DEPLOY_DIR/envman_integration_tests.xml
+        - search_pattern: "*"
+    - custom-test-results-export@1:
+        title: Export envman parity test results
+        inputs:
+        - test_name: Envman parity tests on $TEST_OS_NAME (stack envman)
+        - base_path: $BITRISE_DEPLOY_DIR/envman_parity_tests_stack.xml
         - search_pattern: "*"
     - deploy-to-bitrise-io@2: {}
 

@@ -1,0 +1,88 @@
+steps:
+- args: [init]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [unset, --key, A]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+- args: [add, --key, C, --value, '${A}x']
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - C: ${A}x
+- args: [rm, --key, B]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          unset: true
+      - C: ${A}x
+      - B: ""
+        opts:
+          unset: true
+- args: [print, --format, json]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  stdout: |
+    {"A":"","B":"","C":"${A}x"}
+- args: [print, --format, json, --expand]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  stdout: |
+    {"C":"x"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  stdout: |
+    A=<unset>|B=<unset>|C=x
+- args: [add, --key, A, --value, readded]
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: readded
+      - C: ${A}x
+      - B: ""
+        opts:
+          unset: true
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  env:
+  - A=os
+  - B=os
+  exit_code: 0
+  stdout: |
+    A=readded|B=<unset>|C=readdedx
