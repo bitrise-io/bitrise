@@ -2,11 +2,8 @@ package build
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -54,7 +51,10 @@ json/yml the final build record is written to stdout.
 json/yml, build logs stream to stderr as plain text and the final build
 record is written to stdout; otherwise, on a terminal, an interactive status
 display is shown instead of raw log lines, and when stdout isn't a terminal,
-logs stream as plain text there instead.`,
+logs stream as plain text there instead.
+
+Ctrl-C during --wait or --watch detaches without affecting the running build,
+and exits non-zero.`,
 		Example: `  bitrise build trigger --app my-app-id --workflow primary
   bitrise build trigger --app my-app-id --workflow deploy --branch release/1.2 --format json
   bitrise build trigger --app my-app-id --pipeline my-pipeline --branch main
@@ -120,52 +120,7 @@ logs stream as plain text there instead.`,
 				return err
 			}
 
-			if !wait && !watch {
-				return output.Render(cmd.OutOrStdout(), output.Format, b, printTriggerText)
-			}
-
-			if watch {
-				logWriter := io.Writer(cmd.OutOrStdout())
-				if output.Format == output.FormatJSON || output.Format == output.FormatYML {
-					logWriter = cmd.ErrOrStderr()
-				}
-				return runWatch(cmd, svc, b, interval, logWriter, output.Format)
-			}
-
-			// --wait: silent block until the build finishes; no log output.
-			header := fmt.Sprintf("Waiting for build #%d to finish\n", b.BuildNumber)
-			if url := buildDetailURL(cmd, b); url != "" {
-				header += fmt.Sprintf("%s\n", url)
-			}
-			if _, err := fmt.Fprint(cmd.ErrOrStderr(), header); err != nil {
-				return err
-			}
-
-			finalBuild, err := svc.WaitForCompletion(cmd.Context(), b.AppSlug, b.Slug, interval)
-			if errors.Is(err, context.Canceled) {
-				return writeDetachNotice(cmd.ErrOrStderr(), "build watch "+b.Slug)
-			}
-			if err != nil {
-				return err
-			}
-
-			if output.Format == output.FormatJSON || output.Format == output.FormatYML {
-				if err := output.Render(cmd.OutOrStdout(), output.Format, finalBuild, printBuildText); err != nil {
-					return err
-				}
-			} else {
-				footer := fmt.Sprintf("Build #%d finished: %s%s\n", finalBuild.BuildNumber, finalBuild.Status, buildElapsed(finalBuild))
-				if _, err := fmt.Fprint(cmd.ErrOrStderr(), footer); err != nil {
-					return err
-				}
-			}
-
-			// The exit code reflects the build outcome in every mode, including
-			// --format json/yml: stdout already carries the build record above.
-			if finalBuild.Status != "success" && finalBuild.Status != "aborted-with-success" {
-				return fmt.Errorf("build %s", finalBuild.Status)
-			}
-			return nil
+			return runAfterTrigger(cmd, svc, b, "Build triggered", wait, watch, interval)
 		},
 	}
 
@@ -182,13 +137,10 @@ logs stream as plain text there instead.`,
 	cmd.Flags().StringVar(&stack, "stack", "", "stack ID to run the build on, overrides the workflow's stack (see 'bitrise stack list')")
 	cmd.Flags().StringVar(&machineType, "machine-type", "", "machine type ID to run the build on, overrides the workflow's machine type")
 	cmd.Flags().StringVar(&licensePool, "license-pool", "", "license pool ID to run the build with")
-	cmd.Flags().BoolVar(&wait, "wait", false, "block until the build finishes without streaming logs (exit code reflects build outcome)")
-	cmd.Flags().BoolVar(&watch, "watch", false, "wait for the build to finish, showing progress (exit code reflects build outcome)")
-	cmd.Flags().DurationVar(&interval, "interval", 3*time.Second, "polling interval when --wait or --watch is active")
+	addFollowFlags(cmd, &wait, &watch, &interval)
 	cmdutil.AddAppFlag(cmd.Flags(), "app ID (or set BITRISE_APP_ID)")
 	cmd.Flags().StringP(cmdutil.FormatKey, "f", "", "Output format. Accepted: raw (default), json, yml")
 	cmd.MarkFlagsMutuallyExclusive("workflow", "pipeline")
-	cmd.MarkFlagsMutuallyExclusive("wait", "watch")
 
 	return cmd
 }
