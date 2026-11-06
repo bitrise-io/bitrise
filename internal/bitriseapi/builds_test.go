@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -361,6 +363,57 @@ func TestBuildLogManifest_ParsesNextAfterTimestamp(t *testing.T) {
 	assert.Equal(t, "2026-05-06T10:01:00Z", manifest.NextAfterTimestamp)
 	require.Len(t, manifest.LogChunks, 1)
 	assert.Equal(t, "hello\n", manifest.LogChunks[0].Chunk)
+}
+
+func TestBuildStepLog_ConcatenatesArchivedMessages(t *testing.T) {
+	var gotAuthHeader string
+	rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuthHeader = r.Header.Get("Authorization")
+		_, _ = w.Write([]byte(`[{"message":"first\n","level":"normal"},{"message":"second\n","level":"error"}]`))
+	}))
+	t.Cleanup(rawSrv.Close)
+
+	var gotPath string
+	apiSrv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, rawSrv.URL)
+	})
+
+	var log strings.Builder
+	require.NoError(t, newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", &log))
+	assert.Equal(t, "/apps/my-app/builds/my-build/log/steps/step-1", gotPath)
+	assert.Equal(t, "first\nsecond\n", log.String())
+	assert.Empty(t, gotAuthHeader, "the presigned URL must not receive our Authorization header")
+}
+
+func TestBuildStepLog_EmptyWithoutArchiveURL(t *testing.T) {
+	for _, body := range []string{
+		`{"log_chunks":[],"next_before_timestamp":null,"next_after_timestamp":null}`,
+		`{"log_chunks":null,"next_before_timestamp":null,"next_after_timestamp":null}`,
+	} {
+		apiSrv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(body))
+		})
+
+		var log strings.Builder
+		require.NoError(t, newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", &log))
+		assert.Empty(t, log.String())
+	}
+}
+
+func TestBuildStepLog_RejectsMalformedArchive(t *testing.T) {
+	for _, body := range []string{"not json", `{"message":"a"}`, `[{"message":"a"}`, `[{"message":1}]`, `[{"message":"a"}] x`, `[{"message":"a"}] []`} {
+		rawSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(body))
+		}))
+		t.Cleanup(rawSrv.Close)
+		apiSrv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, rawSrv.URL)
+		})
+
+		err := newAPIClient(t, apiSrv.URL, "t").BuildStepLog(context.Background(), "my-app", "my-build", "step-1", io.Discard)
+		require.ErrorContains(t, err, "decode step log", "body %q", body)
+	}
 }
 
 func TestBuildLogSummary_PathAndParse(t *testing.T) {
