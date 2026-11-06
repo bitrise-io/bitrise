@@ -1,0 +1,16 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, public]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: public
+- args: [print, --format, json, --sensitive-only]
+  exit_code: 0
+  stdout: |
+    {}

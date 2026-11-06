@@ -1,0 +1,23 @@
+steps:
+- args: [add, --key, A, --nope]
+  exit_code: 1
+  stdout: |+
+    Incorrect Usage: flag provided but not defined: -nope
+
+    NAME:
+       envman add - Add new, or update an exist environment variable.
+
+    USAGE:
+       envman add [command options] [arguments...]
+
+    OPTIONS:
+       --key value, -k value        Key of the environment variable. Empty string ("") is NOT accepted.
+       --value value, -v value      Value of the environment variable. Empty string is accepted.
+       --valuefile value, -f value  Path of a file which contains the environment variable's value to be stored.
+       --no-expand, -n              If enabled, envman will NOT replaces ${var} or $var in the string according to the values of the current environment variables.
+       --append, -a                 If enabled, new env will append to envstore, otherwise if env exist with specified key, will replaced.
+       --skip-if-empty              If enabled the added environment variable will be skipped during envman run, if the value is empty. If not set then the empty value will be used.
+       --sensitive                  The environment variable will be marked as sensitive.
+
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:flag provided but not defined: -nope

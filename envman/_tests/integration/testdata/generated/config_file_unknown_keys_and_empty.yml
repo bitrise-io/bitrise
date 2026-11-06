@@ -1,0 +1,18 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [add, --key, B, --value, b]
+  env:
+  - HOME=$WORK/home2
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input

@@ -1,11 +1,11 @@
-# this is intended to be used only for local testing of container related integration tests
+# local helpers: generated files and container related integration tests
 # everything else CI related is in the bitrise.yml
 
 DOCKER_COMPOSE_FILE=integrationtests/docker/local_docker_test_environment/docker-compose.yml
 SRC_DIR_IN_GOPATH=/bitrise/src
 DOCKERCOMPOSE=$(shell which docker-compose 2> /dev/null || echo '')
 
-.PHONY: docker-with-group-test docker-step-based-test setup-test-environment build-main-container docker-clean docs docs-check
+.PHONY: docker-with-group-test docker-step-based-test setup-test-environment build-main-container docker-clean docs docs-check envman-golden
 
 docs:
 	go run ./tools/gendocs
@@ -17,6 +17,11 @@ docs-check: docs
 		echo "$$status"; \
 		exit 1; \
 	fi
+
+# Regenerates the envman parity suite's expected outputs from the in-repo build
+envman-golden:
+	go build -o _tmp/envman/envman ./envman
+	INTEGRATION_TEST_BINARY_PATH=$(CURDIR)/_tmp/envman/envman go test -count=1 -run TestGolden ./envman/_tests/integration/ -update
 
 docker-step-based-test: setup-test-environment
 	@echo "Running docker integration tests..."

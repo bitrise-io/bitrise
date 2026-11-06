@@ -1,0 +1,10 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --valuefile, big]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <263180 bytes, sha256 eda4f83ec1cd1947ba9beea5f187162929c5606e769fd7cc1aff512000e15afa>

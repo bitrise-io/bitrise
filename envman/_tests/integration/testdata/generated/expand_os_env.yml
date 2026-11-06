@@ -1,0 +1,42 @@
+steps:
+- args: [init]
+  env:
+  - A=from-os
+  - B=os-b
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, C, --value, $A+$B]
+  env:
+  - A=from-os
+  - B=os-b
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - C: $A+$B
+- args: [add, --key, B, --value, store-b]
+  env:
+  - A=from-os
+  - B=os-b
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - C: $A+$B
+      - B: store-b
+- args: [print, --format, json, --expand]
+  env:
+  - A=from-os
+  - B=os-b
+  exit_code: 0
+  stdout: |
+    {"B":"store-b","C":"from-os+os-b"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  env:
+  - A=from-os
+  - B=os-b
+  exit_code: 0
+  stdout: |
+    A=from-os|B=store-b|C=from-os+os-b

@@ -1,0 +1,30 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [run, sh, -c, 'printf ''[%s]'' "$@"', argv0, --key, -h, --version, a b]
+  exit_code: 0
+  stdout: '[--key][-h][--version][a b]'
+- args: [run, --help]
+  exit_code: 255
+  stderr: |
+    ERRO[HH:MM:SS] command failed: exec: "--help": executable file not found in $PATH
+- args: [run, cat]
+  stdin: |
+    from stdin
+  exit_code: 0
+  stdout: |
+    from stdin
+- args: [run, sh, -c, printf '%s' "$PWD"]
+  exit_code: 0
+  stdout: $WORK
+- args: [-p, $WORK/custom.yml, init]
+  exit_code: 0
+  changed_files:
+    custom.yml: |
+      envs: []
+- args: [-p, $WORK/custom.yml, run, sh, -c, 'printf ''%s'' "${ENVMAN_ENVSTORE_PATH-<unset>}"']
+  exit_code: 0
+  stdout: <unset>

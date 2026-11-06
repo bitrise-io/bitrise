@@ -1,0 +1,42 @@
+steps:
+- args: [init]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --valuefile, "600"]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- args: [add, --key, B, --valuefile, "424"]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <1042 bytes, sha256 ad24b4af7cb346dacb9aed5df5e32c39a0672220576a9649b7c4f6c6704bdc62>
+- args: [add, --key, C, --value, x]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var list is too large (1.0009765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, A, --valuefile, "100"]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: env var list is too large (1.09765625 KB), max allowed size: 1 KB.
+    To increase env var limits please visit: https://support.bitrise.io/en/articles/9676692-env-var-value-too-large-env-var-list-too-large
+- args: [add, --key, LONG_KEY_NAME_IS_NOT_COUNTED_IN_THE_LIST_SIZE, --value, ""]
+  env:
+  - ENVMAN_ENV_LIST_BYTES_LIMIT_IN_KB=1
+  exit_code: 0
+  changed_files:
+    .envstore.yml: <1094 bytes, sha256 ad6cda429828eef3cbe70d1d2168d29cd39bbebfcd3cdf57b92f8c2062bfed40>
