@@ -1,0 +1,53 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [-l, debug, add, --key, A, --value, a]
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] adding flag value: (a)
+    DEBU[HH:MM:SS] [ENVMAN] Env added
+    DEBU[HH:MM:SS] - A: a
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [-l, debug, add, --key, B, --value, $A, --no-expand]
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] adding flag value: ($A)
+    DEBU[HH:MM:SS] [ENVMAN] Env added
+    DEBU[HH:MM:SS] - A: a
+    DEBU[HH:MM:SS] - B: $A
+    DEBU[HH:MM:SS]   isExpand: false
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A
+        opts:
+          is_expand: false
+- args: [-l, debug, add, --key, C]
+  stdin: piped
+  exit_code: 0
+  stderr: |
+    DEBU[HH:MM:SS] [ENVMAN] Work path: $WORK/.envstore.yml
+    DEBU[HH:MM:SS] adding from piped stdin
+    DEBU[HH:MM:SS] stdin value: (piped)
+    DEBU[HH:MM:SS] [ENVMAN] Env added
+    DEBU[HH:MM:SS] - A: a
+    DEBU[HH:MM:SS] - B: $A
+    DEBU[HH:MM:SS]   isExpand: false
+    DEBU[HH:MM:SS] - C: piped
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A
+        opts:
+          is_expand: false
+      - C: piped

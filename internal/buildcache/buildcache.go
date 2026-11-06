@@ -1,4 +1,4 @@
-// Package buildcache installs the bitrise-build-cache CLI once and runs the build-start activations with the build's envs, which plugins never see.
+// Package buildcache puts the bitrise-build-cache CLI the VM setup installed on the tools PATH and runs the build-start activations with the build's envs, which plugins never see.
 // Which tools to activate, and whether the workspace is enabled at all, are the CLI's decisions.
 package buildcache
 
@@ -25,14 +25,7 @@ import (
 const (
 	// EnvActivateAll opts a build in; the DEN agent passes BITRISE_* envs through, so preboot can set it.
 	EnvActivateAll = "BITRISE_BUILD_CACHE_ACTIVATE_ALL"
-	// EnvActivateGradleMirrors opts a build in to the Gradle repository mirrors, independently of the activation above.
-	EnvActivateGradleMirrors = "BITRISE_BUILD_CACHE_ACTIVATE_GRADLE_MIRRORS"
-	// EnvHostCacheURL serves release tarballs by bare name, e.g. http://192.168.64.1:59020/build-cache-cli-releases.
-	EnvHostCacheURL = "BITRISE_BUILD_CACHE_CLI_HOST_CACHE_URL"
-	// EnvCLIVersion and EnvCLISHA256 carry the VM setup's own pin, so there is no second one to bump here.
-	EnvCLIVersion = "BITRISE_BUILD_CACHE_CLI_VERSION"
-	EnvCLISHA256  = "BITRISE_BUILD_CACHE_CLI_SHA256"
-	// EnvCLIPath points at a CLI the VM setup already installed; it is reused when it reports the pinned version.
+	// EnvCLIPath points at the CLI the VM setup installed; the hook never downloads one itself.
 	EnvCLIPath = "BITRISE_BUILD_CACHE_CLI_PATH"
 
 	servicesTokenKey      = "BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN"
@@ -42,9 +35,6 @@ const (
 	gradleUserHomeKey     = "GRADLE_USER_HOME"
 
 	activationTimeout = 3 * time.Minute
-
-	envDisableHostsOverride = "BITRISE_DEN_DISABLE_HOSTS_OVERRIDE"
-	envMavenCentralProxy    = "BITRISE_MAVENCENTRAL_PROXY_ENABLED"
 )
 
 var (
@@ -54,11 +44,8 @@ var (
 	commandWaitDelay = 5 * time.Second
 )
 
-// The version ends up in a path and a URL.
-var (
-	versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+[0-9A-Za-z.+-]*$`)
-	sha256Pattern  = regexp.MustCompile(`^[0-9a-f]{64}$`)
-)
+// The reported version ends up in a log line, so anything else a binary prints is rejected.
+var versionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+[0-9A-Za-z.+-]*$`)
 
 // ActivateIfEnabled reports whether activation was attempted; it never fails the build, problems are logged as warnings.
 func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentItemModel) bool {
@@ -70,20 +57,14 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	values, err := evaluate(buildEnvs)
 	if err != nil {
 		// Only a build that opted in at the VM level has reason to see this.
-		if os.Getenv(EnvActivateAll) == "true" || os.Getenv(EnvActivateGradleMirrors) == "true" {
+		if os.Getenv(EnvActivateAll) == "true" {
 			logger.Warnf("Bitrise Build Cache activation skipped, could not evaluate the build envs: %s", err)
 		}
 
 		return false
 	}
 
-	all := enabled(values, EnvActivateAll)
-	mirrors := enabled(values, EnvActivateGradleMirrors)
-	if mirrors && os.Getenv(envDisableHostsOverride) == "true" {
-		logger.Infof("Skipping the Gradle mirrors because %s is true", envDisableHostsOverride)
-		mirrors = false
-	}
-	if !all && !mirrors {
+	if !enabled(values, EnvActivateAll) {
 		return false
 	}
 
@@ -91,29 +72,17 @@ func ActivateIfEnabled(logger log.Logger, buildEnvs []envmanModels.EnvironmentIt
 	defer cancel()
 
 	logger.Infof("Activating Bitrise Build Cache")
-	bin, err := installCLI(ctx, logger)
+	bin, err := resolveCLI(ctx, logger)
 	if err != nil {
 		logger.Warnf("Bitrise Build Cache activation failed, continuing without it: %s", err)
 
 		return true
 	}
 
-	if mirrors {
-		// The mirrors' init script re-reads this at build time, so a build can still switch them off.
-		env := append(os.Environ(), envMavenCentralProxy+"=true")
-		if home, ok := values[gradleUserHomeKey]; ok {
-			env = append(env, gradleUserHomeKey+"="+home)
-		}
-		if err := run(ctx, logger, bin, env, "activate", "gradle-mirrors", "-d"); err != nil {
-			logger.Warnf("activating bitrise-build-cache gradle-mirrors failed: %s", err)
-		}
-	}
-	if all {
-		// exec keeps the last value of a duplicated key, so build envs win.
-		env := append(os.Environ(), cacheEnvs(values)...)
-		if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
-			logger.Warnf("Bitrise Build Cache activation failed, continuing without it: activate all: %s", err)
-		}
+	// exec keeps the last value of a duplicated key, so build envs win.
+	env := append(os.Environ(), cacheEnvs(values)...)
+	if err := run(ctx, logger, bin, env, "activate", "all", "--auto"); err != nil {
+		logger.Warnf("Bitrise Build Cache activation failed, continuing without it: activate all: %s", err)
 	}
 
 	return true
@@ -177,68 +146,51 @@ func blankIfUnset(item envmanModels.EnvironmentItemModel) error {
 	return nil
 }
 
-// installCLI puts the pinned CLI on the tools PATH and returns the path the activations run from.
-// A pre-installed CLI is trusted on its reported version alone, as its tarball checksum is not available.
-// Both paths return a concrete file, not the shared link, so relinking cannot swap the binary that was verified.
-func installCLI(ctx context.Context, logger log.Logger) (string, error) {
-	version, checksum := os.Getenv(EnvCLIVersion), os.Getenv(EnvCLISHA256)
-	if !versionPattern.MatchString(version) {
-		return "", fmt.Errorf("%s (%q) must be set by the VM setup", EnvCLIVersion, version)
+// resolveCLI puts the CLI the VM setup installed on the tools PATH and returns the path the activations run from.
+// The VM setup owns the version, so any CLI that runs and reports one is used; a missing or broken one means no activation.
+// It returns a concrete file, not the shared link, so relinking cannot swap the binary that was verified.
+func resolveCLI(ctx context.Context, logger log.Logger) (string, error) {
+	path := os.Getenv(EnvCLIPath)
+	if path == "" {
+		return "", fmt.Errorf("%s is not set, the VM setup has to install the CLI", EnvCLIPath)
 	}
 
-	if preinstalled := os.Getenv(EnvCLIPath); preinstalled != "" {
-		bin, err := usePreinstalled(ctx, preinstalled, version)
-		if err == nil {
-			logger.Infof("Using bitrise-build-cache %s from %s", version, bin)
-
-			return bin, nil
-		}
-		logger.Warnf("Not using %s=%s, installing bitrise-build-cache %s instead: %s", EnvCLIPath, preinstalled, version, err)
-	}
-
-	if !sha256Pattern.MatchString(checksum) {
-		return "", fmt.Errorf("%s (%q) must be set by the VM setup", EnvCLISHA256, checksum)
-	}
-
-	installDir := filepath.Join(configs.GetBitriseHomeDirPath(), "build-cache", version)
-	versioned, err := newInstaller(logger, os.Getenv(EnvHostCacheURL), version, checksum).install(ctx, installDir)
+	bin, version, err := usePreinstalled(ctx, path)
 	if err != nil {
-		return "", fmt.Errorf("install bitrise-build-cache %s: %w", version, err)
+		return "", fmt.Errorf("%s=%s is not usable: %w", EnvCLIPath, path, err)
 	}
-	// Generated configs name the CLI bare when it is on PATH, which survives upgrades.
-	if err := link(versioned, toolsLinkPath()); err != nil {
-		return "", fmt.Errorf("link bitrise-build-cache onto PATH: %w", err)
-	}
+	logger.Infof("Using bitrise-build-cache %s from %s", version, bin)
 
-	return versioned, nil
+	return bin, nil
 }
 
 func toolsLinkPath() string {
 	return filepath.Join(configs.GetBitriseToolsDirPath(), binaryName)
 }
 
-// usePreinstalled ensures the tools entry resolves to the CLI and returns its absolute, symlink-free path,
-// so a relative value cannot leave a dangling link and the entry never points at itself.
-func usePreinstalled(ctx context.Context, path, version string) (string, error) {
+// usePreinstalled ensures the tools entry resolves to the CLI and returns its absolute, symlink-free path and the
+// version it reports, so a relative value cannot leave a dangling link and the entry never points at itself.
+func usePreinstalled(ctx context.Context, path string) (string, string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return "", fmt.Errorf("resolve the path: %w", err)
+		return "", "", fmt.Errorf("resolve the path: %w", err)
 	}
 	bin, err := filepath.EvalSymlinks(abs)
 	if err != nil {
-		return "", fmt.Errorf("resolve the path: %w", err)
+		return "", "", fmt.Errorf("resolve the path: %w", err)
 	}
-	if err := verifyPreinstalled(ctx, bin, version); err != nil {
-		return "", err
+	version, err := reportedVersion(ctx, bin)
+	if err != nil {
+		return "", "", err
 	}
 
 	if tools := toolsLinkPath(); !sameFile(tools, bin) {
 		if err := link(bin, tools); err != nil {
-			return "", fmt.Errorf("link onto PATH: %w", err)
+			return "", "", fmt.Errorf("link onto PATH: %w", err)
 		}
 	}
 
-	return bin, nil
+	return bin, version, nil
 }
 
 func sameFile(a, b string) bool {
@@ -248,9 +200,9 @@ func sameFile(a, b string) bool {
 	return errA == nil && errB == nil && os.SameFile(infoA, infoB)
 }
 
-func verifyPreinstalled(ctx context.Context, bin, version string) error {
+func reportedVersion(ctx context.Context, bin string) (string, error) {
 	if !isExecutable(bin) {
-		return errors.New("not an executable file")
+		return "", errors.New("not an executable file")
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, versionTimeout)
@@ -260,13 +212,14 @@ func verifyPreinstalled(ctx context.Context, bin, version string) error {
 	cmd.WaitDelay = commandWaitDelay
 	out, err := cmd.Output()
 	if err != nil && !errors.Is(err, exec.ErrWaitDelay) {
-		return fmt.Errorf("`version` failed: %w", err)
+		return "", fmt.Errorf("`version` failed: %w", err)
 	}
-	if got := strings.TrimPrefix(strings.TrimSpace(string(out)), "v"); got != version {
-		return fmt.Errorf("reports version %q, want %s", got, version)
+	version := strings.TrimPrefix(strings.TrimSpace(string(out)), "v")
+	if !versionPattern.MatchString(version) {
+		return "", fmt.Errorf("reports %q, which is not a version", version)
 	}
 
-	return nil
+	return version, nil
 }
 
 // cacheEnvs selects the evaluated build envs the CLI needs; the rest of the build envs are not added to its environment.

@@ -1,0 +1,32 @@
+steps:
+- args: [--version]
+  exit_code: 0
+  stdout: |
+    $VERSION
+- args: [-v]
+  exit_code: 0
+  stdout: |
+    $VERSION
+- args: [version]
+  exit_code: 0
+  stdout: |
+    $VERSION
+- args: [version, --format, json]
+  exit_code: 0
+  stdout: |
+    {"version":"$VERSION","build_number":"","commit":""}
+- args: [version, --format, yml]
+  exit_code: 0
+  stdout: |+
+    version: $VERSION
+    buildnumber: ""
+    commit: ""
+
+- args: [version, --format, raw]
+  exit_code: 0
+  stdout: |
+    $VERSION
+- args: [version, --format, invalid]
+  exit_code: 1
+  stderr: |
+    YYYY/MM/DD HH:MM:SS Error: invalid output format: invalid

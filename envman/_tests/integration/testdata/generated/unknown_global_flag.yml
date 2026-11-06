@@ -1,0 +1,34 @@
+steps:
+- args: [--nope, init]
+  exit_code: 1
+  stdout: |+
+    Incorrect Usage. flag provided but not defined: -nope
+
+
+    NAME: envman - Environment variable manager
+
+    USAGE: envman [OPTIONS] COMMAND [arg...]
+
+    VERSION: $VERSION
+
+    GLOBAL OPTIONS:
+      --loglevel value, -l value  Log level (options: debug, info, warn, error, fatal, panic). (default: "info") [$LOGLEVEL]
+      --path value, -p value      Path of the envstore. [$ENVMAN_ENVSTORE_PATH]
+      --tool, -t                  If enabled, envman will NOT ask for user inputs. [$ENVMAN_TOOLMODE]
+      --help, -h                  Show help.
+      --version, -v               Print the version.
+
+    COMMANDS:
+      version  Prints the version
+      init     Create an empty .envstore.yml into the current working directory, or to the path specified by the --path flag.
+      add      Add new, or update an exist environment variable.
+      clear    Clear the envstore.
+      print    Print out the environment variables in envstore.
+      run      Run the specified command with the environment variables stored in the envstore.
+      unset    Enlist an environment variable to be unset (for example to clear OS inherited vars for the process).
+      help     Shows a list of commands or help for one command
+
+    COMMAND HELP: envman COMMAND --help/-h
+
+  stderr: |
+    time="<time>" level=fatal msg="[ENVMAN] - Finished:flag provided but not defined: -nope"

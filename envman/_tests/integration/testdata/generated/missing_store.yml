@@ -1,0 +1,25 @@
+steps:
+- args: [add, --key, A, --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: No file found at path: $WORK/.envstore.yml
+- args: [unset, --key, A]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:No file found at path: $WORK/.envstore.yml
+- args: [print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] failed to read envs: No file found at path: $WORK/.envstore.yml
+- args: [clear]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to clear EnvStore:EnvStore not found in path:$WORK/.envstore.yml
+- args: [run, "true"]
+  exit_code: 2
+  stderr: |
+    ERRO[HH:MM:SS] command failed: failed to load EnvStore: No file found at path: $WORK/.envstore.yml
+    panic: runtime error: invalid memory address or nil pointer dereference
+    [signal SIGSEGV: segmentation violation code=<code> addr=<addr> pc=<pc>]
+
+    <stack trace>

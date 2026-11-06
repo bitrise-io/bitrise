@@ -9,8 +9,6 @@ import (
 
 func TestMain(m *testing.M) {
 	// A CI or VM export must not make a test run the real build cache CLI.
-	for _, key := range []string{buildcache.EnvActivateAll, buildcache.EnvActivateGradleMirrors} {
-		_ = os.Unsetenv(key)
-	}
+	_ = os.Unsetenv(buildcache.EnvActivateAll)
 	os.Exit(m.Run())
 }

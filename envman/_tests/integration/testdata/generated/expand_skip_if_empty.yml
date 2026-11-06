@@ -1,0 +1,55 @@
+steps:
+- args: [init]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, "", --skip-if-empty]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          skip_if_empty: true
+- args: [add, --key, B, --value, $A]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          skip_if_empty: true
+      - B: $A
+- args: [add, --key, C, --value, $EMPTY, --skip-if-empty]
+  env:
+  - A=os
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: ""
+        opts:
+          skip_if_empty: true
+      - B: $A
+      - C: $EMPTY
+        opts:
+          skip_if_empty: true
+- args: [print, --format, json, --expand]
+  env:
+  - A=os
+  exit_code: 0
+  stdout: |
+    {"B":"os","C":""}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  env:
+  - A=os
+  exit_code: 0
+  stdout: |
+    A=os|B=os|C=

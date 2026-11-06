@@ -1,0 +1,39 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [add, --key, B, --value, $A, --no-expand]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A
+        opts:
+          is_expand: false
+- args: [add, --key, C, --value, $B]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+      - B: $A
+        opts:
+          is_expand: false
+      - C: $B
+- args: [print, --format, json, --expand]
+  exit_code: 0
+  stdout: |
+    {"A":"a","B":"$A","C":"$A"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  exit_code: 0
+  stdout: |
+    A=a|B=$A|C=$A

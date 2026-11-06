@@ -1,0 +1,5 @@
+steps:
+- args: [add, --key, A, --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:json: cannot unmarshal string into Go struct field ConfigsFileMode.env_bytes_limit_in_kb of type int

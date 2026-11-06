@@ -1,0 +1,36 @@
+steps:
+- args: [clear]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to clear EnvStore:EnvStore not found in path:$WORK/.envstore.yml
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [clear]
+  exit_code: 0
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - EnvStore cleared
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [c]
+  exit_code: 0
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - EnvStore cleared
+  changed_files:
+    .envstore.yml: |
+      envs: []

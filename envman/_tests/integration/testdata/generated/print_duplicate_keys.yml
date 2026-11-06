@@ -1,0 +1,31 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, first]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: first
+- args: [add, --key, A, --value, second, --append]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: first
+      - A: second
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {"A":"second"}
+- args: [print, --format, json, --expand]
+  exit_code: 0
+  stdout: |
+    {"A":"second"}
+- args: [run, sh, -c, 'printf ''A=%s|B=%s|C=%s\n'' "${A-<unset>}" "${B-<unset>}" "${C-<unset>}"']
+  exit_code: 0
+  stdout: |
+    A=second|B=<unset>|C=<unset>

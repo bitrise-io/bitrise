@@ -1,0 +1,56 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, "1"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: "1"
+- args: [add, --key, A, --value, "2"]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: "2"
+- args: [add, --key, A, --value, "3", --append]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: "2"
+      - A: "3"
+- args: [add, --key, A, --value, "4", -a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: "2"
+      - A: "3"
+      - A: "4"
+- args: [-t, add, --key, A, --value, "5"]
+  exit_code: 1
+  stderr: |
+    INFO[HH:MM:SS] [ENVMAN] - Tool mode on
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: More then one env exist with key 'A'
+- args: [add, --key, A, --value, "6"]
+  exit_code: 1
+  stdout: |2
+       More then one env exist with key 'A' replace all/append ['replace/append'] ? :
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: failed to get input - scanner failed
+- args: [add, --key, A, --value, "7"]
+  stdin: |
+    replace
+  exit_code: 0
+  stdout: |2
+       More then one env exist with key 'A' replace all/append ['replace/append'] ? :
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: "7"
+      - A: "7"
+      - A: "7"

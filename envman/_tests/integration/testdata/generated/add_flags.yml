@@ -1,0 +1,36 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, long]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: long
+- args: [add, -k, B, -v, short]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: long
+      - B: short
+- args: [a, -k, C, -v, alias]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: long
+      - B: short
+      - C: alias
+- args: [add, --key=D, --value=equals]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: long
+      - B: short
+      - C: alias
+      - D: equals

@@ -1,0 +1,32 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [init]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Finished:failed to init at path: Path already exist: $WORK/.envstore.yml
+- args: [init, --clear]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --key, A, --value, a]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs:
+      - A: a
+- args: [i, -c]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []

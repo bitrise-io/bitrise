@@ -1,0 +1,14 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [add, --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: key is not specified, required
+- args: [add, --key, "", --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] Failed to add env var: key is not specified, required

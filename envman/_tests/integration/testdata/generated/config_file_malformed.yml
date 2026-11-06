@@ -1,0 +1,25 @@
+steps:
+- args: [init]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input
+- args: [add, --key, A, --value, a]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input
+- args: [print]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input
+- args: [run, "true"]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input
+- args: [version]
+  exit_code: 1
+  stderr: |
+    FATA[HH:MM:SS] [ENVMAN] - Failed to init configs:unexpected end of JSON input
+- args: [--version]
+  exit_code: 0
+  stdout: |
+    $VERSION

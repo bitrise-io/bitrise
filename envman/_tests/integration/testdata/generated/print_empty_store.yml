@@ -1,0 +1,20 @@
+steps:
+- args: [init]
+  exit_code: 0
+  changed_files:
+    .envstore.yml: |
+      envs: []
+- args: [print]
+  exit_code: 0
+  stdout: |2+
+
+
+- args: [print, --format, json]
+  exit_code: 0
+  stdout: |
+    {}
+- args: [print, --format, envlist]
+  exit_code: 0
+  stdout: |2+
+
+

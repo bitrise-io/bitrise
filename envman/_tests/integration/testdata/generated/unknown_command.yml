@@ -1,0 +1,5 @@
+steps:
+- args: [nope]
+  exit_code: 3
+  stderr: |
+    No help topic for 'nope'
