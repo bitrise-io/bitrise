@@ -103,7 +103,7 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 
 	stackVersionRes := <-stackVersionCh
 	if stackVersionRes.err != nil {
-		if _, err = fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not fetch stack image version: %v\n", stackVersionRes.err) {
+		if _, err = fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not fetch stack image version: %v\n", stackVersionRes.err); err != nil {
 			return err
 		}
 	} else {
