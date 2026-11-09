@@ -245,6 +245,24 @@ func (c *Client) BuildLogManifest(ctx context.Context, appSlug, buildSlug, after
 	return get[BuildLogResponse](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log", params)
 }
 
+// BuildLogSummary is the subset of the build log summary the CLI reads. The
+// full body also carries additional attributes that can be added here as needed
+type BuildLogSummary struct {
+	AgentInfo BuildLogSummaryAgentInfo `json:"agent_info"`
+}
+
+// BuildLogSummaryAgentInfo describes the VM the build ran on. For a build that
+// never got one, the key is absent and this decodes to its zero value.
+type BuildLogSummaryAgentInfo struct {
+	StackImageVersion string `json:"stack_image_version"`
+}
+
+// BuildLogSummary fetches the log summary for a build.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
+func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string) (BuildLogSummary, error) {
+	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", nil)
+}
+
 // BuildLog fetches the log for a build and writes it to w.
 //
 // For archived (finished) builds, the full log is downloaded from

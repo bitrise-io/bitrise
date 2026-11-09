@@ -37,6 +37,7 @@ type Build struct {
 	TriggeredBy             string     `json:"triggered_by,omitempty" yaml:"triggered_by,omitempty"`
 	FinishedAt              *time.Time `json:"finished_at,omitempty" yaml:"finished_at,omitempty"`
 	StackIdentifier         string     `json:"stack_identifier,omitempty" yaml:"stack_identifier,omitempty"`
+	StackImageVersion       string     `json:"stack_image_version,omitempty" yaml:"stack_image_version,omitempty"`
 	MachineTypeID           string     `json:"machine_type_id,omitempty" yaml:"machine_type_id,omitempty"`
 	CreditCost              int        `json:"credit_cost,omitempty" yaml:"credit_cost,omitempty"`
 	BuildURL                string     `json:"build_url,omitempty" yaml:"build_url,omitempty"`
@@ -214,6 +215,22 @@ func (s *Service) View(ctx context.Context, appSlug, buildSlug string) (Build, e
 		return Build{}, err
 	}
 	return fromAPI(b, appSlug), nil
+}
+
+// StackImageVersion returns the version of the stack image the build's VM
+// booted, e.g. "2-161-0".
+// Returns "" and no error for a build whose VM never started: its summary
+// exists but has no agent_info.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
+func (s *Service) StackImageVersion(ctx context.Context, appSlug, buildSlug string) (string, error) {
+	if s.client == nil {
+		return "", fmt.Errorf("API client not configured")
+	}
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug)
+	if err != nil {
+		return "", err
+	}
+	return summary.AgentInfo.StackImageVersion, nil
 }
 
 // Log streams the build log for the given build to w. For finished builds

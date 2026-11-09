@@ -139,6 +139,48 @@ func TestService_View_NotFound(t *testing.T) {
 	require.EqualError(t, err, `build "missing" not found`)
 }
 
+func TestService_StackImageVersion(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{"agent_info":{"stack_image_version":"2-161-0"}}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StackImageVersion(context.Background(), "my-app", "b-xyz")
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/b-xyz/log/summary", gotPath)
+	assert.Equal(t, "2-161-0", got)
+}
+
+// Captured from a real build aborted as idle before it reached a worker: the
+// summary exists, but agent_info is absent.
+func TestService_StackImageVersion_NeverStartedIsEmpty(t *testing.T) {
+	const neverStartedSummary = `{"app_id":"my-app","build_id":"b-xyz","cli_info":{"bitrise_cli_version":"","ci_mode":false},"has_build_environment_setup_logs":false,"execution":{"build_environment_setup":{"started_at":"2026-11-09T19:01:37.324Z","finished_at":null,"status":""},"workflows":[],"with_groups":null,"step_bundles":null},"is_log_archived":false}`
+
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(neverStartedSummary))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.StackImageVersion(context.Background(), "my-app", "b-xyz")
+	require.NoError(t, err)
+	assert.Empty(t, got)
+}
+
+func TestService_StackImageVersion_ErrorsPropagate(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"message":"boom"}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.StackImageVersion(context.Background(), "my-app", "b-xyz")
+	var apiErr *bitriseapi.APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusInternalServerError, apiErr.StatusCode)
+}
+
 func TestService_Trigger_BodyAndResponse(t *testing.T) {
 	var gotMethod, gotPath string
 	var gotBody []byte

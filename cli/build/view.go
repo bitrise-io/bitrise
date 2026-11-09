@@ -80,12 +80,34 @@ func runView(cmd *cobra.Command, args []string, web bool, openBrowser func(strin
 	if err != nil {
 		return err
 	}
-	b, err := internalbuild.NewService(client).View(cmd.Context(), appSlug, buildSlug)
+	svc := internalbuild.NewService(client)
+
+	type stackVersionResult struct {
+		version string
+		err     error
+	}
+	stackVersionCh := make(chan stackVersionResult, 1)
+
+	go func() {
+		version, err := svc.StackImageVersion(cmd.Context(), appSlug, buildSlug)
+		stackVersionCh <- stackVersionResult{version: version, err: err}
+	}()
+
+	b, err := svc.View(cmd.Context(), appSlug, buildSlug)
 	if err != nil {
 		return err
 	}
 	if b.BuildURL == "" {
 		b.BuildURL = buildWebURL(cmdutil.ResolveWebBaseURL(cmd), appSlug, buildSlug)
+	}
+
+	stackVersionRes := <-stackVersionCh
+	if stackVersionRes.err != nil {
+		if _, err = fmt.Fprintf(cmd.ErrOrStderr(), "warning: could not fetch stack image version: %v\n", stackVersionRes.err) {
+			return err
+		}
+	} else {
+		b.StackImageVersion = stackVersionRes.version
 	}
 
 	return output.Render(cmd.OutOrStdout(), output.Format, b, printBuildText)
