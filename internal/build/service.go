@@ -127,11 +127,12 @@ func (st Step) FailedBuild() bool {
 	return slices.Contains(FailedStepStatuses, st.Status)
 }
 
-// SkippedAfterFailure reports whether the step was skipped only because an
-// earlier step failed, which the Bitrise CLI states in StatusReason. Next to
-// that failed step, the reason adds nothing.
+// SkippedAfterFailure reports whether the step was skipped because an earlier
+// step failed. The Bitrise CLI sets plain "skipped" for nothing else (a run_if
+// skip is skipped_with_run_if), so next to that failed step, StatusReason adds
+// nothing.
 func (st Step) SkippedAfterFailure() bool {
-	return st.Status == "skipped" && strings.Contains(st.StatusReason, "because a previous Step failed")
+	return st.Status == "skipped"
 }
 
 // StepError is one error a failed step reported.
@@ -376,10 +377,10 @@ func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID 
 			}
 			return StepsResult{}, fmt.Errorf("no step summary for build %q, and looking up the build failed: %w", buildSlug, buildErr)
 		}
-		switch b.Status {
-		case 0: // in-progress, which includes queued and on-hold builds
+		switch statusString(b.Status) {
+		case "in-progress": // includes queued and on-hold builds
 			return StepsResult{Items: []Step{}}, nil
-		case 3, 4: // aborted before any step ran
+		case "aborted", "aborted-with-success": // aborted before any step ran
 			return StepsResult{Items: []Step{}, Complete: true}, nil
 		}
 		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)

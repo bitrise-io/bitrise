@@ -576,9 +576,8 @@ func TestStep_FailedBuild(t *testing.T) {
 }
 
 func TestStep_SkippedAfterFailure(t *testing.T) {
-	assert.True(t, Step{Status: "skipped", StatusReason: `This Step was skipped, because a previous Step failed, and this Step was not marked "is_always_run".`}.SkippedAfterFailure())
-	assert.False(t, Step{Status: "skipped", StatusReason: "This Step was skipped, because the build was aborted."}.SkippedAfterFailure())
-	assert.False(t, Step{Status: "skipped_with_run_if", StatusReason: "because a previous Step failed"}.SkippedAfterFailure())
+	assert.True(t, Step{Status: "skipped"}.SkippedAfterFailure())
+	assert.False(t, Step{Status: "skipped_with_run_if"}.SkippedAfterFailure())
 }
 
 func TestStepsResult_JSONShape(t *testing.T) {

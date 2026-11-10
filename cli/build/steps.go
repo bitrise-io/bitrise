@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
@@ -117,7 +118,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	const colStatus = 2
 	styler := func(row, col int, content string) string {
 		if col == colStatus {
-			return s.StepStatus(res.Items[row].Status).Render(content)
+			return stepStatusStyle(s, res.Items[row]).Render(content)
 		}
 		return content
 	}
@@ -147,7 +148,7 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 		if b.Len() == 0 {
 			fmt.Fprintf(&b, "\n%s\n", s.Bold.Render("Reasons:"))
 		}
-		fmt.Fprintf(&b, "  %s › %s\n", st.Workflow, s.StepStatus(st.Status).Render(stepName(st)))
+		fmt.Fprintf(&b, "  %s › %s\n", st.Workflow, stepStatusStyle(s, st).Render(stepName(st)))
 		for _, r := range reasons {
 			for _, line := range strings.Split(r, "\n") {
 				fmt.Fprintf(&b, "    %s\n", line)
@@ -156,6 +157,25 @@ func printStepsTable(w io.Writer, res internalbuild.StepsResult, filtered bool) 
 	}
 	_, err := io.WriteString(w, b.String())
 	return err
+}
+
+// stepStatusStyle colors a step like the build outcome it stands for: a step
+// that fails the build as a failed build, failed_skippable (the build went on)
+// and aborted (the build itself was aborted) as an aborted build, and started
+// as a running one. The skipped ones and not_started are Dim.
+func stepStatusStyle(s style.Styles, st internalbuild.Step) lipgloss.Style {
+	switch {
+	case st.Status == "started":
+		return s.BuildStatus("in-progress")
+	case st.Status == "success":
+		return s.BuildStatus("success")
+	case st.FailedBuild():
+		return s.BuildStatus("failed")
+	case st.Status == "failed_skippable", st.Status == "aborted":
+		return s.BuildStatus("aborted")
+	default:
+		return s.Dim
+	}
 }
 
 func stepName(st internalbuild.Step) string {

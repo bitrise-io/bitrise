@@ -114,32 +114,6 @@ func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
 	}
 }
 
-func TestStepStatus_KnownAndUnknownValues(t *testing.T) {
-	var buf bytes.Buffer
-	s := New(&buf)
-
-	cases := map[string]lipgloss.Style{
-		"started":                     s.running,
-		"success":                     s.Success,
-		"failed":                      s.Failure,
-		"preparation_failed":          s.Failure,
-		"aborted_with_custom_timeout": s.Failure,
-		"aborted_with_no_output":      s.Failure,
-		"failed_skippable":            s.aborted,
-		"aborted":                     s.aborted,
-		"not_started":                 s.Dim,
-		"skipped":                     s.Dim,
-		"skipped_with_run_if":         s.Dim,
-		"some-unrecognized-str":       s.Dim,
-	}
-	for status, want := range cases {
-		// Style.String() is empty for every style here, so compare the colors.
-		if got := s.StepStatus(status); got.GetForeground() != want.GetForeground() {
-			t.Errorf("StepStatus(%q) foreground = %v, want %v", status, got.GetForeground(), want.GetForeground())
-		}
-	}
-}
-
 func TestRainbow_NoColorReturnsPlain(t *testing.T) {
 	// On a non-TTY writer there's no color profile, so Rainbow must be a
 	// no-op: same string, no ANSI bytes.

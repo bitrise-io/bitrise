@@ -7,13 +7,16 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v3/internal/auth"
+	internalbuild "github.com/bitrise-io/bitrise/v3/internal/build"
 	"github.com/bitrise-io/bitrise/v3/internal/config"
+	"github.com/bitrise-io/bitrise/v3/internal/style"
 )
 
 func TestStepsCmd_HappyPath(t *testing.T) {
@@ -125,8 +128,7 @@ func TestStepsCmd_Reasons(t *testing.T) {
    "errors": [{"code": 1, "message": "exit status 1"}]},
   {"uuid": "s-3", "title": "Tests", "status": "failed", "errors": [{"code": 1, "message": "exit status 2"}]},
   {"uuid": "s-4", "title": "Save cache", "status": "skipped",
-   "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."},
-  {"uuid": "s-5", "title": "Deploy", "status": "skipped", "status_reason": "This Step was skipped for another reason."}
+   "status_reason": "This Step was skipped, because a previous Step failed, and this Step was not marked \"is_always_run\"."}
 ]}]}}`))
 	})
 
@@ -143,8 +145,6 @@ func TestStepsCmd_Reasons(t *testing.T) {
     exit status 1
   primary › Tests
     exit status 2
-  primary › Deploy
-    This Step was skipped for another reason.
 `)
 	assert.NotContains(t, out.String(), "previous Step failed", "a plain skipped step's reason is implied by the failure listed before it")
 }
@@ -243,6 +243,30 @@ func TestStepsCmd_RejectsWrongArgCount(t *testing.T) {
 		cmd.SetOut(&bytes.Buffer{})
 		cmd.SetErr(&bytes.Buffer{})
 		assert.Error(t, cmd.Execute(), "args=%v should be rejected", args)
+	}
+}
+
+func TestStepStatusStyle(t *testing.T) {
+	s := style.New(&bytes.Buffer{})
+
+	cases := map[string]lipgloss.Style{
+		"started":                     s.BuildStatus("in-progress"),
+		"success":                     s.BuildStatus("success"),
+		"failed":                      s.BuildStatus("failed"),
+		"preparation_failed":          s.BuildStatus("failed"),
+		"aborted_with_custom_timeout": s.BuildStatus("failed"),
+		"aborted_with_no_output":      s.BuildStatus("failed"),
+		"failed_skippable":            s.BuildStatus("aborted"),
+		"aborted":                     s.BuildStatus("aborted"),
+		"not_started":                 s.Dim,
+		"skipped":                     s.Dim,
+		"skipped_with_run_if":         s.Dim,
+		"some-unrecognized-str":       s.Dim,
+	}
+	for status, want := range cases {
+		// Style.String() is empty for every style here, so compare the colors.
+		got := stepStatusStyle(s, internalbuild.Step{Status: status})
+		assert.Equal(t, want.GetForeground(), got.GetForeground(), status)
 	}
 }
 
