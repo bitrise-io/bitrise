@@ -79,6 +79,9 @@ func printBuildText(w io.Writer, b internalbuild.Build) error {
 	if b.StackIdentifier != "" {
 		fmt.Fprintf(&buf, "Stack:        %s\n", b.StackIdentifier)
 	}
+	if b.StackImageVersion != "" {
+		fmt.Fprintf(&buf, "Image:        %s\n", b.StackImageVersion)
+	}
 	if b.MachineTypeID != "" {
 		fmt.Fprintf(&buf, "Machine Type: %s\n", b.MachineTypeID)
 	}

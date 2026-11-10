@@ -328,3 +328,33 @@ func TestBuildLogManifest_ParsesNextAfterTimestamp(t *testing.T) {
 	require.Len(t, manifest.LogChunks, 1)
 	assert.Equal(t, "hello\n", manifest.LogChunks[0].Chunk)
 }
+
+func TestBuildLogSummary_PathAndStackImageVersion(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{
+  "agent_info": {"stack_image_version": "2-161-0", "machine_type": "g2.mac.m4.5c-14g"},
+  "app_id": "my-app",
+  "execution": {"workflows": [{"steps": [{"step_id": "git-clone"}]}]},
+  "is_log_archived": true
+}`))
+	})
+
+	summary, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build")
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/my-build/log/summary", gotPath)
+	assert.Equal(t, "2-161-0", summary.AgentInfo.StackImageVersion)
+}
+
+func TestBuildLogSummary_PropagatesAPIError(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"message":"not found"}`))
+	})
+
+	_, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build")
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusNotFound, apiErr.StatusCode)
+}
