@@ -428,7 +428,7 @@ func TestService_Steps_FlattensWorkflowsInOrder(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/my-app/builds/b-1/log/summary", gotPath)
 	require.Len(t, got.Items, 3)
@@ -457,6 +457,11 @@ func TestService_Steps_SendsFilters(t *testing.T) {
 	var gotQuery url.Values
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		gotQuery = r.URL.Query()
+		if id := gotQuery.Get("step_id"); id != "" {
+			// A step to find, or Steps would look the step ID up again.
+			_, _ = fmt.Fprintf(w, `{"is_log_archived": true, "execution": {"workflows": [{"workflow_id": "primary", "steps": [{"uuid": "s-1", "step_id": %q, "status": "success"}]}]}}`, id)
+			return
+		}
 		_, _ = w.Write([]byte(`{"is_log_archived": true, "execution": {"workflows": []}}`))
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
@@ -472,7 +477,7 @@ func TestService_Steps_SendsFilters(t *testing.T) {
 		{"skipped", "script", url.Values{"status": {"skipped"}, "step_id": {"script"}}},
 	}
 	for _, tt := range tests {
-		got, err := svc.Steps(context.Background(), "my-app", "b-1", tt.status, tt.stepID)
+		got, err := svc.Steps(context.Background(), "my-app", "b-1", tt.status, tt.stepID, nil)
 		require.NoError(t, err)
 		assert.Equal(t, tt.want, gotQuery, "status %q, step ID %q", tt.status, tt.stepID)
 		assert.NotNil(t, got.Items, "an empty result must render as [] not null")
@@ -488,7 +493,7 @@ func TestService_Steps_IncompleteWhileLogNotArchived(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 	require.NoError(t, err)
 	assert.False(t, got.Complete)
 	require.Len(t, got.Items, 2)
@@ -499,9 +504,9 @@ func TestService_Steps_IncompleteWhileLogNotArchived(t *testing.T) {
 func TestService_Steps_RequiresSlugs(t *testing.T) {
 	svc := NewService(newAPIClient(t, "https://unused.test"))
 
-	_, err := svc.Steps(context.Background(), "", "b-1", "", "")
+	_, err := svc.Steps(context.Background(), "", "b-1", "", "", nil)
 	require.EqualError(t, err, "app ID is required")
-	_, err = svc.Steps(context.Background(), "my-app", "", "", "")
+	_, err = svc.Steps(context.Background(), "my-app", "", "", "", nil)
 	require.EqualError(t, err, "build ID is required")
 }
 
@@ -512,7 +517,7 @@ func TestService_Steps_NotFound(t *testing.T) {
 	})
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	_, err := svc.Steps(context.Background(), "my-app", "missing", "", "")
+	_, err := svc.Steps(context.Background(), "my-app", "missing", "", "", nil)
 	require.EqualError(t, err, `build "missing" not found`)
 }
 
@@ -520,7 +525,7 @@ func TestService_Steps_NoSummaryYetForRunningBuild(t *testing.T) {
 	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":0}}`)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 	require.NoError(t, err)
 	assert.False(t, got.Complete)
 	assert.NotNil(t, got.Items)
@@ -532,7 +537,7 @@ func TestService_Steps_NoSummaryForAbortedBuild(t *testing.T) {
 		srv := newSummaryNotFoundServer(t, http.StatusOK, fmt.Sprintf(`{"data":{"slug":"b-1","status":%d}}`, status))
 		svc := NewService(newAPIClient(t, srv.URL))
 
-		got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+		got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 		require.NoError(t, err, "status %d", status)
 		assert.True(t, got.Complete, "a build aborted before any step ran has its final, empty list")
 		assert.NotNil(t, got.Items)
@@ -544,7 +549,7 @@ func TestService_Steps_NoSummaryForFinishedBuild(t *testing.T) {
 	srv := newSummaryNotFoundServer(t, http.StatusOK, `{"data":{"slug":"b-1","status":2}}`)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 	require.EqualError(t, err, `build "b-1" has no step summary`)
 }
 
@@ -552,14 +557,14 @@ func TestService_Steps_NoSummaryAndBuildLookupFails(t *testing.T) {
 	srv := newSummaryNotFoundServer(t, http.StatusInternalServerError, `{"message":"boom"}`)
 	svc := NewService(newAPIClient(t, srv.URL))
 
-	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "")
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "", nil)
 	require.ErrorContains(t, err, `no step summary for build "b-1", and looking up the build failed`)
 }
 
 func TestService_Steps_RejectsUnknownStatus(t *testing.T) {
 	svc := NewService(newAPIClient(t, "https://unused.test"))
 
-	_, err := svc.Steps(context.Background(), "my-app", "b-1", "aborted-with-success", "")
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "aborted-with-success", "", nil)
 	require.ErrorContains(t, err, `unknown step status "aborted-with-success" (expected: not_started, started, success`)
 }
 
@@ -656,6 +661,61 @@ func TestService_StepLogs_StepIDFilter(t *testing.T) {
 	require.NoError(t, err, "s-1 is git-clone: the server must not drop it, or it would look missing")
 	assert.Empty(t, gotQuery)
 	assert.Empty(t, got.Items)
+}
+
+func TestService_Steps_UnknownStepID(t *testing.T) {
+	var queries []url.Values
+	steps := newStepLogsServer(t)
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Query())
+		steps.Config.Handler.ServeHTTP(w, r)
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	_, err := svc.Steps(context.Background(), "my-app", "b-1", "", "xcode-tests", nil)
+	require.EqualError(t, err, `step "xcode-tests" not found in build "b-1"`)
+	assert.Len(t, queries, 1, "without a status filter the first summary already proves the step ID wrong")
+
+	queries = nil
+	_, err = svc.Steps(context.Background(), "my-app", "b-1", "failed", "xcode-tests", nil)
+	require.EqualError(t, err, `step "xcode-tests" not found in build "b-1"`)
+
+	queries = nil
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "success", "script", nil)
+	require.NoError(t, err, "script ran, with another status")
+	assert.Empty(t, got.Items)
+	assert.Equal(t, []url.Values{{"status": {"success"}, "step_id": {"script"}}, {"step_id": {"script"}}}, queries)
+}
+
+func TestService_Steps_UnknownStepIDBeforeArchive(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"is_log_archived": false, "execution": {"workflows": []}}`))
+	})
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	got, err := svc.Steps(context.Background(), "my-app", "b-1", "", "xcode-test", nil)
+	require.NoError(t, err, "the step may not have started yet")
+	assert.False(t, got.Complete)
+	assert.Empty(t, got.Items)
+}
+
+func TestService_StepLog(t *testing.T) {
+	srv := newStepLogsServer(t)
+	svc := NewService(newAPIClient(t, srv.URL))
+
+	var full bytes.Buffer
+	require.NoError(t, svc.StepLog(context.Background(), "my-app", "b-1", "s-2", 0, &full))
+	assert.Equal(t, "s-2 one\ns-2 two\ns-2 three\n", full.String())
+
+	var tail bytes.Buffer
+	require.NoError(t, svc.StepLog(context.Background(), "my-app", "b-1", "s-2", 1, &tail))
+	assert.Equal(t, "s-2 three\n", tail.String())
+
+	var empty bytes.Buffer
+	require.NoError(t, svc.StepLog(context.Background(), "my-app", "b-1", "s-3", 0, &empty))
+	assert.Empty(t, empty.String(), "a step that logged nothing writes nothing")
+
+	require.Error(t, svc.StepLog(context.Background(), "my-app", "b-1", "s-2", -1, io.Discard))
 }
 
 func TestService_StepLogs_Tail(t *testing.T) {
@@ -1061,7 +1121,7 @@ func newStepLogsServer(t *testing.T) *httptest.Server {
 			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
 			return
 		}
-		body, err := filterSummaryByStatus(stepsSummaryJSON, r.URL.Query()["status"])
+		body, err := filterSummary(stepsSummaryJSON, r.URL.Query())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -1070,11 +1130,12 @@ func newStepLogsServer(t *testing.T) *httptest.Server {
 	})
 }
 
-// filterSummaryByStatus applies the status filter of GET .../log/summary as
-// build-log-service does: it keeps the steps with one of statuses, and the
-// workflows left with any.
-func filterSummaryByStatus(summary string, statuses []string) ([]byte, error) {
-	if len(statuses) == 0 {
+// filterSummary applies the status and step_id filters of GET
+// .../log/summary as build-log-service does: it keeps the steps with one of
+// the statuses and the step ID, and the workflows left with any.
+func filterSummary(summary string, query url.Values) ([]byte, error) {
+	statuses, stepID := query["status"], query.Get("step_id")
+	if len(statuses) == 0 && stepID == "" {
 		return []byte(summary), nil
 	}
 	var s struct {
@@ -1093,7 +1154,9 @@ func filterSummaryByStatus(summary string, statuses []string) ([]byte, error) {
 	for _, wf := range s.Execution.Workflows {
 		steps := wf.Steps[:0]
 		for _, st := range wf.Steps {
-			if status, _ := st["status"].(string); slices.Contains(statuses, status) {
+			status, _ := st["status"].(string)
+			id, _ := st["step_id"].(string)
+			if (len(statuses) == 0 || slices.Contains(statuses, status)) && (stepID == "" || id == stepID) {
 				steps = append(steps, st)
 			}
 		}

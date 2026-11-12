@@ -213,18 +213,18 @@ func runWatch(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Bu
 	return finishFollowedBuild(cmd, finalBuild, "\n"+watchDivider+"\n", buildDetailURL(cmd, b))
 }
 
-// waitForBuild prints the --wait header in raw format and blocks until the build finishes.
+// waitForBuild prints the --wait header and blocks until the build finishes.
+// The header goes to stderr in every format: in --format json/yml it is the
+// only place the build URL is printed, and stdout stays a clean record.
 // The SIGINT handler lives only as long as the wait, so a step after it (the
 // log download of `build log --wait`) can still be interrupted.
 func waitForBuild(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Build, interval time.Duration, resumeCmd string) (internalbuild.Build, error) {
-	if output.Format == output.FormatRaw {
-		header := fmt.Sprintf("Waiting for build #%d to finish\n", b.BuildNumber)
-		if url := buildDetailURL(cmd, b); url != "" {
-			header += fmt.Sprintf("%s\n", url)
-		}
-		if _, err := fmt.Fprint(cmd.ErrOrStderr(), header); err != nil {
-			return internalbuild.Build{}, err
-		}
+	header := fmt.Sprintf("Waiting for build #%d to finish\n", b.BuildNumber)
+	if url := buildDetailURL(cmd, b); url != "" {
+		header += fmt.Sprintf("%s\n", url)
+	}
+	if _, err := fmt.Fprint(cmd.ErrOrStderr(), header); err != nil {
+		return internalbuild.Build{}, err
 	}
 
 	// Go's default SIGINT handling would kill the process before the detach

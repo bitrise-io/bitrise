@@ -125,16 +125,21 @@ the running build, and exits non-zero because no log was printed.`,
 			}
 
 			if byStep {
-				res, err := svc.StepLogs(cmd.Context(), appSlug, buildSlug, stepStatus, stepID, stepUUIDs, tail)
+				if output.Format != output.FormatRaw {
+					res, err := svc.StepLogs(cmd.Context(), appSlug, buildSlug, stepStatus, stepID, stepUUIDs, tail)
+					if err != nil {
+						return err
+					}
+					return output.Print(cmd.OutOrStdout(), res, output.Format)
+				}
+				steps, err := svc.Steps(cmd.Context(), appSlug, buildSlug, stepStatus, stepID, stepUUIDs)
 				if err != nil {
 					return err
 				}
-				if err := output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalbuild.StepLogsResult) error {
-					return printStepLogsText(w, res)
-				}); err != nil {
+				if err := printStepLogsText(cmd.Context(), cmd.OutOrStdout(), svc, appSlug, buildSlug, steps, tail); err != nil {
 					return err
 				}
-				if output.Format == output.FormatRaw && !res.Complete && !cmdutil.IsQuiet(cmd) {
+				if !steps.Complete && !cmdutil.IsQuiet(cmd) {
 					msg := "The step logs are not available yet: the build is still running, or has just finished and its log is being archived. Only the steps that have started so far are listed. Pass --wait to wait for the logs."
 					if wait {
 						msg = "The step logs are not available yet: the build log was not archived within a minute. Run the command again later."
@@ -212,34 +217,62 @@ func waitForLogArchive(cmd *cobra.Command, svc *internalbuild.Service, appSlug, 
 }
 
 // printStepLogsText prints each step's log under a header naming the step,
-// its workflow, status and duration.
-func printStepLogsText(w io.Writer, res internalbuild.StepLogsResult) error {
-	if len(res.Items) == 0 {
+// its workflow, status and duration. Each log is written as it downloads, so a
+// long one is never held whole. Until the log is archived (steps.Complete)
+// there are no step logs, only the headers.
+func printStepLogsText(ctx context.Context, w io.Writer, svc *internalbuild.Service, appSlug, buildSlug string, steps internalbuild.StepsResult, tail int) error {
+	if len(steps.Items) == 0 {
 		// Before the archive the summary lists only the steps started so far,
 		// so "no steps" would claim more than is known; the stderr notice
 		// explains instead.
-		if !res.Complete {
+		if !steps.Complete {
 			return nil
 		}
 		_, err := fmt.Fprintln(w, "No steps match the filters.")
 		return err
 	}
 	s := style.New(w)
-	var b strings.Builder
-	for i, st := range res.Items {
-		if i > 0 && res.Items[i-1].Log != "" {
-			b.WriteString("\n")
+	ew := cmdutil.NewErrWriter(w)
+	lw := &lastByteWriter{w: w}
+	for _, st := range steps.Items {
+		if lw.wrote {
+			ew.Ln()
 		}
-		fmt.Fprintf(&b, "%s  %s", s.Bold.Render(st.Workflow+" › "+stepName(st.Step)), stepStatusStyle(s, st.Step).Render(st.Status))
-		if d := stepDuration(st.Step); d != "" {
-			fmt.Fprintf(&b, "  %s", s.Dim.Render(d))
+		ew.F("%s  %s", s.Bold.Render(st.Workflow+" › "+stepName(st)), stepStatusStyle(s, st).Render(st.Status))
+		if d := stepDuration(st); d != "" {
+			ew.F("  %s", s.Dim.Render(d))
 		}
-		b.WriteString("\n")
-		b.WriteString(st.Log)
-		if st.Log != "" && !strings.HasSuffix(st.Log, "\n") {
-			b.WriteString("\n")
+		ew.Ln()
+		if ew.Err != nil {
+			return ew.Err
+		}
+		lw.wrote = false
+		if steps.Complete {
+			if err := svc.StepLog(ctx, appSlug, buildSlug, st.ID, tail, lw); err != nil {
+				return err
+			}
+		}
+		if lw.wrote && lw.last != '\n' {
+			ew.Ln()
 		}
 	}
-	_, err := io.WriteString(w, b.String())
-	return err
+	return ew.Err
+}
+
+// lastByteWriter records whether anything was written to it since wrote was
+// last reset, and the last byte written, which is all printStepLogsText needs
+// to know about a step log it streams.
+type lastByteWriter struct {
+	w     io.Writer
+	wrote bool
+	last  byte
+}
+
+func (lw *lastByteWriter) Write(p []byte) (int, error) {
+	n, err := lw.w.Write(p)
+	if n > 0 {
+		lw.wrote = true
+		lw.last = p[n-1]
+	}
+	return n, err
 }

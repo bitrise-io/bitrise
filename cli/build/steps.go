@@ -53,7 +53,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 				return err
 			}
 
-			res, err := internalbuild.NewService(client).Steps(cmd.Context(), appSlug, args[0], status, stepID)
+			res, err := internalbuild.NewService(client).Steps(cmd.Context(), appSlug, args[0], status, stepID, nil)
 			if err != nil {
 				return err
 			}

@@ -167,7 +167,8 @@ func TestTriggerCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 	var rec map[string]any
 	require.NoError(t, json.Unmarshal(stdout.Bytes(), &rec))
 	assert.Equal(t, "b-1", rec["id"])
-	assert.NotContains(t, stderr.String(), "Waiting for build", "the human-only header is raw-format only")
+	assert.Contains(t, stderr.String(), "Waiting for build #")
+	assert.Contains(t, stderr.String(), "/build/b-1", "the header is the only place --format json prints the build URL")
 }
 
 func TestTriggerCmd_DefaultsBranchToMain(t *testing.T) {

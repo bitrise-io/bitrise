@@ -375,37 +375,165 @@ func (s *Service) LogText(ctx context.Context, appSlug, buildSlug string, tail i
 // Steps returns the steps of a build across all its workflows, in execution
 // order. A non-empty status keeps only the steps with that status, except
 // "failed", which keeps every step that failed the build (FailedStepStatuses).
-// A non-empty stepID keeps only the runs of that step. The server applies
-// both filters.
+// A non-empty stepID keeps only the runs of that step, and non-empty stepUUIDs
+// only those step runs. Once the build's log is archived, a stepID or step UUID
+// the build has no step for is an error.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
-func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID string) (StepsResult, error) {
-	return s.steps(ctx, appSlug, buildSlug, status, stepID, nil)
+func (s *Service) Steps(ctx context.Context, appSlug, buildSlug, status, stepID string, stepUUIDs []string) (StepsResult, error) {
+	if s.client == nil {
+		return StepsResult{}, fmt.Errorf("API client not configured")
+	}
+	if appSlug == "" {
+		return StepsResult{}, fmt.Errorf("app ID is required")
+	}
+	if buildSlug == "" {
+		return StepsResult{}, fmt.Errorf("build ID is required")
+	}
+	if err := ValidateStepStatus(status); err != nil {
+		return StepsResult{}, err
+	}
+	var statuses []string
+	switch status {
+	case "":
+	case "failed":
+		statuses = FailedStepStatuses
+	default:
+		statuses = []string{status}
+	}
+	// The server would leave out a requested step whose status or step ID
+	// doesn't match, which would then look missing below, so with stepUUIDs
+	// both are matched here instead.
+	serverStatuses, serverStepID := statuses, stepID
+	if len(stepUUIDs) > 0 {
+		serverStatuses, serverStepID = nil, ""
+	}
+	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, serverStatuses, serverStepID)
+	if err != nil {
+		var apiErr *bitriseapi.APIError
+		if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
+			return StepsResult{}, err
+		}
+		// A build that has not started running yet has no summary either, so
+		// the 404 alone doesn't say whether the build exists.
+		b, buildErr := s.client.Build(ctx, appSlug, buildSlug)
+		if buildErr != nil {
+			if errors.As(buildErr, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
+				return StepsResult{}, fmt.Errorf("build %q not found", buildSlug)
+			}
+			return StepsResult{}, fmt.Errorf("no step summary for build %q, and looking up the build failed: %w", buildSlug, buildErr)
+		}
+		switch statusString(b.Status) {
+		case "in-progress": // includes queued and on-hold builds
+			return StepsResult{Items: []Step{}}, nil
+		case "aborted", "aborted-with-success": // aborted before any step ran
+			return StepsResult{Items: []Step{}, Complete: true}, nil
+		}
+		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)
+	}
+	items := []Step{}
+	found := map[string]bool{}
+	for _, wf := range summary.Execution.Workflows {
+		for _, st := range wf.Steps {
+			if len(stepUUIDs) > 0 {
+				if !slices.Contains(stepUUIDs, st.UUID) {
+					continue
+				}
+				found[st.UUID] = true
+				if len(statuses) > 0 && !slices.Contains(statuses, st.Status) {
+					continue
+				}
+				if stepID != "" && st.StepID != stepID {
+					continue
+				}
+			}
+			items = append(items, stepFromAPI(st, wf.WorkflowID))
+		}
+	}
+	// A step that has not started yet is missing from an unarchived summary,
+	// so only a final summary proves an ID wrong.
+	if summary.IsLogArchived {
+		for _, id := range stepUUIDs {
+			if !found[id] {
+				return StepsResult{}, fmt.Errorf("step %q not found in build %q", id, buildSlug)
+			}
+		}
+		// With a status filter too, an empty result can also mean the step ran
+		// with another status, so only a summary filtered by step ID alone
+		// tells.
+		if len(items) == 0 && stepID != "" && len(stepUUIDs) == 0 {
+			exists := false
+			if len(statuses) > 0 {
+				byID, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, nil, stepID)
+				if err != nil {
+					return StepsResult{}, err
+				}
+				for _, wf := range byID.Execution.Workflows {
+					exists = exists || len(wf.Steps) > 0
+				}
+			}
+			if !exists {
+				return StepsResult{}, fmt.Errorf("step %q not found in build %q", stepID, buildSlug)
+			}
+		}
+	}
+	return StepsResult{Items: items, Complete: summary.IsLogArchived}, nil
 }
 
-// StepLogs returns the steps of a build Steps would, narrowed to stepUUIDs
-// (step run UUIDs) when non-empty, each with its log. tail > 0 keeps only the
-// last tail lines of each log. Until the build's log is archived the step logs
-// are not served, so every log is empty and Complete is false.
+// StepLogs returns the steps of a build Steps would, each with its log. tail >
+// 0 keeps only the last tail lines of each log. Until the build's log is
+// archived the step logs are not served, so every log is empty and Complete is
+// false.
 // Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
 func (s *Service) StepLogs(ctx context.Context, appSlug, buildSlug, status, stepID string, stepUUIDs []string, tail int) (StepLogsResult, error) {
 	if tail < 0 {
 		return StepLogsResult{}, fmt.Errorf("tail must not be negative")
 	}
-	steps, err := s.steps(ctx, appSlug, buildSlug, status, stepID, stepUUIDs)
+	steps, err := s.Steps(ctx, appSlug, buildSlug, status, stepID, stepUUIDs)
 	if err != nil {
 		return StepLogsResult{}, err
 	}
 	res := StepLogsResult{Items: make([]StepLog, 0, len(steps.Items)), Complete: steps.Complete}
 	for _, st := range steps.Items {
-		buf := newLogBuffer(tail)
+		var b strings.Builder
 		if steps.Complete {
-			if err := s.client.BuildStepLog(ctx, appSlug, buildSlug, st.ID, buf); err != nil {
-				return StepLogsResult{}, fmt.Errorf("fetch log of step %q: %w", st.ID, err)
+			if err := s.StepLog(ctx, appSlug, buildSlug, st.ID, tail, &b); err != nil {
+				return StepLogsResult{}, err
 			}
 		}
-		res.Items = append(res.Items, StepLog{Step: st, Log: buf.String()})
+		res.Items = append(res.Items, StepLog{Step: st, Log: b.String()})
 	}
 	return res, nil
+}
+
+// StepLog writes the log of one step run, identified by its UUID (Step.ID), to
+// w: streamed as it downloads, or with tail > 0 only its last tail lines. The
+// log is served only once the build's log is archived (StepsResult.Complete);
+// before that, nothing is written.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/steps/{step-uuid}.
+func (s *Service) StepLog(ctx context.Context, appSlug, buildSlug, stepUUID string, tail int, w io.Writer) error {
+	if s.client == nil {
+		return fmt.Errorf("API client not configured")
+	}
+	if tail < 0 {
+		return fmt.Errorf("tail must not be negative")
+	}
+	dst := w
+	var buf interface {
+		io.Writer
+		String() string
+	}
+	if tail > 0 {
+		buf = newLogBuffer(tail)
+		dst = buf
+	}
+	if err := s.client.BuildStepLog(ctx, appSlug, buildSlug, stepUUID, dst); err != nil {
+		return fmt.Errorf("fetch log of step %q: %w", stepUUID, err)
+	}
+	if buf != nil {
+		_, err := io.WriteString(w, buf.String())
+		return err
+	}
+	return nil
 }
 
 // logArchiveTimeout bounds WaitForLogArchive. Archiving normally takes a few
@@ -457,89 +585,6 @@ func (s *Service) WaitForLogArchive(ctx context.Context, appSlug, buildSlug stri
 		case <-time.After(interval):
 		}
 	}
-}
-
-// steps returns the steps Steps does, narrowed to stepUUIDs (step run UUIDs)
-// when non-empty.
-func (s *Service) steps(ctx context.Context, appSlug, buildSlug, status, stepID string, stepUUIDs []string) (StepsResult, error) {
-	if s.client == nil {
-		return StepsResult{}, fmt.Errorf("API client not configured")
-	}
-	if appSlug == "" {
-		return StepsResult{}, fmt.Errorf("app ID is required")
-	}
-	if buildSlug == "" {
-		return StepsResult{}, fmt.Errorf("build ID is required")
-	}
-	if err := ValidateStepStatus(status); err != nil {
-		return StepsResult{}, err
-	}
-	// The server would leave out a requested step whose status or step ID
-	// doesn't match, which would then look missing below, so with stepUUIDs
-	// both are matched here instead.
-	var statuses []string
-	serverStepID := stepID
-	switch {
-	case len(stepUUIDs) > 0:
-		serverStepID = ""
-	case status == "":
-	case status == "failed":
-		statuses = FailedStepStatuses
-	default:
-		statuses = []string{status}
-	}
-	summary, err := s.client.BuildLogSummary(ctx, appSlug, buildSlug, statuses, serverStepID)
-	if err != nil {
-		var apiErr *bitriseapi.APIError
-		if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
-			return StepsResult{}, err
-		}
-		// A build that has not started running yet has no summary either, so
-		// the 404 alone doesn't say whether the build exists.
-		b, buildErr := s.client.Build(ctx, appSlug, buildSlug)
-		if buildErr != nil {
-			if errors.As(buildErr, &apiErr) && apiErr.StatusCode == http.StatusNotFound {
-				return StepsResult{}, fmt.Errorf("build %q not found", buildSlug)
-			}
-			return StepsResult{}, fmt.Errorf("no step summary for build %q, and looking up the build failed: %w", buildSlug, buildErr)
-		}
-		switch statusString(b.Status) {
-		case "in-progress": // includes queued and on-hold builds
-			return StepsResult{Items: []Step{}}, nil
-		case "aborted", "aborted-with-success": // aborted before any step ran
-			return StepsResult{Items: []Step{}, Complete: true}, nil
-		}
-		return StepsResult{}, fmt.Errorf("build %q has no step summary", buildSlug)
-	}
-	items := []Step{}
-	found := map[string]bool{}
-	for _, wf := range summary.Execution.Workflows {
-		for _, st := range wf.Steps {
-			if len(stepUUIDs) > 0 {
-				if !slices.Contains(stepUUIDs, st.UUID) {
-					continue
-				}
-				found[st.UUID] = true
-				if status != "" && st.Status != status && (status != "failed" || !slices.Contains(FailedStepStatuses, st.Status)) {
-					continue
-				}
-				if stepID != "" && st.StepID != stepID {
-					continue
-				}
-			}
-			items = append(items, stepFromAPI(st, wf.WorkflowID))
-		}
-	}
-	// A step that has not started yet is missing from an unarchived summary,
-	// so only a final summary proves the ID wrong.
-	if summary.IsLogArchived {
-		for _, id := range stepUUIDs {
-			if !found[id] {
-				return StepsResult{}, fmt.Errorf("step %q not found in build %q", id, buildSlug)
-			}
-		}
-	}
-	return StepsResult{Items: items, Complete: summary.IsLogArchived}, nil
 }
 
 // ValidateStepStatus checks a step status filter: empty, or one of

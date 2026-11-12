@@ -114,7 +114,7 @@ func TestLogCmd_WaitPolls_ThenPrintsLog(t *testing.T) {
 	assert.Contains(t, out.String(), "done")
 }
 
-func TestLogCmd_WaitJSON_NoWaitHeader(t *testing.T) {
+func TestLogCmd_WaitJSON_HeaderOnStderr(t *testing.T) {
 	var viewCalls atomic.Int32
 	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -142,7 +142,7 @@ func TestLogCmd_WaitJSON_NoWaitHeader(t *testing.T) {
 
 	assert.GreaterOrEqual(t, int(viewCalls.Load()), 2, "the build was in progress, so --wait polled")
 	assert.JSONEq(t, `{"log":"done\n","complete":true}`, out.String())
-	assert.Empty(t, errOut.String())
+	assert.Contains(t, errOut.String(), "Waiting for build #5 to finish")
 }
 
 func TestLogCmd_WaitSkipsPolling_WhenAlreadyFinished(t *testing.T) {
@@ -319,6 +319,36 @@ func TestLogCmd_StepLogsByID(t *testing.T) {
 	assert.Equal(t, "_setup › Git clone  success  <1s\nGit clone: line 1\nGit clone: line 2\nGit clone: line 3\n\nprimary › save-cache  skipped\n", out.String())
 }
 
+func TestLogCmd_StepLogsSeparators(t *testing.T) {
+	logs := map[string]string{
+		"s-1": `[{"message":"no trailing newline"}]`,
+		"s-2": `[]`,
+		"s-3": `[{"message":"last\n"}]`,
+	}
+	archive := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(logs[strings.TrimPrefix(r.URL.Path, "/")]))
+	})
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		if id, ok := strings.CutPrefix(r.URL.Path, "/apps/my-app/builds/build-1/log/steps/"); ok {
+			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
+			return
+		}
+		_, _ = w.Write([]byte(`{"is_log_archived": true, "execution": {"workflows": [{"workflow_id": "primary", "steps": [
+  {"uuid": "s-1", "step_id": "a", "status": "success"},
+  {"uuid": "s-2", "step_id": "b", "status": "success"},
+  {"uuid": "s-3", "step_id": "c", "status": "success"}
+]}]}}`))
+	})
+
+	cmd, out := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-status", "success"))
+	require.NoError(t, cmd.RunE(cmd, []string{"build-1"}))
+
+	assert.Equal(t, "primary › a  success\nno trailing newline\n\nprimary › b  success\nprimary › c  success\nlast\n", out.String(),
+		"a log gets a final newline and a blank line after it; an empty log gets neither")
+}
+
 func TestLogCmd_StepLogsJSON(t *testing.T) {
 	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
 
@@ -383,6 +413,16 @@ func TestLogCmd_StepLogsUnknownStep(t *testing.T) {
 	require.NoError(t, cmd.Flags().Set("step-uuid", "nope"))
 	err := cmd.RunE(cmd, []string{"build-1"})
 	require.EqualError(t, err, `step "nope" not found in build "build-1"`)
+}
+
+func TestLogCmd_StepLogsUnknownStepID(t *testing.T) {
+	srv := newStepLogsFakeServer(t, stepsSummaryJSON)
+
+	cmd, _ := newTestLogCmd(t, srv.URL)
+	require.NoError(t, cmd.Flags().Set("app", "my-app"))
+	require.NoError(t, cmd.Flags().Set("step-id", "xcode-tests"))
+	err := cmd.RunE(cmd, []string{"build-1"})
+	require.EqualError(t, err, `step "xcode-tests" not found in build "build-1"`)
 }
 
 func TestLogCmd_StepLogsBeforeArchiveNotice(t *testing.T) {
@@ -559,7 +599,7 @@ func newStepLogsFakeServer(t *testing.T, summary string) *httptest.Server {
 			_, _ = fmt.Fprintf(w, `{"expiring_raw_log_url":%q}`, archive.URL+"/"+id)
 			return
 		}
-		body, err := filterSummaryByStatus(summary, r.URL.Query()["status"])
+		body, err := filterSummary(summary, r.URL.Query())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -568,11 +608,12 @@ func newStepLogsFakeServer(t *testing.T, summary string) *httptest.Server {
 	})
 }
 
-// filterSummaryByStatus applies the status filter of GET .../log/summary as
-// build-log-service does: it keeps the steps with one of statuses, and the
-// workflows left with any.
-func filterSummaryByStatus(summary string, statuses []string) ([]byte, error) {
-	if len(statuses) == 0 {
+// filterSummary applies the status and step_id filters of GET
+// .../log/summary as build-log-service does: it keeps the steps with one of
+// the statuses and the step ID, and the workflows left with any.
+func filterSummary(summary string, query url.Values) ([]byte, error) {
+	statuses, stepID := query["status"], query.Get("step_id")
+	if len(statuses) == 0 && stepID == "" {
 		return []byte(summary), nil
 	}
 	var s struct {
@@ -591,7 +632,9 @@ func filterSummaryByStatus(summary string, statuses []string) ([]byte, error) {
 	for _, wf := range s.Execution.Workflows {
 		steps := wf.Steps[:0]
 		for _, st := range wf.Steps {
-			if status, _ := st["status"].(string); slices.Contains(statuses, status) {
+			status, _ := st["status"].(string)
+			id, _ := st["step_id"].(string)
+			if (len(statuses) == 0 || slices.Contains(statuses, status)) && (stepID == "" || id == stepID) {
 				steps = append(steps, st)
 			}
 		}
