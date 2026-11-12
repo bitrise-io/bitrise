@@ -29,6 +29,10 @@ that ran more than once, the messages of its failed runs are listed too.
 Each test case also lists the test suites it belongs to, which can differ from
 where it is nested, and the identifier its test report gives it, if any.
 
+A quarantine matches a test case by those exact suites, its name and class
+name, or by its identifier. 'bitrise app quarantined-tests add --build
+BUILD_ID --name NAME' looks them up in the build, with NAME as listed here.
+
 Test results are available once the build has finished, and only if the plan
 of the app's workspace includes test reports. Filters narrow the test cases
 listed, and suites left without any are left out; a suite's counts always
@@ -70,7 +74,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 			}
 
 			return output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalbuild.TestResultsResult) error {
-				return printTestResultsText(w, res, filter)
+				return printTestResultsText(w, res, filter, appSlug, args[0])
 			})
 		},
 	}
@@ -101,8 +105,9 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 
 // printTestResultsText renders the suites as an indented tree: each suite
 // with its totals, then its test cases, then its child suites. Messages can
-// span lines, so they go under their test case rather than in a column.
-func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filter internalbuild.TestResultsFilter) error {
+// span lines, so they go under their test case rather than in a column. A
+// footer shows how to quarantine one of the test cases listed.
+func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filter internalbuild.TestResultsFilter, appSlug, buildSlug string) error {
 	if len(res.TestSuites) == 0 {
 		msg := "No test results found."
 		// A limit alone can only leave nothing when there was nothing to begin with.
@@ -177,6 +182,11 @@ func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filt
 		fmt.Fprintf(&b, "\n%d %s shown.\n", shown, noun)
 	} else {
 		fmt.Fprintf(&b, "\nTotal: %s\n", testCounts(total.TestCount, total.FailureCount, total.ErrorCount, total.SkippedCount, total.DurationMS))
+	}
+	if shown > 0 {
+		fmt.Fprintf(&b, "\n%s\n%s\n",
+			s.Dim.Render("Quarantining a test case needs its exact suites, name and class name, or its identifier. To look them up in this build:"),
+			s.Dim.Render(fmt.Sprintf("  bitrise app quarantined-tests add --app %s --build %s --name NAME", appSlug, buildSlug)))
 	}
 	_, err := io.WriteString(w, b.String())
 	return err
