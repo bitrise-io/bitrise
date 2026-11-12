@@ -214,6 +214,8 @@ func runWatch(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Bu
 }
 
 // waitForBuild prints the --wait header and blocks until the build finishes.
+// The header goes to stderr in every format: in --format json/yml it is the
+// only place the build URL is printed, and stdout stays a clean record.
 // The SIGINT handler lives only as long as the wait, so a step after it (the
 // log download of `build log --wait`) can still be interrupted.
 func waitForBuild(cmd *cobra.Command, svc *internalbuild.Service, b internalbuild.Build, interval time.Duration, resumeCmd string) (internalbuild.Build, error) {

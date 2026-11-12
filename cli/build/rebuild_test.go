@@ -124,6 +124,7 @@ func TestRebuildCmd_Wait_FailedBuildJSONWritesRecordAndErrors(t *testing.T) {
 	assert.Equal(t, "b-2", rec["id"])
 	assert.Equal(t, "failed", rec["status"])
 	assert.Contains(t, stderr.String(), "Waiting for build #8")
+	assert.Contains(t, stderr.String(), "/build/b-2", "the header is the only place --format json prints the build URL")
 	assert.NotContains(t, stderr.String(), "ARCHIVED LOG LINE", "--wait must not stream the log")
 }
 
