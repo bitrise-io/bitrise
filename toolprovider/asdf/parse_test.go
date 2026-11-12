@@ -47,3 +47,22 @@ func TestParseAsdfListOutput(t *testing.T) {
 		})
 	}
 }
+
+func TestLastLine(t *testing.T) {
+	tests := []struct {
+		name     string
+		output   string
+		expected string
+	}{
+		{"single line", "/home/user/.asdf/installs/nodejs/22.23.2\n", "/home/user/.asdf/installs/nodejs/22.23.2"},
+		{"warning before the value", "warning: something\n/home/user/.asdf/installs/nodejs/22.23.2\n", "/home/user/.asdf/installs/nodejs/22.23.2"},
+		{"trailing empty lines", "/home/user/.asdf/installs/ruby/3.4.1\n\n\n", "/home/user/.asdf/installs/ruby/3.4.1"},
+		{"empty output", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, lastLine(tt.output))
+		})
+	}
+}

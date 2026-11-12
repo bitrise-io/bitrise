@@ -13,4 +13,9 @@ workflows:
       - script@1:
           title: Test activated tool
           inputs:
-            - content: set -ex; node --version | grep -q "22"
+            - content: |
+                set -ex
+                echo "$PATH"
+                command -v node
+                node --version
+                node --version | grep -Eq "^v22\\."
