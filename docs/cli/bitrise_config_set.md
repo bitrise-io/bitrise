@@ -15,7 +15,7 @@ bitrise config set KEY VALUE [flags]
 ### Examples
 
 ```
-  bitrise config set api_base_url https://staging-api.bitrise.io/v0.1
+  bitrise config set api_base_url https://api.example.com/v0.1
 ```
 
 ### Options

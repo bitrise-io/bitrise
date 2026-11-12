@@ -213,6 +213,18 @@ func (c *Client) AbortBuild(ctx context.Context, appSlug, buildSlug string, req 
 	return postDecode[AbortBuildResponse](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/abort", nil, req)
 }
 
+// RebuildBuildRequest is the JSON body for POST /apps/{app-slug}/builds/{build-slug}/rebuild.
+type RebuildBuildRequest struct {
+	IsRemote bool `json:"is_remote,omitempty"`
+}
+
+// RebuildBuild starts a new build with the parameters and workflow of a
+// finished one. The server rejects an unfinished build with a 400.
+// Endpoint: POST /apps/{app-slug}/builds/{build-slug}/rebuild.
+func (c *Client) RebuildBuild(ctx context.Context, appSlug, buildSlug string, req RebuildBuildRequest) (TriggerBuildResponse, error) {
+	return postDecode[TriggerBuildResponse](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/rebuild", nil, req)
+}
+
 // BuildLogResponse is the JSON returned by GET /apps/{app-slug}/builds/{build-slug}/log.
 //
 // Behavior depends on whether the build is finished: for archived builds,

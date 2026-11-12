@@ -11,7 +11,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 
 --wait waits for the build to finish before printing the log — useful when
 the build is still in-progress. Ctrl-C detaches without affecting the
-running build.
+running build, and exits non-zero because no log was printed.
 
 Output is always raw text — this command has no --format flag.
 

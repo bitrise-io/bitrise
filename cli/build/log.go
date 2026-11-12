@@ -1,9 +1,6 @@
 package build
 
 import (
-	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -29,7 +26,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 
 --wait waits for the build to finish before printing the log — useful when
 the build is still in-progress. Ctrl-C detaches without affecting the
-running build.
+running build, and exits non-zero because no log was printed.
 
 Output is always raw text — this command has no --format flag.`,
 		Example: `  bitrise build log abc123 --app my-app-id
@@ -58,18 +55,7 @@ Output is always raw text — this command has no --format flag.`,
 					return err
 				}
 				if b.Status == "in-progress" {
-					url := b.BuildURL
-					if url == "" {
-						url = buildWebURL(cmdutil.ResolveWebBaseURL(cmd), appSlug, buildSlug)
-					}
-					if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Waiting for build #%d to finish\n%s\n", b.BuildNumber, url); err != nil {
-						return err
-					}
-
-					if _, err := svc.WaitForCompletion(cmd.Context(), appSlug, buildSlug, interval); err != nil {
-						if errors.Is(err, context.Canceled) {
-							return writeDetachNotice(cmd.ErrOrStderr(), "build log --wait "+buildSlug)
-						}
+					if _, err := waitForBuild(cmd, svc, b, interval, "build log --wait "+buildSlug); err != nil {
 						return err
 					}
 				}
