@@ -72,6 +72,7 @@ You can find a complete iOS sample project at: https://github.com/bitrise-io/sam
 | [`build list`](docs/cli/bitrise_build_list.md) | List builds for an app |
 | [`build log`](docs/cli/bitrise_build_log.md) | Print the build log |
 | [`build rebuild`](docs/cli/bitrise_build_rebuild.md) | Start a new build with the parameters of a finished build |
+| [`build steps`](docs/cli/bitrise_build_steps.md) | List a build's steps with their status and failure or skip reasons |
 | [`build trigger`](docs/cli/bitrise_build_trigger.md) | Start a new build |
 | [`build view`](docs/cli/bitrise_build_view.md) | Show details of a single build |
 | [`build watch`](docs/cli/bitrise_build_watch.md) | Stream logs for a running build |

@@ -107,8 +107,9 @@ func TestBuildStatus_KnownAndUnknownValues(t *testing.T) {
 		"some-unrecognized-str": s.Dim,
 	}
 	for status, want := range cases {
-		if got := s.BuildStatus(status); got.String() != want.String() {
-			t.Errorf("BuildStatus(%q) = %q, want %q", status, got.String(), want.String())
+		// Style.String() is empty for every style here, so compare the colors.
+		if got := s.BuildStatus(status); got.GetForeground() != want.GetForeground() {
+			t.Errorf("BuildStatus(%q) foreground = %v, want %v", status, got.GetForeground(), want.GetForeground())
 		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -374,7 +375,7 @@ func TestBuildLogSummary_PathAndStackImageVersion(t *testing.T) {
 }`))
 	})
 
-	summary, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build")
+	summary, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build", nil, "")
 	require.NoError(t, err)
 	assert.Equal(t, "/apps/my-app/builds/my-build/log/summary", gotPath)
 	assert.Equal(t, "2-161-0", summary.AgentInfo.StackImageVersion)
@@ -386,8 +387,62 @@ func TestBuildLogSummary_PropagatesAPIError(t *testing.T) {
 		_, _ = w.Write([]byte(`{"message":"not found"}`))
 	})
 
-	_, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build")
+	_, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build", nil, "")
 	var apiErr *APIError
 	require.ErrorAs(t, err, &apiErr)
 	assert.Equal(t, http.StatusNotFound, apiErr.StatusCode)
+}
+
+func TestBuildLogSummary_PathAndParse(t *testing.T) {
+	var gotPath string
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_, _ = w.Write([]byte(`{
+  "app_id": "my-app",
+  "is_log_archived": true,
+  "execution": {
+    "workflows": [{
+      "uuid": "wf-1",
+      "workflow_id": "primary",
+      "steps": [
+        {"uuid": "s-1", "step_id": "git-clone", "title": "Git clone", "version": "8.5.1", "status": "success",
+         "started_at": "2026-10-19T13:25:35Z", "finished_at": "2026-10-19T13:25:38.793Z"},
+        {"uuid": "s-2", "step_id": "script", "title": "Tests", "status": "failed",
+         "errors": [{"code": 1, "message": "exit status 1"}]}
+      ]
+    }]
+  }
+}`))
+	})
+
+	summary, err := newAPIClient(t, srv.URL, "t").BuildLogSummary(context.Background(), "my-app", "my-build", nil, "")
+	require.NoError(t, err)
+	assert.Equal(t, "/apps/my-app/builds/my-build/log/summary", gotPath)
+	assert.True(t, summary.IsLogArchived)
+	require.Len(t, summary.Execution.Workflows, 1)
+	wf := summary.Execution.Workflows[0]
+	assert.Equal(t, "primary", wf.WorkflowID)
+	require.Len(t, wf.Steps, 2)
+	assert.Equal(t, "s-1", wf.Steps[0].UUID)
+	assert.Equal(t, "8.5.1", wf.Steps[0].Version)
+	assert.Equal(t, time.Date(2026, 10, 19, 13, 25, 38, 793_000_000, time.UTC), wf.Steps[0].FinishedAt.UTC())
+	assert.Equal(t, []BuildStepError{{Code: 1, Message: "exit status 1"}}, wf.Steps[1].Errors)
+	assert.True(t, wf.Steps[1].StartedAt.IsZero())
+}
+
+func TestBuildLogSummary_Query(t *testing.T) {
+	var gotQuery url.Values
+	srv := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.Query()
+		_, _ = w.Write([]byte(`{}`))
+	})
+	c := newAPIClient(t, srv.URL, "t")
+
+	_, err := c.BuildLogSummary(context.Background(), "my-app", "my-build", nil, "")
+	require.NoError(t, err)
+	assert.Empty(t, gotQuery)
+
+	_, err = c.BuildLogSummary(context.Background(), "my-app", "my-build", []string{"failed", "aborted"}, "xcode-test")
+	require.NoError(t, err)
+	assert.Equal(t, url.Values{"status": {"failed", "aborted"}, "step_id": {"xcode-test"}}, gotQuery)
 }

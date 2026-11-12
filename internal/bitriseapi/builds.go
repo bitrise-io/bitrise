@@ -257,24 +257,6 @@ func (c *Client) BuildLogManifest(ctx context.Context, appSlug, buildSlug, after
 	return get[BuildLogResponse](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log", params)
 }
 
-// BuildLogSummary is the subset of the build log summary the CLI reads. The
-// full body also carries additional attributes that can be added here as needed
-type BuildLogSummary struct {
-	AgentInfo BuildLogSummaryAgentInfo `json:"agent_info"`
-}
-
-// BuildLogSummaryAgentInfo describes the VM the build ran on. For a build that
-// never got one, the key is absent and this decodes to its zero value.
-type BuildLogSummaryAgentInfo struct {
-	StackImageVersion string `json:"stack_image_version"`
-}
-
-// BuildLogSummary fetches the log summary for a build.
-// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
-func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string) (BuildLogSummary, error) {
-	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", nil)
-}
-
 // BuildLog fetches the log for a build and writes it to w.
 //
 // For archived (finished) builds, the full log is downloaded from
@@ -305,6 +287,69 @@ func (c *Client) BuildLog(ctx context.Context, appSlug, buildSlug string, w io.W
 		}
 	}
 	return manifest, nil
+}
+
+// BuildLogSummary is the step-level summary of a build's execution, returned
+// by GET /apps/{app-slug}/builds/{build-slug}/log/summary. Until the build's
+// log is archived, IsLogArchived is false and the summary covers only the
+// steps that have started so far.
+type BuildLogSummary struct {
+	IsLogArchived bool                     `json:"is_log_archived"`
+	Execution     BuildExecution           `json:"execution"`
+	AgentInfo     BuildLogSummaryAgentInfo `json:"agent_info"`
+}
+
+// BuildLogSummaryAgentInfo describes the VM the build ran on. For a build that
+// never got one, the key is absent and this decodes to its zero value.
+type BuildLogSummaryAgentInfo struct {
+	StackImageVersion string `json:"stack_image_version"`
+}
+
+// BuildExecution holds the workflows of a build in execution order, utility
+// workflows (IDs starting with _) included.
+type BuildExecution struct {
+	Workflows []BuildExecutionWorkflow `json:"workflows"`
+}
+
+// BuildExecutionWorkflow is one workflow run within a build.
+type BuildExecutionWorkflow struct {
+	WorkflowID string               `json:"workflow_id"`
+	Steps      []BuildExecutionStep `json:"steps"`
+}
+
+// BuildExecutionStep is one step run within a workflow. StatusReason is set
+// when the step was skipped; Errors when it failed.
+type BuildExecutionStep struct {
+	UUID         string           `json:"uuid"`
+	StepID       string           `json:"step_id"`
+	Title        string           `json:"title,omitempty"`
+	Version      string           `json:"version,omitempty"`
+	Status       string           `json:"status"`
+	StatusReason string           `json:"status_reason,omitempty"`
+	StartedAt    time.Time        `json:"started_at,omitempty"`
+	FinishedAt   time.Time        `json:"finished_at,omitempty"`
+	Errors       []BuildStepError `json:"errors,omitempty"`
+}
+
+// BuildStepError is one error a failed step reported.
+type BuildStepError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// BuildLogSummary fetches the step-level summary of a build. A non-empty
+// statuses or stepID keeps only the matching steps, and drops the workflows
+// left without any.
+// Endpoint: GET /apps/{app-slug}/builds/{build-slug}/log/summary.
+func (c *Client) BuildLogSummary(ctx context.Context, appSlug, buildSlug string, statuses []string, stepID string) (BuildLogSummary, error) {
+	params := url.Values{}
+	for _, st := range statuses {
+		params.Add("status", st)
+	}
+	if stepID != "" {
+		params.Set("step_id", stepID)
+	}
+	return get[BuildLogSummary](ctx, c, "/apps/"+url.PathEscape(appSlug)+"/builds/"+url.PathEscape(buildSlug)+"/log/summary", params)
 }
 
 // streamRawLog GETs rawURL and copies the body to w. rawURL is expected to
