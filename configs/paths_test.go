@@ -41,6 +41,44 @@ func TestGeneratePATHEnvString(t *testing.T) {
 		GeneratePATHEnvString("/usr/bin:/MY/PATH:/usr/local/bin:/bin", "/MY/PATH"))
 }
 
+func TestMovePATHEntryToFront(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want string
+	}{
+		{name: "empty PATH", path: "", want: "/shims"},
+		{name: "not in PATH", path: "/tools:/usr/bin", want: "/shims:/tools:/usr/bin"},
+		{name: "already first", path: "/shims:/tools:/usr/bin", want: "/shims:/tools:/usr/bin"},
+		{name: "behind another entry", path: "/tools:/shims:/usr/bin", want: "/shims:/tools:/usr/bin"},
+		{name: "listed twice, once with a trailing slash", path: "/tools:/shims/:/usr/bin:/shims", want: "/shims:/tools:/usr/bin"},
+		{name: "empty entry means the current dir and is kept", path: "/tools::/usr/bin", want: "/shims:/tools::/usr/bin"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, MovePATHEntryToFront(tt.path, "/shims"))
+		})
+	}
+}
+
+func TestInitPaths_PATHOrder(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv(DebugUseSystemTools, "")
+	shims, tools := GetBitriseShimsDirPath(), GetBitriseToolsDirPath()
+
+	t.Setenv("PATH", "/usr/bin:"+shims)
+	require.NoError(t, InitPaths())
+	require.Equal(t, shims+":"+tools+":/usr/bin", os.Getenv("PATH"))
+
+	require.NoError(t, InitPaths())
+	require.Equal(t, shims+":"+tools+":/usr/bin", os.Getenv("PATH"), "a second call leaves PATH as it is")
+
+	t.Setenv("PATH", "/usr/bin")
+	t.Setenv(DebugUseSystemTools, "true")
+	require.NoError(t, InitPaths())
+	require.Equal(t, "/usr/bin", os.Getenv("PATH"), "system tools mode leaves PATH alone")
+}
+
 func TestInitPaths(t *testing.T) {
 	//
 	// BITRISE_SOURCE_DIR

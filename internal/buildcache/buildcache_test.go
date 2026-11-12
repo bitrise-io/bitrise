@@ -2,6 +2,7 @@ package buildcache
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
+	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -551,4 +553,10 @@ func TestActivateIfEnabled_ActivateAllSeesABuildDeclaredGradleUserHome(t *testin
 	calls, err := os.ReadFile(out)
 	require.NoError(t, err)
 	assert.Equal(t, "activate all --auto home=/work/gradle", strings.TrimSpace(string(calls)))
+}
+
+const testVersion = "3.14.1"
+
+func testLogger() log.Logger {
+	return log.NewLogger(log.LoggerOpts{LoggerType: log.ConsoleLogger, Writer: io.Discard})
 }

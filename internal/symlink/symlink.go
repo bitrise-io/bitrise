@@ -1,4 +1,6 @@
-package buildcache
+// Package symlink maintains the links the CLI keeps on PATH. Depends on nothing
+// but the standard library, so any package can import it.
+package symlink
 
 import (
 	"fmt"
@@ -7,9 +9,9 @@ import (
 	"time"
 )
 
-const binaryName = "bitrise-build-cache"
-
-func link(target, name string) error {
+// Ensure points name at target. The link is swapped in with a rename, so a
+// concurrent caller or a process resolving name never sees it missing.
+func Ensure(target, name string) error {
 	if current, err := os.Readlink(name); err == nil && current == target {
 		return nil
 	}
@@ -25,9 +27,4 @@ func link(target, name string) error {
 		return err
 	}
 	return nil
-}
-
-func isExecutable(p string) bool {
-	info, err := os.Stat(p)
-	return err == nil && info.Mode().IsRegular() && info.Mode().Perm()&0o111 != 0
 }
