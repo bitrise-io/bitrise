@@ -5,7 +5,8 @@ List a build's test suites and test cases with their results
 ### Synopsis
 
 List the test suites a build reported and the test cases in them, with each
-case's status and duration, and the message of failed ones.
+case's status and duration, and the message of failed ones. For a test case
+that ran more than once, the messages of its failed runs are listed too.
 
 Each test case also lists the test suites it belongs to, which can differ from
 where it is nested, and the identifier its test report gives it, if any.

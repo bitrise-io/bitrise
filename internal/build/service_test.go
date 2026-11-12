@@ -1191,7 +1191,7 @@ func TestService_TestResults_RejectsInvalidFilters(t *testing.T) {
 func TestService_TestResults_MapsAPIErrors(t *testing.T) {
 	tests := map[int]string{
 		http.StatusBadRequest: "Couldn't fetch test results for this build. Please try again later!",
-		http.StatusForbidden:  "the plan of the app's workspace does not include test reports",
+		http.StatusForbidden:  "Couldn't fetch test results for this build. Please try again later!",
 		http.StatusNotFound:   `build "b-1" not found`,
 		http.StatusBadGateway: "Couldn't fetch test results",
 	}
@@ -1215,6 +1215,14 @@ func TestService_TestResults_BadRequestReturnsServerMessage(t *testing.T) {
 		_, err := NewService(newAPIClient(t, srv.URL)).TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{})
 		require.EqualError(t, err, msg)
 	}
+}
+
+func TestService_TestResults_ForbiddenWithoutMessage(t *testing.T) {
+	srv := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	})
+	_, err := NewService(newAPIClient(t, srv.URL)).TestResults(context.Background(), "my-app", "b-1", TestResultsFilter{})
+	require.EqualError(t, err, "the plan of the app's workspace does not include test reports")
 }
 
 func TestService_TestResults_RequiresSlugs(t *testing.T) {

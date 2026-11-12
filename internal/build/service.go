@@ -736,6 +736,9 @@ func (s *Service) TestResults(ctx context.Context, appSlug, buildSlug string, f 
 					return TestResultsResult{}, errors.New(apiErr.Message)
 				}
 			case http.StatusForbidden:
+				if apiErr.Message != "" {
+					return TestResultsResult{}, errors.New(apiErr.Message)
+				}
 				return TestResultsResult{}, fmt.Errorf("the plan of the app's workspace does not include test reports")
 			case http.StatusNotFound:
 				return TestResultsResult{}, fmt.Errorf("build %q not found", buildSlug)
@@ -953,9 +956,8 @@ func limitTestCases(suites []TestSuite, limit int) ([]TestSuite, int) {
 	return out, limit
 }
 
-// testIdentifierProperty is the test case property a test report carries
-// the test framework's own identifier in. The build page reads the same one
-// (testCaseIdentifierOf in bitrise-website's TestResults.utils.ts).
+// testIdentifierProperty is the test case property test reports use for the
+// test framework's own identifier.
 const testIdentifierProperty = "test-identifier"
 
 func testCaseFromAPI(tc bitriseapi.TestCase) TestCase {

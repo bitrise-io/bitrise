@@ -23,7 +23,8 @@ func NewTestResultsCommand() *cobra.Command {
 		Use:   "test-results BUILD_ID",
 		Short: "List a build's test suites and test cases with their results",
 		Long: `List the test suites a build reported and the test cases in them, with each
-case's status and duration, and the message of failed ones.
+case's status and duration, and the message of failed ones. For a test case
+that ran more than once, the messages of its failed runs are listed too.
 
 Each test case also lists the test suites it belongs to, which can differ from
 where it is nested, and the identifier its test report gives it, if any.
@@ -69,7 +70,7 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 			}
 
 			return output.Render(cmd.OutOrStdout(), output.Format, res, func(w io.Writer, res internalbuild.TestResultsResult) error {
-				return printTestResultsText(w, res, filter.IsSet())
+				return printTestResultsText(w, res, filter)
 			})
 		},
 	}
@@ -101,10 +102,13 @@ BUILD_ID belongs to an app: pass --app ID, or set BITRISE_APP_ID (or run
 // printTestResultsText renders the suites as an indented tree: each suite
 // with its totals, then its test cases, then its child suites. Messages can
 // span lines, so they go under their test case rather than in a column.
-func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filtered bool) error {
+func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filter internalbuild.TestResultsFilter) error {
 	if len(res.TestSuites) == 0 {
 		msg := "No test results found."
-		if filtered {
+		// A limit alone can only leave nothing when there was nothing to begin with.
+		unlimited := filter
+		unlimited.Limit = 0
+		if unlimited.IsSet() {
 			msg = "No test cases match the filters."
 		}
 		_, err := fmt.Fprintln(w, msg)
@@ -140,6 +144,15 @@ func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filt
 					fmt.Fprintf(&b, "%s    %s\n", indent, line)
 				}
 			}
+			if len(tc.Runs) > 1 {
+				for i, run := range tc.Runs {
+					msg := strings.TrimSpace(run.Message)
+					if msg == "" || (run.Status != "failed" && run.Status != "error") {
+						continue
+					}
+					fmt.Fprintf(&b, "%s    %s %s\n", indent, s.Dim.Render(fmt.Sprintf("run %d %s:", i+1, run.Status)), strings.ReplaceAll(msg, "\n", "\n"+indent+"    "))
+				}
+			}
 		}
 		for _, child := range su.TestSuites {
 			printSuite(child, indent+"  ")
@@ -155,13 +168,13 @@ func printTestResultsText(w io.Writer, res internalbuild.TestResultsResult, filt
 		total.DurationMS += su.DurationMS
 	}
 
-	// A filter drops whole suites, so their totals would no longer add up.
-	if filtered {
+	// A filter or limit drops whole suites, so their totals would no longer add up.
+	if filter.IsSet() {
 		noun := "test cases"
 		if shown == 1 {
 			noun = "test case"
 		}
-		fmt.Fprintf(&b, "\n%d matching %s.\n", shown, noun)
+		fmt.Fprintf(&b, "\n%d %s shown.\n", shown, noun)
 	} else {
 		fmt.Fprintf(&b, "\nTotal: %s\n", testCounts(total.TestCount, total.FailureCount, total.ErrorCount, total.SkippedCount, total.DurationMS))
 	}
@@ -182,4 +195,3 @@ func testDuration(ms int64) string {
 	}
 	return d.Round(100 * time.Millisecond).String()
 }
-

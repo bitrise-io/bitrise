@@ -34,6 +34,7 @@ func TestTestResultsCmd_HappyPath(t *testing.T) {
     expected error
     at line 12
   passed   LoginTests.testRetry  1.3s  flaky  2 runs
+    run 1 failed: timeout
   SSO  1 tests, 0 failed, 1 errors, 0 skipped, 300ms
     error    SSOTests.testSAML  300ms
       crashed
@@ -68,7 +69,7 @@ func TestTestResultsCmd_SendsFilters(t *testing.T) {
 	}, gotQuery)
 	assert.Contains(t, out.String(), "testWrongPassword")
 	assert.NotContains(t, out.String(), "Total:")
-	assert.Contains(t, out.String(), "\n1 matching test case.\n")
+	assert.Contains(t, out.String(), "\n1 test case shown.\n")
 }
 
 func TestTestResultsCmd_FlakyUnsetSendsNothing(t *testing.T) {
@@ -106,11 +107,13 @@ func TestTestResultsCmd_NoResults(t *testing.T) {
 		_, _ = w.Write([]byte(`{"test_suites": []}`))
 	})
 
-	cmd, out := newTestTestResultsCmd(t, srv.URL)
-	cmd.SetArgs([]string{"build-1", "--app", "my-app"})
-	require.NoError(t, cmd.Execute())
+	for _, args := range [][]string{{}, {"--limit", "5"}} {
+		cmd, out := newTestTestResultsCmd(t, srv.URL)
+		cmd.SetArgs(append([]string{"build-1", "--app", "my-app"}, args...))
+		require.NoError(t, cmd.Execute())
 
-	assert.Equal(t, "No test results found.\n", out.String())
+		assert.Equal(t, "No test results found.\n", out.String(), "args %v", args)
+	}
 }
 
 func TestTestResultsCmd_JSON(t *testing.T) {
