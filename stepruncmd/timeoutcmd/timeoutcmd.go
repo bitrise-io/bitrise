@@ -67,19 +67,24 @@ func (c *Command) Start() error {
 		hanged = c.hangDetector.C()
 	}
 
-	if err := c.cmd.Start(); err != nil { // start the process
+	output, err := copyOutput(c.cmd)
+	if err != nil {
 		return err
 	}
 
+	startErr := c.cmd.Start() // start the process
+	// The child holds its own copies of the write ends; closing ours lets the
+	// copies reach EOF once the child, and anything it left behind, exits.
+	output.closeWriteEnds()
+	if startErr != nil {
+		return startErr
+	}
+
 	// Wait reaps the process only. cmd.Wait would additionally block until the
-	// goroutines exec.Cmd spawns to copy the child's stdout/stderr have drained
-	// their pipes, which sounds better — it is what stops a large final burst
-	// being truncated — but the pipes only reach EOF once every process holding
-	// the write end exits. A step that leaves a daemon behind (ssh-agent, adb,
-	// an emulator) keeps them open, and with no per-step timeout and no
-	// BITRISE_NO_OUTPUT_TIMEOUT configured, which is the default, nothing else
-	// in the select below can fire: the step would hang forever. Truncation is
-	// the lesser failure, so this stays on Process.Wait.
+	// child's stdout/stderr pipes reach EOF, but a step that leaves a daemon
+	// behind (ssh-agent, adb, an emulator) keeps them open, and with no per-step
+	// timeout and no BITRISE_NO_OUTPUT_TIMEOUT configured, which is the default,
+	// nothing else in the select below can fire: the step would hang forever.
 	done := make(chan error, 1)
 	go func() {
 		switch p, err := c.cmd.Process.Wait(); {
@@ -115,9 +120,22 @@ func (c *Command) Start() error {
 
 		return NewNoOutputTimeout(c.hangTimeout)
 	case err := <-done:
+		// The copies can still be behind the child's last writes when it exits,
+		// which would lose the end of the step's output and the error message
+		// read from it. Wait for them, but only briefly: a daemon left behind
+		// keeps the pipes open, and its output keeps being copied after this
+		// returns, so it isn't killed by writing to a closed pipe.
+		select {
+		case <-output.done:
+		case <-time.After(outputDrainTimeout):
+		}
 		return err
 	}
 }
+
+// outputDrainTimeout bounds how long Start waits, once the process exits, for
+// its remaining output to be copied.
+const outputDrainTimeout = time.Second
 
 // ExitStatus returns the error's exit status
 // if the error is an exec.ExitError
