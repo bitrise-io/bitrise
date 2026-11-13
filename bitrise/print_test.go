@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/stretchr/testify/require"
-
 	"github.com/bitrise-io/bitrise/v3/models"
+	"github.com/bitrise-io/go-utils/pointers"
 	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/stretchr/testify/require"
 )
 
 const longStr = "This is a very long string, this is a very long string, " +

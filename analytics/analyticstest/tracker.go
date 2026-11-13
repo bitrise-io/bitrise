@@ -8,7 +8,6 @@ import (
 	"time"
 
 	extanalytics "github.com/bitrise-io/go-utils/v2/analytics"
-
 	"github.com/bitrise-io/bitrise/v3/stepman/activator"
 	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 

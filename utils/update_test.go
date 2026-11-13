@@ -3,9 +3,8 @@ package utils
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsUpdateAvailable(t *testing.T) {

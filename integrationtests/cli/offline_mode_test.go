@@ -6,11 +6,10 @@ package cli
 import (
 	"testing"
 
-	"github.com/bitrise-io/go-utils/command"
-	"github.com/stretchr/testify/require"
-
 	"github.com/bitrise-io/bitrise/v3/integrationtests/internal/testhelpers"
+	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
+	"github.com/stretchr/testify/require"
 )
 
 const (

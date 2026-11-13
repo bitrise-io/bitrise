@@ -5,17 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitrise-io/go-utils/v2/analytics"
-	"github.com/bitrise-io/go-utils/v2/env"
-	utilslog "github.com/bitrise-io/go-utils/v2/log"
-
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
 	"github.com/bitrise-io/bitrise/v3/models"
-	"github.com/bitrise-io/bitrise/v3/stepman/activator"
-	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 	"github.com/bitrise-io/bitrise/v3/version"
+	"github.com/bitrise-io/go-utils/v2/analytics"
+	"github.com/bitrise-io/go-utils/v2/env"
+	utilslog "github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 )
 
 const (

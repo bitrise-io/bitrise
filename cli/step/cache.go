@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
 	stepman "github.com/bitrise-io/bitrise/v3/stepman/cli"
 	"github.com/bitrise-io/bitrise/v3/stepman/preload"
+	"github.com/spf13/cobra"
 )
 
 const (
