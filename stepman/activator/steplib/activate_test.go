@@ -5,12 +5,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary"
 )
 
 // Tests for ActivateStep's dispatch: version resolution, step.yml placement, and

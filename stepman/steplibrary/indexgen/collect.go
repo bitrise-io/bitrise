@@ -6,10 +6,11 @@ import (
 	"io/fs"
 	"sort"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
-	"github.com/bitrise-io/stepman/stepman"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 // parsedStep is the intermediate representation collected during the walk

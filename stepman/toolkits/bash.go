@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/stringutil"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 )
 
 type BashToolkit struct {

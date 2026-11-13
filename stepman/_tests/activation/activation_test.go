@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/stepman/activator"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 )
 
 // assertStepInfoContent checks the resolved StepInfo carries the requested

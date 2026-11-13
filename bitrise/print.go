@@ -7,12 +7,13 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/bitrise-io/bitrise/v3/log"
-	"github.com/bitrise-io/bitrise/v3/models"
-	"github.com/bitrise-io/bitrise/v3/utils"
 	"github.com/bitrise-io/go-utils/colorstring"
 	"github.com/bitrise-io/go-utils/stringutil"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/utils"
 )
 
 const (

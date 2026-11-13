@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func TestDefaultStepTitle(t *testing.T) {

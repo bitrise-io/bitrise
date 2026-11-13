@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func Test_activateStepLibStep(t *testing.T) {

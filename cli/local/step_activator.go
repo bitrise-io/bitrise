@@ -8,8 +8,8 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/configs"
 	"github.com/bitrise-io/bitrise/v3/log"
-	"github.com/bitrise-io/stepman/activator"
-	"github.com/bitrise-io/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 )
 
 // stepActivator wraps the stepman activator. Both it and the activator it

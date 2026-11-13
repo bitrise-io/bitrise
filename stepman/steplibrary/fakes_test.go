@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 // fakeAPI is an in-memory API implementation driven entirely by its map

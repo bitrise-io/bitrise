@@ -13,9 +13,10 @@ import (
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/fileutil"
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepman"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func activateStepExecutable(

@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/stepman/activator/steplib"
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/steplibrary"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/activator/steplib"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary"
 )
 
 func Test_stepBinaryFilename(t *testing.T) {

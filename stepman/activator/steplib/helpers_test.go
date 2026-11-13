@@ -13,10 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 // Shared hermetic fixtures for the steplib package tests. A steplibrary.Client

@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func TestStatusReasonSuccess(t *testing.T) {

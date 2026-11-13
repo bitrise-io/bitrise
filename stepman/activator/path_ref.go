@@ -6,8 +6,9 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/stepman"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func ActivatePathRefStep(

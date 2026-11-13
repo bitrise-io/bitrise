@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func deleteStepLib(c *cli.Context) error {

@@ -5,7 +5,8 @@ import (
 
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/errorutil"
-	"github.com/bitrise-io/stepman/stepman"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 type commandRunner interface {

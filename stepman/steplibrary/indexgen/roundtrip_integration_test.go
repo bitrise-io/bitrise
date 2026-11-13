@@ -11,12 +11,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 // TestRoundTrip_stepYAML_to_stepJSON locks in the central V2 wire-format

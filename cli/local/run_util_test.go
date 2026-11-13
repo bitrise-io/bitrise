@@ -7,19 +7,20 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/bitrise-io/bitrise/v3/analytics/analyticstest"
 	"github.com/bitrise-io/bitrise/v3/bitrise"
 	"github.com/bitrise-io/bitrise/v3/cli/cmdutil"
 	"github.com/bitrise-io/bitrise/v3/configs"
-	"github.com/bitrise-io/bitrise/v3/models"
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
-	"github.com/bitrise-io/go-utils/fileutil"
-	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/toolkits"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/bitrise-io/bitrise/v3/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 )
 
 func TestIsSecretFiltering(t *testing.T) {

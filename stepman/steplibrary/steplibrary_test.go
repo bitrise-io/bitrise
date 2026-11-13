@@ -3,10 +3,11 @@ package steplibrary
 import (
 	"testing"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 func TestToStepGroupInfoModel(t *testing.T) {

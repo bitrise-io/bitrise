@@ -13,9 +13,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 type stubLogger struct{ t *testing.T }

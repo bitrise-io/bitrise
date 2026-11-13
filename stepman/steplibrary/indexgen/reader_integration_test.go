@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/internal/specfixtures"
-	"github.com/bitrise-io/stepman/steplibrary"
-	"github.com/bitrise-io/stepman/steplibrary/indexgen"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/specfixtures"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/indexgen"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

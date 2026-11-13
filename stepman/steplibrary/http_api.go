@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 // HTTPAPI fetches the V2 inventory (step_ids/latest/versions/step-info/step.json)

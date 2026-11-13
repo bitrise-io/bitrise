@@ -1,6 +1,6 @@
 package activator
 
-import "github.com/bitrise-io/stepman/models"
+import "github.com/bitrise-io/bitrise/v3/stepman/models"
 
 type ActivatedStep struct {
 	StepInfo models.StepInfoModel

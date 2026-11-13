@@ -18,10 +18,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/activator"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 const bitriseSteplibURL = "https://github.com/bitrise-io/bitrise-steplib.git"

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/bitrise-io/stepman/activator/steplib"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/stepman"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator/steplib"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 // ActivateSteplibRefStep activates a step referenced through a StepLib.

@@ -18,10 +18,11 @@ import (
 	"github.com/bitrise-io/go-utils/urlutil"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/bitrise-io/go-utils/v2/ziputil"
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
 	version "github.com/hashicorp/go-version"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 // ParseStepGroupInfoModel ...

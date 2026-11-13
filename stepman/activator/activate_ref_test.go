@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/stepman/stepid"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 )
 
 const testStepYML = `title: Hello Step

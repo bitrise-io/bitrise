@@ -1,9 +1,9 @@
 package activator
 
 import (
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/steplibrary"
-	"github.com/bitrise-io/stepman/stepman"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 const (

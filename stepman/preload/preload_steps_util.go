@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func filterPreloadedStepVersions(stepID string, steps map[string]models.StepModel, opts CacheOpts) (map[string]models.StepModel, error) {

@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func TestValidateTag(t *testing.T) {

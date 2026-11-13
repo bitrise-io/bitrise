@@ -10,10 +10,11 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/stringutil"
-	"github.com/bitrise-io/stepman/activator/steplib"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/activator/steplib"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func ListCachedSteps(steplibURI, maintaner string, log stepman.Logger) error {

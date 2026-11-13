@@ -6,8 +6,9 @@ import (
 	"runtime"
 
 	flog "github.com/bitrise-io/go-utils/log"
-	ver "github.com/bitrise-io/stepman/version"
 	"github.com/urfave/cli"
+
+	ver "github.com/bitrise-io/bitrise/v3/stepman/version"
 )
 
 // VersionOutputModel ...

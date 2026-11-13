@@ -9,9 +9,10 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 // ExportType ...
@@ -63,7 +64,7 @@ func convertToLatestSpec(stepLib models.StepCollectionModel) models.StepCollecti
 			Versions: map[string]models.StepModel{
 				latestVersionStr: latestStep,
 			},
-			Info: groupInfo,
+			Info:                groupInfo,
 			LatestVersionNumber: latestVersionStr,
 		}
 	}

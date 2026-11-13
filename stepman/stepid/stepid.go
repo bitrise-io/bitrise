@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 // CanonicalID is a structured representation of a composite-step-id

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 // StepRunStatus ...

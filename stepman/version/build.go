@@ -1,7 +1,7 @@
 package version
 
 // Version is the main CLI version number.
-// Injected at build time via -ldflags "-X github.com/bitrise-io/stepman/version.Version=..."
+// Injected at build time via -ldflags "-X github.com/bitrise-io/bitrise/v3/stepman/version.Version=..."
 // See goreleaser config file for details.
 // Falls back to "dev" when not set (local / go install builds).
 var Version = "dev"

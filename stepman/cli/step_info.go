@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 //nolint:exhaustruct // CLI command definitions don't need all fields initialized

@@ -4,8 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 func TestIndex_per_step_latest_pointer(t *testing.T) {

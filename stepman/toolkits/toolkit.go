@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/stepman"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 type InstallResult struct {
@@ -21,7 +21,7 @@ type PrepareForStepRunResult struct {
 	PrepareDuration time.Duration
 
 	// CacheHit should indicate if PrepareDuration was shorter because of a cache hit or similar optimizations.
-	CacheHit        bool
+	CacheHit bool
 }
 
 type ToolkitCheckResult struct {

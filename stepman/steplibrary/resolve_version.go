@@ -8,8 +8,8 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 func (c Client) getStepVersionInfo(ctx context.Context, stepID, version string) (models.StepInfoModel, ResolvedStepVersion, error) {

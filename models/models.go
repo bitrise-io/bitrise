@@ -8,7 +8,7 @@ import (
 	"time"
 
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 type GraphPipelineAlwaysRunMode string

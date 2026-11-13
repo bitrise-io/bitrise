@@ -10,9 +10,10 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func auditStepBeforeShare(pth string) error {

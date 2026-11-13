@@ -9,7 +9,8 @@ import (
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/stepman/models"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 // QueryStepInfoFromGit returns step info from git source.

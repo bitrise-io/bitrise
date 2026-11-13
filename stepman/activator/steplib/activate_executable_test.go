@@ -15,9 +15,10 @@ import (
 	"testing"
 
 	"github.com/bitrise-io/go-utils/log"
-	"github.com/bitrise-io/stepman/internal/httpfetch"
-	"github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func sha256Hash(b []byte) string {

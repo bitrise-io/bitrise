@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bitrise-io/bitrise/v3/models"
-	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"github.com/stretchr/testify/require"
+
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
+	"github.com/bitrise-io/bitrise/v3/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 func TestApplyOutputAliases(t *testing.T) {

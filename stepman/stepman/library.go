@@ -10,7 +10,8 @@ import (
 	"github.com/bitrise-io/go-utils/command/git"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/retry"
-	"github.com/bitrise-io/stepman/models"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 const filePathPrefix = "file://"

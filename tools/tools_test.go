@@ -8,13 +8,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/stretchr/testify/require"
+
 	envmanCLI "github.com/bitrise-io/bitrise/v3/envman/cli"
 	envmanEnv "github.com/bitrise-io/bitrise/v3/envman/env"
 	"github.com/bitrise-io/bitrise/v3/envman/envman"
 	"github.com/bitrise-io/bitrise/v3/envman/models"
-	"github.com/bitrise-io/go-utils/command"
-	"github.com/bitrise-io/go-utils/pathutil"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMoveFile(t *testing.T) {

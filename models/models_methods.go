@@ -10,11 +10,12 @@ import (
 	"strconv"
 	"strings"
 
-	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
 	"github.com/heimdalr/dag"
+
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 )
 
 // TODO: can we replace these with slices package functions?

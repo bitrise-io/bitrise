@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitrise-io/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 // FormatVersion is the on-disk schema version recorded in Meta. Bump only on

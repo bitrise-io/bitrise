@@ -8,8 +8,9 @@ import (
 	"github.com/bitrise-io/go-utils/log"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/goinp/goinp"
-	"github.com/bitrise-io/stepman/stepman"
 	"github.com/urfave/cli"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
 )
 
 func showSubcommandHelp(c *cli.Context) {
@@ -50,7 +51,7 @@ func start(c *cli.Context) error {
 				log.Errorf("failed to cleanup route for uri: %s", collectionURI)
 			}
 		}
-	} 
+	}
 
 	// cleanup
 	if err := DeleteShareSteplibFile(); err != nil {

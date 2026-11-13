@@ -7,17 +7,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitrise-io/bitrise/v3/configs"
-	"github.com/bitrise-io/bitrise/v3/log"
-	"github.com/bitrise-io/bitrise/v3/models"
-	"github.com/bitrise-io/bitrise/v3/tools"
-	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
 	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/configs"
+	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
+	"github.com/bitrise-io/bitrise/v3/log"
+	"github.com/bitrise-io/bitrise/v3/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/tools"
 )
 
 type ValidationType int

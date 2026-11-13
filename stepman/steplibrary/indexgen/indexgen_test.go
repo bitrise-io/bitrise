@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitrise-io/stepman/internal/specfixtures"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/specfixtures"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 // fixedTime is used everywhere so tests don't depend on time.Now.

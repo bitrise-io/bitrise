@@ -5,8 +5,8 @@ import (
 	"io/fs"
 	"strconv"
 
-	"github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/steplibrary/steplibindex"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary/steplibindex"
 )
 
 // writeStepFiles emits the per-step source files under steps/<id>/. Output paths

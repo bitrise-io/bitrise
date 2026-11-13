@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/bitrise-io/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
