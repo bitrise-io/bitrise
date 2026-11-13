@@ -700,6 +700,10 @@ step_bundles:
             test_log="${BITRISE_DEPLOY_DIR}/stepman_integration_tests.log"
             INTEGRATION_TEST_BINARY_PATH="$current_stepman" go test -v ./stepman/_tests/integration/... 2>&1 \
               | tee "$test_log" || test_exit_code=$?
+            go test -tags integration -v ./stepman/steplibrary/indexgen/... 2>&1 \
+              | tee -a "$test_log" || test_exit_code=$?
+            go test -tags integration -v -timeout 30m ./stepman/_tests/activation/... 2>&1 \
+              | tee -a "$test_log" || test_exit_code=$?
             go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_tests.xml"
 
             exit $test_exit_code
