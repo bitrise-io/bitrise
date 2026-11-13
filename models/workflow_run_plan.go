@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/bitrise-io/bitrise/v3/version"
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
-	"github.com/bitrise-io/bitrise/v3/version"
 )
 
 const LogFormatVersion = "2"
