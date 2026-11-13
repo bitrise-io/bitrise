@@ -54,9 +54,6 @@ github.com/bartventer/httpcache/store/memcache
 # github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
 ## explicit
 github.com/bitrise-io/colorstring
-# github.com/bitrise-io/envman/v2 v2.7.0
-## explicit; go 1.25
-github.com/bitrise-io/envman/v2/models
 # github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/secretkeys

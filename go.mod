@@ -7,7 +7,6 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/bartventer/httpcache v0.14.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.7.0
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.38
