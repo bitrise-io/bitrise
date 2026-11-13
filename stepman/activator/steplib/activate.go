@@ -97,9 +97,9 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 		}
 	}
 
-	execPath, err := downloadPrecompiled(log, stepModel, resolvedID, destination, fetcher, opts)
+	execPath := downloadPrecompiled(log, stepModel, resolvedID, destination, fetcher, opts)
 	if execPath != "" {
-		return ResolvedStep{ExecPath: execPath, StepInfo: stepInfo}, err
+		return ResolvedStep{ExecPath: execPath, StepInfo: stepInfo}, nil
 	}
 
 	// Fall back to step source activation.
@@ -123,7 +123,7 @@ func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string,
 	return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, nil
 }
 
-func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.CanonicalID, destination string, fetcher httpfetch.Client, opts Options) (string, error) {
+func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.CanonicalID, destination string, fetcher httpfetch.Client, opts Options) string {
 	if !opts.DisablePrecompiled && step.Executables != nil {
 		platform := fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
 		executableForPlatform, ok := (*step.Executables)[platform]
@@ -134,13 +134,13 @@ func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.Ca
 			if err == nil {
 				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
 
-				return execPath, nil
+				return execPath
 			}
 			log.Warnf("Failed to download step executable, fallback to step source activation: %s", err)
 		}
 		log.Infof("No prebuilt executable found for %s, fallback to step source activation", platform)
 	}
-	return "", nil
+	return ""
 }
 
 func copyStepYML(libraryURL, id, version, dest string) error {
