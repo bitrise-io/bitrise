@@ -88,20 +88,6 @@ github.com/bitrise-io/go-utils/v2/ziputil
 # github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
 ## explicit; go 1.18
 github.com/bitrise-io/goinp/goinp
-# github.com/bitrise-io/stepman v0.27.0
-## explicit; go 1.25.0
-github.com/bitrise-io/stepman/activator
-github.com/bitrise-io/stepman/activator/steplib
-github.com/bitrise-io/stepman/cli
-github.com/bitrise-io/stepman/internal/httpfetch
-github.com/bitrise-io/stepman/models
-github.com/bitrise-io/stepman/preload
-github.com/bitrise-io/stepman/stepid
-github.com/bitrise-io/stepman/steplibrary
-github.com/bitrise-io/stepman/steplibrary/steplibindex
-github.com/bitrise-io/stepman/stepman
-github.com/bitrise-io/stepman/toolkits
-github.com/bitrise-io/stepman/version
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
@@ -302,6 +288,13 @@ github.com/gofrs/uuid/v5
 # github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8
 ## explicit; go 1.20
 github.com/golang/groupcache/lru
+# github.com/google/go-cmp v0.7.0
+## explicit; go 1.21
+github.com/google/go-cmp/cmp
+github.com/google/go-cmp/cmp/internal/diff
+github.com/google/go-cmp/cmp/internal/flags
+github.com/google/go-cmp/cmp/internal/function
+github.com/google/go-cmp/cmp/internal/value
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
