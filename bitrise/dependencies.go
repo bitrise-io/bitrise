@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/command"
 	"github.com/bitrise-io/go-utils/retry"
 	"github.com/bitrise-io/goinp/goinp"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 	ver "github.com/hashicorp/go-version"
 )
 

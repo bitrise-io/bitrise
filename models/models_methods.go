@@ -12,8 +12,8 @@ import (
 
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
 	"github.com/heimdalr/dag"
 )
 

@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 

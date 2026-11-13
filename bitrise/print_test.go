@@ -7,7 +7,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 	"github.com/stretchr/testify/require"
 )
 

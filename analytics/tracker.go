@@ -13,8 +13,8 @@ import (
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
 	utilslog "github.com/bitrise-io/go-utils/v2/log"
-	"github.com/bitrise-io/stepman/activator"
-	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 )
 
 const (

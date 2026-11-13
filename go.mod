@@ -5,18 +5,18 @@ go 1.25.11
 require (
 	al.essio.dev/pkg/shellescape v1.6.0
 	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/bartventer/httpcache v0.14.0
 	github.com/bitrise-io/colorstring v0.0.0-20180614154802-a8cd70115192
-	github.com/bitrise-io/envman/v2 v2.7.0
 	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.44
 	github.com/bitrise-io/go-utils v1.0.15
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.38
 	github.com/bitrise-io/goinp v0.0.0-20240103152431-054ed78518ef
-	github.com/bitrise-io/stepman v0.27.0
 	github.com/charmbracelet/bubbles v1.0.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/gofrs/uuid v4.3.1+incompatible
+	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/go-version v1.9.0
 	github.com/heimdalr/dag v1.4.0
@@ -40,7 +40,6 @@ require (
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/bartventer/httpcache v0.14.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/colorprofile v0.4.1 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect

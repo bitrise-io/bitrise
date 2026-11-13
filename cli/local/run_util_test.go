@@ -16,8 +16,8 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

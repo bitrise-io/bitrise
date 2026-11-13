@@ -1,0 +1,22 @@
+title: Hello Step
+summary: Says hello, now with timezones.
+description: |
+  Greets with a timezone-aware message.
+website: https://example.com/hello-step
+source_code_url: https://github.com/example/hello-step
+support_url: https://github.com/example/hello-step/issues
+published_at: 2024-03-01T12:30:00Z
+source:
+  git: https://github.com/example/hello-step.git
+  commit: bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222
+type_tags:
+- utility
+toolkit:
+  bash:
+    entry_file: step.sh
+is_always_run: false
+is_skippable: false
+inputs:
+- name: World
+  opts:
+    title: Greeting target

@@ -6,7 +6,7 @@ import (
 
 	"github.com/bitrise-io/bitrise/v3/version"
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 const LogFormatVersion = "2"

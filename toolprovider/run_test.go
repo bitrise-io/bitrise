@@ -8,8 +8,8 @@ import (
 	clianalytics "github.com/bitrise-io/bitrise/v3/analytics"
 	"github.com/bitrise-io/bitrise/v3/toolprovider/provider"
 	"github.com/bitrise-io/go-utils/v2/analytics"
-	"github.com/bitrise-io/stepman/activator"
-	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 	"github.com/stretchr/testify/require"
     "github.com/stretchr/testify/assert"
 )

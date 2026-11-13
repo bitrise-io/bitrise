@@ -30,7 +30,7 @@ import (
 	envmanModels "github.com/bitrise-io/bitrise/v3/envman/models"
 	"github.com/bitrise-io/go-utils/colorstring"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
-	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 	"github.com/gofrs/uuid"
 	"github.com/spf13/cobra"
 )

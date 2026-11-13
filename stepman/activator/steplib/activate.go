@@ -1,0 +1,211 @@
+package steplib
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"slices"
+	"time"
+
+	"github.com/bitrise-io/go-utils/command"
+	"github.com/bitrise-io/go-utils/pathutil"
+	"github.com/bitrise-io/go-utils/v2/fileutil"
+	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/steplibrary"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepman"
+)
+
+// DefaultPrecompiledStorageURLs are the base URLs tried in order when
+// downloading a precompiled step executable.
+var DefaultPrecompiledStorageURLs = []string{
+	"https://steplib.bitrise.io",
+	"https://storage.googleapis.com/bitrise-steplib-storage",
+}
+
+// Options is the per-run configuration of step activation. It is passed in
+// rather than read from the environment here, so that a caller building an
+// activator once per run resolves the configuration once. The zero value is
+// what production wants: prebuilt executables on, from the default storage.
+type Options struct {
+	// DisablePrecompiled builds every step from source, even where the library
+	// offers a prebuilt executable.
+	DisablePrecompiled bool
+
+	// StorageURLs are the base URLs tried in order for precompiled
+	// executables. Empty means DefaultPrecompiledStorageURLs.
+	StorageURLs []string
+
+	// IsOfflineMode forbids network access, restricting activation to what is
+	// already in the local StepLib cache.
+	IsOfflineMode bool
+}
+
+// storageURLs is the configured list, or the built-in one when unset, so a
+// caller using Options directly does not silently lose the precompiled path.
+func (o Options) storageURLs() []string {
+	if len(o.StorageURLs) == 0 {
+		return DefaultPrecompiledStorageURLs
+	}
+	return o.StorageURLs
+}
+
+type ResolvedStep struct {
+	// ExecPath is optional: it holds the activated step executable only for
+	// precompiled executable activation, and is empty for source activation.
+	ExecPath string
+	StepInfo models.StepInfoModel
+}
+
+// ActivateStep materializes a step into destination and writes its step.yml to
+// destinationStepYML. useSteplibAPI picks the inventory backend: the StepLib V2
+// API, served by library, or a git-cloned steplib. library is unread when
+// useSteplibAPI is false.
+func ActivateStep(id stepid.CanonicalID, destination, destinationStepYML string, log stepman.Logger, opts Options, useSteplibAPI bool, library steplibrary.Client, fetcher httpfetch.Client) (ResolvedStep, error) {
+	var stepInfo models.StepInfoModel
+	var resolveErr error
+	if useSteplibAPI {
+		stepInfo, resolveErr = library.FetchStepMetadata(context.Background(), id)
+	} else {
+		// Legacy path: resolve the step from the local steplib spec (resolving the
+		// version constraint to a concrete version). This repeats the resolution
+		// already done by prepareStepLibForActivation, but keeps the legacy path
+		// self-contained instead of threading resolved info in.
+		stepInfo, resolveErr = stepman.QueryStepInfoFromLibrary(id.SteplibSource, id.IDorURI, id.Version, log)
+	}
+	if resolveErr != nil {
+		return ResolvedStep{ExecPath: "", StepInfo: models.StepInfoModel{}}, resolveErr
+	}
+	stepModel := stepInfo.Step
+	version := stepInfo.Version
+	resolvedID := id
+	resolvedID.Version = version
+
+	// Place the step.yml at destinationStepYML once, up front.
+	if !useSteplibAPI {
+		if err := copyStepYML(id.SteplibSource, id.IDorURI, version, destinationStepYML); err != nil {
+			return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, fmt.Errorf("copy step.yml: %s", err)
+		}
+	} else {
+		if err := writeStepYML(stepInfo.Step, destinationStepYML); err != nil {
+			return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, err
+		}
+	}
+
+	execPath := downloadPrecompiled(log, stepModel, resolvedID, destination, fetcher, opts)
+	if execPath != "" {
+		return ResolvedStep{ExecPath: execPath, StepInfo: stepInfo}, nil
+	}
+
+	// Fall back to step source activation.
+	if useSteplibAPI {
+		// activate the source over the API, without git clone
+		if err := activateStepSourceWithAPI(library, id.IDorURI, version, stepModel.Source, destination, log, opts.IsOfflineMode, fetcher); err != nil {
+			return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, err
+		}
+		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, nil
+	}
+
+	// using git cloned steplib
+	stepCollection, err := stepman.ReadStepSpec(id.SteplibSource)
+	if err != nil {
+		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, fmt.Errorf("failed to read %s steplib: %s", id.SteplibSource, err)
+	}
+	if err := activateStepSource(stepCollection, id.SteplibSource, id.IDorURI, version, stepModel, destination, log, opts.IsOfflineMode, fetcher); err != nil {
+		return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, err
+	}
+
+	return ResolvedStep{ExecPath: "", StepInfo: stepInfo}, nil
+}
+
+func downloadPrecompiled(log stepman.Logger, step models.StepModel, id stepid.CanonicalID, destination string, fetcher httpfetch.Client, opts Options) string {
+	if !opts.DisablePrecompiled && step.Executables != nil {
+		platform := fmt.Sprintf("%s-%s", runtime.GOOS, runtime.GOARCH)
+		executableForPlatform, ok := (*step.Executables)[platform]
+		if ok && executableForPlatform.Hash != "" && executableForPlatform.StorageURI != "" {
+			log.Debugf("Downloading executable for %s", platform)
+			downloadStart := time.Now()
+			execPath, err := activateStepExecutable(context.Background(), fetcher, id.SteplibSource, id.IDorURI, id.Version, platform, executableForPlatform, destination, log, opts.storageURLs())
+			if err == nil {
+				log.Debugf("Downloaded executable in %s", time.Since(downloadStart).Round(time.Millisecond))
+
+				return execPath
+			}
+			log.Warnf("Failed to download step executable, fallback to step source activation: %s", err)
+		}
+		log.Infof("No prebuilt executable found for %s, fallback to step source activation", platform)
+	}
+	return ""
+}
+
+func copyStepYML(libraryURL, id, version, dest string) error {
+	route, found := stepman.ReadRoute(libraryURL)
+	if !found {
+		return fmt.Errorf("no route found for %s steplib", libraryURL)
+	}
+
+	if exist, err := pathutil.IsPathExists(dest); err != nil {
+		return fmt.Errorf("failed to check if %s path exist: %s", dest, err)
+	} else if exist {
+		return fmt.Errorf("%s already exist", dest)
+	}
+
+	stepCollectionDir := stepman.GetStepCollectionDirPath(route, id, version)
+	stepYMLSrc := filepath.Join(stepCollectionDir, "step.yml")
+	if err := command.CopyFile(stepYMLSrc, dest); err != nil {
+		return fmt.Errorf("copy command failed: %s", err)
+	}
+	return nil
+}
+
+func writeStepYML(step models.StepModel, outputPath string) error {
+	stepYML, err := yaml.Marshal(step)
+	if err != nil {
+		return fmt.Errorf("marshal step model to YAML: %w", err)
+	}
+
+	fileManager := fileutil.NewFileManager()
+	if err := fileManager.WriteBytes(outputPath, stepYML); err != nil {
+		return fmt.Errorf("write step.yml: %w", err)
+	}
+
+	return nil
+}
+
+func ListCachedStepVersions(log stepman.Logger, stepLib models.StepCollectionModel, stepLibURI, stepID string) []string {
+	versions := []models.Semver{}
+
+	route, found := stepman.ReadRoute(stepLibURI)
+	if !found {
+		return nil
+	}
+
+	for version := range stepLib.Steps[stepID].Versions {
+		stepCacheDir := stepman.GetStepCacheDirPath(route, stepID, version)
+		_, err := os.Stat(stepCacheDir)
+		if err != nil {
+			continue
+		}
+
+		v, err := models.ParseSemver(version)
+		if err != nil {
+			log.Warnf("failed to parse version (%s): %s", version, err)
+		}
+
+		versions = append(versions, v)
+	}
+
+	slices.SortFunc(versions, models.CmpSemver)
+
+	versionsStr := make([]string, len(versions))
+	for i, v := range versions {
+		versionsStr[i] = v.String()
+	}
+
+	return versionsStr
+}

@@ -1,0 +1,28 @@
+title: Hello Step
+summary: Says hello.
+description: |
+  A simple example step that echoes a greeting.
+website: https://example.com/hello-step
+source_code_url: https://github.com/example/hello-step
+support_url: https://github.com/example/hello-step/issues
+published_at: 2024-01-15T10:00:00Z
+source:
+  git: https://github.com/example/hello-step.git
+  commit: aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111
+type_tags:
+- utility
+toolkit:
+  bash:
+    entry_file: step.sh
+is_always_run: false
+is_skippable: false
+run_if: ""
+inputs:
+- name: World
+  opts:
+    title: Greeting target
+    description: Who to greet.
+outputs:
+- GREETING_RESULT: null
+  opts:
+    title: The composed greeting message.

@@ -1,0 +1,360 @@
+package models
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/bitrise-io/go-utils/pointers"
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func Test_parseRequiredVersion(t *testing.T) {
+	tests := []struct {
+		name            string
+		requiredVersion string
+		want            VersionConstraint
+		wantErr         bool
+	}{
+		{
+			name:            "fixed version",
+			requiredVersion: "1.2.3",
+			want: VersionConstraint{
+				VersionLockType: Fixed,
+				Version: Semver{
+					Major: 1,
+					Minor: 2,
+					Patch: 3,
+				},
+			},
+		},
+		{
+			name:            "locked minor version",
+			requiredVersion: "1.2.x",
+			want: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version: Semver{
+					Major: 1,
+					Minor: 2,
+				},
+			},
+		},
+		{
+			name:            "locked minor version (omitted)",
+			requiredVersion: "1.2",
+			want: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version: Semver{
+					Major: 1,
+					Minor: 2,
+				},
+			},
+		},
+		{
+			name:            "locked minor version (omitted) - Invalid due to trailing dot",
+			requiredVersion: "1.2.",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+		{
+			name:            "locked major version",
+			requiredVersion: "1.x.x",
+			want: VersionConstraint{
+				VersionLockType: MajorLocked,
+				Version: Semver{
+					Major: 1,
+				},
+			},
+		},
+		{
+			name:            "locked major version - Invalid due to omitted patch version",
+			requiredVersion: "1.x",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+		{
+			name:            "locked major version (omitted)",
+			requiredVersion: "1",
+			want: VersionConstraint{
+				VersionLockType: MajorLocked,
+				Version: Semver{
+					Major: 1,
+				},
+			},
+		},
+		{
+			name:            "locked major version (omitted) - Invalid due to trailing dot",
+			requiredVersion: "1.",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+		{
+			name:            "locked major version (omitted) - Invalid due to omitted minor version",
+			requiredVersion: "1..x",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+		{
+			name:            "Invalid major version, x",
+			requiredVersion: "x.x.x",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+		{
+			name:            "No version specified",
+			requiredVersion: "",
+			want: VersionConstraint{
+				VersionLockType: Latest,
+			},
+			wantErr: false,
+		},
+		{
+			name:            "Invalid major version, negative number",
+			requiredVersion: "-1",
+			want:            VersionConstraint{},
+			wantErr:         true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseRequiredVersion(tt.requiredVersion)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseRequiredVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseRequiredVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHighestForMajorMinor(t *testing.T) {
+	sv := func(major, minor, patch uint64) Semver {
+		return Semver{Major: major, Minor: minor, Patch: patch}
+	}
+
+	cases := map[string]struct {
+		versions []Semver
+		target   Semver
+		want     Semver
+		wantOK   bool
+	}{
+		"picks highest patch in the minor": {
+			versions: []Semver{sv(1, 1, 0), sv(1, 1, 5), sv(1, 2, 0)},
+			target:   sv(1, 1, 0),
+			want:     sv(1, 1, 5),
+			wantOK:   true,
+		},
+		"ignores other majors and minors": {
+			versions: []Semver{sv(1, 1, 9), sv(2, 1, 0), sv(1, 2, 9)},
+			target:   sv(1, 1, 0),
+			want:     sv(1, 1, 9),
+			wantOK:   true,
+		},
+		"no match returns ok=false": {
+			versions: []Semver{sv(1, 0, 0), sv(2, 0, 0)},
+			target:   sv(1, 5, 0),
+			wantOK:   false,
+		},
+		"empty input returns ok=false": {
+			versions: nil,
+			target:   sv(1, 0, 0),
+			wantOK:   false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, ok := HighestForMajorMinor(tc.versions, tc.target)
+			require.Equal(t, tc.wantOK, ok, "ok")
+			if tc.wantOK {
+				assert.Equal(t, tc.want, got, "best version")
+			}
+		})
+	}
+}
+
+func Test_latestMatchingStepVersion(t *testing.T) {
+	step := StepModel{
+		Title: pointers.NewStringPtr("name 1"),
+	}
+	stepGroup := StepGroupModel{
+		Versions: map[string]StepModel{
+			"1.0.0": step,
+			"1.1.0": step,
+			"1.1.1": step,
+			"1.2.0": step,
+			"2.0.0": step,
+			"2.1.1": step,
+		},
+		LatestVersionNumber: "2.0.0",
+	}
+
+	tests := []struct {
+		name            string
+		requiredVersion VersionConstraint
+		stepVersions    StepGroupModel
+		want            StepVersionModel
+		want1           bool
+	}{
+		{
+			name: "Fix version",
+			requiredVersion: VersionConstraint{
+				VersionLockType: Fixed,
+				Version: Semver{
+					Major: 1,
+					Minor: 0,
+					Patch: 0,
+				},
+			},
+			stepVersions: stepGroup,
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.0.0",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+		},
+		{
+			name: "Lock Minor version",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version: Semver{
+					Major: 1,
+					Minor: 1,
+				},
+			},
+			stepVersions: stepGroup,
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.1.1",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+		},
+		{
+			name: "Lock Major ersion",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MajorLocked,
+				Version: Semver{
+					Major: 1,
+				},
+			},
+			stepVersions: stepGroup,
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.2.0",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+		},
+		{
+			name: "Lock Minor version - only a patch-0 version exists (must still match)",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version: Semver{
+					Major: 1,
+					Minor: 2,
+				},
+			},
+			stepVersions: stepGroup,
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.2.0",
+				LatestAvailableVersion: "2.0.0",
+			},
+			want1: true,
+		},
+		{
+			name: "Lock Minor version - no matching version",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version: Semver{
+					Major: 1,
+					Minor: 9,
+				},
+			},
+			stepVersions: stepGroup,
+			want:         StepVersionModel{},
+			want1:        false,
+		},
+		{
+			name: "Lock Major version - no matching version",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MajorLocked,
+				Version: Semver{
+					Major: 9,
+				},
+			},
+			stepVersions: stepGroup,
+			want:         StepVersionModel{},
+			want1:        false,
+		},
+		{
+			name: "Fixed version - not present",
+			requiredVersion: VersionConstraint{
+				VersionLockType: Fixed,
+				Version:         Semver{Major: 9, Minor: 9, Patch: 9},
+			},
+			stepVersions: stepGroup,
+			want:         StepVersionModel{},
+			want1:        false,
+		},
+		{
+			name: "Lock Minor version - skips unparseable version keys",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MinorLocked,
+				Version:         Semver{Major: 1, Minor: 1},
+			},
+			stepVersions: StepGroupModel{
+				Versions:            map[string]StepModel{"garbage": step, "1.1.2": step},
+				LatestVersionNumber: "1.1.2",
+			},
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "1.1.2",
+				LatestAvailableVersion: "1.1.2",
+			},
+			want1: true,
+		},
+		{
+			name: "Lock Major version - skips unparseable version keys",
+			requiredVersion: VersionConstraint{
+				VersionLockType: MajorLocked,
+				Version:         Semver{Major: 2},
+			},
+			stepVersions: StepGroupModel{
+				Versions:            map[string]StepModel{"not.semver.x": step, "2.3.4": step},
+				LatestVersionNumber: "2.3.4",
+			},
+			want: StepVersionModel{
+				Step:                   step,
+				Version:                "2.3.4",
+				LatestAvailableVersion: "2.3.4",
+			},
+			want1: true,
+		},
+		{
+			name: "Non-locked constraint (Latest) falls through to not-found",
+			requiredVersion: VersionConstraint{
+				VersionLockType: Latest,
+			},
+			stepVersions: stepGroup,
+			want:         StepVersionModel{},
+			want1:        false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := latestMatchingStepVersion(tt.requiredVersion, tt.stepVersions)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("latestMatchingRequiredVersion() got = %+v, want +%v,\n Diff: %s", got, tt.want, cmp.Diff(tt.want1, got))
+			}
+			if got1 != tt.want1 {
+				t.Errorf("latestMatchingRequiredVersion() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}

@@ -1,0 +1,180 @@
+title: Bitrise.io Cache:Push
+summary: Updates the Cache, if required
+description: "Checks whether cache has to be updated based on the **Cache Paths**
+  and **Ignore Paths** inputs.\nIf it does, the Step creates a new cache archive and
+  uploads it. \nIt won't update/upload the cache if the cache hasn't changed nor in
+  the case of a pull request unless you change the Step's `run_if` property. \nFor
+  caching, you will need the **Bitrise.io Cache:Pull** Step at the beginning of your
+  Workflow (after the **Git Clone Repository** Step but before a dependency installer
+  Step) to download the previous cache, if any. \nThe **Bitrise.io Cache:Push** Step
+  should be the very last Step in your Workflow.\n\n### Configuring the Step\n\n1.
+  Cache any directory or file by adding it in the **Cache paths** field.\nFor most
+  cases, caching will automatically work based on your native build and testing Steps
+  as these automatically configure cache paths in your cache Steps.\nIf adding multiple
+  paths, separate them with a newline.\nIf you have a path in the list which does
+  not exist, it will not cause the Step to fail. \nYou can also specify an update
+  indicator file with the `->` syntax, for example, `update/this -> if/this/file/is/updated.`
+  \nPlease note the indicator points to a file and not to a folder.\n2. In the **Ignore
+  Paths from change check** field, you can set any path which you don't want to do
+  change analysis for.\n- Paths prefixed with an `!` will get ignored from the cache
+  archive.\n- The path can also include `*`, `**`, `/`. \nThe `*` will replace a path
+  element, the `**` will replace part of a path. \nTo exclude a full directory, simply
+  put a `/` behind the directory.\nNote that you can't ignore a path which results
+  in an invalid cache item.\n3. Modify **Working directory** if you wish to set relative
+  cache paths and reference them from a working directory other than `$BITRISE_SOURCE_DIR`.\n4.
+  Select a **Fingerprint Method** option (`file-content-hash` or `file-mod-time`)
+  to detect changes in a directory, file, or in an update indicator file. \nIf changes
+  are detected, new cache gets generated.\n5. If you set **Debug mode?** input to
+  `true`, the Step will print out more detailed logs.\n6. With **Compress cache?**
+  input set to `true`, you can compress the cache archive for faster uploads and downloads,
+  especially useful for node-modules and other huge dependency folders.\n7. In `Ignore
+  paths collected by steps` you can set which files or extensions should be ignored
+  by the Step during the build.\n8. `Cache Upload URL` shows the URL where the cache
+  gets uploaded.\n\n### Troubleshooting\nWe recommend you do not cache any dependency
+  manager lock file (for example, `package.lock`, `gemfile.lock`, `podfile.lock`)
+  as it would override the lock file in your repository.\n\n### Useful links\n- [About
+  caching](https://devcenter.bitrise.io/builds/caching/about-caching-index/)\n- [Caching
+  Cocoapods](https://devcenter.bitrise.io/builds/caching/caching-cocoapods/)\n- [Caching
+  Gradle](https://devcenter.bitrise.io/builds/caching/caching-gradle/)\n\n### Related
+  Steps\n- [Bitrise.io Cache:Pull](https://www.bitrise.io/integrations/steps/cache-pull)\n-
+  [Git Clone Repository](https://www.bitrise.io/integrations/steps/git-clone)"
+website: https://github.com/bitrise-steplib/steps-cache-push
+source_code_url: https://github.com/bitrise-steplib/steps-cache-push.git
+support_url: https://github.com/bitrise-steplib/steps-cache-push/issues
+published_at: 2022-05-20T15:04:58.949481039Z
+source:
+  git: https://github.com/bitrise-steplib/steps-cache-push.git
+  commit: f1aa51a651f8b4076f61a1f099ee0cc954711634
+host_os_tags:
+- osx-10.10
+- ubuntu-14.04
+type_tags:
+- utility
+toolkit:
+  go:
+    package_name: github.com/bitrise-steplib/steps-cache-push
+deps:
+  apt_get:
+  - name: tar
+is_requires_admin_user: false
+is_always_run: false
+is_skippable: true
+run_if: .IsCI | and (not .IsPR)
+inputs:
+- cache_paths: null
+  opts:
+    description: |-
+      Cache these paths. Separate paths with a newline.
+
+      A path item can be either a file or a directory.
+
+      You can also specify an "update indicator file" with the `->`
+      syntax: `update/this -> if/this/file/is/updated`.
+      *The indicator can only be a file!*
+
+      If you have a path in the list which doesn't exist that will not cause
+      this step to fail. It'll be logged but the step will try to gather
+      as many specified & valid paths as it can, and just print a warning
+      about the invalid items.
+    summary: Cache these paths. Separate paths with a newline.
+    title: Cache paths
+- ignore_check_on_paths: null
+  opts:
+    description: "These paths will be ignored from change checking.\nIf something
+      has changed under the specified path(s) and nothing else has changed,\nthen
+      the cache won't be updated.\n\n**Paths prefixed with an `!` will get ignored
+      from the cache archive**.\nIf a path is located inside a specified Cache Path
+      item and not prefixed with an `!`,\nit'll be included in the cache archive,
+      but won't be checked for changes. \n\nThe path can also include `*`, `**`, `/`.\n`*`
+      will replace a path element (for example, `a/*/b` will match `a/x/b`).\n`**`
+      will replace part of a path (for example, `a/**/b` will match `a/x/y/z/b`).\nTo
+      exclude a full directory like `/my/full/path`, simply put a `/` behind `/my/full/path`,\nso
+      it will be `/my/full/path/`.\n\nImportant: you can't ignore a path which results
+      in an invalid cache item.\nFor example, if you specify the path `a/path/to/cache`
+      to be cached, you\ncan't ignore `a/path/to`, as that would ignore every file
+      from checking\nfor a change and no fingerprint could be generated for `a/path/to/cache`.\nYou
+      can ignore paths inside a Cache Path, however, if, for example, a path is `a/path/to/cache`,
+      you can ignore `a/path/to/cache/.ignore-me`,\nunless that's the only file inside
+      `a/path/to/cache`.\n\nThe point is: you should not specify an ignore rule which
+      would completely\nignore a specified Cache Path item, as that would result in
+      a path which\ncan't be checked for updates,changes or fingerprints."
+    summary: Define the paths which have to be ignored when checking for cache changes.
+    title: Ignore Paths from change check
+- opts:
+    description: Working directory path - should be an absolute path.
+    summary: Working directory path
+    title: Working directory path
+  workdir: $BITRISE_SOURCE_DIR
+- fingerprint_method: file-content-hash
+  opts:
+    description: |-
+      The specified Fingerprint Method will be used to calculate
+      fingerprints for the cached files.
+
+      The (file) fingerprint is used to check whether
+      the cached files did change - if it changed, a new cache will be generated.
+      If the fingerprint matches the previous cache version's fingerprint, then
+      no new cache will be generated.
+
+      **Regardless of which method you choose** the following file attributes will
+      be used to create the fingerprint **in addition** to the method you choose:
+
+      * File path
+      * File size
+      * File permission bits
+
+      Information about the options:
+
+      * `file-content-hash` : create a file content checksum hash for every file in the cache,
+        and use that as the fingerprint source of the file. This means that **the full file content will be loaded** in
+        order to create the checksum hash!
+      * `file-mod-time` : use the file's "modified at" time information. For larger files this method
+        can be significantly faster, as the file doesn't have to be loaded to calculate this information!
+
+      **Note**: in case of "update indicator files", the fingerprint method will always be `file-content-hash`,
+      regardless of which option you select here.
+    summary: Fingerprint method, used for checking file changes.
+    title: Fingerprint Method
+    value_options:
+    - file-content-hash
+    - file-mod-time
+- is_debug_mode: "false"
+  opts:
+    description: If debug mode is enabled the step will print verbose logs.
+    is_required: true
+    summary: If debug mode is enabled, the step will print verbose logs.
+    title: Debug mode?
+    value_options:
+    - "true"
+    - "false"
+- compress_archive: "false"
+  opts:
+    description: If Compress cache is set to `true`, then it will upload a compressed
+      archive.
+    is_required: true
+    summary: If Compress cache is set to `true`, then it will upload a compressed
+      archive.
+    title: Compress cache?
+    value_options:
+    - "true"
+    - "false"
+- bitrise_cache_include_paths: $BITRISE_CACHE_INCLUDE_PATHS
+  opts:
+    is_dont_change_value: true
+    is_required: true
+    summary: Collected dependencies by steps from the build
+    title: Cache paths collected by steps
+- bitrise_cache_exclude_paths: $BITRISE_CACHE_EXCLUDE_PATHS
+  opts:
+    is_dont_change_value: true
+    is_required: true
+    summary: Changing files or extensions are collected regularly by steps from the
+      build.
+    title: Ignore paths collected by steps
+- cache_api_url: $BITRISE_CACHE_API_URL
+  opts:
+    description: Cache Upload URL
+    is_dont_change_value: true
+    is_required: true
+    summary: Cache Upload URL
+    title: Cache Upload URL

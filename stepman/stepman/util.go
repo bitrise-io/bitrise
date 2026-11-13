@@ -1,0 +1,488 @@
+package stepman
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/bitrise-io/go-utils/command/git"
+	"github.com/bitrise-io/go-utils/fileutil"
+	"github.com/bitrise-io/go-utils/retry"
+	"github.com/bitrise-io/go-utils/urlutil"
+	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bitrise-io/go-utils/v2/ziputil"
+	version "github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v2"
+
+	"github.com/bitrise-io/bitrise/v3/stepman/internal/httpfetch"
+	"github.com/bitrise-io/bitrise/v3/stepman/models"
+)
+
+// ParseStepGroupInfoModel ...
+func ParseStepGroupInfoModel(pth string) (models.StepGroupInfoModel, bool, error) {
+	if exist, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
+		return models.StepGroupInfoModel{}, false, err
+	} else if !exist {
+		return models.StepGroupInfoModel{}, false, nil
+	}
+
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepGroupInfoModel{}, true, err
+	}
+
+	var globalStepInfo models.StepGroupInfoModel
+	if err := yaml.Unmarshal(bytes, &globalStepInfo); err != nil {
+		return models.StepGroupInfoModel{}, true, err
+	}
+
+	return globalStepInfo, true, nil
+}
+
+// ParseStepDefinition ...
+func ParseStepDefinition(pth string, validate bool) (models.StepModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepModel{}, err
+	}
+
+	return parseStepModel(bytes, validate)
+}
+
+func parseStepModel(bytes []byte, validate bool) (models.StepModel, error) {
+	var stepModel models.StepModel
+	if err := yaml.Unmarshal(bytes, &stepModel); err != nil {
+		return models.StepModel{}, err
+	}
+
+	if err := stepModel.Normalize(); err != nil {
+		return models.StepModel{}, err
+	}
+
+	if validate {
+		if err := stepModel.Audit(); err != nil {
+			return models.StepModel{}, err
+		}
+	}
+
+	if err := stepModel.FillMissingDefaults(); err != nil {
+		return models.StepModel{}, err
+	}
+
+	return stepModel, nil
+}
+
+// ParseStepGroupInfo ...
+func ParseStepGroupInfo(pth string) (models.StepGroupInfoModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepGroupInfoModel{}, err
+	}
+
+	var stepGroupInfo models.StepGroupInfoModel
+	if err := yaml.Unmarshal(bytes, &stepGroupInfo); err != nil {
+		return models.StepGroupInfoModel{}, err
+	}
+
+	return stepGroupInfo, nil
+}
+
+// ParseStepCollection ...
+func ParseStepCollection(pth string) (models.StepCollectionModel, error) {
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepCollectionModel{}, err
+	}
+
+	var stepCollection models.StepCollectionModel
+	if err := yaml.Unmarshal(bytes, &stepCollection); err != nil {
+		return models.StepCollectionModel{}, err
+	}
+	return stepCollection, nil
+}
+
+// DownloadStep ...
+func DownloadStep(collectionURI string, collection models.StepCollectionModel, id, version, commithash string, log Logger, fetcher httpfetch.Client) error {
+	downloadLocations, err := collection.GetDownloadLocations(id, version)
+	if err != nil {
+		return err
+	}
+
+	route, found := ReadRoute(collectionURI)
+	if !found {
+		return fmt.Errorf("no routing found for lib: %s", collectionURI)
+	}
+
+	stepPth := GetStepCacheDirPath(route, id, version)
+	if exist, err := pathutil.NewPathChecker().IsPathExists(stepPth); err != nil {
+		return err
+	} else if exist {
+		return nil
+	}
+
+	// Materialize into a staging dir next to the cache dir and move it into place
+	// only once it is complete: the cache is keyed by the existence of stepPth
+	// alone (see the check above and activateStepSource), so a half-written
+	// stepPth would be served as a valid cache hit on the next run.
+	if err := os.MkdirAll(filepath.Dir(stepPth), 0o755); err != nil {
+		return fmt.Errorf("create step cache dir: %w", err)
+	}
+	// Staging under the cache dir's parent keeps the rename on one filesystem.
+	stagingDir, err := os.MkdirTemp(filepath.Dir(stepPth), ".staging-")
+	if err != nil {
+		return fmt.Errorf("create staging dir: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(stagingDir); err != nil {
+			log.Warnf("Failed to remove staging dir %s: %s", stagingDir, err)
+		}
+	}()
+
+	if err := DownloadStepSourceArchive(stagingDir, downloadLocations, id, version, commithash, log, fetcher); err != nil {
+		return err
+	}
+
+	if err := os.Rename(stagingDir, stepPth); err != nil {
+		return fmt.Errorf("move staged step to %s: %w", stepPth, err)
+	}
+	return nil
+}
+
+// DownloadStepSourceArchive fetches a step's source into destDir from the given
+// download locations in priority order.
+// commithash applies only to git source.
+func DownloadStepSourceArchive(destDir string, downloadLocations []models.DownloadLocationModel, id, version, commithash string, log Logger, fetcher httpfetch.Client) error {
+	for _, downloadLocation := range downloadLocations {
+		switch downloadLocation.Type {
+		case "zip":
+			if err := downloadStepZip(fetcher, downloadLocation.Src, destDir, log); err != nil {
+				log.Warnf("Failed to download step.zip: %s", err)
+			} else {
+				return nil
+			}
+		case "git":
+			err := retry.Times(2).Wait(3 * time.Second).Try(func(attempt uint) error {
+				// Clone into a clean target. git clone refuses a non-empty dir, so a
+				// retry after an attempt that already populated stepPth (e.g. a clone
+				// that succeeded but failed the commit-hash check) would otherwise
+				// fail with a misleading "already exists and is not empty" error,
+				// masking the real cause.
+				if err := os.RemoveAll(destDir); err != nil {
+					return fmt.Errorf("clean %s before clone: %s", destDir, err)
+				}
+				repo, err := git.New(destDir)
+				if err != nil {
+					return err
+				}
+
+				if err := repo.CloneTagOrBranch(downloadLocation.Src, version).Run(); err != nil {
+					return err
+				}
+
+				hash, err := repo.RevParse("HEAD").RunAndReturnTrimmedCombinedOutput()
+				if err != nil {
+					return err
+				}
+
+				if hash != commithash {
+					return fmt.Errorf("commit hash (%s) doesn't match the one specified (%s) for the version tag (%s)", hash, commithash, version)
+				}
+				return nil
+			})
+
+			if err != nil {
+				log.Warnf("Failed to clone step (%s): %v", downloadLocation.Src, err)
+			} else {
+				return nil
+			}
+		default:
+			return fmt.Errorf("failed to download: Invalid download location (%#v) for step %#v (%#v)", downloadLocation, id, version)
+		}
+	}
+
+	return errors.New("failed to download step")
+}
+
+// downloadStepZip fetches the step source archive at url into a temp file and
+// extracts it into destDir. Callers own destDir's atomicity: DownloadStep stages
+// into a temp dir it renames into the cache, and the V2 API path passes a fresh
+// per-activation dir.
+func downloadStepZip(fetcher httpfetch.Client, url, destDir string, log Logger) error {
+	tmpDir, err := pathutil.NewPathProvider().CreateTempDir("stepman-step-zip")
+	if err != nil {
+		return fmt.Errorf("create temp dir: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			log.Warnf("Failed to remove temp dir %s: %s", tmpDir, err)
+		}
+	}()
+
+	zipPath := filepath.Join(tmpDir, "step.zip")
+	if err := fetcher.Download(context.Background(), zipPath, url); err != nil {
+		return fmt.Errorf("download step zip: %w", err)
+	}
+	zipManager := ziputil.NewZipManager(pathutil.NewPathChecker())
+	return zipManager.UnZip(zipPath, destDir)
+}
+
+func addStepVersionToStepGroup(step models.StepModel, stepVersionStr string, stepGroup models.StepGroupModel) (models.StepGroupModel, error) {
+	if stepGroup.LatestVersionNumber != "" {
+		latestVersion, err := version.NewVersion(stepGroup.LatestVersionNumber)
+		if err != nil {
+			return models.StepGroupModel{}, err
+		}
+		stepVersion, err := version.NewVersion(stepVersionStr)
+		if err != nil {
+			return models.StepGroupModel{}, err
+		}
+		if latestVersion.LessThan(stepVersion) {
+			stepGroup.LatestVersionNumber = stepVersionStr
+		}
+	} else {
+		stepGroup.LatestVersionNumber = stepVersionStr
+	}
+	stepGroup.Versions[stepVersionStr] = step
+	return stepGroup, nil
+}
+
+func parseStepCollection(route SteplibRoute, templateCollection models.StepCollectionModel) (models.StepCollectionModel, error) {
+	collection := models.StepCollectionModel{
+		FormatVersion:         templateCollection.FormatVersion,
+		GeneratedAtTimeStamp:  time.Now().Unix(),
+		SteplibSource:         templateCollection.SteplibSource,
+		DownloadLocations:     templateCollection.DownloadLocations,
+		AssetsDownloadBaseURI: templateCollection.AssetsDownloadBaseURI,
+		Steps:                 models.StepHash{},
+	}
+
+	stepsCollectionDirPth := GetLibraryBaseDirPath(route)
+	if err := filepath.Walk(stepsCollectionDirPth, func(pth string, f os.FileInfo, err error) error {
+		truncatedPath := strings.ReplaceAll(pth, stepsCollectionDirPth+"/", "")
+		match, matchErr := regexp.MatchString("([a-z]+).yml", truncatedPath)
+		if matchErr != nil {
+			return matchErr
+		}
+
+		if match {
+			components := strings.Split(truncatedPath, "/")
+			if len(components) == 4 {
+				stepsDirName := components[0]
+				stepID := components[1]
+				stepVersion := components[2]
+
+				step, parseErr := ParseStepDefinition(pth, true)
+				if parseErr != nil {
+					return parseErr
+				}
+
+				stepGroupInfo := models.StepGroupInfoModel{}
+
+				// Check for step-info.yml - STEP_SPEC_DIR/steps/step-id/step-info.yml
+				stepGroupInfoPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "step-info.yml")
+				if exist, err := pathutil.NewPathChecker().IsPathExists(stepGroupInfoPth); err != nil {
+					return err
+				} else if exist {
+					deprecationInfo, err := ParseStepGroupInfo(stepGroupInfoPth)
+					if err != nil {
+						return err
+					}
+
+					stepGroupInfo.RemovalDate = deprecationInfo.RemovalDate
+					stepGroupInfo.DeprecateNotes = deprecationInfo.DeprecateNotes
+					stepGroupInfo.Maintainer = deprecationInfo.Maintainer
+				}
+
+				// Check for assets - STEP_SPEC_DIR/steps/step-id/assets
+				if collection.AssetsDownloadBaseURI != "" {
+					assetsFolderPth := filepath.Join(stepsCollectionDirPth, stepsDirName, stepID, "assets")
+					exist, err := pathutil.NewPathChecker().IsPathExists(assetsFolderPth)
+					if err != nil {
+						return err
+					}
+					if exist {
+						assetsMap := map[string]string{}
+						err := filepath.Walk(assetsFolderPth, func(pth string, f os.FileInfo, err error) error {
+							_, file := filepath.Split(pth)
+							if pth != assetsFolderPth && file != "" {
+								assetURI, err := urlutil.Join(collection.AssetsDownloadBaseURI, stepID, "assets", file)
+								if err != nil {
+									return err
+								}
+								assetsMap[file] = assetURI
+							}
+							return nil
+						})
+
+						if err != nil {
+							return err
+						}
+
+						step.AssetURLs = assetsMap
+						stepGroupInfo.AssetURLs = assetsMap
+					}
+				}
+
+				// Add to stepgroup
+				stepGroup, found := collection.Steps[stepID]
+				if !found {
+					stepGroup = models.StepGroupModel{
+						Versions:            map[string]models.StepModel{},
+						Info:                models.StepGroupInfoModel{},
+						LatestVersionNumber: "",
+					}
+				}
+				stepGroup, err = addStepVersionToStepGroup(step, stepVersion, stepGroup)
+				if err != nil {
+					return err
+				}
+
+				stepGroup.Info = stepGroupInfo
+
+				collection.Steps[stepID] = stepGroup
+			}
+		}
+
+		return err
+	}); err != nil {
+		return models.StepCollectionModel{}, fmt.Errorf("failed to walk through path, error: %s", err)
+	}
+
+	return collection, nil
+}
+
+func generateSlimStepModel(collection models.StepCollectionModel) models.StepCollectionModel {
+
+	slimCollection := models.StepCollectionModel{
+		FormatVersion:         collection.FormatVersion,
+		GeneratedAtTimeStamp:  collection.GeneratedAtTimeStamp,
+		SteplibSource:         collection.SteplibSource,
+		DownloadLocations:     collection.DownloadLocations,
+		AssetsDownloadBaseURI: collection.AssetsDownloadBaseURI,
+		Steps:                 models.StepHash{},
+	}
+
+	for stepID, stepGroupModel := range collection.Steps {
+		slimCollection.Steps[stepID] = models.StepGroupModel{
+			Info:                stepGroupModel.Info,
+			Versions:            map[string]models.StepModel{stepGroupModel.LatestVersionNumber: stepGroupModel.Versions[stepGroupModel.LatestVersionNumber]},
+			LatestVersionNumber: stepGroupModel.LatestVersionNumber,
+		}
+	}
+
+	return slimCollection
+}
+
+// WriteStepSpecToFile ...
+func WriteStepSpecToFile(templateCollection models.StepCollectionModel, route SteplibRoute) error {
+	pth := GetStepSpecPath(route)
+
+	if exist, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
+		return err
+	} else if !exist {
+		dir, _ := path.Split(pth)
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := os.Remove(pth)
+		if err != nil {
+			return err
+		}
+	}
+
+	collection, err := parseStepCollection(route, templateCollection)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := json.MarshalIndent(collection, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	if err := fileutil.WriteBytesToFile(pth, bytes); err != nil {
+		return err
+	}
+
+	pth = GetSlimStepSpecPath(route)
+	slimCollection := generateSlimStepModel(collection)
+	if err != nil {
+		return err
+	}
+
+	bytes, err = json.MarshalIndent(slimCollection, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	return fileutil.WriteBytesToFile(pth, bytes)
+}
+
+// ReadStepSpec ...
+func ReadStepSpec(uri string) (models.StepCollectionModel, error) {
+	route, found := ReadRoute(uri)
+	if !found {
+		return models.StepCollectionModel{}, errors.New("No route found for lib: " + uri)
+	}
+	pth := GetStepSpecPath(route)
+	bytes, err := fileutil.ReadBytesFromFile(pth)
+	if err != nil {
+		return models.StepCollectionModel{}, err
+	}
+	var stepLib models.StepCollectionModel
+	if err := json.Unmarshal(bytes, &stepLib); err != nil {
+		return models.StepCollectionModel{}, err
+	}
+
+	return stepLib, nil
+}
+
+// ReadStepVersionInfo ...
+func ReadStepVersionInfo(collectionURI, stepID, stepVersionID string) (models.StepVersionModel, error) {
+	// Input validation
+	if stepID == "" {
+		return models.StepVersionModel{}, errors.New("missing required input: step id")
+	}
+
+	// Check if step exist in collection
+	collection, err := ReadStepSpec(collectionURI)
+	if err != nil {
+		return models.StepVersionModel{}, fmt.Errorf("failed to read steps spec (spec.json), err: %s", err)
+	}
+
+	stepWithVersion, stepFound, versionFound := collection.GetStepVersion(stepID, stepVersionID)
+	if !stepFound {
+		return models.StepVersionModel{}, fmt.Errorf("collection doesn't contain step with id: %s", stepID)
+	} else if !versionFound {
+		return models.StepVersionModel{}, fmt.Errorf("collection doesn't contain step (%s) with version: %s", stepID, stepVersionID)
+	}
+
+	return stepWithVersion, nil
+}
+
+// ReGenerateLibrarySpec ...
+func ReGenerateLibrarySpec(route SteplibRoute) error {
+	pth := GetLibraryBaseDirPath(route)
+	if exists, err := pathutil.NewPathChecker().IsPathExists(pth); err != nil {
+		return err
+	} else if !exists {
+		return errors.New("not initialized")
+	}
+
+	specPth := GetStepCollectionSpecPath(route)
+	collection, err := ParseStepCollection(specPth)
+	if err != nil {
+		return err
+	}
+
+	return WriteStepSpecToFile(collection, route)
+}

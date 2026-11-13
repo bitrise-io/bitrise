@@ -8,7 +8,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/models"
 	"github.com/bitrise-io/go-utils/v2/analytics"
 	"github.com/bitrise-io/go-utils/v2/env"
-	"github.com/bitrise-io/stepman/activator"
+	"github.com/bitrise-io/bitrise/v3/stepman/activator"
 	"github.com/stretchr/testify/require"
 )
 

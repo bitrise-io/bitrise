@@ -13,7 +13,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/utils"
 	"github.com/bitrise-io/go-utils/pointers"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 )
 
 type buildRunResultCollector struct {

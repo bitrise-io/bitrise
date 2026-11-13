@@ -28,9 +28,9 @@ import (
 	"github.com/bitrise-io/go-utils/retry"
 	coreanalytics "github.com/bitrise-io/go-utils/v2/analytics"
 	logV2 "github.com/bitrise-io/go-utils/v2/log"
-	stepmanModels "github.com/bitrise-io/stepman/models"
-	"github.com/bitrise-io/stepman/stepid"
-	"github.com/bitrise-io/stepman/toolkits"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
+	"github.com/bitrise-io/bitrise/v3/stepman/stepid"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 )
 
 func (r WorkflowRunner) runWorkflow(

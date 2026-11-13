@@ -16,7 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/fileutil"
 	"github.com/bitrise-io/go-utils/pathutil"
 	"github.com/bitrise-io/go-utils/pointers"
-	stepmanModels "github.com/bitrise-io/stepman/models"
+	stepmanModels "github.com/bitrise-io/bitrise/v3/stepman/models"
 	"gopkg.in/yaml.v2"
 )
 

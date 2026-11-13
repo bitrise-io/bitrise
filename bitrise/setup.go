@@ -11,7 +11,7 @@ import (
 	"github.com/bitrise-io/bitrise/v3/plugins"
 	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/bitrise-io/go-utils/colorstring"
-	"github.com/bitrise-io/stepman/toolkits"
+	"github.com/bitrise-io/bitrise/v3/stepman/toolkits"
 )
 
 type SetupMode string
