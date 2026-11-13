@@ -1,0 +1,113 @@
+title: Script
+summary: Run any custom script you want. The power is in your hands. Use it wisely!
+description: "\nRun any custom script you want as part of your Bitrise build. All
+  you need to do is specifying the script runner  \n(the default is bash), add the
+  script, and run a build. \n\nYou can also read the script from a file.\n\n### Configuring
+  the Step\n\n1. Set the **Execute with/runner binary** input.\n\n   Either define
+  the path of the executor, or simply just add its name if you know it is available
+  in the PATH, such as `ruby` or `python`. It can even be a command, such as `go run`.
+  \ \n\n1. Write your script in the **Script content** input or specify a script file.\n\n
+  \  If you have a script in your repository, you can simply run it from the file,
+  either by calling it in the **Script content** input  \n   or, optionally, by specifying
+  the path to it in the **Script file path** input. \n   \n   Be aware that relative
+  paths are relative to the value set in the **Working directory** input - by default,
+  it is your app's source directory.\n\n### Troubleshooting\n\nIf the script fails,
+  check the executor first - obviously, a Python script will not work with a bash
+  runner.\n\nNote that in certain cases, the filename or the filepath actually matters.
+  For example, the `go run` command only accepts `.go` files.\n\n### Useful links\n\n*
+  [System reports to check out the pre-installed executors](https://stacks.bitrise.io)\n*
+  [Exporting to Test Reports from custom Script Steps](https://devcenter.bitrise.io/testing/exporting-to-test-reports-from-custom-script-steps/)\n\n###
+  Related Steps\n\n* [Script Runner](https://www.bitrise.io/integrations/steps/script-runner)\n*
+  [Remote Bash Script Runner](https://www.bitrise.io/integrations/steps/remote-script-runner)"
+website: https://github.com/bitrise-io/steps-script
+source_code_url: https://github.com/bitrise-io/steps-script
+support_url: https://github.com/bitrise-io/steps-script/issues
+published_at: 2023-09-18T13:21:55.992180288Z
+source:
+  git: https://github.com/bitrise-steplib/steps-script.git
+  commit: 48d256c50746e2625a25cb7499bc22c62e04cf71
+host_os_tags:
+- osx
+- ubuntu
+type_tags:
+- utility
+is_requires_admin_user: false
+is_always_run: false
+is_skippable: false
+inputs:
+- content: |-
+    #!/usr/bin/env bash
+    # fail if any commands fails
+    set -e
+    # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
+    set -o pipefail
+    # debug log
+    set -x
+
+    # write your script here
+    echo "Hello World!"
+
+    # or run a script from your repository, like:
+    # bash ./path/to/script.sh
+    # not just bash, e.g.:
+    # ruby ./path/to/script.rb
+  opts:
+    description: |
+      Type your script here.
+
+      **Make sure that it returns a non zero exit code in case of an error!**
+      The step will only fail if your script returns with a non zero exit code!
+    is_expand: false
+    is_required: true
+    title: Script content
+- opts:
+    category: Config
+    description: |
+      The executor to be used for running the script.
+      If it's available in the PATH you can just
+      specify `ruby` or `python`, generally
+      if you know the path of the executor you should
+      define that, like `/bin/bash`.
+
+      You can even specify an execution command
+      like `go run` instead of just a binary.
+    is_required: true
+    title: Execute with / runner binary
+  runner_bin: /bin/bash
+- opts:
+    category: Config
+    description: |
+      This directory will be set as the current working
+      directory for the script.
+
+      Any relative path in the Script (content) will be
+      relative to this directory.
+    title: Working directory
+  working_dir: $BITRISE_SOURCE_DIR
+- opts:
+    category: Config
+    description: |
+      Save the specified script content to this path
+      before execution. The file will be removed after
+      the script finishes.
+
+      Generally you don't have to define this but
+      there might be cases where the file's name or path
+      actually matters.
+      For example `go run` only accepts `.go` files.
+
+      If you specify a relative path then it will be
+      relative to the *working directory* (which you
+      can optionally specify as well).
+    title: Script file path
+  script_file_path: ""
+- is_debug: "no"
+  opts:
+    category: Debug
+    description: |
+      If debug=yes the step will print debug infos about
+      the working dir, tmp file path, exit code, etc.
+    title: Debug print?
+    value_options:
+    - "no"
+    - "yes"

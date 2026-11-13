@@ -1,0 +1,26 @@
+title: Hello Step
+summary: Says hello, breaking change.
+description: |
+  Major rewrite. Now greets in 27 languages.
+website: https://example.com/hello-step
+source_code_url: https://github.com/example/hello-step
+support_url: https://github.com/example/hello-step/issues
+published_at: 2025-06-01T09:15:00Z
+source:
+  git: https://github.com/example/hello-step.git
+  commit: cccc3333cccc3333cccc3333cccc3333cccc3333
+type_tags:
+- utility
+toolkit:
+  go:
+    package_name: github.com/example/hello-step
+is_always_run: false
+is_skippable: false
+inputs:
+- greeting_language: en
+  opts:
+    title: Greeting language
+    value_options:
+    - en
+    - fr
+    - es

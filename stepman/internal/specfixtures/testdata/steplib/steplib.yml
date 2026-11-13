@@ -1,0 +1,9 @@
+---
+format_version: 1.0.0
+steplib_source: https://github.com/example/test-steplib.git
+assets_download_base_uri: https://assets.example.com/steps
+download_locations:
+- type: zip
+  src: https://archives.example.com/
+- type: git
+  src: source/git
