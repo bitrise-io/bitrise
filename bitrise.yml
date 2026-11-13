@@ -697,21 +697,39 @@ step_bundles:
 
             test_exit_code=0
 
-            test_log="${BITRISE_DEPLOY_DIR}/stepman_integration_tests.log"
+            integration_log="${BITRISE_DEPLOY_DIR}/stepman_integration_integration.log"
             INTEGRATION_TEST_BINARY_PATH="$current_stepman" go test -v ./stepman/_tests/integration/... 2>&1 \
-              | tee "$test_log" || test_exit_code=$?
+              | tee "$integration_log" || test_exit_code=$?
+            go-junit-report -in "$integration_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_integration.xml"
+
+            indexgen_log="${BITRISE_DEPLOY_DIR}/stepman_integration_indexgen.log"
             go test -tags integration -v ./stepman/steplibrary/indexgen/... 2>&1 \
-              | tee -a "$test_log" || test_exit_code=$?
+              | tee "$indexgen_log" || test_exit_code=$?
+            go-junit-report -in "$indexgen_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_indexgen.xml"
+
+            activation_log="${BITRISE_DEPLOY_DIR}/stepman_integration_activation.log"
             go test -tags integration -v -timeout 30m ./stepman/_tests/activation/... 2>&1 \
-              | tee -a "$test_log" || test_exit_code=$?
-            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_tests.xml"
+              | tee "$activation_log" || test_exit_code=$?
+            go-junit-report -in "$activation_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_activation.xml"
 
             exit $test_exit_code
     - custom-test-results-export@1:
         title: Export stepman integration test results
         inputs:
         - test_name: Stepman integration tests on $TEST_OS_NAME
-        - base_path: $BITRISE_DEPLOY_DIR/stepman_integration_tests.xml
+        - base_path: $BITRISE_DEPLOY_DIR/stepman_integration_integration.xml
+        - search_pattern: "*"
+    - custom-test-results-export@1:
+        title: Export stepman indexgen test results
+        inputs:
+        - test_name: Stepman indexgen tests on $TEST_OS_NAME
+        - base_path: $BITRISE_DEPLOY_DIR/stepman_integration_indexgen.xml
+        - search_pattern: "*"
+    - custom-test-results-export@1:
+        title: Export stepman activation test results
+        inputs:
+        - test_name: Stepman activation tests on $TEST_OS_NAME
+        - base_path: $BITRISE_DEPLOY_DIR/stepman_integration_activation.xml
         - search_pattern: "*"
     - deploy-to-bitrise-io@2: {}
 
