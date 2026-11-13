@@ -37,6 +37,23 @@ builds:
   - -X github.com/bitrise-io/bitrise/v3/version.Commit={{ .FullCommit }}
   - -X github.com/bitrise-io/bitrise/v3/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
 
+- id: stepman
+  main: ./stepman
+  binary: stepman
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - arm64
+  ldflags:
+  - -w -s # strip debug info and symbol table
+  - -X github.com/bitrise-io/bitrise/v3/stepman/version.Version={{ .Version }}
+  - -X github.com/bitrise-io/bitrise/v3/stepman/version.Commit={{ .FullCommit }}
+  - -X github.com/bitrise-io/bitrise/v3/stepman/version.BuildNumber={{ index .Env "BITRISE_BUILD_NUMBER" }}
+
 archives:
   # GitHub release should contain the raw binaries (no zip or tar.gz)
 - formats: [ binary ]

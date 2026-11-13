@@ -22,6 +22,8 @@ pipelines:
       run_integration_tests_linux: {}
       run_envman_integration_tests_macos: {}
       run_envman_integration_tests_linux: {}
+      run_stepman_integration_tests_macos: {}
+      run_stepman_integration_tests_linux: {}
       run_with_group_based_containerization_integration_tests_linux: {}
       run_step_based_containerization_integration_tests_linux: {}
       test_binary_build_macos: {}
@@ -198,6 +200,34 @@ workflows:
         - IGNORE_CUSTOM_GOLANG: "true"
     - bundle::setup_go_junit_report: {}
     - bundle::run_envman_integration_tests: {}
+    meta:
+      bitrise.io:
+        stack: ubuntu-noble-24.04-bitrise-2025-android
+        machine_type_id: g2.linux.medium
+
+  run_stepman_integration_tests_macos:
+    envs:
+    - TEST_OS_NAME: macOS
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies: {}
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_stepman_integration_tests: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-latest-stable
+        machine_type_id: g2.mac.large
+
+  run_stepman_integration_tests_linux:
+    envs:
+    - TEST_OS_NAME: Linux
+    steps:
+    - bundle::setup_repo: {}
+    - bundle::install_dependencies:
+        inputs:
+        - IGNORE_CUSTOM_GOLANG: "true"
+    - bundle::setup_go_junit_report: {}
+    - bundle::run_stepman_integration_tests: {}
     meta:
       bitrise.io:
         stack: ubuntu-noble-24.04-bitrise-2025-android
@@ -643,6 +673,41 @@ step_bundles:
         inputs:
         - test_name: Envman parity tests on $TEST_OS_NAME (stack envman)
         - base_path: $BITRISE_DEPLOY_DIR/envman_parity_tests_stack.xml
+        - search_pattern: "*"
+    - deploy-to-bitrise-io@2: {}
+
+  run_stepman_integration_tests:
+    steps:
+    - script@1:
+        title: Run stepman integration tests
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -exo pipefail
+
+            # Build the standalone stepman binary under test, named stepman like the release binaries
+            current_stepman="$(pwd)/_tmp/stepman/stepman"
+            export CGO_ENABLED=0
+            go build -o "$current_stepman" ./stepman
+
+            export PR="" PULL_REQUEST_ID=""
+
+            # Prevent this script's content from being added to the test process environment
+            unset content
+
+            test_exit_code=0
+
+            test_log="${BITRISE_DEPLOY_DIR}/stepman_integration_tests.log"
+            INTEGRATION_TEST_BINARY_PATH="$current_stepman" go test -v ./stepman/_tests/integration/... 2>&1 \
+              | tee "$test_log" || test_exit_code=$?
+            go-junit-report -in "$test_log" -out "${BITRISE_DEPLOY_DIR}/stepman_integration_tests.xml"
+
+            exit $test_exit_code
+    - custom-test-results-export@1:
+        title: Export stepman integration test results
+        inputs:
+        - test_name: Stepman integration tests on $TEST_OS_NAME
+        - base_path: $BITRISE_DEPLOY_DIR/stepman_integration_tests.xml
         - search_pattern: "*"
     - deploy-to-bitrise-io@2: {}
 
