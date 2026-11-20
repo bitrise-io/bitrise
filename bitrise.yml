@@ -44,7 +44,6 @@ workflows:
         inputs:
         - client_config: "$GCP_CLIENT_CONFIG"
         - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
-        - verbose: true
     - script@1:
         inputs:
         - content: |-
