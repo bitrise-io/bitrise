@@ -44,7 +44,6 @@ workflows:
         inputs:
         - client_config: "$GCP_CLIENT_CONFIG"
         - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
-        - verbose: true
     - script@1:
         inputs:
         - content: |-
@@ -109,8 +108,7 @@ workflows:
     - trigger-bitrise-workflow@0:
         inputs:
         - api_token: $CONTROL_CENTER_TRIGGER_KEY
-        - workflow_id: binary-tool-release
-        - exported_environment_variable_names: GIT_REPOSITORY_URL
+        - workflow_id: bitrise-cli-release
         - app_slug: $CONTROL_CENTER_APP_SLUG
 
   run_lint:
@@ -264,22 +262,18 @@ workflows:
   create-release:
     description: Creates Linux and Darwin binaries, then publishes a GitHub release
     envs:
-    - GITHUB_TOKEN: $GIT_BOT_USER_ACCESS_TOKEN # Goreleaser expects this env var
+    - GITHUB_TOKEN: $GITHUB_TOKEN_BITRISE_IO_RELEASES # Goreleaser expects this env var
     # R2 bucket connection params
     - AWS_ENDPOINT_URL: $AWS_ENDPOINT_PROD
     - AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID_PROD
     - AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY_PROD
     steps:
-    - script@1:
-        title: Fetch GCS bucket credentials
+    # Exports GOOGLE_APPLICATION_CREDENTIALS, which Goreleaser's GCS upload reads
+    - authenticate-with-gcp@0:
+        title: Authenticate with GCP (workload identity)
         inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-
-            echo "$GCS_BITRISE_CLI_BUCKET_CREDENTIALS" > /tmp/gcs_service_account.json
-            # Goreleaser expects this env var:
-            envman add --key GOOGLE_APPLICATION_CREDENTIALS --value /tmp/gcs_service_account.json
+        - client_config: $GCP_CLI_RELEASE_CLIENT_CONFIG
+        - audience: https://iam.googleapis.com/projects/813711872101/locations/global/workloadIdentityPools/bitrise-ci/providers/bitrise-oidc
     - script@1:
         title: Goreleaser (create binaries + publish to GH)
         deps:
