@@ -104,11 +104,18 @@ workflows:
     triggers:
       tag:
       - name: "*.*.*"
+    envs:
+    - TOOLINGCC_RELEASE_TAG: $BITRISE_GIT_TAG
+    - TOOLINGCC_RELEASE_COMMIT: $BITRISE_GIT_COMMIT
     steps:
     - trigger-bitrise-workflow@0:
         inputs:
         - api_token: $CONTROL_CENTER_TRIGGER_KEY
         - workflow_id: bitrise-cli-release
+        - exported_environment_variable_names: TOOLINGCC_RELEASE_TAG|TOOLINGCC_RELEASE_COMMIT
+        - branch: master
+        - tag: ""
+        - commit_hash: ""
         - app_slug: $CONTROL_CENTER_APP_SLUG
 
   run_lint:
