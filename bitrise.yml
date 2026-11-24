@@ -113,7 +113,6 @@ workflows:
         - api_token: $CONTROL_CENTER_TRIGGER_KEY
         - workflow_id: bitrise-cli-release
         - exported_environment_variable_names: TOOLINGCC_RELEASE_TAG|TOOLINGCC_RELEASE_COMMIT
-        # Control Center reads the release ref from TOOLINGCC_RELEASE_*. Its own build ref has to point at the repo holding its bitrise.yml, not this one.
         - branch: master
         - tag: ""
         - commit_hash: ""
