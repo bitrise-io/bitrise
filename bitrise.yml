@@ -104,19 +104,26 @@ workflows:
     triggers:
       tag:
       - name: "*.*.*"
-    envs:
-    - TOOLINGCC_RELEASE_TAG: $BITRISE_GIT_TAG
-    - TOOLINGCC_RELEASE_COMMIT: $BITRISE_GIT_COMMIT
     steps:
-    - trigger-bitrise-workflow@0:
+    - script@1:
+        title: Trigger bitrise-cli-release in Tooling Control Center
         inputs:
-        - api_token: $CONTROL_CENTER_TRIGGER_KEY
-        - workflow_id: bitrise-cli-release
-        - exported_environment_variable_names: TOOLINGCC_RELEASE_TAG|TOOLINGCC_RELEASE_COMMIT
-        - branch: master
-        - tag: ""
-        - commit_hash: ""
-        - app_slug: $CONTROL_CENTER_APP_SLUG
+        - content: |-
+            #!/usr/bin/env bash
+            set -euo pipefail
+
+            # Control Center runs on master and reads the release ref from these envs
+            envs=$(jq -n \
+                --arg tag "$BITRISE_GIT_TAG" \
+                --arg commit "$BITRISE_GIT_COMMIT" \
+                '{TOOLINGCC_RELEASE_TAG: $tag, TOOLINGCC_RELEASE_COMMIT: $commit}')
+            echo "$envs"
+
+            BITRISE_TOKEN="$CONTROL_CENTER_TRIGGER_TOKEN" bitrise build trigger \
+                --app "$CONTROL_CENTER_APP_SLUG" \
+                --workflow bitrise-cli-release \
+                --branch master \
+                --env "$envs"
 
   run_lint:
     steps:
