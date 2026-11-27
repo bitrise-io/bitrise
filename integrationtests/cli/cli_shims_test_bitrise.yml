@@ -1,0 +1,16 @@
+format_version: "11"
+
+workflows:
+  envman-through-shim:
+    steps:
+    - path::$BITRISE_CLI_SHIMS_STEP_DIR:
+        title: Export through the shim
+        inputs:
+        - content: |-
+            test "$(command -v envman)" = "$HOME/.bitrise/shims/envman"
+            envman add --key SHIMMED --value through-the-shim
+    - path::$BITRISE_CLI_SHIMS_STEP_DIR:
+        title: Read it back
+        inputs:
+        - content: |-
+            test "$SHIMMED" = through-the-shim

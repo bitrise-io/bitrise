@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -13,6 +14,18 @@ func CheckProgramInstalledPath(clcommand string) (string, error) {
 	outBytes, err := cmd.Output()
 	outStr := string(outBytes)
 	return strings.TrimSpace(outStr), err
+}
+
+// IsExecutable reports whether pth, an absolute path, is a regular file the current user can run.
+// os.Stat follows symlinks, so a link to such a file counts. exec.LookPath asks the OS, while the
+// mode bits alone also accept a file that only another user can run.
+func IsExecutable(pth string) bool {
+	info, err := os.Stat(pth)
+	if err != nil || !info.Mode().IsRegular() {
+		return false
+	}
+	_, err = exec.LookPath(pth)
+	return err == nil
 }
 
 // FormattedSecondsToMax8Chars ...

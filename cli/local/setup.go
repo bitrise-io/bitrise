@@ -1,6 +1,7 @@
 package local
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/bitrise-io/bitrise/v3/bitrise"
@@ -10,6 +11,8 @@ import (
 	"github.com/bitrise-io/bitrise/v3/version"
 	"github.com/spf13/cobra"
 )
+
+const genCLIShimsKey = "experimental-gen-cli-shims"
 
 // NewSetupCommand ...
 func NewSetupCommand() *cobra.Command {
@@ -30,6 +33,7 @@ func NewSetupCommand() *cobra.Command {
 	setupCommand.Flags().Bool("clean", false, "Removes bitrise's workdir before setup.")
 	setupCommand.Flags().Bool("minimal", false, "Only installs the required tools for running in CI mode.")
 	setupCommand.Flags().Bool("no-update", false, "Skip updating core tools (stepman/envman) and plugins if they are already installed, even if outdated (or set BITRISE_SETUP_NO_UPDATE=true).")
+	setupCommand.Flags().Bool(genCLIShimsKey, false, "Experimental: put an envman shim ahead of the installed envman on PATH, running the Envman built into this CLI. Set it to false to remove the shim.")
 
 	return setupCommand
 }
@@ -48,6 +52,14 @@ func setup(cmd *cobra.Command) error {
 	logger := log.NewLogger(log.GetGlobalLoggerOpts())
 	if err := bitrise.RunSetup(logger, version.VERSION, setupMode, clean, noUpdate); err != nil {
 		return err
+	}
+	// Changed is false when the flag is absent, which keeps the shim as it is.
+	// GetBool alone would read an absent flag as false and remove it.
+	if cmd.Flags().Changed(genCLIShimsKey) {
+		genShims, _ := cmd.Flags().GetBool(genCLIShimsKey)
+		if err := bitrise.SetupShims(genShims); err != nil {
+			return fmt.Errorf("set up CLI shims: %w", err)
+		}
 	}
 
 	logger.Print()

@@ -224,6 +224,9 @@ func (r WorkflowRunner) RunWorkflowsWithSetupAndCheckForUpdate() (int, error) {
 	if err := bitrise.RunSetupIfNeeded(r.logger); err != nil {
 		return 1, fmt.Errorf("setup failed: %s", err)
 	}
+	if err := bitrise.RefreshShims(); err != nil {
+		r.logger.Warnf("Failed to refresh the CLI shims, steps may run an older CLI or the installed tools instead: %s", err)
+	}
 
 	if r.agentConfig != nil {
 		if err := runBuildHook(r.agentConfig.Hooks.DoOnBuildStart, "build start"); err != nil {
