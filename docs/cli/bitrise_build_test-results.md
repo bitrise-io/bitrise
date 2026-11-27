@@ -11,6 +11,10 @@ that ran more than once, the messages of its failed runs are listed too.
 Each test case also lists the test suites it belongs to, which can differ from
 where it is nested, and the identifier its test report gives it, if any.
 
+A quarantine matches a test case by those exact suites, its name and class
+name, or by its identifier. 'bitrise app quarantined-tests add --build
+BUILD_ID --name NAME' looks them up in the build, with NAME as listed here.
+
 Test results are available once the build has finished, and only if the plan
 of the app's workspace includes test reports. Filters narrow the test cases
 listed, and suites left without any are left out; a suite's counts always

@@ -29,5 +29,6 @@ bitrise app [flags]
 * [bitrise](bitrise.md)	 - Bitrise Automations Workflow Runner
 * [bitrise app create](bitrise_app_create.md)	 - Register a new app on Bitrise
 * [bitrise app list](bitrise_app_list.md)	 - List apps the authenticated user can access
+* [bitrise app quarantined-tests](bitrise_app_quarantined-tests.md)	 - List and manage the tests quarantined on an app
 * [bitrise app view](bitrise_app_view.md)	 - Show details of a single app
 
