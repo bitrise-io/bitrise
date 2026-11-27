@@ -119,7 +119,7 @@ workflows:
                 '{TOOLINGCC_RELEASE_TAG: $tag, TOOLINGCC_RELEASE_COMMIT: $commit}')
             echo "$envs"
 
-            BITRISE_TOKEN="$CONTROL_CENTER_TRIGGER_TOKEN" bitrise build trigger \
+            BITRISE_TOKEN="$BITRISE_API_TOKEN_CONTROL_CENTER_TRIGGER" bitrise build trigger \
                 --app "$CONTROL_CENTER_APP_SLUG" \
                 --workflow bitrise-cli-release \
                 --branch master \
